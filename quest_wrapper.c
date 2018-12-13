@@ -5,23 +5,20 @@
 
 QuESTEnv env;
 
-
-extern int WSMain(int, char **);
-
-
-
-extern int mytest( int i, int j);
-
-int mytest( int i, int j)
-{
+int mytest( int i, int j) {
     
     Qureg q = createQureg(10, env);
     initPlusState(q);
     
     return measure(q, 0);
+}
+
+int anothertest(void) {
     
+    Qureg q = createQureg(10, env);
+    initPlusState(q);
     
-	//return i+j;
+    return calcProbOfOutcome(q, 0, 0);
 }
 
 int main(int argc, char* argv[])
