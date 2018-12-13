@@ -1,3 +1,10 @@
+# if not already initialised, set num threads and processes
+if [[ -z "${OMP_NUM_THREADS}" ]]; then
+    export OMP_NUM_THREADS=3
+fi
+if [[ -z "${MPI_HOSTS}" ]]; then
+    export MPI_HOSTS=4
+fi
 
 # grab the makefile, use its current settings
 cp ../makefile makefile
@@ -19,6 +26,7 @@ else
 	printf "\nCOMPILATION FAILED"
 	printf "\n---------------------\n\n"
 	make clean EXE=runTests --silent
+	rm makefile        
 	exit 1
 fi
 
@@ -27,13 +35,12 @@ printf "     RUNNING UNIT TESTS     \n"
 printf "============================\n\n"
 
 # run the unit tests
-export OMP_NUM_THREADS=3
-distributed=$(make SUPPRESS_WARNING=1 getvalue-DISTRIBUTED --silent)
+distributed=$(make SUPPRESS_WARNING=1 getvalue-DISTRIBUTED SILENT=1 --silent)
 if [ $distributed == 0 ]
 then
     ./runTests
 else
-    mpirun $MPI_HOSTS ./runTests
+    mpirun -np $MPI_HOSTS ./runTests
 fi
 
 # report test success
