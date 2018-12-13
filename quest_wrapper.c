@@ -10,16 +10,49 @@ int mytest( int i, int j) {
     Qureg q = createQureg(10, env);
     initPlusState(q);
     
-    return measure(q, 0);
+    int out = measure(q, 0);
+    destroyQureg(q, env);
+    return out;
 }
 
-int anothertest(void) {
+qreal anothertest(void) {
     
     Qureg q = createQureg(10, env);
     initPlusState(q);
     
-    return calcProbOfOutcome(q, 0, 0);
+    qreal prob = calcProbOfOutcome(q, 0, 0);
+    destroyQureg(q, env);
+    return prob;
 }
+
+
+void getQureg(void) {
+    
+    Qureg q = createQureg(10, env);
+    
+    
+    WSPutFunction(stdlink, "List", 2);
+    WSPutInteger(stdlink, 0);
+    WSPutString(stdlink, "hello");
+    
+    
+    
+    destroyQureg(q, env);
+}
+
+
+void giveQureg(void) {
+    
+    long int i;
+    long int j;
+    
+    WSGetLongInteger(stdlink, &i);
+    WSGetLongInteger(stdlink, &j);
+    
+    WSPutLongInteger(stdlink, i+j);
+}
+
+
 
 int main(int argc, char* argv[])
 {
