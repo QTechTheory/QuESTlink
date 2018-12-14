@@ -31,7 +31,7 @@
 
 :Begin:
 :Function:       giveQureg
-:Pattern:        GiveQureg[q_Association]
+:Pattern:        GiveQureg[q_List]
 :Arguments:      { q }
 :ArgumentTypes:  { Manual }
 :ReturnType:     Manual

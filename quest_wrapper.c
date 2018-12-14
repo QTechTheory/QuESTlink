@@ -1,56 +1,77 @@
-
 #include "wstp.h"
 #include <QuEST.h>
 
-
+/**
+ * Global instance of QuESTEnv, created when MMA is linked.
+ * 
+ */
 QuESTEnv env;
 
-
 /**
- * puts Rule[field, value] in current MMA expression
+ * puts a Qureg into MMA, with the structure of
+ * {numQubits, isDensityMatrix, realAmps, imagAmps}
  */
-void putRuleInt(char* field, int value) {
+void putQuregToMMA(Qureg qureg) {
     
-    WSPutFunction(stdlink, "Rule", 2);
-    WSPutString(stdlink, field);
-    WSPutInteger(stdlink, value);
+    WSPutFunction(stdlink, "List", 4);
+    WSPutInteger(stdlink, qureg.numQubitsRepresented);
+    WSPutInteger(stdlink, qureg.isDensityMatrix);
+    WSPutReal64List(stdlink, qureg.stateVec.real, qureg.numAmpsTotal);
+    WSPutReal64List(stdlink, qureg.stateVec.imag, qureg.numAmpsTotal);
 }
 
 /**
- * puts Rule[field, arr] in current MMA expression
+ * extracts a Qureg from a List passed from MMA, which
+ * must have the structure:
+ * {numQubits, isDensityMatrix, realAmps, imagAmps}
  */
-void putRuleArr(char* field, qreal* arr, int len) {
+Qureg getQuregFromMMA(void) {
     
-    WSPutFunction(stdlink, "Rule", 2);
-    WSPutString(stdlink, field);
-    WSPutRealList(stdlink, arr, len);
+    // qureg properties
+    int numQb, numAmps, isDensityMatrix;
+    qreal* realAmps;
+    qreal* imagAmps;
+    
+    // throws error if incorrectly sized arr is passed
+    int numElems = 4;
+    WSTestHeadWithArgCount(stdlink, "List", &numElems);
+    
+    // get qureg properties
+    WSGetInteger(stdlink, &numQb);
+    WSGetInteger(stdlink, &isDensityMatrix);
+    WSGetReal64List(stdlink, &realAmps, &numAmps);
+    WSGetReal64List(stdlink, &imagAmps, &numAmps);
+    
+    // validate qurge properties
+    // @TODO validate numQb vs numAmps (considering isDensityMatrix)
+
+    // create Qureg
+    Qureg qureg;
+    if (isDensityMatrix)
+        qureg = createDensityQureg(numQb, env);
+    else
+        qureg = createQureg(numQb, env);
+    
+    // set wavefunction
+    initStateFromAmps(qureg, realAmps, imagAmps);
+    
+    // free MMA-allocated arrays
+    WSReleaseReal64List(stdlink, realAmps, numAmps);
+    WSReleaseReal64List(stdlink, imagAmps, numAmps);
+    
+    return qureg;
 }
 
-/**
- * puts an Association representing a Qureg in current MMA expression
- */
-void putQureg(Qureg q) {
 
-    WSPutFunction(stdlink, "Association", 6);
-    putRuleInt("numQubitsRepresented", q.numQubitsRepresented);
-    putRuleInt("numQubitsInStateVec", q.numQubitsInStateVec);
-    putRuleInt("isDensityMatrix", q.isDensityMatrix);
-    putRuleInt("numAmpsTotal", q.numAmpsTotal);
-    putRuleArr("stateVecReal", q.stateVec.real, q.numAmpsTotal);
-    putRuleArr("stateVecImag", q.stateVec.imag, q.numAmpsTotal);
-}
-
-/**
- * extracts a Qureg from an Assocation passed from MMA
- */
-void getQureg(void) {
+void giveQureg(void) {
     
-    // throws error if not a correctly sized Assocation was passed
-    int numArgs = 6;
-    WSTestHeadWithArgCount(stdlink, "Association", &numArgs);
-
+    Qureg qureg = getQuregFromMMA();
+    qreal ampRe = getRealAmp(qureg, 0);
     
-
+    
+    WSPutReal(stdlink, ampRe);
+    
+    destroyQureg(qureg, env);
 }
 
 
@@ -83,7 +104,7 @@ void returnQureg(void) {
     controlledNot(q, 0, 1);
     controlledPhaseShift(q, 1, 2, .3);
     
-    putQureg(q);
+    putQuregToMMA(q);
     
     destroyQureg(q, env);
     
@@ -104,13 +125,6 @@ void returnQureg(void) {
 }
 
 
-void giveQureg(void) {
-    
-    getQureg();
-    
-    
-
-}
 
 
 
