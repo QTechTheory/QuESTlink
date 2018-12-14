@@ -16,24 +16,24 @@
 :ArgumentTypes:  {}
 :ReturnType:     Real
 :End:
-:Evaluate: MyTest::usage = "AnotherTest[] gives summin."
+:Evaluate: AnotherTest::usage = "AnotherTest[] gives summin."
 
 
 :Begin:
-:Function:       getQureg
-:Pattern:        GetQureg[]
+:Function:       returnQureg
+:Pattern:        ReturnQureg[]
 :Arguments:      {}
 :ArgumentTypes:  {}
 :ReturnType:     Manual
 :End:
-:Evaluate: MyTest::usage = "GetQureg[] gives summin."
+:Evaluate: ReturnQureg::usage = "ReturnQureg[] gives summin."
 
 
 :Begin:
 :Function:       giveQureg
-:Pattern:        GiveQureg[i_Integer, j_Integer]
-:Arguments:      { i, j }
+:Pattern:        GiveQureg[q_Association]
+:Arguments:      { q }
 :ArgumentTypes:  { Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: MyTest::usage = "GiveQureg[] gives summin."
+:Evaluate: GiveQureg::usage = "GiveQureg[list] gives summin."
