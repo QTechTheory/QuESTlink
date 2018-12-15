@@ -12,16 +12,16 @@
 #======================================================================#
 
 # name of the executable to create
-EXE = demo
+EXE = quest_wrapper
 
 # space-separated names (no file type) of all user source files (.c or .cpp) in the root directory
-SOURCES = tutorial_example
+SOURCES = quest_wrapper
 
 # path to QuEST library from root directory
 QUEST_DIR = QuEST
 
 # compiler to use, which should support both C and C++, to be wrapped by GPU/MPI compilers
-COMPILER = gcc
+COMPILER = gcc-8
 
 # type of above compiler, one of {GNU, INTEL, CLANG}, used for setting compiler flags
 COMPILER_TYPE = GNU
