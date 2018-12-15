@@ -245,7 +245,7 @@ void applyCircuit(void) {
                 WSClearError(stdlink);
                 WSNextPacket(stdlink);
                 WSNewPacket(stdlink);
-                WSPutSymbol(stdlink, "$Failed");
+                WSPutSymbol(stdlink, "$Aborted");
                 return;
             }
         }

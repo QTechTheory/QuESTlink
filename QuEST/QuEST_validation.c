@@ -88,13 +88,19 @@ void exitWithError(ErrorCode code, const char* func){
     // create error message
     char err_msg[200];
     sprintf(err_msg, 
-        "Incorrect use of function %s: %s.\nKilling link...",
+        "Incorrect use of function %s: %s",
         func, errorMessages[code]);
 
     // echo a message in MMA
     WSPutFunction(stdlink, "EvaluatePacket", 1);
     WSPutFunction(stdlink, "Echo", 2);
     WSPutString(stdlink, err_msg);
+    WSPutString(stdlink, "Error: ");
+    WSEndPacket(stdlink);
+    
+    WSPutFunction(stdlink, "EvaluatePacket", 1);
+    WSPutFunction(stdlink, "Echo", 2);
+    WSPutString(stdlink, "The QuEST link must now be killed.");
     WSPutString(stdlink, "Error: ");
     WSEndPacket(stdlink);
     
