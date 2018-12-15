@@ -12,6 +12,7 @@ extern "C" {
 # include "QuEST_precision.h"
 # include "QuEST_internal.h"
 # include "QuEST_validation.h"
+#include "../wstp.h"
 
 # include <stdio.h>
 # include <stdlib.h>
@@ -80,10 +81,38 @@ static const char* errorMessages[] = {
 };
 
 void exitWithError(ErrorCode code, const char* func){
-    printf("!!!\n");
-    printf("QuEST Error in function %s: %s\n", func, errorMessages[code]);
-    printf("!!!\n");
-    printf("exiting..\n");
+    
+    // clear any MMA errors in the pipeline
+    WSClearError(stdlink);
+    
+    // create error message
+    char err_msg[200];
+    sprintf(err_msg, 
+        "Incorrect use of function %s: %s.\nKilling link...",
+        func, errorMessages[code]);
+
+    // echo a message in MMA
+    WSPutFunction(stdlink, "EvaluatePacket", 1);
+    WSPutFunction(stdlink, "Echo", 2);
+    WSPutString(stdlink, err_msg);
+    WSPutString(stdlink, "Error: ");
+    WSEndPacket(stdlink);
+    
+    // attempt to abort (I'm not sure this does anything)
+    WSNextPacket(stdlink);
+    WSNewPacket(stdlink);
+    WSPutFunction(stdlink, "EvaluatePacket", 1);
+    WSPutFunction(stdlink, "Abort", 0);
+    WSEndPacket(stdlink);
+    
+    // return a $Failed
+    WSNextPacket(stdlink);
+    WSNewPacket(stdlink);
+    WSPutSymbol(stdlink, "$Failed");
+    WSEndPacket(stdlink);
+    
+    // kill link
+    WSClose(stdlink);
     exit(code);
 }
 
