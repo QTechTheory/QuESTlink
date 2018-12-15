@@ -14,15 +14,6 @@
 #define OPCODE_S 7
 #define OPCODE_T 8
 
-/* will be inferred from ctrl arg
-#define OPCODE_CX 9
-#define OPCODE_CY 10
-#define OPCODE_CZ 11
-#define OPCODE_CRx 12
-#define OPCODE_CRy 13
-#define OPCODE_CRz 14
-*/
-
 /**
  * Global instance of QuESTEnv, created when MMA is linked.
  */
@@ -237,6 +228,29 @@ void applyCircuit(void) {
     
     // apply each op
     for (int i=0; i < numOps; i++) {
+        
+        // check whether the user has tried to abort
+        // why the eff does WSAbort not exist?
+        //if (WSAbort) {
+        if (WSMessageReady(stdlink)) {
+            int code, param;
+            WSGetMessage(stdlink, &code, &param);
+            
+            if (code == WSTerminateMessage || 
+                code == WSInterruptMessage || 
+                code == WSAbortMessage ||
+                code == WSImDyingMessage) {
+            
+                destroyQureg(qureg, env);
+                WSClearError(stdlink);
+                WSNextPacket(stdlink);
+                WSNewPacket(stdlink);
+                WSPutSymbol(stdlink, "$Failed");
+                return;
+            }
+        }
+        
+        // get gate info
         int op = opcodes[i];
         int ctrl = ctrls[i];
         int targ = targs[i];
