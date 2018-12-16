@@ -64,6 +64,8 @@ void sendErrorToMMA(char* err_msg) {
     WSPutString(stdlink, err_msg);
     WSPutString(stdlink, "Error: ");
     WSEndPacket(stdlink);
+    WSNextPacket(stdlink);
+    WSNewPacket(stdlink);
 }
 
 
@@ -174,6 +176,10 @@ int wrapper_initClassicalState(int id, int stateInd) {
 int wrapper_initPureState(int quregID, int pureID) {
     initPureState(quregs[quregID], quregs[pureID]);
     return quregID;
+}
+int wrapper_cloneQureg(int outID, int inID) {
+    cloneQureg(quregs[outID], quregs[inID]);
+    return outID;
 }
 
 

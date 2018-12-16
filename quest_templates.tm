@@ -65,6 +65,15 @@
 :End:
 :Evaluate: InitCPureState::usage = "InitPureState[targetQureg, pureQureg] puts targetQureg (statevec or density matrix) into the pureQureg (statevec) state"
 
+:Begin:
+:Function:       wrapper_cloneQureg
+:Pattern:        CloneQureg[target_Integer, source_Integer]
+:Arguments:      { target, source }
+:ArgumentTypes:  { Integer, Integer }
+:ReturnType:     Integer
+:End:
+:Evaluate: CloneQureg::usage = "CloneQureg[dest, source] sets dest to be a copy of source."
+
 
 
 
