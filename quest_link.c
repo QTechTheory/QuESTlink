@@ -15,11 +15,19 @@
 #define OPCODE_T 8
 
 /**
+ * Max number of quregs which can simultaneously exist
+ */
+# define MAX_NUM_QUREGS 1000
+
+/**
  * Global instance of QuESTEnv, created when MMA is linked.
  */
 QuESTEnv env;
 
-
+/**
+ * Collection of instantiated Quregs
+ */
+Qureg quregs[MAX_NUM_QUREGS];
 
 
 
@@ -27,6 +35,16 @@ QuESTEnv env;
  * INTERNAL CODE
  * Abstracts communication between C and MMA
  */
+
+int getNextQuregID() {
+    
+    for (int id=0; id < MAX_NUM_QUREGS; id++)
+        if (!quregs[id].isCreated)
+            return id;
+    
+    // @TODO: raise error; out of available quregs
+    return -1;
+}
 
 int getIntFromMMA(void) {
     int num;
@@ -39,6 +57,16 @@ qreal getRealFromMMA(void) {
     WSGetReal(stdlink, &num);
     return num;
 }
+
+void sendErrorToMMA(char* err_msg) {
+    WSPutFunction(stdlink, "EvaluatePacket", 1);
+    WSPutFunction(stdlink, "Echo", 2);
+    WSPutString(stdlink, err_msg);
+    WSPutString(stdlink, "Error: ");
+    WSEndPacket(stdlink);
+}
+
+
 
 /**
  * extracts a Qureg from a List passed from MMA, which
@@ -104,117 +132,87 @@ void putQuregToMMA(Qureg qureg) {
  */
 
 
+/* qureg allocation */
+
+int wrapper_createQureg(int numQubits) {
+    int id = getNextQuregID();
+    quregs[id] = createQureg(numQubits, env);
+    quregs[id].isCreated = 1;
+    return id;
+}
+int wrapper_createDensityQureg(int numQubits) {
+    int id = getNextQuregID();
+    quregs[id] = createDensityQureg(numQubits, env);
+    quregs[id].isCreated = 1;
+    return id;
+}
+int wrapper_destroyQureg(int id) {
+    if (quregs[id].isCreated) {
+        destroyQureg(quregs[id], env);
+        quregs[id].isCreated = 0;
+    } else {
+        sendErrorToMMA("qureg has not been created.");
+    }
+    return id;
+}
+
+
 /** initial states */
 
-void wrapper_initZeroState(void) {
-    Qureg qureg = getQuregFromMMA();
-    initZeroState(qureg);
-    putQuregToMMA(qureg);
-    destroyQureg(qureg, env);
+int wrapper_initZeroState(int id) {
+    initZeroState(quregs[id]);
+    return id;
 }
-void wrapper_initPlusState(void) {
-    Qureg qureg = getQuregFromMMA();
-    initPlusState(qureg);
-    putQuregToMMA(qureg);
-    destroyQureg(qureg, env);
+int wrapper_initPlusState(int id) {
+    initPlusState(quregs[id]);
+    return id;
 }
-void wrapper_initClassicalState(void) {
-    Qureg qureg = getQuregFromMMA();
-    int stateInd = getIntFromMMA();
-    initClassicalState(qureg, stateInd);
-    putQuregToMMA(qureg);
-    destroyQureg(qureg, env);
+int wrapper_initClassicalState(int id, int stateInd) {
+    initClassicalState(quregs[id], stateInd);
+    return id;
 }
-void wrapper_initPureState(void) {
-    Qureg qureg = getQuregFromMMA();
-    Qureg pure = getQuregFromMMA();
-    initPureState(qureg, pure);
-    putQuregToMMA(qureg);
-    destroyQureg(qureg, env);
-    destroyQureg(pure, env);
+int wrapper_initPureState(int quregID, int pureID) {
+    initPureState(quregs[quregID], quregs[pureID]);
+    return quregID;
 }
 
 
 /** noise */
 
-void applyNoise(int isDepol, int isDouble) {
-    
-    // get args, create qureg
-    Qureg qureg = getQuregFromMMA();
-    int qb1 = getIntFromMMA();
-    int qb2 = (isDouble)? getIntFromMMA() : -1;
-    qreal prob = getRealFromMMA();
-    
-    // appply noise
-    if (isDepol) {
-        if (isDouble)
-            applyTwoQubitDepolariseError(qureg, qb1, qb2, prob);
-        else
-            applyOneQubitDepolariseError(qureg, qb1, prob);
-    } else {
-        if (isDouble)
-            applyTwoQubitDephaseError(qureg, qb1, qb2, prob);
-        else
-            applyOneQubitDephaseError(qureg, qb1, prob);
-    }
-    
-    // give qureg to MMA
-    putQuregToMMA(qureg);
-    
-    // clean up
-    destroyQureg(qureg, env);
+int wrapper_applyOneQubitDephaseError(int id, int qb1, qreal prob) {
+    applyOneQubitDephaseError(quregs[id], qb1, prob);
+    return id;
 }
-
-void wrapper_applyOneQubitDephaseError(void) {
-    applyNoise(0, 0);
+int wrapper_applyTwoQubitDephaseError(int id, int qb1, int qb2, qreal prob) {
+    applyTwoQubitDephaseError(quregs[id], qb1, qb2, prob);
+    return id;
 }
-void wrapper_applyTwoQubitDephaseError(void) {
-    applyNoise(0, 1);
+int wrapper_applyOneQubitDepolariseError(int id, int qb1, qreal prob) {
+    applyOneQubitDepolariseError(quregs[id], qb1, prob);
+    return id;
 }
-void wrapper_applyOneQubitDepolariseError(void) {
-    applyNoise(1, 0);
-}
-void wrapper_applyTwoQubitDepolariseError(void) {
-    applyNoise(1, 1);
+int wrapper_applyTwoQubitDepolariseError(int id, int qb1, int qb2, qreal prob) {
+    applyTwoQubitDepolariseError(quregs[id], qb1, qb2, prob);
+    return id;
 }
 
 
 /* calculations */
 
-qreal wrapper_calcProbOfOutcome(void) {
-    
-    // get args, create qureg
-    Qureg qureg = getQuregFromMMA();
-    int qubit = getIntFromMMA();
-    int outcome = getIntFromMMA();
-    
-    qreal prob = calcProbOfOutcome(qureg, qubit, outcome);
-    
-    // clean up
-    destroyQureg(qureg, env);
-    
-    return prob;
+qreal wrapper_calcProbOfOutcome(int id, int qb, int outcome) {
+    return calcProbOfOutcome(quregs[id], qb, outcome);
 }
-
-qreal wrapper_calcFidelity(void) {
-    
-    Qureg qureg1 = getQuregFromMMA();
-    Qureg qureg2 = getQuregFromMMA();
-    
-    qreal fid = calcFidelity(qureg1, qureg2);
-    
-    destroyQureg(qureg1, env);
-    destroyQureg(qureg2, env);
-    
-    return fid;
+qreal wrapper_calcFidelity(int id1, int id2) {
+    return calcFidelity(quregs[id1], quregs[id2]);
 }
 
 
 /* circuit execution */
 
-void applyCircuit(void) {
+int applyCircuit(int id) {
     
     // get arguments
+    Qureg qureg = quregs[id];
     int numOps;
     int *opcodes;
     int *ctrls;
@@ -224,29 +222,32 @@ void applyCircuit(void) {
     WSGetInteger32List(stdlink, &ctrls, &numOps);
     WSGetInteger32List(stdlink, &targs, &numOps);
     WSGetReal64List(stdlink, &params, &numOps);
-    Qureg qureg = getQuregFromMMA();
+    
+    // backup of initial state in case of abort
+    Qureg backup;
+    if (qureg.isDensityMatrix)
+        backup = createDensityQureg(qureg.numQubitsRepresented, env);
+    else
+        backup = createQureg(qureg.numQubitsRepresented, env);
+    cloneQureg(backup, qureg);
     
     // apply each op
     for (int i=0; i < numOps; i++) {
         
         // check whether the user has tried to abort
-        // why the eff does WSAbort not exist?
-        //if (WSAbort) {
+        //if (WSAbort) { // why does WSAbort not exist??
         if (WSMessageReady(stdlink)) {
-            int code, param;
-            WSGetMessage(stdlink, &code, &param);
-            
+            int code, arg;
+            WSGetMessage(stdlink, &code, &arg);
             if (code == WSTerminateMessage || 
                 code == WSInterruptMessage || 
                 code == WSAbortMessage ||
                 code == WSImDyingMessage) {
             
-                destroyQureg(qureg, env);
-                WSClearError(stdlink);
-                WSNextPacket(stdlink);
-                WSNewPacket(stdlink);
-                WSPutSymbol(stdlink, "$Aborted");
-                return;
+                // restore the backup
+                cloneQureg(qureg, backup);
+                destroyQureg(backup, env);
+                return id;
             }
         }
         
@@ -303,18 +304,26 @@ void applyCircuit(void) {
             else
                 controlledRotateZ(qureg, ctrl, targ, param);
         }
+        
+        // @TODO must warn user if encountered invalid gate
+        // @TODO (not though we can refine MMA match pattern)
     }
     
-    putQuregToMMA(qureg);
-    
-    destroyQureg(qureg, env);
+    destroyQureg(backup, env);
+    return id;
 }
 
 
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
+    
+    // create the single, global QuEST execution env
     env = createQuESTEnv();
     
+    // indicate that no quregs have yet been created
+    for (int id=0; id < MAX_NUM_QUREGS; id++)
+        quregs[id].isCreated = 0;
+    
+    // establish link with MMA
 	return WSMain(argc, argv);
 }

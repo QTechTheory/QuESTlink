@@ -80,6 +80,9 @@ typedef struct Vector
  */
 typedef struct Qureg
 {
+    // for MMA
+    int isCreated;
+    
     //! Whether this instance is a density-state representation
     int isDensityMatrix;
     //! The number of qubits represented in either the state-vector or density matrix
