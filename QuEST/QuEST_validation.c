@@ -100,7 +100,7 @@ void exitWithError(ErrorCode code, const char* func){
     
     WSPutFunction(stdlink, "EvaluatePacket", 1);
     WSPutFunction(stdlink, "Echo", 2);
-    WSPutString(stdlink, "The QuEST link must now be killed.");
+    WSPutString(stdlink, "The QuEST link has been killed (and qureg's cleared) and must be re-established");
     WSPutString(stdlink, "Error: ");
     WSEndPacket(stdlink);
     

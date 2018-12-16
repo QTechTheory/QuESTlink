@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     25216,        656]
-NotebookOptionsPosition[     23570,        623]
-NotebookOutlinePosition[     23927,        639]
-CellTagsIndexPosition[     23884,        636]
+NotebookDataLength[    107925,       2984]
+NotebookOptionsPosition[     86980,       2718]
+NotebookOutlinePosition[     87341,       2734]
+CellTagsIndexPosition[     87298,       2731]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -201,15 +201,18 @@ Cell[BoxData[
         RowBox[{"ReleaseHold", "@", "qureg"}], "]"}], ";", " ", 
        RowBox[{"Clear", "[", "qureg", "]"}]}]}], "]"}]}], "\n", "\n", 
    RowBox[{
-    RowBox[{"ToMatrix", "[", "qureg_Integer", "]"}], " ", ":=", "\n", "\t", 
+    RowBox[{"GetMatrix", "[", "qureg_Integer", "]"}], " ", ":=", "\n", "\t", 
     RowBox[{"With", "[", 
      RowBox[{
       RowBox[{"{", 
        RowBox[{"data", " ", "=", " ", 
         RowBox[{"GetStateVecInternal", "[", "qureg", "]"}]}], "}"}], ",", 
       "\n", "\t\t", 
-      RowBox[{"If", "[", "\n", "\t\t\t", 
+      RowBox[{"Which", "[", "\n", "\t\t\t", 
        RowBox[{
+        RowBox[{"data", " ", "\[Equal]", " ", 
+         RowBox[{"-", "1"}]}], ",", "\n", "\t\t\t", "$Failed", ",", "\n", 
+        "\t\t\t", 
         RowBox[{
          RowBox[{"data", "[", 
           RowBox[{"[", "2", "]"}], "]"}], " ", "\[Equal]", " ", "0"}], ",", 
@@ -225,6 +228,10 @@ Cell[BoxData[
              RowBox[{"[", "3", "]"}], "]"}], ",", " ", 
             RowBox[{"data", "[", 
              RowBox[{"[", "4", "]"}], "]"}]}], "}"}]}], "]"}], ",", "\n", 
+        "\t\t\t", 
+        RowBox[{
+         RowBox[{"data", "[", 
+          RowBox[{"[", "2", "]"}], "]"}], " ", "==", " ", "1"}], ",", "\n", 
         "\t\t\t", 
         RowBox[{"Transpose", " ", "@", " ", 
          RowBox[{"ArrayReshape", "[", "\n", "\t\t\t\t", 
@@ -249,17 +256,65 @@ Cell[BoxData[
              SuperscriptBox["2", 
               RowBox[{"data", "[", 
                RowBox[{"[", "1", "]"}], "]"}]]}], "}"}]}], "\n", "\t\t\t", 
-          "]"}]}]}], "\n", "\t\t", "]"}]}], "\n", "\t", "]"}]}]}]}]], "Code",
+          "]"}]}]}], "\n", "\t\t", "]"}]}], "\n", "\t", "]"}]}], "\n", "\t", 
+   "\n", 
+   RowBox[{
+    RowBox[{"SetMatrix", "[", 
+     RowBox[{"qureg_Integer", ",", " ", "elems_List"}], "]"}], " ", ":=", 
+    "\n", "\t", 
+    RowBox[{"With", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"flatelems", " ", "=", " ", "\n", "\t\t", 
+        RowBox[{"Which", "[", "\n", "\t\t\t", 
+         RowBox[{"(*", " ", 
+          RowBox[{"vectors", " ", "in", " ", "various", " ", "forms"}], " ", 
+          "*)"}], "\n", "\t\t\t", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"Length", " ", "@", " ", 
+            RowBox[{"Dimensions", " ", "@", " ", "elems"}]}], " ", "\[Equal]",
+            " ", "1"}], ",", "\n", "\t\t\t\t", "elems", ",", "\n", "\t\t\t", 
+          RowBox[{
+           RowBox[{"First", " ", "@", " ", 
+            RowBox[{"Dimensions", " ", "@", " ", "elems"}]}], " ", "\[Equal]",
+            " ", "1"}], ",", "\n", "\t\t\t\t", 
+          RowBox[{"First", " ", "@", " ", "elems"}], ",", "\n", "\t\t\t", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"(", 
+             RowBox[{"Dimensions", " ", "@", " ", "elems"}], ")"}], "[", 
+            RowBox[{"[", "2", "]"}], "]"}], " ", "\[Equal]", " ", "1"}], ",", 
+          "\n", "\t\t\t\t", 
+          RowBox[{"First", " ", "@", " ", 
+           RowBox[{"Transpose", " ", "@", " ", "elems"}]}], ",", "\n", 
+          "\t\t\t", 
+          RowBox[{"(*", " ", 
+           RowBox[{"density", " ", "matrices"}], " ", "*)"}], "\n", "\t\t\t", 
+          
+          RowBox[{"SquareMatrixQ", " ", "@", " ", "elems"}], ",", "\n", 
+          "\t\t\t\t", 
+          RowBox[{"Flatten", " ", "@", " ", 
+           RowBox[{"Transpose", " ", "@", " ", "elems"}]}]}], "\n", "\t\t", 
+         "]"}]}], "}"}], ",", "\n", "\t\t", 
+      RowBox[{"InitStateFromAmps", "[", 
+       RowBox[{"qureg", ",", " ", 
+        RowBox[{"Re", "[", "flatelems", "]"}], ",", " ", 
+        RowBox[{"Im", "[", "flatelems", "]"}]}], "]"}]}], "\n", "\t", "]"}], 
+    "\t\t"}]}]}]], "Code",
  CellChangeTimes->CompressedData["
-1:eJwdyVsoQ3EAx/HxYNiGkAeTwuJB0VbL5UWnRoqNJJHbrGgvosZcy60ty2oP
-S9aEsuhQSsiLXEurJTy4NHNZWUZHh2xjIvn/zsO3z8M3Q9NV0x7J4/HSSZCt
-uNkK3jKUlq0/gL8Blwv6GmvdUOxy54WI1/s+TrXseOKT+K71GGGkddcCN5cz
-rbDFOURDQesL5+Pwrw92PKj83NdZBGEibVPFwXwZHRbeMdTO9sgPlEQH8kTE
-c/tPEZSz3SWw+DvI2XPhsDKvDMX3iuyQpzPzT78Yyp5zkgzr9a5UqGpbTYOs
-VpoFKycLSuBVgaEcanpNnIlrqmooaVc0weKUKjV8+jjTwLqEUDAmzFCZtvkw
-jHrrG4slLs7qjVAzYJ2CzYP+aWgbcrhhp6j6Hv4tNJQKiN7xfk7TUUSukJh0
-6ZZDZcOzIZ5YqJcaIR00zcCQ38tZV6acg8p1/hJk+wM0lGY3rcDsQ/EGPNsb
-PYbxZucNVBgjPPAfcO8XzQ==
+1:eJwdymtIU2EAxvGj0KbOZXctC8rWCgRri2H5ZaxWKLY1Yo4NtWxhLCgKrGVp
+dMPRoaXBIVoLJyitYxCESkF2MWkMDpZay9gsG7RadWRFu4ZDe5/z4eH34flv
+sJ480JxLUVQ5GYzVhoYSn3iNLWYegdk4x8FIvTEIS7lgRZL48WVEsEnpu5oi
+/rFNO2Au87wLDnrLGHjQ38ZCyaGfgl/bsxF49Is+KvwtXZIMkXXpF8OtSjZT
++JnXDD++OAdlefEKKXHCPbcTqmKn1LDqX0LwdKCP4Wd5jTgsdUOqxSl+m+Y1
+7s1jK6DZzq2B+sMP1sKYTbER7rtWqYZTlR3V0HqGFlz2UG+AsmZtA6xatb8J
+fv87boWmJclEfobXlLk8GSj6ffZyAbH3rt0BreeY67DxfPQWdLX1BeEJqWEG
+zvdY9kiI4SutgvRoTnkhcfmHoArqLD86iog77AoHZBP0bZiMhgVNe3XdUPdI
+fA/GWuMsVMgb+qH8VekAHH9xyQeLnP4Q1DpypmGquFG7iXhzQlUDfZ0BGnI3
++p0wIDf5odYyInhhrCYEa7mhGegp9kTgu0njNzir9qZgZ+9CGk6mS+bhUiqP
+khOZ99sL4PHs/ZVQdKxnNfQalevgVP6wDD7ZPbBN6N4cqYPVC+Z6+Ku95M4W
+4nqRqhsado0+hYvo18/gfxENiE0=
   
   "],ExpressionUUID->"67ad40e4-903b-439c-9232-44ed66fb26eb"],
 
@@ -319,6 +374,11 @@ Cell[BoxData[
        HoldForm]},
      {
       TagBox[
+       RowBox[{"InitStateFromAmps", "[", 
+        RowBox[{"qureg_Integer", ",", "reals_List", ",", "imags_List"}], "]"}],
+       HoldForm]},
+     {
+      TagBox[
        RowBox[{"CloneQureg", "[", 
         RowBox[{"target_Integer", ",", "source_Integer"}], "]"}],
        HoldForm]},
@@ -369,6 +429,14 @@ Cell[BoxData[
      {
       TagBox[
        RowBox[{"GetStateVecInternal", "[", "qureg_Integer", "]"}],
+       HoldForm]},
+     {
+      TagBox[
+       RowBox[{"DestroyAllQuregs", "[", "]"}],
+       HoldForm]},
+     {
+      TagBox[
+       RowBox[{"GetAllQuregs", "[", "]"}],
        HoldForm]}
     },
     GridBoxAlignment->{
@@ -390,16 +458,516 @@ Cell[BoxData[
    3.75392378667553*^9, 3.753923809901183*^9}, 3.753926219611042*^9, 
    3.753926278521656*^9, 3.753926329071796*^9, 3.753926366495524*^9, 
    3.753926933864216*^9, 3.753933997999976*^9, 3.753934051546254*^9, 
-   3.753934388865016*^9, 
-   3.7539345556417933`*^9},ExpressionUUID->"7fc87e77-c496-4bf1-976d-\
-4d24d0442330"]
+   3.753934388865016*^9, 3.7539345556417933`*^9, 3.7539352977556458`*^9, {
+   3.753980830235805*^9, 3.7539808319675493`*^9}, 3.753981700745244*^9, 
+   3.7539850880100594`*^9, 3.753985281473373*^9, 3.753985368772484*^9, 
+   3.753985445357362*^9, 3.7539856357353086`*^9, 3.753985767648099*^9, 
+   3.75398585999387*^9, 
+   3.753986020678186*^9},ExpressionUUID->"4377a25b-a959-4d27-a577-\
+1b73acb4c539"]
 }, Open  ]],
 
-Cell[BoxData[""], "Input",
- CellChangeTimes->{{3.7539343993956347`*^9, 3.753934411109336*^9}, 
-   3.753934504083331*^9, {3.753934572067502*^9, 
-   3.7539346530870523`*^9}},ExpressionUUID->"ab70b4be-4192-4456-be44-\
-62f2d0b4442a"],
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"InitPlusState", " ", "@", " ", "234"}]], "Input",
+ CellChangeTimes->{{3.753985866573573*^9, 
+  3.753985869575119*^9}},ExpressionUUID->"b84c29d1-6250-41f3-852d-\
+d01c2b6cbcc1"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 234) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986022164548*^9},ExpressionUUID->"9352f0a7-e2d4-4531-bd73-\
+d2efa289ecb2"],
+
+Cell[BoxData["234"], "Output",
+ CellChangeTimes->{{3.7539858700002527`*^9, 3.7539858742800007`*^9}, 
+   3.753986022212263*^9},ExpressionUUID->"faa4aacf-fe57-4a1e-b236-\
+da3d64a63eb2"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ApplyCircuit", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["H", "2"], 
+    SubscriptBox["H", "3"]}], ",", " ", "234"}], "]"}]], "Input",
+ CellChangeTimes->{{3.75398566623029*^9, 3.7539856764928513`*^9}, {
+  3.753985877977439*^9, 
+  3.7539858798316298`*^9}},ExpressionUUID->"86c8438b-7376-4ab4-8532-\
+c2c14783d6b2"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 234) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986025909707*^9},ExpressionUUID->"677c709b-aa7d-4545-9bff-\
+9c2d430ab61c"],
+
+Cell[BoxData["234"], "Output",
+ CellChangeTimes->{{3.753985669976942*^9, 3.753985679502446*^9}, 
+   3.753985875212187*^9, {3.7539860232874737`*^9, 
+   3.753986025955572*^9}},ExpressionUUID->"701d9d64-7828-4e56-ba04-\
+14aed72a2763"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"SetMatrix", "[", 
+  RowBox[{"123", ",", " ", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "2", ",", "3", ",", "4"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.753985316120838*^9, 
+  3.753985325240884*^9}},ExpressionUUID->"71285c10-b046-418b-8747-\
+40b3e0a176b6"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 123) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753985643337468*^9},ExpressionUUID->"d9be104e-593b-4414-90f5-\
+1d12e032896b"],
+
+Cell[BoxData["123"], "Output",
+ CellChangeTimes->{
+  3.753985325546034*^9, {3.7539856427049923`*^9, 
+   3.7539856433808107`*^9}},ExpressionUUID->"b6b0591f-a641-45c7-b700-\
+1164258f9093"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetMatrix", "[", "3", "]"}]], "Input",
+ CellChangeTimes->{{3.753985094685425*^9, 
+  3.753985113138916*^9}},ExpressionUUID->"05cc6498-ea8b-498e-b8be-\
+13b505a27b5e"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 3) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753985647284128*^9},ExpressionUUID->"f59949bf-9cb6-4779-b492-\
+6f78578960eb"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.753985106276526*^9, 3.75398511431419*^9}, {
+  3.753985265921178*^9, 3.753985284556759*^9}, {3.753985645791686*^9, 
+  3.753985647353421*^9}},ExpressionUUID->"6a2032ac-c37e-4428-a11a-\
+71d42cca4f73"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"b", " ", "=", " ", 
+   RowBox[{"CreateDensityQureg", "[", "3", "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.753980872316831*^9, 3.753980888024601*^9}, {
+  3.753981704720858*^9, 
+  3.753981707000943*^9}},ExpressionUUID->"d3622577-7d9d-4d51-b921-\
+86919085a21c"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"c", " ", "=", " ", 
+   RowBox[{"CreateQureg", "[", "4", "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.753981748246069*^9, 
+  3.753981755527964*^9}},ExpressionUUID->"b7ebdb6f-f415-494e-a599-\
+3d00bbaa8385"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"InitClassicalState", "[", 
+   RowBox[{"c", ",", " ", "20"}], "]"}], ";"}]], "Input",
+ CellChangeTimes->{{3.753981788678667*^9, 
+  3.753981798976659*^9}},ExpressionUUID->"5d4ff9e5-b49e-45f7-ba9f-\
+5d56402e2b22"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"Incorrect use of function initClassicalState: Invalid state \
+index. Must be >=0 and <2^numQubits.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539817991881943`*^9},ExpressionUUID->"46bd2eae-d657-4b32-8258-\
+21b214c3a706"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], " ", "\<\"The QuEST link must now be killed.\"\>"}]], "Echo",\
+
+ CellChangeTimes->{
+  3.753981799263856*^9},ExpressionUUID->"ac82857b-b6d8-4cca-be74-\
+e4c88a1e1ad8"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetMatrix", " ", "@", " ", "b"}]], "Input",
+ CellChangeTimes->{{3.753980909238579*^9, 
+  3.753980910838255*^9}},ExpressionUUID->"dca259e1-f92d-4598-bd07-\
+131f1eedc65c"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"1.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{3.7539809110841846`*^9, 
+  3.7539817089326878`*^9},ExpressionUUID->"5025328e-ef26-4730-98c5-\
+86ea883e5d1e"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"SetMatrix", "[", 
+   RowBox[{"b", ",", " ", 
+    RowBox[{"GetMatrix", "[", "c", "]"}]}], "]"}], ";"}]], "Input",
+ CellChangeTimes->{{3.753980918419321*^9, 3.753980943863583*^9}, {
+  3.753981720441361*^9, 
+  3.753981764776134*^9}},ExpressionUUID->"c4593313-f5dd-46d2-81ae-\
+6bb08bc62c0f"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539856506791153`*^9},ExpressionUUID->"ee62fa86-df36-43bf-8e7a-\
+644858c1f7bf"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetMatrix", " ", "@", " ", "b"}]], "Input",
+ CellChangeTimes->{{3.7539809310358953`*^9, 
+  3.753980939518545*^9}},ExpressionUUID->"18c43455-f46f-4cc0-be8c-\
+6b42bf0dee17"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"3.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+     RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+      RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{
+  3.7539809397523613`*^9, {3.75398172742204*^9, 
+   3.7539817374067087`*^9}},ExpressionUUID->"45c1468f-a0e2-4b78-b2ea-\
+449b956c1b46"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{"DestroyQureg", " ", "@", " ", "b"}]], "Input",
+ CellChangeTimes->{{3.7539809572939997`*^9, 
+  3.7539809605747013`*^9}},ExpressionUUID->"93840e13-b231-457c-b45a-\
+30b697ed894d"],
 
 Cell[CellGroupData[{
 
@@ -411,13 +979,13 @@ Cell[BoxData[{
  RowBox[{
   RowBox[{"InitPlusState", "[", "a", "]"}], ";"}], "\[IndentingNewLine]", 
  RowBox[{
-  RowBox[{"ToMatrix", " ", "@", " ", "a"}], " ", "//", " ", 
+  RowBox[{"GetMatrix", " ", "@", " ", "a"}], " ", "//", " ", 
   "MatrixForm"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"DestroyQureg", " ", "@", " ", "a"}], ";"}]}], "Input",
  CellChangeTimes->{{3.7539344143700247`*^9, 3.753934416264531*^9}, {
-  3.753934605764668*^9, 
-  3.7539346702121143`*^9}},ExpressionUUID->"7b805440-8eba-4579-8c24-\
+  3.753934605764668*^9, 3.7539346702121143`*^9}, {3.753978417259437*^9, 
+  3.753978417513921*^9}},ExpressionUUID->"7b805440-8eba-4579-8c24-\
 21c6b58b8286"],
 
 Cell[BoxData[
@@ -473,9 +1041,9 @@ Cell[BoxData[
   Function[BoxForm`e$, 
    MatrixForm[BoxForm`e$]]]], "Output",
  CellChangeTimes->{{3.753934416571197*^9, 3.753934470746698*^9}, {
-  3.753934574566298*^9, 
-  3.753934670486699*^9}},ExpressionUUID->"10bf8a8e-63bb-44da-b204-\
-29ec23f4c7c4"]
+   3.753934574566298*^9, 3.753934670486699*^9}, 
+   3.753980845968803*^9},ExpressionUUID->"b0031ddc-25e8-43d3-a51e-\
+ed5ca24c9214"]
 }, Open  ]],
 
 Cell[BoxData[{
@@ -499,6 +1067,56 @@ Cell[BoxData[{
  RowBox[{
   RowBox[{"InitPlusState", "[", "\[Phi]", "]"}], ";"}]}], "Input",ExpressionUU\
 ID->"876ed2bf-ccc1-4ebd-83c7-630ee83f91e4"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetAllQuregs", "[", "]"}]], "Input",
+ CellChangeTimes->{{3.7539853847735043`*^9, 
+  3.753985386577119*^9}},ExpressionUUID->"be35c3fb-974d-4ce7-b485-\
+8669aea69612"],
+
+Cell[BoxData[
+ RowBox[{"{", "}"}]], "Output",
+ CellChangeTimes->{
+  3.75398538685012*^9},ExpressionUUID->"44350a99-4dfb-4d15-91af-05da2f45439a"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[""], "Input",
+ CellChangeTimes->{{3.75398539003902*^9, 3.753985397867015*^9}, {
+   3.753985452436441*^9, 3.75398545251516*^9}, 
+   3.7539856600910597`*^9},ExpressionUUID->"769ff920-3d0f-4083-a019-\
+0b089bcaef90"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 234) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539854544089603`*^9},ExpressionUUID->"69d34f6c-267d-4a87-9b66-\
+6af82ed09b1b"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.753985398295804*^9, 3.753985400334221*^9}, 
+   3.753985454462329*^9},ExpressionUUID->"5254be61-9ad0-471a-a823-\
+88757f6124f1"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["\[Psi]"], "Input",
+ CellChangeTimes->{{3.7539853786507263`*^9, 
+  3.753985379252842*^9}},ExpressionUUID->"e173ff0f-963d-4d27-b1e0-\
+12e500f383e1"],
+
+Cell[BoxData["0"], "Output",
+ CellChangeTimes->{
+  3.753985379685803*^9},ExpressionUUID->"c3edf749-432b-4166-989e-\
+c5cba805fd39"]
+}, Open  ]],
 
 Cell[CellGroupData[{
 
@@ -540,64 +1158,1502 @@ Cell[BoxData[{
   3.7539271404080057`*^9}},ExpressionUUID->"93d682c6-f4a1-4644-bd02-\
 873476592b2c"],
 
+Cell[CellGroupData[{
+
 Cell[BoxData[
- GraphicsBox[{{}, {{}, {}, 
-    {RGBColor[0.368417, 0.506779, 0.709798], PointSize[0.016666666666666666`],
-      AbsoluteThickness[1.6], LineBox[CompressedData["
-1:eJxV0H8s1HEcx/HLGiKFmh/9WBSSmfxKfsULd47DHXYTK3ZTEnJ+pGxputka
-zbKVmeNKkYjWMkwXdk0uFpffbMaQLEKHrkXmRzXv+6Pv9tlnjz0/38937695
-bEp4nAaDwfD+u/7tO8+y9/87A88FYr5r5RJZG8bxxnfji5RkfYwhwXdsapF8
-ENmXysUTknmyCSw1dFYzp2fJR3B0bm+VfHiGbIZ1ByuWXuln8nEkdVaXXKkZ
-J1vAgPUiyok/QraCw0aGlJ/ZR7ZG4wg/QiDuINtgQq/LvGm7hWyLqfECwUL+
-K7IdqrnhWxPaxWR7XJR3lCqbhWQHfLsnaMs6zCQ7YrssVjiYlEt2QtiPdzOa
-gnKyMxxjyvu+t9SRz+BNaGpqY1Az2QWKLbHyPuc9+SzSpXNx7YmdZFd0XGM+
-zbRTkN2Qy+HnSy3V87lDwdUx9pX3kz3wqbdfIpscIHuCEW3/bEg4SD4H0aEK
-97w0tb0wH3SSzVpWn/fG5pOltIx19X3A5u8cN1klfU8ErE6P32bt66HuA+H+
-omLTm13UfZCcNWyv1aD+377QOl2X5aii+US+cMuJ1KxvlVH3w1TBLVN7ayl1
-P5ToPgphRNRTZ2LZ7kBPa1stdSZ44YXuyZUV1FmI9GiITnggps7CBf0RU13b
-Aur+sDNcOLY8KqLuD16jcrRJkEqdjRSTseC2U1HU2ej4peqWqFyoB6BlcqiG
-n67w2ukBkMukLrtCzKkH4jJP6KMy8qL3A9Gw1F42ps+hzkFwbs5g/ddQ6hzE
-VGabGSWGUw9Ct+SD7XpVGPUgbI0vvd4Tw6UejBvCWZFBIZt6MDaZhQO7r4N6
-CAx/SgRXzztTD8HDt61f1l5aUudiRTt5cX3SkDoXaXcsvD2d13bmYfBQW2TD
-W+ntp/l42FB+PPF4Mc/rD4PjI9Q=
-      "]]}}, {}, {}, {}, {}},
-  AspectRatio->NCache[GoldenRatio^(-1), 0.6180339887498948],
-  Axes->{True, True},
-  AxesLabel->{None, None},
-  AxesOrigin->{0., 0},
-  DisplayFunction->Identity,
-  Frame->{{False, False}, {False, False}},
-  FrameLabel->{{None, None}, {None, None}},
-  FrameTicks->{{Automatic, Automatic}, {Automatic, Automatic}},
-  GridLines->{None, None},
-  GridLinesStyle->Directive[
-    GrayLevel[0.5, 0.4]],
-  ImagePadding->All,
-  Method->{"CoordinatesToolOptions" -> {"DisplayFunction" -> ({
-        (Identity[#]& )[
-         Part[#, 1]], 
-        (Identity[#]& )[
-         Part[#, 2]]}& ), "CopiedValueFunction" -> ({
-        (Identity[#]& )[
-         Part[#, 1]], 
-        (Identity[#]& )[
-         Part[#, 2]]}& )}},
-  PlotRange->{{0., 63.}, {0, 1.}},
-  PlotRangeClipping->True,
-  PlotRangePadding->{{
-     Scaled[0.02], 
-     Scaled[0.02]}, {
-     Scaled[0.02], 
-     Scaled[0.05]}},
-  Ticks->{Automatic, Automatic}]], "Output",
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.75398603184298*^9},ExpressionUUID->"78587568-ea47-4168-b2b2-777f4fb86a68"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860318890343`*^9},ExpressionUUID->"538b3d1f-8100-4582-9dd2-\
+38fd95d7d307"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860319374437`*^9},ExpressionUUID->"d54a9905-2356-408f-b1a5-\
+fc0675825aac"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986031987977*^9},ExpressionUUID->"9553d375-e818-48a3-862e-\
+e39f986a5163"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986032036931*^9},ExpressionUUID->"975d1892-daf2-4d1a-b998-\
+f8876fe9065d"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860320880957`*^9},ExpressionUUID->"5111a252-0ce0-4760-99a5-\
+132aa8edddd9"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986032144425*^9},ExpressionUUID->"78ace5db-f561-44d1-ade8-\
+08e802d98ef4"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.75398603220718*^9},ExpressionUUID->"a46b9c16-0faf-4ae6-a21b-70e18e178893"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986032264921*^9},ExpressionUUID->"276f082a-4183-458d-a8ce-\
+7f3dd7d2622c"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860323240967`*^9},ExpressionUUID->"325f28ed-d7f4-4cd2-96b0-\
+99bcb4f692eb"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986032378374*^9},ExpressionUUID->"72a73668-bc05-4f60-a251-\
+657f80cda725"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986032430828*^9},ExpressionUUID->"4a4c9d8f-af4f-4c1e-ab8c-\
+855cd4de47ad"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986032489399*^9},ExpressionUUID->"a488f365-8f86-4d77-82eb-\
+49d1b45bc496"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860325456676`*^9},ExpressionUUID->"ec2fe26f-8630-4660-a95c-\
+4c19c2cb7811"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986032604054*^9},ExpressionUUID->"e8f8eed0-cc59-42c1-9655-\
+fe04e48adbf3"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860326622753`*^9},ExpressionUUID->"1b060459-beed-486e-b0d5-\
+32de5430ec4c"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986032721562*^9},ExpressionUUID->"0618600a-a9ca-4ee4-a279-\
+abce03fbd4ee"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860327781773`*^9},ExpressionUUID->"fb67ca81-7be3-4c9e-bd31-\
+31ad242cbcbc"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986032838674*^9},ExpressionUUID->"4bb03897-0fc4-46d4-bc16-\
+ab3863e83b76"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860328961487`*^9},ExpressionUUID->"d9ffa2cd-4269-41f6-97c2-\
+8d3522e61d2c"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986032954042*^9},ExpressionUUID->"c929aeb3-c1bf-4926-a2c9-\
+1f17996a9132"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033012857*^9},ExpressionUUID->"c1e81390-1bb6-4069-9189-\
+6604173fadc9"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860330720787`*^9},ExpressionUUID->"b3b43413-de48-41d3-8907-\
+c3bfcb9ea526"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033127944*^9},ExpressionUUID->"514c1e22-98ab-47a2-9187-\
+bce2847f84e1"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033186635*^9},ExpressionUUID->"1a339e4e-3da3-4d80-8d35-\
+22d17da5ffee"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033243078*^9},ExpressionUUID->"e39d8409-b30e-4745-89c7-\
+1fcf2d04c3f8"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033304242*^9},ExpressionUUID->"3049a9ac-ab2c-4e85-b5db-\
+400509471485"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033362034*^9},ExpressionUUID->"e10654fe-7d01-427d-8bc6-\
+8d1c01884b43"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033420733*^9},ExpressionUUID->"e6ace0f8-9ea2-4ab9-a1de-\
+3f9d8bd9b39b"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860334780283`*^9},ExpressionUUID->"43158e1e-33d3-40d1-9fb9-\
+3aa2bd2f85db"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033537076*^9},ExpressionUUID->"f134cd2a-4960-4a8c-a6ac-\
+7d78c1e673f6"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033595428*^9},ExpressionUUID->"e7d5b1a9-8448-45ec-b698-\
+e445fbc0d8a7"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860336524467`*^9},ExpressionUUID->"2ac2607d-680d-45e5-96e9-\
+c159fb7bffbf"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033711543*^9},ExpressionUUID->"01ab4ede-ab92-4f33-8893-\
+d065dd4da7f1"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033769734*^9},ExpressionUUID->"70dd3b97-a1cd-48e0-b25d-\
+6f3bf5e711e8"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033818398*^9},ExpressionUUID->"3928d18f-bda1-45ef-ac6c-\
+38cad152d050"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860338773193`*^9},ExpressionUUID->"28e91f5d-5b81-447a-9a46-\
+103ee658ee6f"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033937379*^9},ExpressionUUID->"1c1da9d6-5b57-4287-8ec3-\
+46b9f9e6a86d"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986033984684*^9},ExpressionUUID->"f9287621-fb6f-4c0b-bd05-\
+e1adb8c8b7f9"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986034044846*^9},ExpressionUUID->"0593ef08-d65a-4e56-96f5-\
+ca8b523d1728"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986034103348*^9},ExpressionUUID->"13f92503-b9ac-4643-8217-\
+b1bb5aa9e271"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986034162328*^9},ExpressionUUID->"be560764-996f-4e11-9f45-\
+851fe1134f33"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986034261649*^9},ExpressionUUID->"7f2ea672-86a6-407d-998e-\
+67dd3ac73cd9"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986034419561*^9},ExpressionUUID->"30c368d0-520e-4f83-9bf2-\
+a4dcdf3c340a"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986034478073*^9},ExpressionUUID->"153e2a8b-3373-45d0-9e16-\
+8b4c79274ca5"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.75398603453658*^9},ExpressionUUID->"b9133225-1eb2-420b-a424-8b4cba83908e"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986034596101*^9},ExpressionUUID->"b476313b-1226-40bd-be8e-\
+001242884259"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860346610126`*^9},ExpressionUUID->"28f41696-dc09-4ee3-b92c-\
+5667d3fbd94e"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986034728815*^9},ExpressionUUID->"71a90c83-9fb2-4025-a5f6-\
+f803202d960e"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860348446283`*^9},ExpressionUUID->"85f6cf35-2596-49b6-b458-\
+d49bc7e60642"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986034960915*^9},ExpressionUUID->"39f5edd1-81d8-435d-8c2f-\
+1c8fc687659d"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986035028483*^9},ExpressionUUID->"40b92554-a399-477c-b8dc-\
+e7087a2e9c26"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986035093762*^9},ExpressionUUID->"2a1b0f01-99b0-4404-940e-\
+93a1de5c4b46"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986035161565*^9},ExpressionUUID->"ce3ab07f-522f-4a94-ba0f-\
+575d659b2506"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986035228817*^9},ExpressionUUID->"ae139629-b5ce-4b09-a98c-\
+453e2fbb3bd1"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986035294816*^9},ExpressionUUID->"e3ab3392-b039-4be5-8f28-\
+886c5e48ccf5"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986035361335*^9},ExpressionUUID->"4343b99d-0b1e-4226-a565-\
+f029bf2f7fca"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986035428031*^9},ExpressionUUID->"e3537512-5681-45e6-b2bb-\
+ea2faa831cf5"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986035552391*^9},ExpressionUUID->"3ac87ad0-1f66-48fc-9eb4-\
+d4fc965cb774"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986035718564*^9},ExpressionUUID->"04869a2b-f759-4e35-b59b-\
+1df02fd62de6"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860358277884`*^9},ExpressionUUID->"28fa2ab5-0c14-4851-8068-\
+0807b0097313"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986035886361*^9},ExpressionUUID->"c6a2890d-b101-4a2b-8a78-\
+5cc835e8f782"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986035945282*^9},ExpressionUUID->"f1c6964d-a210-46d1-9cab-\
+41b4f134bf06"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986036002376*^9},ExpressionUUID->"e7d96292-82fa-4777-aa35-\
+eba12fd623ef"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986036061557*^9},ExpressionUUID->"600e7717-82c5-429d-b96a-\
+459b4895b787"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986036119288*^9},ExpressionUUID->"75e3c2e2-bd14-480e-b739-\
+e472045af275"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986036178852*^9},ExpressionUUID->"f986555e-a5aa-44f8-89e1-\
+1c6f22695d6c"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860362360163`*^9},ExpressionUUID->"570e4519-53f2-4dd9-816c-\
+4f9fb18e6a6a"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986036294586*^9},ExpressionUUID->"532edaf8-659a-4954-b267-\
+a8b9057dd5fa"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860363525333`*^9},ExpressionUUID->"29e5cebd-66e2-4c7d-92f1-\
+3c9996b5e85a"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860364132433`*^9},ExpressionUUID->"d9c780ea-3e50-45d9-b10a-\
+a21bb7a37415"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986036468667*^9},ExpressionUUID->"e39fad21-8724-4b5d-98be-\
+2d96f3a424ac"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986036527555*^9},ExpressionUUID->"dff41812-3646-4dec-b35a-\
+dd590fae6d97"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986036584366*^9},ExpressionUUID->"4c5afe29-55be-4a18-94ba-\
+4d9b627aa265"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860366308527`*^9},ExpressionUUID->"bc76c0a8-09ea-4ef0-b519-\
+59a49d680a4c"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.75398603668509*^9},ExpressionUUID->"283ca7ec-6434-42e0-9929-4d3e8fa475be"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986036746172*^9},ExpressionUUID->"f80589c5-fd57-4042-b5c2-\
+f90402cca8bb"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986036795164*^9},ExpressionUUID->"6a2c28c9-088e-4fe9-b23e-\
+2bb3fb1f945a"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860368526363`*^9},ExpressionUUID->"05bf99a5-ae19-48fd-94a2-\
+68eab11b805f"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860369119797`*^9},ExpressionUUID->"16a0b3da-b42b-41b2-82b9-\
+d5b70ad171d4"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986036968388*^9},ExpressionUUID->"49c422c0-58dc-44b1-8101-\
+3f84a3cb6f93"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037028575*^9},ExpressionUUID->"52c9b2ff-5a98-4ec8-b275-\
+a58a635355ae"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037085516*^9},ExpressionUUID->"0e83afd4-c2e7-47ae-99cc-\
+ae03f9e23eba"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037145239*^9},ExpressionUUID->"b3d8bf40-89e0-4e93-9d0c-\
+c141a31c1ebf"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037202333*^9},ExpressionUUID->"f9596f2c-cfa5-4fae-acb4-\
+e69870d5eb8a"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860372612534`*^9},ExpressionUUID->"f904a53c-a0a0-49dd-83c0-\
+fd3719b8b241"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037318798*^9},ExpressionUUID->"78723972-30d3-4872-a70c-\
+73e9d91357d0"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037368065*^9},ExpressionUUID->"7757f6da-abff-4d6c-a789-\
+4a3f56267e59"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037426743*^9},ExpressionUUID->"78f5534d-c005-47ff-b8d4-\
+8581b5316f6b"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037485257*^9},ExpressionUUID->"35532c20-e194-481f-aa91-\
+e6ca0b5413fc"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037544159*^9},ExpressionUUID->"b5241e3f-89da-4d7b-94c0-\
+646ea57901fa"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037593647*^9},ExpressionUUID->"0db7a70d-f3b6-4583-8c49-\
+291b06164b71"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037652083*^9},ExpressionUUID->"87ad9ea8-7c09-4006-b4a2-\
+023dc7f37fb1"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860377110367`*^9},ExpressionUUID->"72d4e3df-eca8-49b0-a74f-\
+e7fc9b57ffe3"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860377695293`*^9},ExpressionUUID->"6251b807-05bc-454f-abb4-\
+4b33b87380e4"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986037815648*^9},ExpressionUUID->"ef9fe8ef-85d7-499f-a742-\
+d7032d915f75"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860395070953`*^9},ExpressionUUID->"90921b6e-0417-424f-acc1-\
+5ca614dd7524"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860395627327`*^9},ExpressionUUID->"4a102a51-0cb5-4df7-ac66-\
+14ae761f1398"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986039611554*^9},ExpressionUUID->"4a5d4c9e-240f-4311-8b55-\
+1aa6ca1dd045"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860396685743`*^9},ExpressionUUID->"06f46d9f-973f-45f0-8b08-\
+64fb857f58bd"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986039728849*^9},ExpressionUUID->"9a103029-e58a-4942-85df-\
+5b2a0330b5df"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860397868767`*^9},ExpressionUUID->"acb93b67-e515-4bf5-88e5-\
+2eba08d8e245"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986039844756*^9},ExpressionUUID->"81ce600a-6f36-41bf-9dd3-\
+e862cf3aafaf"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986039903348*^9},ExpressionUUID->"310a1dd9-94a7-4fc3-8d4d-\
+b20f5ed65e19"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986039962487*^9},ExpressionUUID->"01d2b8c5-d9f4-470c-8eae-\
+e7384cf5fe4f"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986040019395*^9},ExpressionUUID->"84cf473b-5eee-472a-94ec-\
+1fb3279b05ec"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860400794563`*^9},ExpressionUUID->"25ef5c84-23f5-4136-a723-\
+4004e5936813"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860401359987`*^9},ExpressionUUID->"b44b508a-5137-4c3c-ac2a-\
+1002823e091e"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986040194715*^9},ExpressionUUID->"558a24be-22a8-4fad-933b-\
+5e6993e1b1aa"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860402521963`*^9},ExpressionUUID->"d26fb20d-1385-49d7-9997-\
+9d51024a9a2c"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.75398604031112*^9},ExpressionUUID->"1ca3db78-f77d-47b7-9055-bd61c5e86d61"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986040369617*^9},ExpressionUUID->"c8d6f189-64ac-44ad-9bf5-\
+4ca74f92dcc0"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986040428739*^9},ExpressionUUID->"49c71052-d0b1-4b1b-94ac-\
+8427b887d10e"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986040485284*^9},ExpressionUUID->"808e53e8-ba0c-4a92-ae1f-\
+b1a973213f9f"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986040545248*^9},ExpressionUUID->"88d00b2d-a59f-4f7b-9737-\
+b26e4dffe935"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.75398604060308*^9},ExpressionUUID->"2b638dc1-53a6-45c8-b481-514fd2de3b6d"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860406641283`*^9},ExpressionUUID->"a6140779-51a8-41b4-b7ab-\
+af165973840c"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.75398604071906*^9},ExpressionUUID->"81cf0f3f-5bb7-44ea-97d0-368efa380fb9"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986040778585*^9},ExpressionUUID->"82125044-3baf-477c-8a90-\
+cc54364a993f"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860408364563`*^9},ExpressionUUID->"c4516b21-dd01-4bc3-8792-\
+79e5c854e2b7"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986040894617*^9},ExpressionUUID->"a2036961-0249-4a3f-a0b7-\
+180b62200089"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986040952177*^9},ExpressionUUID->"62004a6f-9bb7-4d49-bde6-\
+48135f756417"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986041011609*^9},ExpressionUUID->"17cbf3ac-5add-4395-8dcf-\
+7a9bbfdc1c1e"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986041069182*^9},ExpressionUUID->"f63483f6-f6f5-4242-946e-\
+03745947f750"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860411286383`*^9},ExpressionUUID->"57d0908f-08b5-4ffc-b000-\
+25da018a5214"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860411848927`*^9},ExpressionUUID->"c6ddf8d0-f820-4bea-bccd-\
+6b81e254aa85"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860412460938`*^9},ExpressionUUID->"cedfd332-e3bd-4b0b-a8e6-\
+8e5141c38d6a"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986041303011*^9},ExpressionUUID->"78931448-5118-4ffc-9043-\
+f3b8827b83a8"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986041361195*^9},ExpressionUUID->"fcfdc9b0-7a5a-40bd-a4b5-\
+384e398bdd26"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986041418909*^9},ExpressionUUID->"2f91c559-2db2-4587-bdc0-\
+816d9f0454d5"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860414769287`*^9},ExpressionUUID->"a821be84-af5a-48fd-8d85-\
+c14843521d3d"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986041524976*^9},ExpressionUUID->"707ba68c-2dfe-4e96-81b0-\
+0ca1b327402d"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986041578141*^9},ExpressionUUID->"886a8add-d99b-4eeb-bef4-\
+8a67a831e8c2"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.75398604163463*^9},ExpressionUUID->"58b4a9ef-cd70-49f6-a0cc-ef60d8c37f44"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986041695437*^9},ExpressionUUID->"b5c5e787-c7cd-4f02-98cc-\
+8c0449ce3975"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986041745041*^9},ExpressionUUID->"7e865fe4-4b5f-47eb-aef1-\
+f952e07cc30f"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860418017282`*^9},ExpressionUUID->"c2aa3919-6587-492e-8307-\
+791343542144"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860418609343`*^9},ExpressionUUID->"02bf2e5b-c5bd-4834-be4c-\
+5572d9cf8c45"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986041908087*^9},ExpressionUUID->"90a49ba7-8f5e-4594-b9a4-\
+3bd51d6f5aa8"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986041962347*^9},ExpressionUUID->"92beb6bb-57ab-4fa7-a09d-\
+be7c4d228b4f"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042018042*^9},ExpressionUUID->"2fff1564-fba9-4cc4-ae20-\
+29a01a4042e7"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860420790663`*^9},ExpressionUUID->"7886803a-171f-4f50-8a46-\
+a5d7bfa1a796"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042134891*^9},ExpressionUUID->"2b8b0dfe-cd7e-4ce0-b546-\
+aa7658075300"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042195403*^9},ExpressionUUID->"8f51a289-4400-4e6a-ac71-\
+53654ab31795"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042251768*^9},ExpressionUUID->"9e142d42-d57a-49a5-8b4b-\
+ac002fc5ad61"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042311295*^9},ExpressionUUID->"596a45e2-bbda-4aa9-9e5b-\
+ccf735691a52"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042369021*^9},ExpressionUUID->"cf019a38-f364-42cd-a842-\
+c6d4efcd4b45"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042416258*^9},ExpressionUUID->"9cd8c40f-32e7-4582-aa03-\
+0093d8e95fd7"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860424780893`*^9},ExpressionUUID->"d5045285-7491-4c7b-9448-\
+da12866e285f"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042535185*^9},ExpressionUUID->"54c464a7-420f-4c17-beda-\
+4279344a482c"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042595066*^9},ExpressionUUID->"c34bc231-6812-45f4-8690-\
+b82edf7603e3"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042644177*^9},ExpressionUUID->"17fe7082-3c8d-4012-90a5-\
+f7be592eddd2"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042701017*^9},ExpressionUUID->"a0b31bde-2775-4ce4-ac4f-\
+bddd65a14eb8"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042762084*^9},ExpressionUUID->"55c603c8-3f6c-4c34-9442-\
+6bad1a44f37e"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042827574*^9},ExpressionUUID->"3dc21976-9fdd-4fd6-bbda-\
+3e42eb1e3836"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042877934*^9},ExpressionUUID->"0d7ffcb4-2f70-45c8-ae91-\
+f2a9e4293794"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.75398604293509*^9},ExpressionUUID->"f0fde52c-ded3-4712-b167-e20d1e714549"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986042994766*^9},ExpressionUUID->"3c56eed4-28b9-4a99-9673-\
+cd7ed3f0d19d"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860430533133`*^9},ExpressionUUID->"8ddda3aa-8e53-4aa8-9391-\
+17a9f0450f79"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860431004963`*^9},ExpressionUUID->"c7c3df9b-7177-4e5b-9680-\
+8df3908ddee3"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986043154476*^9},ExpressionUUID->"3deb10e6-bee7-453b-ac93-\
+555d46834ebc"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 0) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753986043211359*^9},ExpressionUUID->"bad0af46-aa63-4fad-ba97-\
+fc58f8715643"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], 
+  " ", "\<\"qureg (with id 1) has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539860450034933`*^9},ExpressionUUID->"b01ba63e-e90b-4ef1-bd55-\
+53e1aacb45ff"]
+}, Open  ]],
+
+Cell[BoxData["$Aborted"], "Output",
  CellChangeTimes->{{3.753923992937928*^9, 3.753924023343444*^9}, {
    3.7539241026857452`*^9, 3.753924131383918*^9}, {3.75392468203161*^9, 
    3.753924722129106*^9}, {3.75392489918237*^9, 3.7539249433474703`*^9}, {
    3.753924981278163*^9, 3.753924987236793*^9}, 3.7539250219084063`*^9, {
-   3.753927129318803*^9, 
-   3.7539271427193213`*^9}},ExpressionUUID->"d302f071-684b-4ab1-b735-\
-ed4f66aa314e"]
+   3.753927129318803*^9, 3.7539271427193213`*^9}, 3.753980853018832*^9, 
+   3.753985350825004*^9, 
+   3.7539860450611563`*^9},ExpressionUUID->"28e34ab6-7420-4791-afc2-\
+f0071016bd6d"]
 }, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetAllQuregs", "[", "]"}]], "Input",
+ CellChangeTimes->{{3.753935314098936*^9, 
+  3.75393534354991*^9}},ExpressionUUID->"40b82dbe-d00c-46a9-945f-\
+2a8a1b3aab31"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0", ",", "1"}], "}"}]], "Output",
+ CellChangeTimes->{{3.753935316389785*^9, 3.75393535101407*^9}, 
+   3.753980854085904*^9},ExpressionUUID->"f6c5237b-ebb7-4e2c-a5c8-\
+79ea80f0fffb"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"DestroyAllQuregs", "[", "]"}], ";"}]], "Input",
+ CellChangeTimes->{{3.7539353446529427`*^9, 
+  3.753935352971459*^9}},ExpressionUUID->"71570cdb-37eb-4e95-8338-\
+3317f5161833"],
+
+Cell[CellGroupData[{
 
 Cell[BoxData[{
  RowBox[{
@@ -613,16 +2669,55 @@ Cell[BoxData[{
   3.7539239270890007`*^9}},ExpressionUUID->"7e4ed74a-4ee8-44a2-82b4-\
 de8cd3dc1394"],
 
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], " ", "\<\"qureg has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.7539353545219917`*^9},ExpressionUUID->"5276f982-5b88-4606-a2d4-\
+d3ee039d73e5"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"Error: \"\>",
+   "EchoLabel"], " ", "\<\"qureg has not been created.\"\>"}]], "Echo",
+ CellChangeTimes->{
+  3.753935354565193*^9},ExpressionUUID->"63f9b234-a306-4d21-b046-\
+343892fcdf79"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
 Cell[BoxData[
  RowBox[{
   RowBox[{"Uninstall", "[", "\"\<quest_link\>\"", "]"}], ";"}]], "Input",
  CellChangeTimes->{{3.75392239441737*^9, 3.753922428738454*^9}, {
   3.753925134940875*^9, 
   3.753925139112884*^9}},ExpressionUUID->"bf4b9f2a-dd12-4a5b-b41f-\
-e0741c248e47"]
+e0741c248e47"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "LinkObject","linkn",
+   "\"Argument \\!\\(\\*RowBox[{\\\"LinkObject\\\", \\\"[\\\", RowBox[{\\\"\\\
+\\\\\"'/Users/tysonjones/Desktop/MMAQuEST/QuEST-MMA/quest_link'\\\\\\\"\\\", \
+\\\",\\\", \\\"1539\\\", \\\",\\\", \\\"11\\\"}], \\\"]\\\"}]\\) in \
+\\!\\(\\*RowBox[{\\\"LinkClose\\\", \\\"[\\\", RowBox[{\\\"LinkObject\\\", \\\
+\"[\\\", RowBox[{\\\"\\\\\\\"'/Users/tysonjones/Desktop/MMAQuEST/QuEST-MMA/\
+quest_link'\\\\\\\"\\\", \\\",\\\", \\\"1539\\\", \\\",\\\", \\\"11\\\"}], \\\
+\"]\\\"}], \\\"]\\\"}]\\) has an invalid LinkObject number; the link may be \
+closed.\"",2,165,9,28882960175184591431,"Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.753985366441126*^9},ExpressionUUID->"03c27b8a-6797-40cf-9cc7-\
+db6cfe1d57c4"]
+}, Open  ]]
 },
-WindowSize->{808, 707},
-WindowMargins->{{4, Automatic}, {Automatic, 4}},
+WindowSize->{960, 1035},
+WindowMargins->{{Automatic, -960}, {Automatic, 0}},
 FrontEndVersion->"11.2 for Mac OS X x86 (32-bit, 64-bit Kernel) (September \
 10, 2017)",
 StyleDefinitions->"Default.nb"
@@ -639,25 +2734,258 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[558, 20, 269, 5, 35, "Text",ExpressionUUID->"5d45ac60-ee73-49d2-885c-5a7974dca956"],
-Cell[830, 27, 9470, 236, 1203, "Code",ExpressionUUID->"67ad40e4-903b-439c-9232-44ed66fb26eb"],
-Cell[10303, 265, 401, 8, 30, "Input",ExpressionUUID->"a0dc9828-87df-4557-83d2-609d7b730ed8"],
+Cell[830, 27, 11907, 291, 1584, "Code",ExpressionUUID->"67ad40e4-903b-439c-9232-44ed66fb26eb"],
+Cell[12740, 320, 401, 8, 30, "Input",ExpressionUUID->"a0dc9828-87df-4557-83d2-609d7b730ed8"],
 Cell[CellGroupData[{
-Cell[10729, 277, 294, 7, 30, "Input",ExpressionUUID->"8eebb608-31f6-45c9-b88d-95106b01adc2"],
-Cell[11026, 286, 3410, 108, 314, "Output",ExpressionUUID->"7fc87e77-c496-4bf1-976d-4d24d0442330"]
+Cell[13166, 332, 294, 7, 30, "Input",ExpressionUUID->"8eebb608-31f6-45c9-b88d-95106b01adc2"],
+Cell[13463, 341, 4031, 125, 368, "Output",ExpressionUUID->"4377a25b-a959-4d27-a577-1b73acb4c539"]
 }, Open  ]],
-Cell[14451, 397, 229, 4, 30, "Input",ExpressionUUID->"ab70b4be-4192-4456-be44-62f2d0b4442a"],
 Cell[CellGroupData[{
-Cell[14705, 405, 599, 15, 94, "Input",ExpressionUUID->"7b805440-8eba-4579-8c24-21c6b58b8286"],
-Cell[15307, 422, 2322, 55, 94, "Output",ExpressionUUID->"10bf8a8e-63bb-44da-b204-29ec23f4c7c4"]
+Cell[17531, 471, 199, 4, 30, "Input",ExpressionUUID->"b84c29d1-6250-41f3-852d-d01c2b6cbcc1"],
+Cell[17733, 477, 242, 7, 25, "Echo",ExpressionUUID->"9352f0a7-e2d4-4531-bd73-d2efa289ecb2"],
+Cell[17978, 486, 183, 3, 34, "Output",ExpressionUUID->"faa4aacf-fe57-4a1e-b236-da3d64a63eb2"]
 }, Open  ]],
-Cell[17644, 480, 692, 13, 52, "Input",ExpressionUUID->"41bb611e-1eba-4e99-ad67-142add116079"],
-Cell[18339, 495, 238, 5, 52, "Input",ExpressionUUID->"876ed2bf-ccc1-4ebd-83c7-630ee83f91e4"],
 Cell[CellGroupData[{
-Cell[18602, 504, 1589, 36, 136, "Input",ExpressionUUID->"93d682c6-f4a1-4644-bd02-873476592b2c"],
-Cell[20194, 542, 2473, 56, 246, "Output",ExpressionUUID->"d302f071-684b-4ab1-b735-ed4f66aa314e"]
+Cell[18198, 494, 340, 9, 30, "Input",ExpressionUUID->"86c8438b-7376-4ab4-8532-c2c14783d6b2"],
+Cell[18541, 505, 242, 7, 25, "Echo",ExpressionUUID->"677c709b-aa7d-4545-9bff-9c2d430ab61c"],
+Cell[18786, 514, 231, 4, 34, "Output",ExpressionUUID->"701d9d64-7828-4e56-ba04-14aed72a2763"]
 }, Open  ]],
-Cell[22682, 601, 610, 12, 52, "Input",ExpressionUUID->"7e4ed74a-4ee8-44a2-82b4-de8cd3dc1394"],
-Cell[23295, 615, 271, 6, 30, "Input",ExpressionUUID->"bf4b9f2a-dd12-4a5b-b41f-e0741c248e47"]
+Cell[CellGroupData[{
+Cell[19054, 523, 287, 7, 30, "Input",ExpressionUUID->"71285c10-b046-418b-8747-40b3e0a176b6"],
+Cell[19344, 532, 242, 7, 25, "Echo",ExpressionUUID->"d9be104e-593b-4414-90f5-1d12e032896b"],
+Cell[19589, 541, 186, 4, 34, "Output",ExpressionUUID->"b6b0591f-a641-45c7-b700-1164258f9093"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[19812, 550, 188, 4, 30, "Input",ExpressionUUID->"05cc6498-ea8b-498e-b8be-13b505a27b5e"],
+Cell[20003, 556, 240, 7, 25, "Echo",ExpressionUUID->"f59949bf-9cb6-4779-b492-6f78578960eb"],
+Cell[20246, 565, 254, 4, 34, "Output",ExpressionUUID->"6a2032ac-c37e-4428-a11a-71d42cca4f73"]
+}, Open  ]],
+Cell[20515, 572, 298, 7, 30, "Input",ExpressionUUID->"d3622577-7d9d-4d51-b921-86919085a21c"],
+Cell[20816, 581, 242, 6, 30, "Input",ExpressionUUID->"b7ebdb6f-f415-494e-a599-3d00bbaa8385"],
+Cell[CellGroupData[{
+Cell[21083, 591, 245, 6, 30, "Input",ExpressionUUID->"5d4ff9e5-b49e-45f7-ba9f-5d56402e2b22"],
+Cell[CellGroupData[{
+Cell[21353, 601, 301, 8, 25, "Echo",ExpressionUUID->"46bd2eae-d657-4b32-8258-21b214c3a706"],
+Cell[21657, 611, 234, 7, 25, "Echo",ExpressionUUID->"ac82857b-b6d8-4cca-be74-e4c88a1e1ad8"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[21940, 624, 193, 4, 30, "Input",ExpressionUUID->"dca259e1-f92d-4598-bd07-131f1eedc65c"],
+Cell[22136, 630, 6829, 149, 182, "Output",ExpressionUUID->"5025328e-ef26-4730-98c5-86ea883e5d1e"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[29002, 784, 322, 8, 30, "Input",ExpressionUUID->"c4593313-f5dd-46d2-81ae-6bb08bc62c0f"],
+Cell[29327, 794, 242, 7, 25, "Echo",ExpressionUUID->"ee62fa86-df36-43bf-8e7a-644858c1f7bf"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[29606, 806, 195, 4, 30, "Input",ExpressionUUID->"18c43455-f46f-4cc0-be8c-6b42bf0dee17"],
+Cell[29804, 812, 6856, 150, 182, "Output",ExpressionUUID->"45c1468f-a0e2-4b78-b2ea-449b956c1b46"]
+}, Open  ]],
+Cell[36675, 965, 200, 4, 30, "Input",ExpressionUUID->"93840e13-b231-457c-b45a-30b697ed894d"],
+Cell[CellGroupData[{
+Cell[36900, 973, 646, 15, 94, "Input",ExpressionUUID->"7b805440-8eba-4579-8c24-21c6b58b8286"],
+Cell[37549, 990, 2346, 55, 94, "Output",ExpressionUUID->"b0031ddc-25e8-43d3-a51e-ed5ca24c9214"]
+}, Open  ]],
+Cell[39910, 1048, 692, 13, 52, "Input",ExpressionUUID->"41bb611e-1eba-4e99-ad67-142add116079"],
+Cell[40605, 1063, 238, 5, 52, "Input",ExpressionUUID->"876ed2bf-ccc1-4ebd-83c7-630ee83f91e4"],
+Cell[CellGroupData[{
+Cell[40868, 1072, 188, 4, 30, "Input",ExpressionUUID->"be35c3fb-974d-4ce7-b485-8669aea69612"],
+Cell[41059, 1078, 144, 3, 34, "Output",ExpressionUUID->"44350a99-4dfb-4d15-91af-05da2f45439a"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[41240, 1086, 225, 4, 30, "Input",ExpressionUUID->"769ff920-3d0f-4083-a019-0b089bcaef90"],
+Cell[41468, 1092, 244, 7, 25, "Echo",ExpressionUUID->"69d34f6c-267d-4a87-9b66-6af82ed09b1b"],
+Cell[41715, 1101, 183, 3, 34, "Output",ExpressionUUID->"5254be61-9ad0-471a-a823-88757f6124f1"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[41935, 1109, 160, 3, 30, "Input",ExpressionUUID->"e173ff0f-963d-4d27-b1e0-12e500f383e1"],
+Cell[42098, 1114, 130, 3, 34, "Output",ExpressionUUID->"c3edf749-432b-4166-989e-c5cba805fd39"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[42265, 1122, 1589, 36, 136, "Input",ExpressionUUID->"93d682c6-f4a1-4644-bd02-873476592b2c"],
+Cell[CellGroupData[{
+Cell[43879, 1162, 237, 6, 25, "Echo",ExpressionUUID->"78587568-ea47-4168-b2b2-777f4fb86a68"],
+Cell[44119, 1170, 242, 7, 25, "Echo",ExpressionUUID->"538b3d1f-8100-4582-9dd2-38fd95d7d307"],
+Cell[44364, 1179, 242, 7, 25, "Echo",ExpressionUUID->"d54a9905-2356-408f-b1a5-fc0675825aac"],
+Cell[44609, 1188, 240, 7, 25, "Echo",ExpressionUUID->"9553d375-e818-48a3-862e-e39f986a5163"],
+Cell[44852, 1197, 240, 7, 25, "Echo",ExpressionUUID->"975d1892-daf2-4d1a-b998-f8876fe9065d"],
+Cell[45095, 1206, 242, 7, 25, "Echo",ExpressionUUID->"5111a252-0ce0-4760-99a5-132aa8edddd9"],
+Cell[45340, 1215, 240, 7, 25, "Echo",ExpressionUUID->"78ace5db-f561-44d1-ade8-08e802d98ef4"],
+Cell[45583, 1224, 237, 6, 25, "Echo",ExpressionUUID->"a46b9c16-0faf-4ae6-a21b-70e18e178893"],
+Cell[45823, 1232, 240, 7, 25, "Echo",ExpressionUUID->"276f082a-4183-458d-a8ce-7f3dd7d2622c"],
+Cell[46066, 1241, 242, 7, 25, "Echo",ExpressionUUID->"325f28ed-d7f4-4cd2-96b0-99bcb4f692eb"],
+Cell[46311, 1250, 240, 7, 25, "Echo",ExpressionUUID->"72a73668-bc05-4f60-a251-657f80cda725"],
+Cell[46554, 1259, 240, 7, 25, "Echo",ExpressionUUID->"4a4c9d8f-af4f-4c1e-ab8c-855cd4de47ad"],
+Cell[46797, 1268, 240, 7, 25, "Echo",ExpressionUUID->"a488f365-8f86-4d77-82eb-49d1b45bc496"],
+Cell[47040, 1277, 242, 7, 25, "Echo",ExpressionUUID->"ec2fe26f-8630-4660-a95c-4c19c2cb7811"],
+Cell[47285, 1286, 240, 7, 25, "Echo",ExpressionUUID->"e8f8eed0-cc59-42c1-9655-fe04e48adbf3"],
+Cell[47528, 1295, 242, 7, 25, "Echo",ExpressionUUID->"1b060459-beed-486e-b0d5-32de5430ec4c"],
+Cell[47773, 1304, 240, 7, 25, "Echo",ExpressionUUID->"0618600a-a9ca-4ee4-a279-abce03fbd4ee"],
+Cell[48016, 1313, 242, 7, 25, "Echo",ExpressionUUID->"fb67ca81-7be3-4c9e-bd31-31ad242cbcbc"],
+Cell[48261, 1322, 240, 7, 25, "Echo",ExpressionUUID->"4bb03897-0fc4-46d4-bc16-ab3863e83b76"],
+Cell[48504, 1331, 242, 7, 25, "Echo",ExpressionUUID->"d9ffa2cd-4269-41f6-97c2-8d3522e61d2c"],
+Cell[48749, 1340, 240, 7, 25, "Echo",ExpressionUUID->"c929aeb3-c1bf-4926-a2c9-1f17996a9132"],
+Cell[48992, 1349, 240, 7, 25, "Echo",ExpressionUUID->"c1e81390-1bb6-4069-9189-6604173fadc9"],
+Cell[49235, 1358, 242, 7, 25, "Echo",ExpressionUUID->"b3b43413-de48-41d3-8907-c3bfcb9ea526"],
+Cell[49480, 1367, 240, 7, 25, "Echo",ExpressionUUID->"514c1e22-98ab-47a2-9187-bce2847f84e1"],
+Cell[49723, 1376, 240, 7, 25, "Echo",ExpressionUUID->"1a339e4e-3da3-4d80-8d35-22d17da5ffee"],
+Cell[49966, 1385, 240, 7, 25, "Echo",ExpressionUUID->"e39d8409-b30e-4745-89c7-1fcf2d04c3f8"],
+Cell[50209, 1394, 240, 7, 25, "Echo",ExpressionUUID->"3049a9ac-ab2c-4e85-b5db-400509471485"],
+Cell[50452, 1403, 240, 7, 25, "Echo",ExpressionUUID->"e10654fe-7d01-427d-8bc6-8d1c01884b43"],
+Cell[50695, 1412, 240, 7, 25, "Echo",ExpressionUUID->"e6ace0f8-9ea2-4ab9-a1de-3f9d8bd9b39b"],
+Cell[50938, 1421, 242, 7, 25, "Echo",ExpressionUUID->"43158e1e-33d3-40d1-9fb9-3aa2bd2f85db"],
+Cell[51183, 1430, 240, 7, 25, "Echo",ExpressionUUID->"f134cd2a-4960-4a8c-a6ac-7d78c1e673f6"],
+Cell[51426, 1439, 240, 7, 25, "Echo",ExpressionUUID->"e7d5b1a9-8448-45ec-b698-e445fbc0d8a7"],
+Cell[51669, 1448, 242, 7, 25, "Echo",ExpressionUUID->"2ac2607d-680d-45e5-96e9-c159fb7bffbf"],
+Cell[51914, 1457, 240, 7, 25, "Echo",ExpressionUUID->"01ab4ede-ab92-4f33-8893-d065dd4da7f1"],
+Cell[52157, 1466, 240, 7, 25, "Echo",ExpressionUUID->"70dd3b97-a1cd-48e0-b25d-6f3bf5e711e8"],
+Cell[52400, 1475, 240, 7, 25, "Echo",ExpressionUUID->"3928d18f-bda1-45ef-ac6c-38cad152d050"],
+Cell[52643, 1484, 242, 7, 25, "Echo",ExpressionUUID->"28e91f5d-5b81-447a-9a46-103ee658ee6f"],
+Cell[52888, 1493, 240, 7, 25, "Echo",ExpressionUUID->"1c1da9d6-5b57-4287-8ec3-46b9f9e6a86d"],
+Cell[53131, 1502, 240, 7, 25, "Echo",ExpressionUUID->"f9287621-fb6f-4c0b-bd05-e1adb8c8b7f9"],
+Cell[53374, 1511, 240, 7, 25, "Echo",ExpressionUUID->"0593ef08-d65a-4e56-96f5-ca8b523d1728"],
+Cell[53617, 1520, 240, 7, 25, "Echo",ExpressionUUID->"13f92503-b9ac-4643-8217-b1bb5aa9e271"],
+Cell[53860, 1529, 240, 7, 25, "Echo",ExpressionUUID->"be560764-996f-4e11-9f45-851fe1134f33"],
+Cell[54103, 1538, 240, 7, 25, "Echo",ExpressionUUID->"7f2ea672-86a6-407d-998e-67dd3ac73cd9"],
+Cell[54346, 1547, 240, 7, 25, "Echo",ExpressionUUID->"30c368d0-520e-4f83-9bf2-a4dcdf3c340a"],
+Cell[54589, 1556, 240, 7, 25, "Echo",ExpressionUUID->"153e2a8b-3373-45d0-9e16-8b4c79274ca5"],
+Cell[54832, 1565, 237, 6, 25, "Echo",ExpressionUUID->"b9133225-1eb2-420b-a424-8b4cba83908e"],
+Cell[55072, 1573, 240, 7, 25, "Echo",ExpressionUUID->"b476313b-1226-40bd-be8e-001242884259"],
+Cell[55315, 1582, 242, 7, 25, "Echo",ExpressionUUID->"28f41696-dc09-4ee3-b92c-5667d3fbd94e"],
+Cell[55560, 1591, 240, 7, 25, "Echo",ExpressionUUID->"71a90c83-9fb2-4025-a5f6-f803202d960e"],
+Cell[55803, 1600, 242, 7, 25, "Echo",ExpressionUUID->"85f6cf35-2596-49b6-b458-d49bc7e60642"],
+Cell[56048, 1609, 240, 7, 25, "Echo",ExpressionUUID->"39f5edd1-81d8-435d-8c2f-1c8fc687659d"],
+Cell[56291, 1618, 240, 7, 25, "Echo",ExpressionUUID->"40b92554-a399-477c-b8dc-e7087a2e9c26"],
+Cell[56534, 1627, 240, 7, 25, "Echo",ExpressionUUID->"2a1b0f01-99b0-4404-940e-93a1de5c4b46"],
+Cell[56777, 1636, 240, 7, 25, "Echo",ExpressionUUID->"ce3ab07f-522f-4a94-ba0f-575d659b2506"],
+Cell[57020, 1645, 240, 7, 25, "Echo",ExpressionUUID->"ae139629-b5ce-4b09-a98c-453e2fbb3bd1"],
+Cell[57263, 1654, 240, 7, 25, "Echo",ExpressionUUID->"e3ab3392-b039-4be5-8f28-886c5e48ccf5"],
+Cell[57506, 1663, 240, 7, 25, "Echo",ExpressionUUID->"4343b99d-0b1e-4226-a565-f029bf2f7fca"],
+Cell[57749, 1672, 240, 7, 25, "Echo",ExpressionUUID->"e3537512-5681-45e6-b2bb-ea2faa831cf5"],
+Cell[57992, 1681, 240, 7, 25, "Echo",ExpressionUUID->"3ac87ad0-1f66-48fc-9eb4-d4fc965cb774"],
+Cell[58235, 1690, 240, 7, 25, "Echo",ExpressionUUID->"04869a2b-f759-4e35-b59b-1df02fd62de6"],
+Cell[58478, 1699, 242, 7, 25, "Echo",ExpressionUUID->"28fa2ab5-0c14-4851-8068-0807b0097313"],
+Cell[58723, 1708, 240, 7, 25, "Echo",ExpressionUUID->"c6a2890d-b101-4a2b-8a78-5cc835e8f782"],
+Cell[58966, 1717, 240, 7, 25, "Echo",ExpressionUUID->"f1c6964d-a210-46d1-9cab-41b4f134bf06"],
+Cell[59209, 1726, 240, 7, 25, "Echo",ExpressionUUID->"e7d96292-82fa-4777-aa35-eba12fd623ef"],
+Cell[59452, 1735, 240, 7, 25, "Echo",ExpressionUUID->"600e7717-82c5-429d-b96a-459b4895b787"],
+Cell[59695, 1744, 240, 7, 25, "Echo",ExpressionUUID->"75e3c2e2-bd14-480e-b739-e472045af275"],
+Cell[59938, 1753, 240, 7, 25, "Echo",ExpressionUUID->"f986555e-a5aa-44f8-89e1-1c6f22695d6c"],
+Cell[60181, 1762, 242, 7, 25, "Echo",ExpressionUUID->"570e4519-53f2-4dd9-816c-4f9fb18e6a6a"],
+Cell[60426, 1771, 240, 7, 25, "Echo",ExpressionUUID->"532edaf8-659a-4954-b267-a8b9057dd5fa"],
+Cell[60669, 1780, 242, 7, 25, "Echo",ExpressionUUID->"29e5cebd-66e2-4c7d-92f1-3c9996b5e85a"],
+Cell[60914, 1789, 242, 7, 25, "Echo",ExpressionUUID->"d9c780ea-3e50-45d9-b10a-a21bb7a37415"],
+Cell[61159, 1798, 240, 7, 25, "Echo",ExpressionUUID->"e39fad21-8724-4b5d-98be-2d96f3a424ac"],
+Cell[61402, 1807, 240, 7, 25, "Echo",ExpressionUUID->"dff41812-3646-4dec-b35a-dd590fae6d97"],
+Cell[61645, 1816, 240, 7, 25, "Echo",ExpressionUUID->"4c5afe29-55be-4a18-94ba-4d9b627aa265"],
+Cell[61888, 1825, 242, 7, 25, "Echo",ExpressionUUID->"bc76c0a8-09ea-4ef0-b519-59a49d680a4c"],
+Cell[62133, 1834, 237, 6, 25, "Echo",ExpressionUUID->"283ca7ec-6434-42e0-9929-4d3e8fa475be"],
+Cell[62373, 1842, 240, 7, 25, "Echo",ExpressionUUID->"f80589c5-fd57-4042-b5c2-f90402cca8bb"],
+Cell[62616, 1851, 240, 7, 25, "Echo",ExpressionUUID->"6a2c28c9-088e-4fe9-b23e-2bb3fb1f945a"],
+Cell[62859, 1860, 242, 7, 25, "Echo",ExpressionUUID->"05bf99a5-ae19-48fd-94a2-68eab11b805f"],
+Cell[63104, 1869, 242, 7, 25, "Echo",ExpressionUUID->"16a0b3da-b42b-41b2-82b9-d5b70ad171d4"],
+Cell[63349, 1878, 240, 7, 25, "Echo",ExpressionUUID->"49c422c0-58dc-44b1-8101-3f84a3cb6f93"],
+Cell[63592, 1887, 240, 7, 25, "Echo",ExpressionUUID->"52c9b2ff-5a98-4ec8-b275-a58a635355ae"],
+Cell[63835, 1896, 240, 7, 25, "Echo",ExpressionUUID->"0e83afd4-c2e7-47ae-99cc-ae03f9e23eba"],
+Cell[64078, 1905, 240, 7, 25, "Echo",ExpressionUUID->"b3d8bf40-89e0-4e93-9d0c-c141a31c1ebf"],
+Cell[64321, 1914, 240, 7, 25, "Echo",ExpressionUUID->"f9596f2c-cfa5-4fae-acb4-e69870d5eb8a"],
+Cell[64564, 1923, 242, 7, 25, "Echo",ExpressionUUID->"f904a53c-a0a0-49dd-83c0-fd3719b8b241"],
+Cell[64809, 1932, 240, 7, 25, "Echo",ExpressionUUID->"78723972-30d3-4872-a70c-73e9d91357d0"],
+Cell[65052, 1941, 240, 7, 25, "Echo",ExpressionUUID->"7757f6da-abff-4d6c-a789-4a3f56267e59"],
+Cell[65295, 1950, 240, 7, 25, "Echo",ExpressionUUID->"78f5534d-c005-47ff-b8d4-8581b5316f6b"],
+Cell[65538, 1959, 240, 7, 25, "Echo",ExpressionUUID->"35532c20-e194-481f-aa91-e6ca0b5413fc"],
+Cell[65781, 1968, 240, 7, 25, "Echo",ExpressionUUID->"b5241e3f-89da-4d7b-94c0-646ea57901fa"],
+Cell[66024, 1977, 240, 7, 25, "Echo",ExpressionUUID->"0db7a70d-f3b6-4583-8c49-291b06164b71"],
+Cell[66267, 1986, 240, 7, 25, "Echo",ExpressionUUID->"87ad9ea8-7c09-4006-b4a2-023dc7f37fb1"],
+Cell[66510, 1995, 242, 7, 25, "Echo",ExpressionUUID->"72d4e3df-eca8-49b0-a74f-e7fc9b57ffe3"],
+Cell[66755, 2004, 242, 7, 25, "Echo",ExpressionUUID->"6251b807-05bc-454f-abb4-4b33b87380e4"],
+Cell[67000, 2013, 240, 7, 25, "Echo",ExpressionUUID->"ef9fe8ef-85d7-499f-a742-d7032d915f75"],
+Cell[67243, 2022, 242, 7, 25, "Echo",ExpressionUUID->"90921b6e-0417-424f-acc1-5ca614dd7524"],
+Cell[67488, 2031, 242, 7, 25, "Echo",ExpressionUUID->"4a102a51-0cb5-4df7-ac66-14ae761f1398"],
+Cell[67733, 2040, 240, 7, 25, "Echo",ExpressionUUID->"4a5d4c9e-240f-4311-8b55-1aa6ca1dd045"],
+Cell[67976, 2049, 242, 7, 25, "Echo",ExpressionUUID->"06f46d9f-973f-45f0-8b08-64fb857f58bd"],
+Cell[68221, 2058, 240, 7, 25, "Echo",ExpressionUUID->"9a103029-e58a-4942-85df-5b2a0330b5df"],
+Cell[68464, 2067, 242, 7, 25, "Echo",ExpressionUUID->"acb93b67-e515-4bf5-88e5-2eba08d8e245"],
+Cell[68709, 2076, 240, 7, 25, "Echo",ExpressionUUID->"81ce600a-6f36-41bf-9dd3-e862cf3aafaf"],
+Cell[68952, 2085, 240, 7, 25, "Echo",ExpressionUUID->"310a1dd9-94a7-4fc3-8d4d-b20f5ed65e19"],
+Cell[69195, 2094, 240, 7, 25, "Echo",ExpressionUUID->"01d2b8c5-d9f4-470c-8eae-e7384cf5fe4f"],
+Cell[69438, 2103, 240, 7, 25, "Echo",ExpressionUUID->"84cf473b-5eee-472a-94ec-1fb3279b05ec"],
+Cell[69681, 2112, 242, 7, 25, "Echo",ExpressionUUID->"25ef5c84-23f5-4136-a723-4004e5936813"],
+Cell[69926, 2121, 242, 7, 25, "Echo",ExpressionUUID->"b44b508a-5137-4c3c-ac2a-1002823e091e"],
+Cell[70171, 2130, 240, 7, 25, "Echo",ExpressionUUID->"558a24be-22a8-4fad-933b-5e6993e1b1aa"],
+Cell[70414, 2139, 242, 7, 25, "Echo",ExpressionUUID->"d26fb20d-1385-49d7-9997-9d51024a9a2c"],
+Cell[70659, 2148, 237, 6, 25, "Echo",ExpressionUUID->"1ca3db78-f77d-47b7-9055-bd61c5e86d61"],
+Cell[70899, 2156, 240, 7, 25, "Echo",ExpressionUUID->"c8d6f189-64ac-44ad-9bf5-4ca74f92dcc0"],
+Cell[71142, 2165, 240, 7, 25, "Echo",ExpressionUUID->"49c71052-d0b1-4b1b-94ac-8427b887d10e"],
+Cell[71385, 2174, 240, 7, 25, "Echo",ExpressionUUID->"808e53e8-ba0c-4a92-ae1f-b1a973213f9f"],
+Cell[71628, 2183, 240, 7, 25, "Echo",ExpressionUUID->"88d00b2d-a59f-4f7b-9737-b26e4dffe935"],
+Cell[71871, 2192, 237, 6, 25, "Echo",ExpressionUUID->"2b638dc1-53a6-45c8-b481-514fd2de3b6d"],
+Cell[72111, 2200, 242, 7, 25, "Echo",ExpressionUUID->"a6140779-51a8-41b4-b7ab-af165973840c"],
+Cell[72356, 2209, 237, 6, 25, "Echo",ExpressionUUID->"81cf0f3f-5bb7-44ea-97d0-368efa380fb9"],
+Cell[72596, 2217, 240, 7, 25, "Echo",ExpressionUUID->"82125044-3baf-477c-8a90-cc54364a993f"],
+Cell[72839, 2226, 242, 7, 25, "Echo",ExpressionUUID->"c4516b21-dd01-4bc3-8792-79e5c854e2b7"],
+Cell[73084, 2235, 240, 7, 25, "Echo",ExpressionUUID->"a2036961-0249-4a3f-a0b7-180b62200089"],
+Cell[73327, 2244, 240, 7, 25, "Echo",ExpressionUUID->"62004a6f-9bb7-4d49-bde6-48135f756417"],
+Cell[73570, 2253, 240, 7, 25, "Echo",ExpressionUUID->"17cbf3ac-5add-4395-8dcf-7a9bbfdc1c1e"],
+Cell[73813, 2262, 240, 7, 25, "Echo",ExpressionUUID->"f63483f6-f6f5-4242-946e-03745947f750"],
+Cell[74056, 2271, 242, 7, 25, "Echo",ExpressionUUID->"57d0908f-08b5-4ffc-b000-25da018a5214"],
+Cell[74301, 2280, 242, 7, 25, "Echo",ExpressionUUID->"c6ddf8d0-f820-4bea-bccd-6b81e254aa85"],
+Cell[74546, 2289, 242, 7, 25, "Echo",ExpressionUUID->"cedfd332-e3bd-4b0b-a8e6-8e5141c38d6a"],
+Cell[74791, 2298, 240, 7, 25, "Echo",ExpressionUUID->"78931448-5118-4ffc-9043-f3b8827b83a8"],
+Cell[75034, 2307, 240, 7, 25, "Echo",ExpressionUUID->"fcfdc9b0-7a5a-40bd-a4b5-384e398bdd26"],
+Cell[75277, 2316, 240, 7, 25, "Echo",ExpressionUUID->"2f91c559-2db2-4587-bdc0-816d9f0454d5"],
+Cell[75520, 2325, 242, 7, 25, "Echo",ExpressionUUID->"a821be84-af5a-48fd-8d85-c14843521d3d"],
+Cell[75765, 2334, 240, 7, 25, "Echo",ExpressionUUID->"707ba68c-2dfe-4e96-81b0-0ca1b327402d"],
+Cell[76008, 2343, 240, 7, 25, "Echo",ExpressionUUID->"886a8add-d99b-4eeb-bef4-8a67a831e8c2"],
+Cell[76251, 2352, 237, 6, 25, "Echo",ExpressionUUID->"58b4a9ef-cd70-49f6-a0cc-ef60d8c37f44"],
+Cell[76491, 2360, 240, 7, 25, "Echo",ExpressionUUID->"b5c5e787-c7cd-4f02-98cc-8c0449ce3975"],
+Cell[76734, 2369, 240, 7, 25, "Echo",ExpressionUUID->"7e865fe4-4b5f-47eb-aef1-f952e07cc30f"],
+Cell[76977, 2378, 242, 7, 25, "Echo",ExpressionUUID->"c2aa3919-6587-492e-8307-791343542144"],
+Cell[77222, 2387, 242, 7, 25, "Echo",ExpressionUUID->"02bf2e5b-c5bd-4834-be4c-5572d9cf8c45"],
+Cell[77467, 2396, 240, 7, 25, "Echo",ExpressionUUID->"90a49ba7-8f5e-4594-b9a4-3bd51d6f5aa8"],
+Cell[77710, 2405, 240, 7, 25, "Echo",ExpressionUUID->"92beb6bb-57ab-4fa7-a09d-be7c4d228b4f"],
+Cell[77953, 2414, 240, 7, 25, "Echo",ExpressionUUID->"2fff1564-fba9-4cc4-ae20-29a01a4042e7"],
+Cell[78196, 2423, 242, 7, 25, "Echo",ExpressionUUID->"7886803a-171f-4f50-8a46-a5d7bfa1a796"],
+Cell[78441, 2432, 240, 7, 25, "Echo",ExpressionUUID->"2b8b0dfe-cd7e-4ce0-b546-aa7658075300"],
+Cell[78684, 2441, 240, 7, 25, "Echo",ExpressionUUID->"8f51a289-4400-4e6a-ac71-53654ab31795"],
+Cell[78927, 2450, 240, 7, 25, "Echo",ExpressionUUID->"9e142d42-d57a-49a5-8b4b-ac002fc5ad61"],
+Cell[79170, 2459, 240, 7, 25, "Echo",ExpressionUUID->"596a45e2-bbda-4aa9-9e5b-ccf735691a52"],
+Cell[79413, 2468, 240, 7, 25, "Echo",ExpressionUUID->"cf019a38-f364-42cd-a842-c6d4efcd4b45"],
+Cell[79656, 2477, 240, 7, 25, "Echo",ExpressionUUID->"9cd8c40f-32e7-4582-aa03-0093d8e95fd7"],
+Cell[79899, 2486, 242, 7, 25, "Echo",ExpressionUUID->"d5045285-7491-4c7b-9448-da12866e285f"],
+Cell[80144, 2495, 240, 7, 25, "Echo",ExpressionUUID->"54c464a7-420f-4c17-beda-4279344a482c"],
+Cell[80387, 2504, 240, 7, 25, "Echo",ExpressionUUID->"c34bc231-6812-45f4-8690-b82edf7603e3"],
+Cell[80630, 2513, 240, 7, 25, "Echo",ExpressionUUID->"17fe7082-3c8d-4012-90a5-f7be592eddd2"],
+Cell[80873, 2522, 240, 7, 25, "Echo",ExpressionUUID->"a0b31bde-2775-4ce4-ac4f-bddd65a14eb8"],
+Cell[81116, 2531, 240, 7, 25, "Echo",ExpressionUUID->"55c603c8-3f6c-4c34-9442-6bad1a44f37e"],
+Cell[81359, 2540, 240, 7, 25, "Echo",ExpressionUUID->"3dc21976-9fdd-4fd6-bbda-3e42eb1e3836"],
+Cell[81602, 2549, 240, 7, 25, "Echo",ExpressionUUID->"0d7ffcb4-2f70-45c8-ae91-f2a9e4293794"],
+Cell[81845, 2558, 237, 6, 25, "Echo",ExpressionUUID->"f0fde52c-ded3-4712-b167-e20d1e714549"],
+Cell[82085, 2566, 240, 7, 25, "Echo",ExpressionUUID->"3c56eed4-28b9-4a99-9673-cd7ed3f0d19d"],
+Cell[82328, 2575, 242, 7, 25, "Echo",ExpressionUUID->"8ddda3aa-8e53-4aa8-9391-17a9f0450f79"],
+Cell[82573, 2584, 242, 7, 25, "Echo",ExpressionUUID->"c7c3df9b-7177-4e5b-9680-8df3908ddee3"],
+Cell[82818, 2593, 240, 7, 25, "Echo",ExpressionUUID->"3deb10e6-bee7-453b-ac93-555d46834ebc"],
+Cell[83061, 2602, 240, 7, 25, "Echo",ExpressionUUID->"bad0af46-aa63-4fad-ba97-fc58f8715643"],
+Cell[83304, 2611, 242, 7, 25, "Echo",ExpressionUUID->"b01ba63e-e90b-4ef1-bd55-53e1aacb45ff"]
+}, Open  ]],
+Cell[83561, 2621, 508, 8, 34, "Output",ExpressionUUID->"28e34ab6-7420-4791-afc2-f0071016bd6d"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[84106, 2634, 185, 4, 30, "Input",ExpressionUUID->"40b82dbe-d00c-46a9-945f-2a8a1b3aab31"],
+Cell[84294, 2640, 221, 5, 34, "Output",ExpressionUUID->"f6c5237b-ebb7-4e2c-a5c8-79ea80f0fffb"]
+}, Open  ]],
+Cell[84530, 2648, 210, 5, 30, "Input",ExpressionUUID->"71570cdb-37eb-4e95-8338-3317f5161833"],
+Cell[CellGroupData[{
+Cell[84765, 2657, 610, 12, 52, "Input",ExpressionUUID->"7e4ed74a-4ee8-44a2-82b4-de8cd3dc1394"],
+Cell[CellGroupData[{
+Cell[85400, 2673, 227, 6, 25, "Echo",ExpressionUUID->"5276f982-5b88-4606-a2d4-d3ee039d73e5"],
+Cell[85630, 2681, 225, 6, 25, "Echo",ExpressionUUID->"63f9b234-a306-4d21-b046-343892fcdf79"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[85904, 2693, 271, 6, 30, "Input",ExpressionUUID->"bf4b9f2a-dd12-4a5b-b41f-e0741c248e47"],
+Cell[86178, 2701, 786, 14, 42, "Message",ExpressionUUID->"03c27b8a-6797-40cf-9cc7-db6cfe1d57c4"]
+}, Open  ]]
 }
 ]
 *)

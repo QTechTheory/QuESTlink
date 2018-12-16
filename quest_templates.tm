@@ -63,7 +63,16 @@
 :ArgumentTypes:  { Integer, Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: InitCPureState::usage = "InitPureState[targetQureg, pureQureg] puts targetQureg (statevec or density matrix) into the pureQureg (statevec) state"
+:Evaluate: InitPureState::usage = "InitPureState[targetQureg, pureQureg] puts targetQureg (statevec or density matrix) into the pureQureg (statevec) state."
+
+:Begin:
+:Function:       wrapper_initStateFromAmps
+:Pattern:        InitStateFromAmps[qureg_Integer, reals_List, imags_List]
+:Arguments:      { qureg, reals, imags }
+:ArgumentTypes:  { Integer, RealList, RealList }
+:ReturnType:     Integer
+:End:
+:Evaluate: InitStateFromAmps::usage = "InitStateFromAmps[qureg, reals, imags] initialises the given qureg to have the supplied amplitudes."
 
 :Begin:
 :Function:       wrapper_cloneQureg
@@ -154,3 +163,24 @@
 :ReturnType:     Manual
 :End:
 :Evaluate: GetStateVecInternal::usage = "GetStateVecInternal[qureg] returns the underlying statevector associated with the given qureg (flat, even for density matrices)."
+
+
+
+
+:Begin:
+:Function:       callable_destroyAllQuregs
+:Pattern:        DestroyAllQuregs[]
+:Arguments:      { }
+:ArgumentTypes:  { }
+:ReturnType:     Integer
+:End:
+:Evaluate: DestroyAllQuregs::usage = "DestroyAllQuregs[] destroys all remote quregs."
+
+:Begin:
+:Function:       callable_getAllQuregs
+:Pattern:        GetAllQuregs[]
+:Arguments:      { }
+:ArgumentTypes:  { }
+:ReturnType:     Manual
+:End:
+:Evaluate: GetAllQuregs::usage = "GetAllQuregs[] returns all active quregs."
