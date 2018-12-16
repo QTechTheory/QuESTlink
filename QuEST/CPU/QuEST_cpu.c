@@ -22,6 +22,12 @@
 # include <omp.h>
 # endif
 
+/** exposed for MMA-wrapper */
+void copyStateFromGPU(Qureg qureg) {
+    
+    // do nothing
+}
+
 /** Get the value of the bit at a particular index in a number.
   SCB edit: new definition of extractBit is much faster ***
  * @param[in] locationOfBitFromRight location of bit in theEncodedNumber

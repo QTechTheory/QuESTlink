@@ -129,6 +129,9 @@ typedef struct QuESTEnv
  * public functions
  */
 
+/** exposed for MMA statevec access */
+void copyStateFromGPU(Qureg qureg);
+
 /** Create a Qureg object representing a set of qubits which will remain in a pure state.
  * Allocate space for state vector of probability amplitudes, including space for temporary values to be copied from
  * one other chunk if running the distributed version. Define properties related to the size of the set of qubits.

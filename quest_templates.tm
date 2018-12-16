@@ -19,12 +19,12 @@
 
 :Begin:
 :Function:       wrapper_destroyQureg
-:Pattern:        DestroyQuregInner[id_Integer]
+:Pattern:        DestroyQuregInternal[id_Integer]
 :Arguments:      { id }
 :ArgumentTypes:  { Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: DestroyQureg::usage = "DestroyQureg[numQubits] frees the memory of the remote qureg associated with the given id."
+:Evaluate: DestroyQuregInternal::usage = "DestroyQuregInternal[numQubits] frees the memory of the remote qureg associated with the given id."
 
 
 
@@ -138,10 +138,19 @@
 
 
 :Begin:
-:Function:       applyCircuit
-:Pattern:        ApplyCircuitInner[qureg_Integer, opcodes_List, ctrls_List, targs_List, params_List]
+:Function:       internal_applyCircuit
+:Pattern:        ApplyCircuitInternal[qureg_Integer, opcodes_List, ctrls_List, targs_List, params_List]
 :Arguments:      { qureg, opcodes, ctrls, targs, params }
 :ArgumentTypes:  { Integer, Manual }
 :ReturnType:     Integer
 :End:
 :Evaluate: ApplyCircuitInner::usage = "ApplyCircuitInner[qureg, opcodes, ctrls, targs, params] applies a circuit (decomposed into codes) to the given qureg."
+
+:Begin:
+:Function:       internal_getStateVec
+:Pattern:        GetStateVecInternal[qureg_Integer]
+:Arguments:      { qureg }
+:ArgumentTypes:  { Integer }
+:ReturnType:     Manual
+:End:
+:Evaluate: GetStateVecInternal::usage = "GetStateVecInternal[qureg] returns the underlying statevector associated with the given qureg (flat, even for density matrices)."

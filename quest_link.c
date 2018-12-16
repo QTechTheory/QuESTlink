@@ -112,17 +112,6 @@ Qureg getQuregFromMMA(void) {
     return qureg;
 }
 
-/**
- * puts a Qureg into MMA, with the structure of
- * {numQubits, isDensityMatrix, realAmps, imagAmps}
- */
-void putQuregToMMA(Qureg qureg) {
-    WSPutFunction(stdlink, "List", 4);
-    WSPutInteger(stdlink, qureg.numQubitsRepresented);
-    WSPutInteger(stdlink, qureg.isDensityMatrix);
-    WSPutReal64List(stdlink, qureg.stateVec.real, qureg.numAmpsTotal);
-    WSPutReal64List(stdlink, qureg.stateVec.imag, qureg.numAmpsTotal);
-}
 
 
 
@@ -215,7 +204,7 @@ qreal wrapper_calcFidelity(int id1, int id2) {
 
 /* circuit execution */
 
-int applyCircuit(int id) {
+int internal_applyCircuit(int id) {
     
     // get arguments
     Qureg qureg = quregs[id];
@@ -317,6 +306,23 @@ int applyCircuit(int id) {
     
     destroyQureg(backup, env);
     return id;
+}
+
+/**
+ * puts a Qureg into MMA, with the structure of
+ * {numQubits, isDensityMatrix, realAmps, imagAmps}
+ */
+void internal_getStateVec(int id) {
+
+    Qureg qureg = quregs[id];
+    syncQuESTEnv(env);
+    copyStateFromGPU(qureg); // does nothing on CPU
+    
+    WSPutFunction(stdlink, "List", 4);
+    WSPutInteger(stdlink, qureg.numQubitsRepresented);
+    WSPutInteger(stdlink, qureg.isDensityMatrix);
+    WSPutReal64List(stdlink, qureg.stateVec.real, qureg.numAmpsTotal);
+    WSPutReal64List(stdlink, qureg.stateVec.imag, qureg.numAmpsTotal);
 }
 
 
