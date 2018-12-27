@@ -1,3 +1,6 @@
+## remove all current object files
+rm *.o
+rm quest_link
 
 ## compile QUEST backend
 echo "Compiling QuEST backend..."

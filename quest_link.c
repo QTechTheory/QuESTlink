@@ -223,7 +223,7 @@ int local_backupQuregThenError(char* err_msg, int id, Qureg backup) {
 }
 
 int local_gateNotValidError(char* gate, int id, Qureg backup) {
-    char buffer[100];
+    char buffer[1000];
     sprintf(buffer, 
         "the gate '%s' is not supported. "
         "Aborting circuit and restoring qureg (id %d) to its original state.", 
@@ -287,7 +287,7 @@ int internal_applyCircuit(int id) {
                     id, backup);
             }
         }
-        
+
         // get gate info
         int op = opcodes[i];
         int ctrl = ctrls[i];
