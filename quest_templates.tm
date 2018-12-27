@@ -151,7 +151,7 @@
 :Pattern:        ApplyCircuitInternal[qureg_Integer, opcodes_List, ctrls_List, targs_List, params_List]
 :Arguments:      { qureg, opcodes, ctrls, targs, params }
 :ArgumentTypes:  { Integer, Manual }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: ApplyCircuitInner::usage = "ApplyCircuitInner[qureg, opcodes, ctrls, targs, params] applies a circuit (decomposed into codes) to the given qureg."
 

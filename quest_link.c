@@ -215,20 +215,21 @@ qreal wrapper_calcFidelity(int id1, int id2) {
 
 /* circuit execution */
 
-int local_backupQuregThenError(char* err_msg, int id, Qureg backup) {
+void local_backupQuregThenError(char* err_msg, int id, Qureg backup) {
     local_sendErrorToMMA(err_msg);
     cloneQureg(quregs[id], backup);
     destroyQureg(backup, env);
-    return id;
+    
+    WSPutSymbol(stdlink, "$Failed");
 }
 
-int local_gateNotValidError(char* gate, int id, Qureg backup) {
+void local_gateNotValidError(char* gate, int id, Qureg backup) {
     char buffer[1000];
     sprintf(buffer, 
         "the gate '%s' is not supported. "
         "Aborting circuit and restoring qureg (id %d) to its original state.", 
         gate, id);
-    return local_backupQuregThenError(buffer, id, backup);
+    local_backupQuregThenError(buffer, id, backup);
 }
 
 /** 
@@ -238,9 +239,12 @@ int local_gateNotValidError(char* gate, int id, Qureg backup) {
  * and their parameters (0 if not parameterised).
  * The original qureg of the state is restored when this function
  * is aborted by the calling MMA, or aborted due to encountering
- * an invalid gate.
+ * an invalid gate. In this case, $Failed is returned.
+ * However, a user error caught by the QuEST backend
+ * (e.g. same target and control qubit) will result in the link being
+ * destroyed.
  */
-int internal_applyCircuit(int id) {
+void internal_applyCircuit(int id) {
     
     // @TODO: should this report superfluous/ignored params?
     // @TODO: should this error when necessary params aren't passed?
@@ -258,7 +262,8 @@ int internal_applyCircuit(int id) {
     Qureg qureg = quregs[id];
     if (!qureg.isCreated) {
         local_quregNotCreatedError(id);
-        return id;
+        WSPutSymbol(stdlink, "$Failed");
+        return;
     }
     
     // backup of initial state in case of abort
@@ -369,7 +374,7 @@ int internal_applyCircuit(int id) {
     }
     
     destroyQureg(backup, env);
-    return id;
+    WSPutInteger(stdlink, id);
 }
 
 /**
