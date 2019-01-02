@@ -219,8 +219,7 @@ void local_backupQuregThenError(char* err_msg, int id, Qureg backup) {
     local_sendErrorToMMA(err_msg);
     cloneQureg(quregs[id], backup);
     destroyQureg(backup, env);
-    
-    WSPutSymbol(stdlink, "$Failed");
+    WSPutFunction(stdlink, "Abort", 0);
 }
 
 void local_gateNotValidError(char* gate, int id, Qureg backup) {
@@ -239,13 +238,15 @@ void local_gateNotValidError(char* gate, int id, Qureg backup) {
  * and their parameters (0 if not parameterised).
  * The original qureg of the state is restored when this function
  * is aborted by the calling MMA, or aborted due to encountering
- * an invalid gate. In this case, $Failed is returned.
+ * an invalid gate. In this case, Ahort[] is returned.
  * However, a user error caught by the QuEST backend
  * (e.g. same target and control qubit) will result in the link being
  * destroyed.
  */
 void internal_applyCircuit(int id) {
     
+    // I think both of these possible errors are filterable in MMA,
+    // especially since applyCircuit is already wrapped
     // @TODO: should this report superfluous/ignored params?
     // @TODO: should this error when necessary params aren't passed?
     //        wait this last is undetectable - it looks like R[0] to us
@@ -262,7 +263,7 @@ void internal_applyCircuit(int id) {
     Qureg qureg = quregs[id];
     if (!qureg.isCreated) {
         local_quregNotCreatedError(id);
-        WSPutSymbol(stdlink, "$Failed");
+        WSPutFunction(stdlink, "Abort", 0);
         return;
     }
     
