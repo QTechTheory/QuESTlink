@@ -91,7 +91,7 @@ void exitWithError(ErrorCode code, const char* func){
         "Incorrect use of function %s: %s",
         func, errorMessages[code]);
 
-    // echo a message in MMA
+    // echo error messages in MMA
     WSPutFunction(stdlink, "EvaluatePacket", 1);
     WSPutFunction(stdlink, "Echo", 2);
     WSPutString(stdlink, err_msg);
@@ -100,22 +100,14 @@ void exitWithError(ErrorCode code, const char* func){
     
     WSPutFunction(stdlink, "EvaluatePacket", 1);
     WSPutFunction(stdlink, "Echo", 2);
-    WSPutString(stdlink, "The QuEST link must now be killed.");
+    WSPutString(stdlink, "The QuEST link has been killed (and qureg's cleared) and must be re-established");
     WSPutString(stdlink, "Error: ");
     WSEndPacket(stdlink);
     
-    // attempt to abort (I'm not sure this does anything)
-    WSNextPacket(stdlink);
-    WSNewPacket(stdlink);
-    WSPutFunction(stdlink, "EvaluatePacket", 1);
+    // abort the user's calling code
     WSPutFunction(stdlink, "Abort", 0);
     WSEndPacket(stdlink);
-    
-    // return a $Failed
     WSNextPacket(stdlink);
-    WSNewPacket(stdlink);
-    WSPutSymbol(stdlink, "$Failed");
-    WSEndPacket(stdlink);
     
     // kill link
     WSClose(stdlink);

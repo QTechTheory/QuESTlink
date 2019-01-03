@@ -80,6 +80,9 @@ typedef struct Vector
  */
 typedef struct Qureg
 {
+    // for MMA
+    int isCreated;
+    
     //! Whether this instance is a density-state representation
     int isDensityMatrix;
     //! The number of qubits represented in either the state-vector or density matrix
@@ -125,6 +128,9 @@ typedef struct QuESTEnv
 /*
  * public functions
  */
+
+/** exposed for MMA statevec access */
+void copyStateFromGPU(Qureg qureg);
 
 /** Create a Qureg object representing a set of qubits which will remain in a pure state.
  * Allocate space for state vector of probability amplitudes, including space for temporary values to be copied from
