@@ -1,7 +1,16 @@
 
 BeginPackage["QuEST`"]
     
-    (* note additional functions and their usage messages are fetched when CreateRemoteQuESTEnv is called *)
+    (* 
+     * Note additional functions and their usage messages are fetched when CreateRemoteQuESTEnv is called.
+     * The additional functions are provided through WSTP and use the QuEST` prefix to share namespace with this package.
+     * This includes QuEST`Private` functions which are thus only called from within this package, which does not need to
+     * explicitly use that package. 
+     * Note also that public WSTP functions e.g. CloneQureg called from this package must be prefixed here with QuEST` so
+     * that they are not incorrectly automatically given a QuEST`Private` prefix. This often will not trigger an error 
+     * but will cause incorrect behaviour. When in doubt, give the full explicit name e.g. QuEST`CloneQureg or
+     * QuEST`Private`ApplyCircuitInternal. 
+     *)
     
     ApplyCircuit::usage = "
         ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit.
@@ -16,10 +25,33 @@ BeginPackage["QuEST`"]
     CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[] connects to the remote Igor server and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
                     
     DestroyQuESTEnv::usage = "DestroyQuESTEnv[link] disconnects from the QuEST link, which may be the remote Igor server, clearing some QuEST function definitions (but not those provided by the QuEST package)."
-    
+            
+    (* 
+     * gate symbols, needed exporting so that their use below does not refer to a private var      
+     *)
+
+    PackageExport[H]
+    H::usage = "H is the Hadamard gate."
+    PackageExport[X]
+    X::usage = "X is the Pauli X gate, a.k.a NOT or bit-flip gate."
+    PackageExport[Y]
+    Y::usage = "Y is the Pauli Y gate."
+    PackageExport[Z]
+    Z::usage = "Z is the Pauli Z gate."
+    PackageExport[Rx]
+    Rx::usage = "Rx[theta] is a rotation of theta around the x-axis of the Bloch sphere."        
+    PackageExport[Ry]
+    Ry::usage = "Ry[theta] is a rotation of theta around the y-axis of the Bloch sphere." 
+    PackageExport[Rz]
+    Rz::usage = "Rz[theta] is a rotation of theta around the z-axis of the Bloch sphere." 
+    PackageExport[S]
+    S::usage = "S is the S gate, a.k.a. PI/2 gate."
+    PackageExport[T]
+    T::usage = "T is the T gate, a.k.a PI/4 gate."
+        
     Begin["`Private`"]
             
-        (* disables gate commutivity, replaces Times with Dot, but may not work! *)
+        (* disables gate commutivity, replaces Times with Dot *)
         $Pre = 
           Function[{arg}, 
            ReleaseHold[
@@ -44,7 +76,7 @@ BeginPackage["QuEST`"]
         codifyCircuit[circuit_Dot] :=
         	circuit /. Dot -> List /. gatePatterns // Reverse // Transpose
                 
-        (* applying a sequence of symoblic gates to a qureg *)
+        (* applying a sequence of symoblic gates to a qureg. ApplyCircuitInternal provided by WSTP *)
         ApplyCircuit[circuit_Dot, qureg_Integer] :=
         	With[
         		{codes = codifyCircuit[circuit]},
@@ -54,10 +86,10 @@ BeginPackage["QuEST`"]
         			Echo["Some non-numerical arguments were passed to the backend!", "Error: "]; $Failed
         		]
         	]
-        (* apply a circuit to get an output state without changing input state *)
+        (* apply a circuit to get an output state without changing input state. CloneQureg provided by WSTP *)
         ApplyCircuit[circuit_Dot, inQureg_Integer, outQureg_Integer] :=
         	Block[{},
-        		CloneQureg[outQureg, inQureg];
+        		QuEST`CloneQureg[outQureg, inQureg];
         		ApplyCircuit[circuit, outQureg]
         	]
 
@@ -68,6 +100,7 @@ BeginPackage["QuEST`"]
         DestroyQureg[qureg_Symbol] :=
         	Block[{}, DestroyQuregInternal[ReleaseHold@qureg]; Clear[qureg]]
 
+        (* get a local matrix representation of the remote qureg. GetStateVecInternal provided by WSTP *)
         GetMatrix[qureg_Integer] :=
         	With[{data = GetStateVecInternal[qureg]},
         		Which[
@@ -82,6 +115,7 @@ BeginPackage["QuEST`"]
         		]
         	]
 
+        (* overwrite the state of a remote qureg. InitStateFromAmps provided by WSTP *)
         SetMatrix[qureg_Integer, elems_List] :=
         	With[{flatelems = 
         		Which[
@@ -96,7 +130,7 @@ BeginPackage["QuEST`"]
         			SquareMatrixQ @ elems,
         				Flatten @ Transpose @ elems
         		]},
-        		InitStateFromAmps[qureg, Re[flatelems], Im[flatelems]]
+        		QuEST`InitStateFromAmps[qureg, Re[flatelems], Im[flatelems]]
         	]
                     
         getIgorLink[port_] :=
