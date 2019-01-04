@@ -1,0 +1,241 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.2' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      9367,        233]
+NotebookOptionsPosition[      7820,        204]
+NotebookOutlinePosition[      8182,        220]
+CellTagsIndexPosition[      8139,        217]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell["Download the QuEST Mathematica package", "Text",
+ CellChangeTimes->{{3.75559431516245*^9, 3.755594342225459*^9}},
+ Background->RGBColor[
+  0.88, 1, 0.88],ExpressionUUID->"ee05fbde-a302-4573-84ab-d2bde2a62d52"],
+
+Cell[BoxData[
+ RowBox[{"Import", "[", "\"\<http://quest.qtechtheory.org/QuEST.m\>\"", 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.7555888303596163`*^9, 3.7555888347286158`*^9}, {
+   3.7555930673314962`*^9, 3.7555930704588614`*^9}, 3.755594229480645*^9, {
+   3.755594266675795*^9, 
+   3.7555942748397093`*^9}},ExpressionUUID->"6b15d716-0b25-43fa-b48e-\
+130b9cab28f4"],
+
+Cell["Connect to the remote Igor server (which must be running)", "Text",
+ CellChangeTimes->{{3.755594344769475*^9, 3.755594351937549*^9}, {
+  3.75559445114931*^9, 3.755594454451592*^9}},
+ Background->RGBColor[
+  0.88, 1, 0.88],ExpressionUUID->"f12d0ccd-dd58-450f-a059-53e034ea578b"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"env", " ", "=", " ", 
+   RowBox[{"CreateRemoteQuESTEnv", "[", "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.7555888375343943`*^9, 3.755588855946558*^9}, 
+   3.755589120517859*^9},ExpressionUUID->"44728b54-a47a-4b52-ab16-\
+7fbc2f685632"],
+
+Cell["Create two 25-qubit registers, which are stored on Igor", "Text",
+ CellChangeTimes->{{3.755594374266593*^9, 3.7555943911938972`*^9}},
+ Background->RGBColor[
+  1, 1, 0.85],ExpressionUUID->"6a2a5344-069d-4fdf-b10e-55121de9677b"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"\[Psi]", " ", "=", " ", 
+   RowBox[{"CreateQureg", "[", "25", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"\[Phi]", " ", "=", " ", 
+   RowBox[{"CreateQureg", "[", "25", "]"}]}], ";"}]}], "Input",
+ CellChangeTimes->{{3.755590066415695*^9, 3.7555900686954947`*^9}, {
+  3.755591303879578*^9, 3.755591304982027*^9}, {3.75559135402325*^9, 
+  3.755591354903206*^9}, {3.75559336980785*^9, 
+  3.755593372382184*^9}},ExpressionUUID->"7ad523bd-07c3-494d-b939-\
+e6d1c07d1a39"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"InitPlusState", "[", "\[Psi]", "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"InitPlusState", "[", "\[Phi]", "]"}], ";"}]}], "Input",ExpressionUU\
+ID->"b7fc6fba-a00d-4cdc-844a-e83e73a8b34c"],
+
+Cell["\<\
+An example computation done lightning fast using Igor\[CloseCurlyQuote]s \
+Quadro P6000\
+\>", "Text",
+ CellChangeTimes->{{3.755594408627232*^9, 3.7555944197384453`*^9}},
+ Background->RGBColor[
+  1, 1, 0.85],ExpressionUUID->"dce07c1a-24c2-48b0-a2dd-2a02277996ae"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"u", "[", "\[Theta]_", "]"}], " ", ":=", " ", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["Ry", "3"], "[", "\[Theta]", "]"}], " ", 
+   RowBox[{
+    SubscriptBox["C", "3"], "[", 
+    RowBox[{
+     SubscriptBox["Rz", "2"], "[", "\[Theta]", "]"}], "]"}], " ", 
+   RowBox[{
+    SubscriptBox["Ry", "3"], "[", "\[Theta]", "]"}], " ", 
+   SubscriptBox["H", "2"], " ", 
+   SubscriptBox["X", "3"], " ", 
+   SubscriptBox["T", "3"], " ", 
+   RowBox[{
+    SubscriptBox["C", "0"], "[", 
+    SubscriptBox["X", "1"], "]"}]}]}]], "Input",ExpressionUUID->"0aa7ff41-\
+bb0d-4587-80fe-b42791547383"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ListLinePlot", " ", "@", "  ", 
+  RowBox[{"Table", "[", "\[IndentingNewLine]", "\t", 
+   RowBox[{
+    RowBox[{"CalcFidelity", "[", 
+     RowBox[{"\[Psi]", ",", " ", 
+      RowBox[{"ApplyCircuit", "[", 
+       RowBox[{
+        RowBox[{"u", "[", "\[Theta]", "]"}], ",", "\[Psi]", ",", "\[Phi]"}], 
+       "]"}]}], "]"}], ",", "\[IndentingNewLine]", "\t", 
+    RowBox[{"{", 
+     RowBox[{"\[Theta]", ",", " ", "0", ",", " ", 
+      RowBox[{"2", "\[Pi]"}], ",", " ", ".1"}], "}"}]}], 
+   "\[IndentingNewLine]", "]"}]}]], "Input",
+ CellChangeTimes->{{3.7554866301600313`*^9, 3.7554866976288643`*^9}, {
+  3.755493930645673*^9, 3.755493987485917*^9}, {3.755506068522099*^9, 
+  3.755506078738405*^9}, {3.75558935004182*^9, 3.755589373215231*^9}, {
+  3.755591728853977*^9, 
+  3.755591755763876*^9}},ExpressionUUID->"7d71b1cc-44de-415e-a708-\
+de35050e7ac3"],
+
+Cell[BoxData[
+ GraphicsBox[{{}, {{}, {}, 
+    {RGBColor[0.368417, 0.506779, 0.709798], PointSize[0.016666666666666666`],
+      AbsoluteThickness[1.6], LineBox[CompressedData["
+1:eJw10n8s1HEcx/FLumrza43lMJIfk5XR5Udc7sX5eceRuflTu1SbWRpNWUvf
+HUuMfjBKph+SRG1Czo+c+VVEfh1HfmWy2OkH+dViVOv9/W7ffff4Pu/7694f
+a3l8xBkdDocj/Lv/O/7fFoUzRUJ+WPi4kE4gffXI51XFGHkPVpO5mzG+H8lG
+yNp4OO5TOEI2Rlt/DVf7YJhsCjfDSfNquZpsgVntsnJtq598AMMN2/u/mX8g
+H8QNiwQDqayTbIvO7qLi6ak2sj0SBpo8R9TNZAd4V6wb9ovqyY7grJTX6stq
+yIeR8MAmmi94RXaCwckrglnTSrIzwKR6Za6wdsEFuxYTl9Zq8lHMzVelJUbX
+kfnIsNLlxuaryMegaUl67W3Evp8rPDNPc39HviO7oUTs2rVzoZvsjq783veD
+4ez3e2D6aZV6b8kg+ThKg22te0aGyJ4w4qXc7dRoyF6Qzxvcy705ShbA43qq
+VrbIzuME6vu2OwKX2Hl5w0wkWV/OZOcpxKaJo9S3kTWQXb67QJJGZoAdDW9l
+mwvs9T5IujOtzN6g+zM+UNjr502p2Of7IuhJJk8povkzvtAT2nboFLDzF0Hv
+xXNLvV6aPyOC9cR6d/vSAHU/jCqK5Tb76P9g/GCWXq0RXOqh7g/nfMea3CVa
+D4w/+LqGhfySDuoB6Ls9PJRX2Eo9AKq4MoP6ZnZ9BMLCQ3UxQttAPRCNk7LI
+kLpa6kH4kfNr6pwdzZsJQsqnGauoQ+x6CEaKTepMTkIF9WAYO0ROtOY8oy5G
+bHSo4mdhCXUxeAG3IoTJxdQlCLm80HiV95i6BHkZzvye+EfUQ5D1RvE1LpHM
+hCD9S3HjmiX9nhOKrV3NVhvn6X5MKNpVc2fFp+h5HCmaWsQx3O+l1KWIuuak
+VRqWUw/Dsjpx7L7yJfUwyBvcLcvmK4V/AA6yLXQ=
+      "]]}}, {}, {}, {}, {}},
+  AspectRatio->NCache[GoldenRatio^(-1), 0.6180339887498948],
+  Axes->{True, True},
+  AxesLabel->{None, None},
+  AxesOrigin->{0., 0},
+  DisplayFunction->Identity,
+  Frame->{{False, False}, {False, False}},
+  FrameLabel->{{None, None}, {None, None}},
+  FrameTicks->{{Automatic, Automatic}, {Automatic, Automatic}},
+  GridLines->{None, None},
+  GridLinesStyle->Directive[
+    GrayLevel[0.5, 0.4]],
+  ImagePadding->All,
+  Method->{"CoordinatesToolOptions" -> {"DisplayFunction" -> ({
+        (Identity[#]& )[
+         Part[#, 1]], 
+        (Identity[#]& )[
+         Part[#, 2]]}& ), "CopiedValueFunction" -> ({
+        (Identity[#]& )[
+         Part[#, 1]], 
+        (Identity[#]& )[
+         Part[#, 2]]}& )}},
+  PlotRange->{{0., 63.}, {0, 0.43330438264123905`}},
+  PlotRangeClipping->True,
+  PlotRangePadding->{{
+     Scaled[0.02], 
+     Scaled[0.02]}, {
+     Scaled[0.02], 
+     Scaled[0.05]}},
+  Ticks->{Automatic, Automatic}]], "Output",
+ CellChangeTimes->{{3.7555892216291113`*^9, 3.755589225934132*^9}, 
+   3.755589324337708*^9, 3.755589355888859*^9, {3.75559005935489*^9, 
+   3.7555900892703*^9}, {3.755591297249484*^9, 3.75559133030105*^9}, {
+   3.7555917298428307`*^9, 3.755591761902938*^9}, {3.755591881511898*^9, 
+   3.755591882646284*^9}, 3.7555919763385057`*^9, 3.755592361035063*^9, 
+   3.75559337889118*^9, 3.755593866177003*^9, {3.755594256303371*^9, 
+   3.755594303212212*^9}},ExpressionUUID->"796a8b1a-cdca-41ec-aa7c-\
+80b1e88dbf06"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"DestroyAllQuregs", "[", "]"}], ";"}]], "Input",
+ CellChangeTimes->{{3.755593871946069*^9, 
+  3.7555938760137653`*^9}},ExpressionUUID->"c14cbf10-1bb4-4af2-b39c-\
+08daa1532d88"],
+
+Cell["Disconnect from Igor", "Text",
+ CellChangeTimes->{{3.755594344769475*^9, 3.755594351937549*^9}, {
+  3.755594441308373*^9, 3.755594445346621*^9}},
+ Background->RGBColor[
+  0.88, 1, 0.88],ExpressionUUID->"4c8661fb-faa3-4897-8fb6-83885ab0e65b"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"DestroyQuESTEnv", "[", "env", "]"}], ";"}]], "Input",
+ CellChangeTimes->{{3.755593156785686*^9, 3.7555931596199512`*^9}, 
+   3.7555938811014633`*^9},ExpressionUUID->"455f8e56-3e6f-4eb5-a946-\
+b2427a140c38"]
+},
+WindowSize->{808, 707},
+WindowMargins->{{Automatic, -1229}, {45, Automatic}},
+FrontEndVersion->"11.2 for Mac OS X x86 (32-bit, 64-bit Kernel) (September \
+10, 2017)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 215, 3, 51, "Text",ExpressionUUID->"ee05fbde-a302-4573-84ab-d2bde2a62d52"],
+Cell[776, 25, 364, 7, 30, "Input",ExpressionUUID->"6b15d716-0b25-43fa-b48e-130b9cab28f4"],
+Cell[1143, 34, 283, 4, 51, "Text",ExpressionUUID->"f12d0ccd-dd58-450f-a059-53e034ea578b"],
+Cell[1429, 40, 273, 6, 30, "Input",ExpressionUUID->"44728b54-a47a-4b52-ab16-7fbc2f685632"],
+Cell[1705, 48, 232, 3, 51, "Text",ExpressionUUID->"6a2a5344-069d-4fdf-b10e-55121de9677b"],
+Cell[1940, 53, 517, 11, 52, "Input",ExpressionUUID->"7ad523bd-07c3-494d-b939-e6d1c07d1a39"],
+Cell[2460, 66, 238, 5, 52, "Input",ExpressionUUID->"b7fc6fba-a00d-4cdc-844a-e83e73a8b34c"],
+Cell[2701, 73, 272, 6, 51, "Text",ExpressionUUID->"dce07c1a-24c2-48b0-a2dd-2a02277996ae"],
+Cell[2976, 81, 610, 18, 32, "Input",ExpressionUUID->"0aa7ff41-bb0d-4587-80fe-b42791547383"],
+Cell[CellGroupData[{
+Cell[3611, 103, 871, 19, 94, "Input",ExpressionUUID->"7d71b1cc-44de-415e-a708-de35050e7ac3"],
+Cell[4485, 124, 2612, 57, 246, "Output",ExpressionUUID->"796a8b1a-cdca-41ec-aa7c-80b1e88dbf06"]
+}, Open  ]],
+Cell[7112, 184, 210, 5, 30, "Input",ExpressionUUID->"c14cbf10-1bb4-4af2-b39c-08daa1532d88"],
+Cell[7325, 191, 247, 4, 51, "Text",ExpressionUUID->"4c8661fb-faa3-4897-8fb6-83885ab0e65b"],
+Cell[7575, 197, 241, 5, 30, "Input",ExpressionUUID->"455f8e56-3e6f-4eb5-a946-b2427a140c38"]
+}
+]
+*)
+
