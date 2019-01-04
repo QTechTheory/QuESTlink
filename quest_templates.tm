@@ -1,186 +1,186 @@
 
 :Begin:
 :Function:       wrapper_createQureg
-:Pattern:        CreateQureg[numQubits_Integer]
+:Pattern:        QuEST`CreateQureg[numQubits_Integer]
 :Arguments:      { numQubits }
 :ArgumentTypes:  { Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: CreateQureg::usage = "CreateQureg[numQubits] returns the id of a newly created remote statevector."
+:Evaluate: QuEST`CreateQureg::usage = "CreateQureg[numQubits] returns the id of a newly created remote statevector."
 
 :Begin:
 :Function:       wrapper_createDensityQureg
-:Pattern:        CreateDensityQureg[numQubits_Integer]
+:Pattern:        QuEST`CreateDensityQureg[numQubits_Integer]
 :Arguments:      { numQubits }
 :ArgumentTypes:  { Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: CreateDensityQureg::usage = "CreateDensityQureg[numQubits] returns the id of a newly created remote density matrix."
+:Evaluate: QuEST`CreateDensityQureg::usage = "CreateDensityQureg[numQubits] returns the id of a newly created remote density matrix."
 
 :Begin:
 :Function:       wrapper_destroyQureg
-:Pattern:        DestroyQuregInternal[id_Integer]
+:Pattern:        QuEST`Private`DestroyQuregInternal[id_Integer]
 :Arguments:      { id }
 :ArgumentTypes:  { Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: DestroyQuregInternal::usage = "DestroyQuregInternal[numQubits] frees the memory of the remote qureg associated with the given id."
+:Evaluate: QuEST`Private`DestroyQuregInternal::usage = "DestroyQuregInternal[numQubits] frees the memory of the remote qureg associated with the given id."
 
 
 
 
 :Begin:
 :Function:       wrapper_initZeroState
-:Pattern:        InitZeroState[qureg_Integer]
+:Pattern:        QuEST`InitZeroState[qureg_Integer]
 :Arguments:      { qureg }
 :ArgumentTypes:  { Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: InitZeroState::usage = "InitZeroState[qureg] returns a state in |0>."
+:Evaluate: QuEST`InitZeroState::usage = "InitZeroState[qureg] returns a state in |0>."
 
 :Begin:
 :Function:       wrapper_initPlusState
-:Pattern:        InitPlusState[qureg_Integer]
+:Pattern:        QuEST`InitPlusState[qureg_Integer]
 :Arguments:      { qureg }
 :ArgumentTypes:  { Integer  }
 :ReturnType:     Integer
 :End:
-:Evaluate: InitPlusState::usage = "InitPlusState[qureg] returns a state in |+>."
+:Evaluate: QuEST`InitPlusState::usage = "InitPlusState[qureg] returns a state in |+>."
 
 :Begin:
 :Function:       wrapper_initClassicalState
-:Pattern:        InitClassicalState[qureg_Integer, state_Integer]
+:Pattern:        QuEST`InitClassicalState[qureg_Integer, state_Integer]
 :Arguments:      { qureg, state }
 :ArgumentTypes:  { Integer, Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: InitClassicalState::usage = "InitClassicalState[qureg, ind] returns a state in basis state |ind>."
+:Evaluate: QuEST`InitClassicalState::usage = "InitClassicalState[qureg, ind] returns a state in basis state |ind>."
 
 :Begin:
 :Function:       wrapper_initPureState
-:Pattern:        InitPureState[targetQureg_Integer, pureQureg_Integer]
+:Pattern:        QuEST`InitPureState[targetQureg_Integer, pureQureg_Integer]
 :Arguments:      { targetQureg, pureQureg }
 :ArgumentTypes:  { Integer, Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: InitPureState::usage = "InitPureState[targetQureg, pureQureg] puts targetQureg (statevec or density matrix) into the pureQureg (statevec) state."
+:Evaluate: QuEST`InitPureState::usage = "InitPureState[targetQureg, pureQureg] puts targetQureg (statevec or density matrix) into the pureQureg (statevec) state."
 
 :Begin:
 :Function:       wrapper_initStateFromAmps
-:Pattern:        InitStateFromAmps[qureg_Integer, reals_List, imags_List]
+:Pattern:        QuEST`InitStateFromAmps[qureg_Integer, reals_List, imags_List]
 :Arguments:      { qureg, reals, imags }
 :ArgumentTypes:  { Integer, RealList, RealList }
 :ReturnType:     Integer
 :End:
-:Evaluate: InitStateFromAmps::usage = "InitStateFromAmps[qureg, reals, imags] initialises the given qureg to have the supplied amplitudes."
+:Evaluate: QuEST`InitStateFromAmps::usage = "InitStateFromAmps[qureg, reals, imags] initialises the given qureg to have the supplied amplitudes."
 
 :Begin:
 :Function:       wrapper_cloneQureg
-:Pattern:        CloneQureg[target_Integer, source_Integer]
+:Pattern:        QuEST`CloneQureg[target_Integer, source_Integer]
 :Arguments:      { target, source }
 :ArgumentTypes:  { Integer, Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: CloneQureg::usage = "CloneQureg[dest, source] sets dest to be a copy of source."
+:Evaluate: QuEST`CloneQureg::usage = "CloneQureg[dest, source] sets dest to be a copy of source."
 
 
 
 
 :Begin:
 :Function:       wrapper_applyOneQubitDepolariseError
-:Pattern:        ApplyOneQubitDepolariseError[qureg_Integer, qb_Integer, prob_Real]
+:Pattern:        QuEST`ApplyOneQubitDepolariseError[qureg_Integer, qb_Integer, prob_Real]
 :Arguments:      { qureg, qb, prob }
 :ArgumentTypes:  { Integer, Integer, Real }
 :ReturnType:     Integer
 :End:
-:Evaluate: ApplyOneQubitDepolariseError::usage = "ApplyOneQubitDepolariseError[qureg, qubit, prob] adds depolarising noise to density matrix qureg."
+:Evaluate: QuEST`ApplyOneQubitDepolariseError::usage = "ApplyOneQubitDepolariseError[qureg, qubit, prob] adds depolarising noise to density matrix qureg."
 
 :Begin:
 :Function:       wrapper_applyTwoQubitDepolariseError
-:Pattern:        ApplyTwoQubitDepolariseError[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
+:Pattern:        QuEST`ApplyTwoQubitDepolariseError[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
 :Arguments:      { qureg, qb1, qb2, prob }
 :ArgumentTypes:  { Integer, Integer, Integer, Real }
 :ReturnType:     Integer
 :End:
-:Evaluate: ApplyTwoQubitDepolariseError::usage = "ApplyTwoQubitDepolariseError[qureg, qb1, qb2 prob] adds depolarising noise to density matrix qureg."
+:Evaluate: QuEST`ApplyTwoQubitDepolariseError::usage = "ApplyTwoQubitDepolariseError[qureg, qb1, qb2 prob] adds depolarising noise to density matrix qureg."
 
 :Begin:
 :Function:       wrapper_applyOneQubitDephaseError
-:Pattern:        ApplyOneQubitDephaseError[qureg_Integer, qb_Integer, prob_Real]
+:Pattern:        QuEST`ApplyOneQubitDephaseError[qureg_Integer, qb_Integer, prob_Real]
 :Arguments:      { qureg, qb, prob }
 :ArgumentTypes:  { Integer, Integer, Real }
 :ReturnType:     Integer
 :End:
-:Evaluate: ApplyOneQubitDephaseError::usage = "ApplyOneQubitDephaseError[qureg, qubit, prob] adds dephasing noise to density matrix qureg."
+:Evaluate: QuEST`ApplyOneQubitDephaseError::usage = "ApplyOneQubitDephaseError[qureg, qubit, prob] adds dephasing noise to density matrix qureg."
 
 :Begin:
 :Function:       wrapper_applyTwoQubitDephaseError
-:Pattern:        ApplyTwoQubitDephaseError[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
+:Pattern:        QuEST`ApplyTwoQubitDephaseError[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
 :Arguments:      { qureg, qb1, qb2, prob }
 :ArgumentTypes:  { Integer, Integer, Integer, Real }
 :ReturnType:     Integer
 :End:
-:Evaluate: ApplyTwoQubitDephaseError::usage = "ApplyTwoQubitDephaseError[qureg, qb1, qb2 prob] adds dephasing noise to density matrix qureg."
+:Evaluate: QuEST`ApplyTwoQubitDephaseError::usage = "ApplyTwoQubitDephaseError[qureg, qb1, qb2 prob] adds dephasing noise to density matrix qureg."
 
 
 
 
 :Begin:
 :Function:       wrapper_calcProbOfOutcome
-:Pattern:        CalcProbOfOutcome[qureg_Integer, qb_Integer, outcome_Integer]
+:Pattern:        QuEST`CalcProbOfOutcome[qureg_Integer, qb_Integer, outcome_Integer]
 :Arguments:      { qureg, qb, outcome }
 :ArgumentTypes:  { Integer, Integer, Integer }
 :ReturnType:     Real
 :End:
-:Evaluate: CalcProbOfOutcome::usage = "CalcProbOfOutcome[qureg, qubit, outcome] returns the probability of measuring qubit in the given outcome."
+:Evaluate: QuEST`CalcProbOfOutcome::usage = "CalcProbOfOutcome[qureg, qubit, outcome] returns the probability of measuring qubit in the given outcome."
 
 :Begin:
 :Function:       wrapper_calcFidelity
-:Pattern:        CalcFidelity[qureg1_Integer, qureg2_Integer]
+:Pattern:        QuEST`CalcFidelity[qureg1_Integer, qureg2_Integer]
 :Arguments:      { qureg1, qureg2 }
 :ArgumentTypes:  { Integer, Integer }
 :ReturnType:     Real
 :End:
-:Evaluate: CalcFidelity::usage = "CalcFidelity[qureg1, qureg2] returns the fidelity between the given states."
+:Evaluate: QuEST`CalcFidelity::usage = "CalcFidelity[qureg1, qureg2] returns the fidelity between the given states."
 
 
 
 
 :Begin:
 :Function:       internal_applyCircuit
-:Pattern:        ApplyCircuitInternal[qureg_Integer, opcodes_List, ctrls_List, targs_List, params_List]
+:Pattern:        QuEST`Private`ApplyCircuitInternal[qureg_Integer, opcodes_List, ctrls_List, targs_List, params_List]
 :Arguments:      { qureg, opcodes, ctrls, targs, params }
 :ArgumentTypes:  { Integer, Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: ApplyCircuitInner::usage = "ApplyCircuitInner[qureg, opcodes, ctrls, targs, params] applies a circuit (decomposed into codes) to the given qureg."
+:Evaluate: QuEST`Private`ApplyCircuitInner::usage = "ApplyCircuitInner[qureg, opcodes, ctrls, targs, params] applies a circuit (decomposed into codes) to the given qureg."
 
 :Begin:
 :Function:       internal_getStateVec
-:Pattern:        GetStateVecInternal[qureg_Integer]
+:Pattern:        QuEST`Private`GetStateVecInternal[qureg_Integer]
 :Arguments:      { qureg }
 :ArgumentTypes:  { Integer }
 :ReturnType:     Manual
 :End:
-:Evaluate: GetStateVecInternal::usage = "GetStateVecInternal[qureg] returns the underlying statevector associated with the given qureg (flat, even for density matrices)."
+:Evaluate: QuEST`Private`GetStateVecInternal::usage = "GetStateVecInternal[qureg] returns the underlying statevector associated with the given qureg (flat, even for density matrices)."
 
 
 
 
 :Begin:
 :Function:       callable_destroyAllQuregs
-:Pattern:        DestroyAllQuregs[]
+:Pattern:        QuEST`DestroyAllQuregs[]
 :Arguments:      { }
 :ArgumentTypes:  { }
 :ReturnType:     Integer
 :End:
-:Evaluate: DestroyAllQuregs::usage = "DestroyAllQuregs[] destroys all remote quregs."
+:Evaluate: QuEST`DestroyAllQuregs::usage = "DestroyAllQuregs[] destroys all remote quregs."
 
 :Begin:
 :Function:       callable_getAllQuregs
-:Pattern:        GetAllQuregs[]
+:Pattern:        QuEST`GetAllQuregs[]
 :Arguments:      { }
 :ArgumentTypes:  { }
 :ReturnType:     Manual
 :End:
-:Evaluate: GetAllQuregs::usage = "GetAllQuregs[] returns all active quregs."
+:Evaluate: QuEST`GetAllQuregs::usage = "GetAllQuregs[] returns all active quregs."
