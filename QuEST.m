@@ -51,14 +51,14 @@ BeginPackage["QuEST`"]
         
     Begin["`Private`"]
             
-        (* disables gate commutivity, replaces Times with Dot *)
+        (* disables gate commutivity, replaces Times with List *)
         $Pre = 
           Function[{arg}, 
            ReleaseHold[
             Hold[arg] //.  
              Times[\[Alpha]___, 
                patt : (Longest[(Subscript[_Symbol, _Integer]|Subscript[_Symbol, _Integer][___]) ..]), \[Omega]___] :> 
-              Times[\[Alpha], Dot[patt], \[Omega]]], HoldAll];
+              Times[\[Alpha], List[patt], \[Omega]]], HoldAll];
                
         (* opcodes *)
         getOpCode[gate_] :=
@@ -73,11 +73,11 @@ BeginPackage["QuEST`"]
         };
 
         (* converting gate sequence to code lists: {opcodes, ctrls, targs, params} *)
-        codifyCircuit[circuit_Dot] :=
-        	circuit /. Dot -> List /. gatePatterns // Reverse // Transpose
+        codifyCircuit[circuit_List] :=
+        	circuit /. gatePatterns // Reverse // Transpose
                 
         (* applying a sequence of symoblic gates to a qureg. ApplyCircuitInternal provided by WSTP *)
-        ApplyCircuit[circuit_Dot, qureg_Integer] :=
+        ApplyCircuit[circuit_List, qureg_Integer] :=
         	With[
         		{codes = codifyCircuit[circuit]},
         		If[
@@ -87,7 +87,7 @@ BeginPackage["QuEST`"]
         		]
         	]
         (* apply a circuit to get an output state without changing input state. CloneQureg provided by WSTP *)
-        ApplyCircuit[circuit_Dot, inQureg_Integer, outQureg_Integer] :=
+        ApplyCircuit[circuit_List, inQureg_Integer, outQureg_Integer] :=
         	Block[{},
         		QuEST`CloneQureg[outQureg, inQureg];
         		ApplyCircuit[circuit, outQureg]
