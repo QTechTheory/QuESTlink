@@ -13,16 +13,22 @@ BeginPackage["QuEST`"]
      *)
     
     ApplyCircuit::usage = "
-        ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit.
-        ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg."
-            
+ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit.
+ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg."
+    
+    Circuit::usage = "Circuit[gates] converts a product of gates into a left-to-right circuit, preserving order."
+    
+    Operator::usage = "Operator[gates] converts a product of gates into a right-to-left circuit."
+    
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
     
     GetMatrix::usage = "GetMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
             
     SetMatrix::usage = "SetMatrix[qureg, matr] modifies qureg, overwriting its statevector or density matrix with that passed."
             
-    CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[] connects to the remote Igor server and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
+    CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[id] connects to the remote Igor server (on port 50000+id and 50100+id) and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
+             
+    CreateLocalQuESTEnv::usage = "CreateLocalQuESTEnv[] connects to a local Mathematica backend, running single-CPU QuEST."
                     
     DestroyQuESTEnv::usage = "DestroyQuESTEnv[link] disconnects from the QuEST link, which may be the remote Igor server, clearing some QuEST function definitions (but not those provided by the QuEST package)."
             
@@ -50,19 +56,10 @@ BeginPackage["QuEST`"]
     T::usage = "T is the T gate, a.k.a PI/4 gate."
         
     Begin["`Private`"]
-            
-        (* disables gate commutivity, replaces Times with List *)
-        $Pre = 
-          Function[{arg}, 
-           ReleaseHold[
-            Hold[arg] //.  
-             Times[\[Alpha]___, 
-               patt : (Longest[(Subscript[_Symbol, _Integer]|Subscript[_Symbol, _Integer][___]) ..]), \[Omega]___] :> 
-              Times[\[Alpha], List[patt], \[Omega]]], HoldAll];
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,S->7,T->8}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,S->7,T->8,_->-1}
         
         (* recognising gates *)
         gatePatterns = {
@@ -74,24 +71,51 @@ BeginPackage["QuEST`"]
 
         (* converting gate sequence to code lists: {opcodes, ctrls, targs, params} *)
         codifyCircuit[circuit_List] :=
-        	circuit /. gatePatterns // Reverse // Transpose
+        	circuit /. gatePatterns // Transpose
+        codifyCircuit[circuit_] :=
+            codifyCircuit @ {circuit}
+            
+        (* checking circuit format *)
+        isGateFormat[Subscript[_Symbol, _Integer]] := True
+        isGateFormat[Subscript[_Symbol, _Integer][__]] := True
+        isGateFormat[___] := False
+        isCircuitFormat[circ_List] := AllTrue[circ,isGateFormat]
+        isCircuitFormat[circ_?isGateFormat] := True
+        isCircuitFormat[___] := False
                 
         (* applying a sequence of symoblic gates to a qureg. ApplyCircuitInternal provided by WSTP *)
-        ApplyCircuit[circuit_List, qureg_Integer] :=
+        ApplyCircuit[circuit_?isCircuitFormat, qureg_Integer] :=
         	With[
         		{codes = codifyCircuit[circuit]},
         		If[
-        			AllTrue[ codes[[4]], NumericQ],
-        			ApplyCircuitInternal[qureg, codes[[1]], codes[[2]], codes[[3]], codes[[4]]],
-        			Echo["Some non-numerical arguments were passed to the backend!", "Error: "]; $Failed
+        			AllTrue[codes[[4]], NumericQ],
+        			ApplyCircuitInternal[qureg, codes[[1]], codes[[2]], codes[[3]], N /@ codes[[4]]],
+        			Echo["Circuit contains non-numerical parameters!", "Error: "]; $Failed
         		]
         	]
         (* apply a circuit to get an output state without changing input state. CloneQureg provided by WSTP *)
-        ApplyCircuit[circuit_List, inQureg_Integer, outQureg_Integer] :=
+        ApplyCircuit[circuit_?isCircuitFormat, inQureg_Integer, outQureg_Integer] :=
         	Block[{},
         		QuEST`CloneQureg[outQureg, inQureg];
         		ApplyCircuit[circuit, outQureg]
         	]
+            
+        (* checking a product is a valid operator *)
+        SetAttributes[isOperatorFormat, HoldAll]
+        isOperatorFormat[op_Times] := isCircuitFormat[ReleaseHold[List @@@ Hold[op]]]
+        isOperatorFormat[___] := False
+        
+        (* convert an operator into a circuit spec without commuting gates *)
+        SetAttributes[Circuit, HoldAll]
+        SetAttributes[Operator, HoldAll]
+        Circuit[gate_?isGateFormat] := 
+            {gate}
+        Circuit[op_?isOperatorFormat] := 
+            ReleaseHold[List @@@ Hold[op]]
+        Operator[op_?isGateFormat] :=
+            {gate}
+        Operator[op_?isOperatorFormat] :=
+            Reverse @ Circuit @ op
 
         (* destroying a remote qureg, and clearing the local symbol *)
         SetAttributes[DestroyQureg, HoldAll];
@@ -132,14 +156,16 @@ BeginPackage["QuEST`"]
         		]},
         		QuEST`InitStateFromAmps[qureg, Re[flatelems], Im[flatelems]]
         	]
-                    
-        getIgorLink[port_] :=
+        
+        getIgorLink[id_] :=
         	LinkConnect[
-        		With[{host="@igor-gpu.materials.ox.ac.uk"},
-        		ToString[port] <> host <> "," <> ToString[port+1] <> host],
+        		With[{host="@129.67.85.74",startport=50000},
+        		ToString[startport+id] <> host <> "," <> ToString[startport+id+100] <> host],
         		LinkProtocol->"TCPIP"]
                     
-        CreateRemoteQuESTEnv[] := Install @ getIgorLink @ 55555
+        CreateRemoteQuESTEnv[port_Integer] := Install @ getIgorLink @ port
+                    
+        CreateLocalQuESTEnv[] := Install[NotebookDirectory[] <> "quest_link"]
                     
         DestroyQuESTEnv[link_] := Uninstall @ link
             

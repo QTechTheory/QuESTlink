@@ -365,11 +365,10 @@ void internal_applyCircuit(int id) {
                     controlledRotateZ(qureg, ctrl, targ, param);
                 break;
                 
-            default:
-            
+            default:            
                 return local_backupQuregThenError(
-                    "circuit contained an unknown gate (opcode: %d). "
-                    "Aborting the circuit and restoring original state.",
+                    "circuit contained an unknown gate. "
+                    "Aborting circuit and restoring original state.",
                     id, backup);
         }
     }
