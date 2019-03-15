@@ -63,10 +63,10 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
         
         (* recognising gates *)
         gatePatterns = {
-        	Subscript[C, ctrl_Integer][Subscript[gate_Symbol, targ_Integer][arg_]] :> {getOpCode[gate], ctrl, targ, arg},
-        	Subscript[C, ctrl_Integer][Subscript[gate_Symbol, targ_Integer]] :> {getOpCode[gate], ctrl, targ, 0},
-        	Subscript[gate_Symbol, targ_Integer][arg_] :> {getOpCode[gate], -1, targ, arg},
-        	Subscript[gate_Symbol, targ_Integer] :> {getOpCode[gate], -1, targ, 0}
+        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, targ_Integer][arg_]] :> {getOpCode[gate], {ctrls}, targ, arg},
+        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, targ_Integer]] :> {getOpCode[gate], {ctrls}, targ, 0},
+        	Subscript[gate_Symbol, targ_Integer][arg_] :> {getOpCode[gate], {}, targ, arg},
+        	Subscript[gate_Symbol, targ_Integer] :> {getOpCode[gate], {}, targ, 0}
         };
 
         (* converting gate sequence to code lists: {opcodes, ctrls, targs, params} *)
@@ -76,8 +76,8 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
             codifyCircuit @ {circuit}
             
         (* checking circuit format *)
-        isGateFormat[Subscript[_Symbol, _Integer]] := True
-        isGateFormat[Subscript[_Symbol, _Integer][__]] := True
+        isGateFormat[Subscript[_Symbol, (_Integer..)|{_Integer..}]] := True
+        isGateFormat[Subscript[_Symbol, (_Integer..)|{_Integer..}][__]] := True
         isGateFormat[___] := False
         isCircuitFormat[circ_List] := AllTrue[circ,isGateFormat]
         isCircuitFormat[circ_?isGateFormat] := True
