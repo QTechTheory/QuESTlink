@@ -89,7 +89,7 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
         		{codes = codifyCircuit[circuit]},
         		If[
         			AllTrue[codes[[4]], NumericQ],
-        			ApplyCircuitInternal[qureg, codes[[1]], codes[[2]], codes[[3]], N /@ codes[[4]]],
+        			ApplyCircuitInternal[qureg, codes[[1]], Flatten @ codes[[2]], Length /@ codes[[2]], codes[[3]], N /@ codes[[4]]],
         			Echo["Circuit contains non-numerical parameters!", "Error: "]; $Failed
         		]
         	]

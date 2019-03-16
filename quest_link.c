@@ -23,6 +23,12 @@
 #include <stdio.h>
 #include <QuEST.h>
 
+/*
+ * PI constant needed for (multiControlled) sGate and tGate
+ */
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 /**
  * Codes for specifiying circuits from MMA
@@ -234,11 +240,12 @@ void local_gateNotValidError(char* gate, int id, Qureg backup) {
 /** 
  * Applies a given circuit to the identified qureg.
  * The circuit is expressed as lists of opcodes (identifying gates),
- * their control qubits (-1 if not controlled), their target qubits,
+ * the total flat sequence control qubits, a list denoting how many of
+ * the control qubits apply to each operation, their target qubits,
  * and their parameters (0 if not parameterised).
  * The original qureg of the state is restored when this function
  * is aborted by the calling MMA, or aborted due to encountering
- * an invalid gate. In this case, Ahort[] is returned.
+ * an invalid gate. In this case, Abort[] is returned.
  * However, a user error caught by the QuEST backend
  * (e.g. same target and control qubit) will result in the link being
  * destroyed.
@@ -252,9 +259,11 @@ void internal_applyCircuit(int id) {
     //        wait this last is undetectable - it looks like R[0] to us
     
     // get arguments from MMA link
-    int numOps, *opcodes, *ctrls, *targs;
+    int numOps, totalNumCtrls;
+    int *opcodes, *ctrls, *numCtrlsPerOp, *targs;
     WSGetInteger32List(stdlink, &opcodes, &numOps);
-    WSGetInteger32List(stdlink, &ctrls, &numOps);
+    WSGetInteger32List(stdlink, &ctrls, &totalNumCtrls);
+    WSGetInteger32List(stdlink, &numCtrlsPerOp, &numOps);
     WSGetInteger32List(stdlink, &targs, &numOps);
     qreal *params;
     WSGetReal64List(stdlink, &params, &numOps);
@@ -275,8 +284,12 @@ void internal_applyCircuit(int id) {
         backup = createQureg(qureg.numQubitsRepresented, env);
     cloneQureg(backup, qureg);
     
+    // for copying sublists of ctrls to pass to QuEST backend
+    int ctrlInd = 0;
+    int ctrlCache[100]; // gates can't have more than 100 control qubits - generous! ;)
+    
     // attempt to apply each gate
-    for (int i=0; i < numOps; i++) {
+    for (int opInd=0; opInd < numOps; opInd++) {
         
         // check whether the user has tried to abort
         //if (WSAbort) { // why does WSAbort not exist??
@@ -295,74 +308,105 @@ void internal_applyCircuit(int id) {
         }
 
         // get gate info
-        int op = opcodes[i];
-        int ctrl = ctrls[i];
-        int targ = targs[i];
-        qreal param = params[i];
+        int op = opcodes[opInd];
+        int numCtrls = numCtrlsPerOp[opInd];
+        int targ = targs[opInd];
+        qreal param = params[opInd];
+        
+        // copy ctrls for this gate
+        for (int c=0; c < numCtrls; c++)
+            ctrlCache[c] = ctrls[ctrlInd++];
         
         switch(op) {
             
             case OPCODE_H :
-                if (ctrl == -1)
+                if (numCtrls == 0)
                     hadamard(qureg, targ);
                 else
                     return local_gateNotValidError("controlled Hadamard", id, backup);
                 break;
                 
             case OPCODE_S :
-                if (ctrl == -1)
+                if (numCtrls == 0)
                     sGate(qureg, targ);
-                else
-                    return local_gateNotValidError("controlled S-gate", id, backup);
+                else {
+                    ctrlCache[numCtrls] = targ;
+                    multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, M_PI/2);
+                }
                 break;
                 
             case OPCODE_T :
-                if (ctrl == -1)
+                if (numCtrls == 0)
                     tGate(qureg, targ);
-                else
-                    return local_gateNotValidError("controlled T-gate", id, backup);
+                else {
+                    ctrlCache[numCtrls] = targ;
+                    multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, M_PI/4);
+                }
                 break;
         
             case OPCODE_X :
-                if (ctrl == -1)
+                if (numCtrls == 0)
                     pauliX(qureg, targ);
-                else
-                    controlledNot(qureg, ctrl, targ);
+                else if (numCtrls == 1)
+                    controlledNot(qureg, ctrlCache[0], targ);
+                else {
+                    ComplexMatrix2 u = {
+                        .r0c0 = {.real=0, .imag=0},
+                        .r0c1 = {.real=1, .imag=0},
+                        .r1c0 = {.real=1, .imag=0},
+                        .r1c1 = {.real=0, .imag=0}};
+                    multiControlledUnitary(qureg, ctrlCache, numCtrls, targ, u);
+                }
                 break;
                 
             case OPCODE_Y :
-                if (ctrl == -1)
+                if (numCtrls == 0)
                     pauliY(qureg, targ);
-                else
-                    controlledPauliY(qureg, ctrl, targ);
+                else if (numCtrls == 1)
+                    controlledPauliY(qureg, ctrlCache[0], targ);
+                else {
+                    return local_gateNotValidError("controlled Y", id, backup);
+                }
+                    
                 break;
                 
             case OPCODE_Z :
-                if (ctrl == -1)
+                if (numCtrls == 0)
                     pauliZ(qureg, targ);
-                else
-                    controlledPhaseFlip(qureg, ctrl, targ);
+                else {
+                    ctrlCache[numCtrls] = targ;
+                    multiControlledPhaseFlip(qureg, ctrlCache, numCtrls+1);
+                }
                 break;
         
             case OPCODE_Rx :
-                if (ctrl == -1)
+                if (numCtrls == 0)
                     rotateX(qureg, targ, param);
-                else
-                    controlledRotateX(qureg, ctrl, targ, param);
+                else if (numCtrls == 1)
+                    controlledRotateX(qureg, ctrlCache[0], targ, param);
+                else {
+                    return local_gateNotValidError("controlled Rotate X", id, backup);
+                }
                 break;
                 
             case OPCODE_Ry :
-                if (ctrl == -1)
+                if (numCtrls == 0)
                     rotateY(qureg, targ, param);
-                else
-                    controlledRotateY(qureg, ctrl, targ, param);
+                else if (numCtrls == 1)
+                    controlledRotateY(qureg, ctrlCache[0], targ, param);
+                else {
+                    return local_gateNotValidError("controlled Rotate Y", id, backup);
+                }
                 break;
                 
             case OPCODE_Rz :
-                if (ctrl == -1)
+                if (numCtrls == 0)
                     rotateZ(qureg, targ, param);
-                else
-                    controlledRotateZ(qureg, ctrl, targ, param);
+                else if (numCtrls == 1)
+                    controlledRotateZ(qureg, ctrlCache[0], targ, param);
+                else {
+                    return local_gateNotValidError("controlled Rotate Z", id, backup);
+                }
                 break;
                 
             default:            
