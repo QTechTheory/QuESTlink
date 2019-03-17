@@ -148,12 +148,12 @@
 
 :Begin:
 :Function:       internal_applyCircuit
-:Pattern:        QuEST`Private`ApplyCircuitInternal[qureg_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, params_List, numParamsPerOp_List]
-:Arguments:      { qureg, opcodes, ctrls, numCtrlsPerOp, targs, params, numParamsPerOp }
+:Pattern:        QuEST`Private`ApplyCircuitInternal[qureg_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List]
+:Arguments:      { qureg, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp }
 :ArgumentTypes:  { Integer, Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: QuEST`Private`ApplyCircuitInner::usage = "ApplyCircuitInner[qureg, opcodes, ctrls, numCtrlsPerOps, targs, params, numParamsPerOps] applies a circuit (decomposed into codes) to the given qureg."
+:Evaluate: QuEST`Private`ApplyCircuitInner::usage = "ApplyCircuitInner[qureg, opcodes, ctrls, numCtrlsPerOps, targs, numTargsPerOp, params, numParamsPerOps] applies a circuit (decomposed into codes) to the given qureg."
 
 :Begin:
 :Function:       internal_getStateVec

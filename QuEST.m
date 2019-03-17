@@ -55,13 +55,17 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     PackageExport[T]
     T::usage = "T is the T gate, a.k.a PI/4 gate."
     PackageExport[U]
-    U::usage = "U is a general single-qubit unitary gate."
+    U::usage = "U[matrix] is a general single-qubit unitary gate, enacting the given 2x2 matrix."
+    PackageExport[Deph]
+    Deph::usage = "Deph[prob] is a 1 or 2 qubit dephasing with probability prob of error."
+    PackageExport[Depol]
+    Deph::usage = "Depol[prob] is a 1 or 2 qubit depolarising with probability prob of error."
         
     Begin["`Private`"]
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,S->7,T->8,U->9,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,S->7,T->8,U->9,Deph->10,Depol->11,_->-1}
         
         (* convert MMA matrix to QuESTs ComplexMatrix2 *)
         codifyMatrix[List[List[r0c0_, r0c1_], List[r1c0_, r1c1_]]] :=
@@ -72,12 +76,18 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
         
         (* recognising gates *)
         gatePatterns = {
-            Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[U, targ_Integer][matr:_List]] :> {getOpCode[U], {ctrls}, targ, codifyMatrix[matr]},
-        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, targ_Integer][arg_]] :> {getOpCode[gate], {ctrls}, targ, {arg}},
-        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, targ_Integer]] :> {getOpCode[gate], {ctrls}, targ, {}},
-        	Subscript[U, targ_Integer][matr:_List] :> {getOpCode[U], {}, targ, codifyMatrix[matr]},
-            Subscript[gate_Symbol, targ_Integer][arg_] :> {getOpCode[gate], {}, targ, {arg}},
-        	Subscript[gate_Symbol, targ_Integer] :> {getOpCode[gate], {}, targ, {}}
+            Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[U,  (targs:_Integer..)|{targs:_Integer..}][matr:_List]] :> 
+                {getOpCode[U], {ctrls}, {targs}, codifyMatrix[matr]},
+        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}][args__]] :> 
+                {getOpCode[gate], {ctrls}, {targs}, {args}},
+        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}]] :> 
+                {getOpCode[gate], {ctrls}, {targs}, {}},
+        	Subscript[U, (targs:_Integer..)|{targs:_Integer..}][matr:_List] :> 
+                {getOpCode[U], {}, {targs}, codifyMatrix[matr]},
+            Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}][args__] :> 
+                {getOpCode[gate], {}, {targs}, {args}},
+        	Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}] :> 
+                {getOpCode[gate], {}, {targs}, {}}
         };
 
         (* converting gate sequence to code lists: {opcodes, ctrls, targs, params} *)
@@ -97,15 +107,14 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
         (* applying a sequence of symoblic gates to a qureg. ApplyCircuitInternal provided by WSTP *)
         ApplyCircuit[circuit_?isCircuitFormat, qureg_Integer] :=
         	With[
-        		{codes = Echo @ codifyCircuit[circuit]},
+        		{codes = codifyCircuit[circuit]},
         		If[
         			AllTrue[codes[[4]], NumericQ, 2],
         			ApplyCircuitInternal[
                         qureg, codes[[1]], 
                         Flatten @ codes[[2]], Length /@ codes[[2]], 
-                        codes[[3]], 
-                        Flatten[N /@ codes[[4]]],
-                        Length /@ codes[[4]]
+                        Flatten @ codes[[3]], Length /@ codes[[3]],
+                        Flatten[N /@ codes[[4]]], Length /@ codes[[4]]
                     ], 
         			Echo["Circuit contains non-numerical parameters!", "Error: "]; $Failed
         		]
