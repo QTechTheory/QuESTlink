@@ -42,6 +42,7 @@
 #define OPCODE_Rz 6
 #define OPCODE_S 7
 #define OPCODE_T 8
+#define OPCODE_U 9
 
 /**
  * Max number of quregs which can simultaneously exist
@@ -228,12 +229,21 @@ void local_backupQuregThenError(char* err_msg, int id, Qureg backup) {
     WSPutFunction(stdlink, "Abort", 0);
 }
 
-void local_gateNotValidError(char* gate, int id, Qureg backup) {
+void local_gateUnsupportedError(char* gate, int id, Qureg backup) {
     char buffer[1000];
     sprintf(buffer, 
         "the gate '%s' is not supported. "
         "Aborting circuit and restoring qureg (id %d) to its original state.", 
         gate, id);
+    local_backupQuregThenError(buffer, id, backup);
+}
+
+void local_gateWrongNumParamsError(char* gate, int wrongNumParams, int rightNumParams, int id, Qureg backup) {
+    char buffer[1000];
+    sprintf(buffer,
+        "the gate '%s' accepts %d params, but %d were passed. "
+        "Aborting circuit and restoring qureg (id %d) to its original state.",
+        gate, rightNumParams, wrongNumParams, id);
     local_backupQuregThenError(buffer, id, backup);
 }
 
@@ -260,13 +270,14 @@ void internal_applyCircuit(int id) {
     
     // get arguments from MMA link
     int numOps, totalNumCtrls;
-    int *opcodes, *ctrls, *numCtrlsPerOp, *targs;
+    int *opcodes, *ctrls, *numCtrlsPerOp, *targs, *numParamsPerOp;
     WSGetInteger32List(stdlink, &opcodes, &numOps);
     WSGetInteger32List(stdlink, &ctrls, &totalNumCtrls);
     WSGetInteger32List(stdlink, &numCtrlsPerOp, &numOps);
     WSGetInteger32List(stdlink, &targs, &numOps);
     qreal *params;
     WSGetReal64List(stdlink, &params, &numOps);
+    WSGetInteger32List(stdlink, &numParamsPerOp, &numOps);
     
     // ensure qureg exists
     Qureg qureg = quregs[id];
@@ -287,6 +298,11 @@ void internal_applyCircuit(int id) {
     // for copying sublists of ctrls to pass to QuEST backend
     int ctrlInd = 0;
     int ctrlCache[100]; // gates can't have more than 100 control qubits - generous! ;)
+    
+    // TODO: I don't think the above is necessary: just pass &ctrls[ctrlInd] to funcs directly
+    
+    int paramInd = 0;
+    
     
     // attempt to apply each gate
     for (int opInd=0; opInd < numOps; opInd++) {
@@ -311,7 +327,8 @@ void internal_applyCircuit(int id) {
         int op = opcodes[opInd];
         int numCtrls = numCtrlsPerOp[opInd];
         int targ = targs[opInd];
-        qreal param = params[opInd];
+        int numParams = numParamsPerOp[opInd];
+        //qreal param = params[opInd];
         
         // copy ctrls for this gate
         for (int c=0; c < numCtrls; c++)
@@ -320,13 +337,16 @@ void internal_applyCircuit(int id) {
         switch(op) {
             
             case OPCODE_H :
-                if (numCtrls == 0)
-                    hadamard(qureg, targ);
-                else
-                    return local_gateNotValidError("controlled Hadamard", id, backup);
+                if (numParams != 0)
+                    return local_gateWrongNumParamsError("Hadamard", numParams, 0, id, backup);
+                if (numCtrls != 0)
+                    return local_gateUnsupportedError("controlled Hadamard", id, backup);
+                hadamard(qureg, targ);
                 break;
                 
             case OPCODE_S :
+                if (numParams != 0)
+                    return local_gateWrongNumParamsError("S gate", numParams, 0, id, backup);
                 if (numCtrls == 0)
                     sGate(qureg, targ);
                 else {
@@ -336,6 +356,8 @@ void internal_applyCircuit(int id) {
                 break;
                 
             case OPCODE_T :
+                if (numParams != 0)
+                    return local_gateWrongNumParamsError("T gate", numParams, 0, id, backup);
                 if (numCtrls == 0)
                     tGate(qureg, targ);
                 else {
@@ -345,6 +367,8 @@ void internal_applyCircuit(int id) {
                 break;
         
             case OPCODE_X :
+                if (numParams != 0)
+                    return local_gateWrongNumParamsError("X", numParams, 0, id, backup);
                 if (numCtrls == 0)
                     pauliX(qureg, targ);
                 else if (numCtrls == 1)
@@ -360,17 +384,21 @@ void internal_applyCircuit(int id) {
                 break;
                 
             case OPCODE_Y :
+                if (numParams != 0)
+                    return local_gateWrongNumParamsError("Y", numParams, 0, id, backup);
                 if (numCtrls == 0)
                     pauliY(qureg, targ);
                 else if (numCtrls == 1)
                     controlledPauliY(qureg, ctrlCache[0], targ);
                 else {
-                    return local_gateNotValidError("controlled Y", id, backup);
+                    return local_gateUnsupportedError("controlled Y", id, backup);
                 }
                     
                 break;
                 
             case OPCODE_Z :
+                if (numParams != 0)
+                    return local_gateWrongNumParamsError("Z", numParams, 0, id, backup);
                 if (numCtrls == 0)
                     pauliZ(qureg, targ);
                 else {
@@ -380,34 +408,53 @@ void internal_applyCircuit(int id) {
                 break;
         
             case OPCODE_Rx :
+                if (numParams != 1)
+                    return local_gateWrongNumParamsError("Rx", numParams, 1, id, backup);
                 if (numCtrls == 0)
-                    rotateX(qureg, targ, param);
+                    rotateX(qureg, targ, params[paramInd++]);
                 else if (numCtrls == 1)
-                    controlledRotateX(qureg, ctrlCache[0], targ, param);
-                else {
-                    return local_gateNotValidError("controlled Rotate X", id, backup);
-                }
+                    controlledRotateX(qureg, ctrlCache[0], targ, params[paramInd++]);
+                else
+                    return local_gateUnsupportedError("multi-controlled Rotate X", id, backup);
                 break;
                 
             case OPCODE_Ry :
+                if (numParams != 1)
+                    return local_gateWrongNumParamsError("Ry", numParams, 1, id, backup);
                 if (numCtrls == 0)
-                    rotateY(qureg, targ, param);
+                    rotateY(qureg, targ, params[paramInd++]);
                 else if (numCtrls == 1)
-                    controlledRotateY(qureg, ctrlCache[0], targ, param);
-                else {
-                    return local_gateNotValidError("controlled Rotate Y", id, backup);
-                }
+                    controlledRotateY(qureg, ctrlCache[0], targ, params[paramInd++]);
+                else
+                    return local_gateUnsupportedError("multi-controlled Rotate Y", id, backup);
                 break;
                 
             case OPCODE_Rz :
+                if (numParams != 1)
+                    return local_gateWrongNumParamsError("Rz", numParams, 1, id, backup);
                 if (numCtrls == 0)
-                    rotateZ(qureg, targ, param);
+                    rotateZ(qureg, targ, params[paramInd++]);
                 else if (numCtrls == 1)
-                    controlledRotateZ(qureg, ctrlCache[0], targ, param);
-                else {
-                    return local_gateNotValidError("controlled Rotate Z", id, backup);
-                }
+                    controlledRotateZ(qureg, ctrlCache[0], targ, params[paramInd++]);
+                else
+                    return local_gateUnsupportedError("multi-controlled Rotate Z", id, backup);
                 break;
+            
+            case OPCODE_U : 
+                if (numParams != 8)
+                    return local_gateWrongNumParamsError("U", numParams, 8, id, backup);
+                ComplexMatrix2 u = {
+                    .r0c0={.real=params[paramInd+0], .imag=params[paramInd+1]},
+                    .r0c1={.real=params[paramInd+2], .imag=params[paramInd+3]},
+                    .r1c0={.real=params[paramInd+4], .imag=params[paramInd+5]},
+                    .r1c1={.real=params[paramInd+6], .imag=params[paramInd+7]}};
+                paramInd += 8;
+                if (numCtrls == 0)
+                    unitary(qureg, targ, u);
+                else
+                    multiControlledUnitary(qureg, ctrlCache, numCtrls, targ, u);
+                break;
+                
                 
             default:            
                 return local_backupQuregThenError(

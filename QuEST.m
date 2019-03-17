@@ -54,19 +54,30 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     S::usage = "S is the S gate, a.k.a. PI/2 gate."
     PackageExport[T]
     T::usage = "T is the T gate, a.k.a PI/4 gate."
+    PackageExport[U]
+    U::usage = "U is a general single-qubit unitary gate."
         
     Begin["`Private`"]
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,S->7,T->8,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,S->7,T->8,U->9,_->-1}
+        
+        (* convert MMA matrix to QuESTs ComplexMatrix2 *)
+        codifyMatrix[List[List[r0c0_, r0c1_], List[r1c0_, r1c1_]]] :=
+            {Re[r0c0],Im[r0c0],
+             Re[r0c1],Im[r0c1],
+             Re[r1c0],Im[r1c0],
+             Re[r1c1],Im[r1c1]}
         
         (* recognising gates *)
         gatePatterns = {
-        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, targ_Integer][arg_]] :> {getOpCode[gate], {ctrls}, targ, arg},
-        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, targ_Integer]] :> {getOpCode[gate], {ctrls}, targ, 0},
-        	Subscript[gate_Symbol, targ_Integer][arg_] :> {getOpCode[gate], {}, targ, arg},
-        	Subscript[gate_Symbol, targ_Integer] :> {getOpCode[gate], {}, targ, 0}
+            Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[U, targ_Integer][matr:_List]] :> {getOpCode[U], {ctrls}, targ, codifyMatrix[matr]},
+        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, targ_Integer][arg_]] :> {getOpCode[gate], {ctrls}, targ, {arg}},
+        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, targ_Integer]] :> {getOpCode[gate], {ctrls}, targ, {}},
+        	Subscript[U, targ_Integer][matr:_List] :> {getOpCode[U], {}, targ, codifyMatrix[matr]},
+            Subscript[gate_Symbol, targ_Integer][arg_] :> {getOpCode[gate], {}, targ, {arg}},
+        	Subscript[gate_Symbol, targ_Integer] :> {getOpCode[gate], {}, targ, {}}
         };
 
         (* converting gate sequence to code lists: {opcodes, ctrls, targs, params} *)
@@ -86,10 +97,16 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
         (* applying a sequence of symoblic gates to a qureg. ApplyCircuitInternal provided by WSTP *)
         ApplyCircuit[circuit_?isCircuitFormat, qureg_Integer] :=
         	With[
-        		{codes = codifyCircuit[circuit]},
+        		{codes = Echo @ codifyCircuit[circuit]},
         		If[
-        			AllTrue[codes[[4]], NumericQ],
-        			ApplyCircuitInternal[qureg, codes[[1]], Flatten @ codes[[2]], Length /@ codes[[2]], codes[[3]], N /@ codes[[4]]],
+        			AllTrue[codes[[4]], NumericQ, 2],
+        			ApplyCircuitInternal[
+                        qureg, codes[[1]], 
+                        Flatten @ codes[[2]], Length /@ codes[[2]], 
+                        codes[[3]], 
+                        Flatten[N /@ codes[[4]]],
+                        Length /@ codes[[4]]
+                    ], 
         			Echo["Circuit contains non-numerical parameters!", "Error: "]; $Failed
         		]
         	]
@@ -99,7 +116,7 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
         		QuEST`CloneQureg[outQureg, inQureg];
         		ApplyCircuit[circuit, outQureg]
         	]
-            
+        
         (* checking a product is a valid operator *)
         SetAttributes[isOperatorFormat, HoldAll]
         isOperatorFormat[op_Times] := isCircuitFormat[ReleaseHold[List @@@ Hold[op]]]

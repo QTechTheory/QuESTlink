@@ -491,8 +491,9 @@ static const char* evalstrs[] = {
 	"s the fidelity between the given states.\"",
 	(const char*)0,
 	"QuEST`Private`ApplyCircuitInner::usage = \"ApplyCircuitInner[qure",
-	"g, opcodes, ctrls, numCtrlsPerOptrls, targs, params] applies a c",
-	"ircuit (decomposed into codes) to the given qureg.\"",
+	"g, opcodes, ctrls, numCtrlsPerOps, targs, params, numParamsPerOp",
+	"s] applies a circuit (decomposed into codes) to the given qureg.",
+	"\"",
 	(const char*)0,
 	"QuEST`Private`GetStateVecInternal::usage = \"GetStateVecInternal[",
 	"qureg] returns the underlying statevector associated with the gi",
@@ -549,7 +550,7 @@ int WSInstall( WSLINK wslp)
 	if (_res) _res = _doevalstr( wslp, 13);
 	if (_res) _res = _definepattern(wslp, (char *)"QuEST`CalcFidelity[qureg1_Integer, qureg2_Integer]", (char *)"{ qureg1, qureg2 }", 14);
 	if (_res) _res = _doevalstr( wslp, 14);
-	if (_res) _res = _definepattern(wslp, (char *)"QuEST`Private`ApplyCircuitInternal[qureg_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, params_List]", (char *)"{ qureg, opcodes, ctrls, numCtrlsPerOp, targs, params }", 15);
+	if (_res) _res = _definepattern(wslp, (char *)"QuEST`Private`ApplyCircuitInternal[qureg_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, params_List, numParamsPerOp_List]", (char *)"{ qureg, opcodes, ctrls, numCtrlsPerOp, targs, params, numParamsPerOp }", 15);
 	if (_res) _res = _doevalstr( wslp, 15);
 	if (_res) _res = _definepattern(wslp, (char *)"QuEST`Private`GetStateVecInternal[qureg_Integer]", (char *)"{ qureg }", 16);
 	if (_res) _res = _doevalstr( wslp, 16);
