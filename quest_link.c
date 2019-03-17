@@ -317,14 +317,9 @@ void internal_applyCircuit(int id) {
         backup = createQureg(qureg.numQubitsRepresented, env);
     cloneQureg(backup, qureg);
     
-    // for copying sublists of ctrls to pass to QuEST backend
     int ctrlInd = 0;
-    int ctrlCache[100]; // gates can't have more than 100 control qubits - generous! ;)
-    
-    // TODO: I don't think the above is necessary: just pass &ctrls[ctrlInd] to funcs directly
     int targInd = 0;
     int paramInd = 0;
-    
     
     // attempt to apply each gate
     for (int opInd=0; opInd < numOps; opInd++) {
@@ -351,10 +346,6 @@ void internal_applyCircuit(int id) {
         int numTargs = numTargsPerOp[opInd];
         int numParams = numParamsPerOp[opInd];
         
-        // copy ctrls for this gate
-        for (int c=0; c < numCtrls; c++)
-            ctrlCache[c] = ctrls[ctrlInd++];
-        
         switch(op) {
             
             case OPCODE_H :
@@ -364,7 +355,7 @@ void internal_applyCircuit(int id) {
                     return local_gateUnsupportedError("controlled Hadamard", id, backup);
                 if (numTargs != 1)
                     return local_gateWrongNumTargsError("Hadamard", numTargs, "1 target", id, backup);
-                hadamard(qureg, targs[targInd++]);
+                hadamard(qureg, targs[targInd]);
                 break;
                 
             case OPCODE_S :
@@ -373,9 +364,12 @@ void internal_applyCircuit(int id) {
                 if (numTargs != 1)
                     return local_gateWrongNumTargsError("S gate", numTargs, "1 target", id, backup);
                 if (numCtrls == 0)
-                    sGate(qureg, targs[targInd++]);
+                    sGate(qureg, targs[targInd]);
                 else {
-                    ctrlCache[numCtrls] = targs[targInd++];
+                    int ctrlCache[100]; 
+                    for (int i=0; i < numCtrls; i++)
+                        ctrlCache[i] = ctrls[i];
+                    ctrlCache[numCtrls] = targs[targInd];
                     multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, M_PI/2);
                 }
                 break;
@@ -386,9 +380,12 @@ void internal_applyCircuit(int id) {
                 if (numTargs != 1)
                     return local_gateWrongNumTargsError("T gate", numTargs, "1 target", id, backup);
                 if (numCtrls == 0)
-                    tGate(qureg, targs[targInd++]);
+                    tGate(qureg, targs[targInd]);
                 else {
-                    ctrlCache[numCtrls] = targs[targInd++];
+                    int ctrlCache[100]; 
+                    for (int i=0; i < numCtrls; i++)
+                        ctrlCache[i] = ctrls[i];
+                    ctrlCache[numCtrls] = targs[targInd];
                     multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, M_PI/4);
                 }
                 break;
@@ -399,16 +396,16 @@ void internal_applyCircuit(int id) {
                 if (numTargs != 1)
                     return local_gateWrongNumTargsError("X", numTargs, "1 target", id, backup);
                 if (numCtrls == 0)
-                    pauliX(qureg, targs[targInd++]);
+                    pauliX(qureg, targs[targInd]);
                 else if (numCtrls == 1)
-                    controlledNot(qureg, ctrlCache[0], targs[targInd++]);
+                    controlledNot(qureg, ctrls[ctrlInd], targs[targInd]);
                 else {
                     ComplexMatrix2 u = {
                         .r0c0 = {.real=0, .imag=0},
                         .r0c1 = {.real=1, .imag=0},
                         .r1c0 = {.real=1, .imag=0},
                         .r1c1 = {.real=0, .imag=0}};
-                    multiControlledUnitary(qureg, ctrlCache, numCtrls, targs[targInd++], u);
+                    multiControlledUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], u);
                 }
                 break;
                 
@@ -418,9 +415,9 @@ void internal_applyCircuit(int id) {
                 if (numTargs != 1)
                     return local_gateWrongNumTargsError("Y", numTargs, "1 target", id, backup);
                 if (numCtrls == 0)
-                    pauliY(qureg, targs[targInd++]);
+                    pauliY(qureg, targs[targInd]);
                 else if (numCtrls == 1)
-                    controlledPauliY(qureg, ctrlCache[0], targs[targInd++]);
+                    controlledPauliY(qureg, ctrls[ctrlInd], targs[targInd]);
                 else
                     return local_gateUnsupportedError("controlled Y", id, backup);
                 break;
@@ -431,9 +428,12 @@ void internal_applyCircuit(int id) {
                 if (numTargs != 1)
                     return local_gateWrongNumTargsError("Z", numTargs, "1 target", id, backup);
                 if (numCtrls == 0)
-                    pauliZ(qureg, targs[targInd++]);
+                    pauliZ(qureg, targs[targInd]);
                 else {
-                    ctrlCache[numCtrls] = targs[targInd++];
+                    int ctrlCache[100]; 
+                    for (int i=0; i < numCtrls; i++)
+                        ctrlCache[i] = ctrls[i];
+                    ctrlCache[numCtrls] = targs[targInd];
                     multiControlledPhaseFlip(qureg, ctrlCache, numCtrls+1);
                 }
                 break;
@@ -444,9 +444,9 @@ void internal_applyCircuit(int id) {
                 if (numTargs != 1)
                     return local_gateWrongNumTargsError("Rx", numTargs, "1 target", id, backup);
                 if (numCtrls == 0)
-                    rotateX(qureg, targs[targInd++], params[paramInd++]);
+                    rotateX(qureg, targs[targInd], params[paramInd]);
                 else if (numCtrls == 1)
-                    controlledRotateX(qureg, ctrlCache[0], targs[targInd++], params[paramInd++]);
+                    controlledRotateX(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]);
                 else
                     return local_gateUnsupportedError("multi-controlled Rotate X", id, backup);
                 break;
@@ -457,9 +457,9 @@ void internal_applyCircuit(int id) {
                 if (numTargs != 1)
                     return local_gateWrongNumTargsError("Ry", numTargs, "1 target", id, backup);
                 if (numCtrls == 0)
-                    rotateY(qureg, targs[targInd++], params[paramInd++]);
+                    rotateY(qureg, targs[targInd], params[paramInd]);
                 else if (numCtrls == 1)
-                    controlledRotateY(qureg, ctrlCache[0], targs[targInd++], params[paramInd++]);
+                    controlledRotateY(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]);
                 else
                     return local_gateUnsupportedError("multi-controlled Rotate Y", id, backup);
                 break;
@@ -470,9 +470,9 @@ void internal_applyCircuit(int id) {
                 if (numTargs != 1)
                     return local_gateWrongNumTargsError("Rz", numTargs, "1 target", id, backup);
                 if (numCtrls == 0)
-                    rotateZ(qureg, targs[targInd++], params[paramInd++]);
+                    rotateZ(qureg, targs[targInd], params[paramInd]);
                 else if (numCtrls == 1)
-                    controlledRotateZ(qureg, ctrlCache[0], targs[targInd++], params[paramInd++]);
+                    controlledRotateZ(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]);
                 else
                     return local_gateUnsupportedError("multi-controlled Rotate Z", id, backup);
                 break;
@@ -487,11 +487,10 @@ void internal_applyCircuit(int id) {
                     .r0c1={.real=params[paramInd+2], .imag=params[paramInd+3]},
                     .r1c0={.real=params[paramInd+4], .imag=params[paramInd+5]},
                     .r1c1={.real=params[paramInd+6], .imag=params[paramInd+7]}};
-                paramInd += 8;
                 if (numCtrls == 0)
-                    unitary(qureg, targs[targInd++], u);
+                    unitary(qureg, targs[targInd], u);
                 else
-                    multiControlledUnitary(qureg, ctrlCache, numCtrls, targs[targInd++], u);
+                    multiControlledUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], u);
                 break;
                 
             case OPCODE_Deph :
@@ -502,11 +501,9 @@ void internal_applyCircuit(int id) {
                 if (numTargs != 1 && numTargs != 2)
                     return local_gateWrongNumTargsError("Dephasing", numTargs, "1 or 2 targets", id, backup);
                 if (numTargs == 1)
-                    applyOneQubitDephaseError(qureg, targs[targInd++], params[paramInd++]);
-                if (numTargs == 2) {
-                    applyTwoQubitDephaseError(qureg, targs[targInd], targs[targInd+1], params[paramInd++]);
-                    targInd += 2;
-                }
+                    applyOneQubitDephaseError(qureg, targs[targInd], params[paramInd]);
+                if (numTargs == 2)
+                    applyTwoQubitDephaseError(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
                 break;
                 
             case OPCODE_Depol :
@@ -517,11 +514,9 @@ void internal_applyCircuit(int id) {
                 if (numTargs != 1 && numTargs != 2)
                     return local_gateWrongNumTargsError("Depolarising", numTargs, "1 or 2 targets", id, backup);
                 if (numTargs == 1)
-                    applyOneQubitDepolariseError(qureg, targs[targInd++], params[paramInd++]);
-                if (numTargs == 2) {
-                    applyTwoQubitDepolariseError(qureg, targs[targInd], targs[targInd+1], params[paramInd++]);
-                    targInd += 2;
-                }
+                    applyOneQubitDepolariseError(qureg, targs[targInd], params[paramInd]);
+                if (numTargs == 2)
+                    applyTwoQubitDepolariseError(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
                 break;
                 
             default:            
@@ -530,6 +525,10 @@ void internal_applyCircuit(int id) {
                     "Aborting circuit and restoring original state.",
                     id, backup);
         }
+        
+        ctrlInd += numCtrls;
+        targInd += numTargs;
+        paramInd += numParams;
     }
     
     destroyQureg(backup, env);
