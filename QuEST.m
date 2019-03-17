@@ -59,7 +59,7 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     PackageExport[Deph]
     Deph::usage = "Deph[prob] is a 1 or 2 qubit dephasing with probability prob of error."
     PackageExport[Depol]
-    Deph::usage = "Depol[prob] is a 1 or 2 qubit depolarising with probability prob of error."
+    Depol::usage = "Depol[prob] is a 1 or 2 qubit depolarising with probability prob of error."
         
     Begin["`Private`"]
                
