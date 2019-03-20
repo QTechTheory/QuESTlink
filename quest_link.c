@@ -46,6 +46,7 @@
 #define OPCODE_Deph 10
 #define OPCODE_Depol 11
 #define OPCODE_SWAP 12
+#define OPCODE_M 13
 
 /**
  * Max number of quregs which can simultaneously exist
@@ -551,6 +552,14 @@ void internal_applyCircuit(int id) {
                 }
                 break;
                 
+            case OPCODE_M:
+                if (numParams != 0)
+                    return local_gateWrongNumParamsError("M", numParams, 0, id, backup);
+                if (numCtrls != 0)
+                    return local_gateUnsupportedError("controlled measurement", id, backup);
+                for (int q=0; q < numTargs; q++)
+                    measure(qureg, targs[targInd+q]);
+                break;
                 
             default:            
                 return local_backupQuregThenError(
