@@ -13,7 +13,7 @@ BeginPackage["QuEST`"]
      *)
     
     ApplyCircuit::usage = "
-ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit.
+ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit. Returns any measurement outcomes.
 ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg."
     
     Circuit::usage = "Circuit[gates] converts a product of gates into a left-to-right circuit, preserving order."
