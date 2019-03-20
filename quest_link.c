@@ -45,6 +45,7 @@
 #define OPCODE_U 9
 #define OPCODE_Deph 10
 #define OPCODE_Depol 11
+#define OPCODE_SWAP 12
 
 /**
  * Max number of quregs which can simultaneously exist
@@ -525,6 +526,31 @@ void internal_applyCircuit(int id) {
                 if (numTargs == 2)
                     applyTwoQubitDepolariseError(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
                 break;
+                
+            case OPCODE_SWAP:
+                if (numParams != 0)
+                    return local_gateWrongNumParamsError("SWAP", numParams, 0, id, backup);
+                if (numTargs != 2)
+                    return local_gateWrongNumTargsError("Depolarising", numTargs, "2 targets", id, backup);
+                if (numCtrls == 0) {
+                    controlledNot(qureg, targs[targInd],   targs[targInd+1]);
+                    controlledNot(qureg, targs[targInd+1], targs[targInd  ]);
+                    controlledNot(qureg, targs[targInd],   targs[targInd+1]);
+                } else {
+                    ComplexMatrix2 u = {
+                        .r0c0 = {.real=0, .imag=0},
+                        .r0c1 = {.real=1, .imag=0},
+                        .r1c0 = {.real=1, .imag=0},
+                        .r1c1 = {.real=0, .imag=0}};
+                    int* ctrlCache = prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
+                    multiControlledUnitary(qureg, ctrlCache, numCtrls+1, targs[targInd+1], u);
+                    ctrlCache[numCtrls] = targs[targInd+1];
+                    multiControlledUnitary(qureg, ctrlCache, numCtrls+1, targs[targInd], u);
+                    ctrlCache[numCtrls] = targs[targInd];
+                    multiControlledUnitary(qureg, ctrlCache, numCtrls+1, targs[targInd+1], u);
+                }
+                break;
+                
                 
             default:            
                 return local_backupQuregThenError(
