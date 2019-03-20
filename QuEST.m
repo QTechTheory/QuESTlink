@@ -63,7 +63,7 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     PackageExport[SWAP]
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
     PackageExport[M]
-    M::usage = "Measurement is a desctructive gate which measures the indicated qubits in the Z basis"
+    M::usage = "M is a desctructive measurement gate which measures the indicated qubits in the Z basis"
             
     Begin["`Private`"]
                
@@ -171,7 +171,7 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
 
         (* overwrite the state of a remote qureg. InitStateFromAmps provided by WSTP *)
         SetMatrix[qureg_Integer, elems_List] :=
-        	With[{flatelems = 
+        	With[{flatelems = N @ 
         		Which[
         			(* vectors in various forms *)
         			Length @ Dimensions @ elems === 1,
