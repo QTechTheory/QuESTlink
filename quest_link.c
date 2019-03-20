@@ -259,6 +259,15 @@ void local_gateWrongNumTargsError(char* gate, int wrongNumTargs, char* rightNumT
     local_backupQuregThenError(buffer, id, backup);
 }
 
+int* prepareCtrlCache(int* ctrls, int ctrlInd, int numCtrls, int addTarg) {
+    static int ctrlCache[100]; 
+    for (int i=0; i < numCtrls; i++)
+        ctrlCache[i] = ctrls[ctrlInd + i];
+    if (addTarg != -1)
+        ctrlCache[numCtrls] = addTarg;
+    return ctrlCache;
+}
+
 /** 
  * Applies a given circuit to the identified qureg.
  * The circuit is expressed as lists of opcodes (identifying gates),
@@ -382,10 +391,7 @@ void internal_applyCircuit(int id) {
                 if (numCtrls == 0)
                     tGate(qureg, targs[targInd]);
                 else {
-                    int ctrlCache[100]; 
-                    for (int i=0; i < numCtrls; i++)
-                        ctrlCache[i] = ctrls[i];
-                    ctrlCache[numCtrls] = targs[targInd];
+                    int* ctrlCache = prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, M_PI/4);
                 }
                 break;
@@ -430,10 +436,7 @@ void internal_applyCircuit(int id) {
                 if (numCtrls == 0)
                     pauliZ(qureg, targs[targInd]);
                 else {
-                    int ctrlCache[100]; 
-                    for (int i=0; i < numCtrls; i++)
-                        ctrlCache[i] = ctrls[i];
-                    ctrlCache[numCtrls] = targs[targInd];
+                    int* ctrlCache = prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledPhaseFlip(qureg, ctrlCache, numCtrls+1);
                 }
                 break;
@@ -500,6 +503,8 @@ void internal_applyCircuit(int id) {
                     return local_gateUnsupportedError("controlled dephasing", id, backup);
                 if (numTargs != 1 && numTargs != 2)
                     return local_gateWrongNumTargsError("Dephasing", numTargs, "1 or 2 targets", id, backup);
+                if (params[paramInd] == 0)
+                    break;
                 if (numTargs == 1)
                     applyOneQubitDephaseError(qureg, targs[targInd], params[paramInd]);
                 if (numTargs == 2)
@@ -513,6 +518,8 @@ void internal_applyCircuit(int id) {
                     return local_gateUnsupportedError("controlled depolarising", id, backup);
                 if (numTargs != 1 && numTargs != 2)
                     return local_gateWrongNumTargsError("Depolarising", numTargs, "1 or 2 targets", id, backup);
+                if (params[paramInd] == 0)
+                    break;
                 if (numTargs == 1)
                     applyOneQubitDepolariseError(qureg, targs[targInd], params[paramInd]);
                 if (numTargs == 2)
