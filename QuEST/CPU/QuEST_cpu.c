@@ -846,7 +846,7 @@ qreal densmatr_calcFidelityLocal(Qureg qureg, Qureg pureState) {
                 rowSumIm += densElemRe*vecElemIm + densElemIm*vecElemRe;
             }
         
-            globalSumRe += rowSumRe*prefacRe + rowSumIm*prefacIm;   
+            globalSumRe += rowSumRe*prefacRe - rowSumIm*prefacIm;   
         }
     }
     
