@@ -154,7 +154,7 @@ int wrapper_initStateFromAmps(int quregID, qreal* reals, int l1, qreal* imags, i
     if (!qureg.isCreated)
         local_quregNotCreatedError(quregID);
     else if (l1 != l2 || l1 != qureg.numAmpsTotal)
-        local_sendErrorToMMA("incorrect number of amplitudes supplied.");
+        local_sendErrorToMMA("incorrect number of amplitudes supplied! State has not been changed.");
     else
         initStateFromAmps(qureg, reals, imags);
     return quregID;
