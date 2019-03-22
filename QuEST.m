@@ -32,6 +32,10 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
                     
     DestroyQuESTEnv::usage = "DestroyQuESTEnv[link] disconnects from the QuEST link, which may be the remote Igor server, clearing some QuEST function definitions (but not those provided by the QuEST package)."
             
+    DrawCircuit::usage = "
+DrawCircuit[circuit] generates a circuit diagram.
+DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagram."
+            
     (* 
      * gate symbols, needed exporting so that their use below does not refer to a private var      
      *)
@@ -198,6 +202,191 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
         CreateLocalQuESTEnv[] := Install[NotebookDirectory[] <> "quest_link"]
                     
         DestroyQuESTEnv[link_] := Uninstall @ link
+        
+        
+        
+        
+        
+        (*
+         * Below is only front-end code for generating circuit diagrams from
+         * from circuit the same format circuit specification
+         *)
+         
+        (* convert symbolic gate form to {symbol, ctrls, targets} *)
+        getSymbCtrlsTargs[Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}][args__]]] := {gate, {ctrls}, {targs}}
+        getSymbCtrlsTargs[Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}]]] := {gate, {ctrls}, {targs}}
+        getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}][args__]] := {gate, {},{targs}}
+        getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}]] := {gate, {}, {targs}}
+
+        (* deciding how to handle gate placement *)
+        getQubitInterval[{ctrls___}, {targs___}] :=
+        	Interval @ {Min[ctrls,targs],Max[ctrls,targs]}
+        getNumQubitsInCircuit[circ_List] :=
+        	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], \[Infinity]],    
+        		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], \[Infinity]]]
+        needsSpecialSwap[(SWAP|M), _List] := False
+        needsSpecialSwap[label_Symbol, targs_List] :=
+        	And[Length[targs] > 1, Abs[targs[[1]] - targs[[2]]] > 1]
+        getFixedThenBotTopSwappedQubits[{targ1_,targ2_}] :=
+        	{Min[targ1,targ2],Min[targ1,targ2]+1,Max[targ1,targ2]}
+            
+        (* gate and qubit graphics primitives *)
+        drawCross[targ_, col_] := {
+        	Line[{{col+.5,targ+.5}-{.1,.1},{col+.5,targ+.5}+{.1,.1}}],
+        	Line[{{col+.5,targ+.5}-{-.1,.1},{col+.5,targ+.5}+{-.1,.1}}]}
+        drawControls[{ctrls__}, {targs__}, col_] := {
+        	FaceForm[Black],
+        	Table[Disk[{col+.5,ctrl+.5},.1],{ctrl,{ctrls}}],
+        	With[{top=Max@{ctrls,targs},bot=Min@{ctrls,targs}},
+        		Line[{{col+.5,bot+.5},{col+.5,top+.5}}]]}
+        drawSingleBox[targ_, col_] :=
+        	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+1-.1}]
+        drawDoubleBox[targ_, col_] :=
+        	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+2-.1}]
+        drawQubitLines[qubits_List, col_] :=
+        	Table[Line[{{col,qb+.5},{col+1,qb+.5}}], {qb,qubits}]
+        drawSpecialSwapLine[targ1_, targ2_, col_] := {
+        	Line[{{col,targ1+.5},{col+.1,targ1+.5}}],
+        	Line[{{col+.1,targ1+.5},{col+.5-.1,targ2+.5}}],
+        	Line[{{col+.5-.1,targ2+.5},{col+.5,targ2+.5}}]}
+        drawSpecialSwap[targ1_,targ2_,col_] := {
+        	drawSpecialSwapLine[targ1,targ2,col],
+        	drawSpecialSwapLine[targ2,targ1,col]}
+        	
+        (* single qubit gate graphics *)
+        drawGate[M, {}, {targs___}, col_] :=
+        	Table[{
+        		drawSingleBox[targ,col],
+        		Circle[{col+.5,targ+.5-.4}, .4, {.7,\[Pi]-.7}],
+        		Line[{{col+.5,targ+.5-.25}, {col+.5+.2,targ+.5+.3}}]
+        		}, {targ, {targs}}]
+        drawGate[symb:(Deph|Depol), {}, {targ_}, col_] := {
+        	EdgeForm[Dashed],
+        	drawGate[If[symb===Deph,\[Phi],\[CapitalDelta]], {}, {targ}, col]}
+        drawGate[label_Symbol, {}, {targ_}, col_] := {
+        	drawSingleBox[targ, col],
+        	Text[SymbolName@label, {col+.5,targ+.5}]}
+            
+        (* special gate graphics *)
+        drawGate[SWAP, {}, {targs___}, col_] := {
+        	(drawCross[#,col]&) /@ {targs},
+        	Line[{{col+.5,.5+Min@targs},{col+.5,.5+Max@targs}}]}
+        	
+        (* two-qubit gate graphics *)
+        drawGate[symb:(Deph|Depol), {}, {targ1_,targ2_}, col_] := {
+        	EdgeForm[Dashed],
+        	drawGate[If[symb===Deph,\[Phi],\[CapitalDelta]], {}, {targ1,targ2}, col]}
+        drawGate[label_Symbol, {}, {targ1_,targ2_}/;Abs[targ2-targ1]===1, col_] := {
+        	drawDoubleBox[Min[targ1,targ2], col],
+        	Text[SymbolName@label, {col+.5,targ1+.5+.5}]}
+        drawGate[label_Symbol, {}, {targ1_,targ2_}, col_] := 
+        	With[{qb = getFixedThenBotTopSwappedQubits[{targ1,targ2}]}, {
+        		drawSpecialSwap[qb[[3]], qb[[2]], col],
+        		drawGate[label, {}, {qb[[1]],qb[[2]]}, col+.5],
+        		drawSpecialSwap[qb[[3]],qb[[2]],col+.5+1]}]
+        		
+        (* controlled gate graphics *)
+        drawGate[SWAP, {ctrls__}, {targs__}, col_] := {
+        	drawControls[{ctrls},{targs},col],
+        	drawGate[SWAP, {}, {targs}, col]}
+        drawGate[label_Symbol, {ctrls__}, {targ_}, col_] := {
+        	drawControls[{ctrls},{targ},col],
+        	drawGate[label, {}, {targ}, col]}
+        drawGate[label_Symbol, {ctrls__}, targs_List, col_] := {
+        	If[needsSpecialSwap[label,targs],
+        		With[{qb = getFixedThenBotTopSwappedQubits[targs]},
+        			drawControls[{ctrls} /. qb[[2]]->qb[[3]], DeleteCases[targs,qb[[3]]], col+.5]],
+        		drawControls[{ctrls},targs, col]],
+        	drawGate[label, {}, targs, col]}
+        
+        (* generating background qubit lines in a whole circuit column *)
+        drawQubitColumn[isSpecialSwapCol_, specialSwapQubits_, numQubits_, curCol_] :=
+        	If[isSpecialSwapCol,
+        		(* for a special column, draw all middle lines then non-special left/right nubs *)
+        		With[{nonspecial=Complement[Range[0,numQubits-1], specialSwapQubits]}, {
+        			drawQubitLines[Range[0,numQubits-1],curCol+.5],
+        			drawQubitLines[nonspecial,curCol],
+        			drawQubitLines[nonspecial,curCol+1]}],
+        		(* for a non special column, draw all qubit lines *)
+        		drawQubitLines[Range[0,numQubits-1],curCol]
+        	]
+            
+        generateCircuitGraphics[gates_List, numQubits_Integer] :=
+        Module[{
+        	qubitgraphics,gategraphics,
+        	curCol,curSymb,curCtrls,curTargs,curInterval,curIsSpecialSwap,
+        	prevIntervals,prevIsSpecialSwap,prevSpecialQubits},
+        	
+            (* outputs *)
+        	qubitgraphics = {};
+        	gategraphics = {};
+        	
+            (* status of whether a gate can fit in the previous column *)
+        	curCol = 0;
+        	prevIntervals = {};
+        	prevIsSpecialSwap = False;
+        	prevSpecialQubits = {};
+            
+            (* for each gate... *)
+        	Table[
+        		(* extract data from gate *)
+        		{curSymb,curCtrls,curTargs} = getSymbCtrlsTargs[gate];
+        		curInterval = getQubitInterval[curCtrls,curTargs];
+        		curIsSpecialSwap = needsSpecialSwap[curSymb,curTargs];
+        		
+        		(* decide whether gate will fit in previous column *)
+        		If[Or[
+        			And[curIsSpecialSwap, Not[prevIsSpecialSwap]],
+        			AnyTrue[prevIntervals, (IntervalIntersection[curInterval,#] =!= Interval[]&)]],
+        			(* will not fit: *)
+        			(
+        				(* draw qubit lines for the previous column *)
+        				AppendTo[qubitgraphics, 
+        					drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]];
+        				
+        				(* then make a new column *)
+        				curCol = curCol + If[prevIsSpecialSwap,2,1]; 
+        				prevIntervals = {curInterval};
+        				prevIsSpecialSwap = curIsSpecialSwap;
+        				prevSpecialQubits = {};
+        			),
+        			(* will fit *)
+        			AppendTo[prevIntervals, curInterval]
+        		];
+        		
+        		(* record whether this gate requires special swaps *)
+        		If[curIsSpecialSwap, 
+        			With[{qbs=getFixedThenBotTopSwappedQubits[curTargs]},
+        				AppendTo[prevSpecialQubits, qbs[[2]]];
+        				AppendTo[prevSpecialQubits, qbs[[3]]]]];
+        	
+        		(* draw gate *)
+        		AppendTo[gategraphics,
+        			drawGate[
+        				curSymb,curCtrls,curTargs,
+        				curCol + If[prevIsSpecialSwap ~And~ Not[curIsSpecialSwap], .5, 0]]];,
+        		{gate,gates}
+        	];
+        	
+        	(* perform the final round of qubit drawing *)
+        	AppendTo[qubitgraphics, 
+        		drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]];
+        	
+            (* return *)
+        	{curCol, qubitgraphics, gategraphics}
+        ]
+        
+        (* public function to fully render a circuit *)
+        DrawCircuit[circ_List, opts:OptionsPattern[]] :=
+        Module[{numCols,qubitgraphics,gategraphics},
+        	{numCols,qubitgraphics,gategraphics} = generateCircuitGraphics[circ, getNumQubitsInCircuit@circ];
+        	Graphics[{
+                FaceForm[White], EdgeForm[Black],
+                qubitgraphics, gategraphics},
+                opts,
+        		ImageSize -> 30 (numCols+1)
+        	]
+        ]
             
     End[ ]
                                        
