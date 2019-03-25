@@ -343,9 +343,28 @@ L0:	return res;
 } /* _tr14 */
 
 
-void internal_applyCircuit P(( int _tp1));
+void wrapper_calcInnerProduct P(( int _tp1, int _tp2));
 
 static int _tr15( WSLINK wslp)
+{
+	int	res = 0;
+	int _tp1;
+	int _tp2;
+	if ( ! WSGetInteger( wslp, &_tp1) ) goto L0;
+	if ( ! WSGetInteger( wslp, &_tp2) ) goto L1;
+	if ( ! WSNewPacket(wslp) ) goto L2;
+
+	wrapper_calcInnerProduct(_tp1, _tp2);
+
+	res = 1;
+L2: L1: 
+L0:	return res;
+} /* _tr15 */
+
+
+void internal_applyCircuit P(( int _tp1));
+
+static int _tr16( WSLINK wslp)
 {
 	int	res = 0;
 	int _tp1;
@@ -356,12 +375,12 @@ static int _tr15( WSLINK wslp)
 	res = 1;
  
 L0:	return res;
-} /* _tr15 */
+} /* _tr16 */
 
 
 void internal_getStateVec P(( int _tp1));
 
-static int _tr16( WSLINK wslp)
+static int _tr17( WSLINK wslp)
 {
 	int	res = 0;
 	int _tp1;
@@ -373,12 +392,12 @@ static int _tr16( WSLINK wslp)
 	res = 1;
 L1: 
 L0:	return res;
-} /* _tr16 */
+} /* _tr17 */
 
 
 int callable_destroyAllQuregs P(( void));
 
-static int _tr17( WSLINK wslp)
+static int _tr18( WSLINK wslp)
 {
 	int	res = 0;
 	int _rp0;
@@ -390,12 +409,12 @@ static int _tr17( WSLINK wslp)
 		WSPutFunction( wslp, "Abort", 0) : WSPutInteger( wslp, _rp0);
 
 L0:	return res;
-} /* _tr17 */
+} /* _tr18 */
 
 
 void callable_getAllQuregs P(( void));
 
-static int _tr18( WSLINK wslp)
+static int _tr19( WSLINK wslp)
 {
 	int	res = 0;
 	if ( ! WSNewPacket(wslp) ) goto L0;
@@ -406,7 +425,7 @@ static int _tr18( WSLINK wslp)
 	res = 1;
 
 L0:	return res;
-} /* _tr18 */
+} /* _tr19 */
 
 
 static struct func {
@@ -414,7 +433,7 @@ static struct func {
 	int   manual;
 	int   (*f_func)P((WSLINK));
 	const char  *f_name;
-	} _tramps[19] = {
+	} _tramps[20] = {
 		{ 1, 0, _tr0, "wrapper_createQureg" },
 		{ 1, 0, _tr1, "wrapper_createDensityQureg" },
 		{ 1, 0, _tr2, "wrapper_destroyQureg" },
@@ -430,10 +449,11 @@ static struct func {
 		{ 4, 0, _tr12, "wrapper_applyTwoQubitDephaseError" },
 		{ 3, 0, _tr13, "wrapper_calcProbOfOutcome" },
 		{ 2, 0, _tr14, "wrapper_calcFidelity" },
-		{ 1, 2, _tr15, "internal_applyCircuit" },
-		{ 1, 0, _tr16, "internal_getStateVec" },
-		{ 0, 0, _tr17, "callable_destroyAllQuregs" },
-		{ 0, 0, _tr18, "callable_getAllQuregs" }
+		{ 2, 0, _tr15, "wrapper_calcInnerProduct" },
+		{ 1, 2, _tr16, "internal_applyCircuit" },
+		{ 1, 0, _tr17, "internal_getStateVec" },
+		{ 0, 0, _tr18, "callable_destroyAllQuregs" },
+		{ 0, 0, _tr19, "callable_getAllQuregs" }
 		};
 
 static const char* evalstrs[] = {
@@ -490,6 +510,9 @@ static const char* evalstrs[] = {
 	"QuEST`CalcFidelity::usage = \"CalcFidelity[qureg1, qureg2] return",
 	"s the fidelity between the given states.\"",
 	(const char*)0,
+	"QuEST`CalcInnerProduct::usage = \"CalcInnerProduct[qureg1, qureg2",
+	"] returns the complex inner product between the given states.\"",
+	(const char*)0,
 	"QuEST`Private`ApplyCircuitInner::usage = \"ApplyCircuitInner[qure",
 	"g, opcodes, ctrls, numCtrlsPerOps, targs, numTargsPerOp, params,",
 	" numParamsPerOps] applies a circuit (decomposed into codes) to t",
@@ -507,7 +530,7 @@ static const char* evalstrs[] = {
 	(const char*)0,
 	(const char*)0
 };
-#define CARDOF_EVALSTRS 19
+#define CARDOF_EVALSTRS 20
 
 static int _definepattern P(( WSLINK, char*, char*, int));
 
@@ -550,14 +573,16 @@ int WSInstall( WSLINK wslp)
 	if (_res) _res = _doevalstr( wslp, 13);
 	if (_res) _res = _definepattern(wslp, (char *)"QuEST`CalcFidelity[qureg1_Integer, qureg2_Integer]", (char *)"{ qureg1, qureg2 }", 14);
 	if (_res) _res = _doevalstr( wslp, 14);
-	if (_res) _res = _definepattern(wslp, (char *)"QuEST`Private`ApplyCircuitInternal[qureg_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List]", (char *)"{ qureg, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp }", 15);
+	if (_res) _res = _definepattern(wslp, (char *)"QuEST`CalcInnerProduct[qureg1_Integer, qureg2_Integer]", (char *)"{ qureg1, qureg2 }", 15);
 	if (_res) _res = _doevalstr( wslp, 15);
-	if (_res) _res = _definepattern(wslp, (char *)"QuEST`Private`GetStateVecInternal[qureg_Integer]", (char *)"{ qureg }", 16);
+	if (_res) _res = _definepattern(wslp, (char *)"QuEST`Private`ApplyCircuitInternal[qureg_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List]", (char *)"{ qureg, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp }", 16);
 	if (_res) _res = _doevalstr( wslp, 16);
-	if (_res) _res = _definepattern(wslp, (char *)"QuEST`DestroyAllQuregs[]", (char *)"{ }", 17);
+	if (_res) _res = _definepattern(wslp, (char *)"QuEST`Private`GetStateVecInternal[qureg_Integer]", (char *)"{ qureg }", 17);
 	if (_res) _res = _doevalstr( wslp, 17);
-	if (_res) _res = _definepattern(wslp, (char *)"QuEST`GetAllQuregs[]", (char *)"{ }", 18);
+	if (_res) _res = _definepattern(wslp, (char *)"QuEST`DestroyAllQuregs[]", (char *)"{ }", 18);
 	if (_res) _res = _doevalstr( wslp, 18);
+	if (_res) _res = _definepattern(wslp, (char *)"QuEST`GetAllQuregs[]", (char *)"{ }", 19);
+	if (_res) _res = _doevalstr( wslp, 19);
 	if (_res) _res = WSPutSymbol( wslp, "End");
 	if (_res) _res = WSFlush( wslp);
 	return _res;
@@ -566,7 +591,7 @@ int WSInstall( WSLINK wslp)
 
 int PREPDoCallPacket( WSLINK wslp)
 {
-	return _PREPDoCallPacket( wslp, _tramps, 19);
+	return _PREPDoCallPacket( wslp, _tramps, 20);
 } /* PREPDoCallPacket */
 
 /******************************* begin trailer ********************************/

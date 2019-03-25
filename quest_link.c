@@ -223,6 +223,17 @@ qreal wrapper_calcFidelity(int id1, int id2) {
     }
     return calcFidelity(quregs[id1], quregs[id2]);
 }
+void wrapper_calcInnerProduct(int id1, int id2) {
+    if (!quregs[id1].isCreated)
+        return local_quregNotCreatedError(id1);
+    if (!quregs[id2].isCreated)
+        return local_quregNotCreatedError(id2);
+        
+    Complex res = calcInnerProduct(quregs[id1], quregs[id2]);
+    WSPutFunction(stdlink, "Complex", 2);
+    WSPutReal64(stdlink, res.real);
+    WSPutReal64(stdlink, res.imag);
+}
 
 
 /* circuit execution */

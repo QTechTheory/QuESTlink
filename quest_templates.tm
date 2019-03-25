@@ -143,6 +143,15 @@
 :End:
 :Evaluate: QuEST`CalcFidelity::usage = "CalcFidelity[qureg1, qureg2] returns the fidelity between the given states."
 
+:Begin:
+:Function:       wrapper_calcInnerProduct
+:Pattern:        QuEST`CalcInnerProduct[qureg1_Integer, qureg2_Integer]
+:Arguments:      { qureg1, qureg2 }
+:ArgumentTypes:  { Integer, Integer }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`CalcInnerProduct::usage = "CalcInnerProduct[qureg1, qureg2] returns the complex inner product between the given states."
+
 
 
 
