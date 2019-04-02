@@ -170,6 +170,9 @@ int wrapper_cloneQureg(int outID, int inID) {
 }
 
 
+
+
+
 /** noise */
 
 int wrapper_applyOneQubitDephaseError(int id, int qb1, qreal prob) {
@@ -629,6 +632,25 @@ void internal_getStateVec(int id) {
     WSPutInteger(stdlink, qureg.isDensityMatrix);
     WSPutReal64List(stdlink, qureg.stateVec.real, qureg.numAmpsTotal);
     WSPutReal64List(stdlink, qureg.stateVec.imag, qureg.numAmpsTotal);
+}
+
+int internal_addWeightedStates(
+    double facRe1, double facIm1, int qureg1, 
+    double facRe2, double facIm2, int qureg2, 
+    double facReOut, double facImOut, int outID
+) {
+    if (!quregs[qureg1].isCreated)
+        local_quregNotCreatedError(qureg1);
+    else if (!quregs[qureg2].isCreated)
+        local_quregNotCreatedError(qureg2);
+    else if (!quregs[outID].isCreated)
+        local_quregNotCreatedError(outID);
+    else 
+        addWeightedStates(
+            (Complex) {.real=facRe1, .imag=facIm1}, quregs[qureg1],
+            (Complex) {.real=facRe2, .imag=facIm2}, quregs[qureg2],
+            (Complex) {.real=facReOut, .imag=facImOut}, quregs[outID]);
+    return outID;
 }
 
 /**

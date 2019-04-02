@@ -126,11 +126,23 @@ typedef struct QuESTEnv
 
 
 /*
- * public functions
+ * Added for Mathematica front-end 
  */
 
 /** exposed for MMA statevec access */
 void copyStateFromGPU(Qureg qureg);
+
+/** Sets out to be (facOut out + fac1 qureg1 + fac2 qureg2), imposing no constraints on normalisation.
+ * Works for both statevectors and density matrices.
+ */
+void addWeightedStates(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Complex facOut, Qureg out);
+
+
+
+
+/*
+ * public functions
+ */
 
 /** Create a Qureg object representing a set of qubits which will remain in a pure state.
  * Allocate space for state vector of probability amplitudes, including space for temporary values to be copied from

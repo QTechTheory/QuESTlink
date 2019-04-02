@@ -14,6 +14,13 @@
 extern "C" {
 # endif
 
+
+/*
+ * defined for Mathematica front-end 
+ */
+
+void statevec_addWeightedStates(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Complex facOut, Qureg out);
+
     
 /*
  * general functions
@@ -182,6 +189,7 @@ qreal statevec_calcProbOfOutcome(Qureg qureg, const int measureQubit, int outcom
 void statevec_collapseToKnownProbOutcome(Qureg qureg, const int measureQubit, int outcome, qreal outcomeProb);
 
 int statevec_measureWithStats(Qureg qureg, int measureQubit, qreal *outcomeProb);
+
 
 
 # ifdef __cplusplus

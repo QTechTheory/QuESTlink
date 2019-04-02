@@ -173,6 +173,15 @@
 :End:
 :Evaluate: QuEST`Private`GetStateVecInternal::usage = "GetStateVecInternal[qureg] returns the underlying statevector associated with the given qureg (flat, even for density matrices)."
 
+:Begin:
+:Function:       internal_addWeightedStates
+:Pattern:        QuEST`Private`AddWeightedStatesInternal[facRe1_Real,facIm1_Real,qureg1_Integer, facRe2_Real,facIm2_Real,qureg2_Integer, facReOut_Real,facImOut_Real,quregOut_Integer]
+:Arguments:      { facRe1,facIm1,qureg1, facRe2,facIm2,qureg2, facReOut,facImOut,quregOut }
+:ArgumentTypes:  { Real, Real, Integer, Real, Real, Integer, Real, Real, Integer }
+:ReturnType:     Integer
+:End:
+:Evaluate: QuEST`Private`AddWeightedStatesInternal::usage = "AddWeightedStatesInternal[facRe1,facIm1,qureg1, facRe2,facIm2,qureg2, facReOut,facImOut,quregOut] modifies quregOut to become (fac1 qureg1 + fac2 qureg2 + facOut qurgeOut)."
+
 
 
 
