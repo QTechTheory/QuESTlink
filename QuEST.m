@@ -29,6 +29,8 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[id] connects to the remote Igor server (on port 50000+id and 50100+id) and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
              
     CreateLocalQuESTEnv::usage = "CreateLocalQuESTEnv[] connects to a local Mathematica backend, running single-CPU QuEST."
+    
+    CreateDownloadedQuESTEnv::usage = "CreateDownloadedQuESTEnv[] downloads a MacOS-CPU-QuEST server from quest.qtechtheory.org, gives it permission to run then locally connects to it."
                     
     DestroyQuESTEnv::usage = "DestroyQuESTEnv[link] disconnects from the QuEST link, which may be the remote Igor server, clearing some QuEST function definitions (but not those provided by the QuEST package)."
     
@@ -204,6 +206,14 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
         CreateRemoteQuESTEnv[port_Integer] := Install @ getIgorLink @ port
                     
         CreateLocalQuESTEnv[] := Install[NotebookDirectory[] <> "quest_link"]
+        
+        CreateDownloadedQuESTEnv[] := Module[{linkfile},
+            SetDirectory @ NotebookDirectory[];
+            linkfile = URLDownload["https://quest.qtechtheory.org/QuESTlink_MacOS_CPU", "quest_link"];
+            Run["chmod +x quest_link"];
+            Install[linkfile]
+        ]
+            
                     
         DestroyQuESTEnv[link_] := Uninstall @ link
         
