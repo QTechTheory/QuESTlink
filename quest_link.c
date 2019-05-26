@@ -421,10 +421,7 @@ void internal_applyCircuit(int id) {
                 if (numCtrls == 0)
                     sGate(qureg, targs[targInd]);
                 else {
-                    int ctrlCache[100]; 
-                    for (int i=0; i < numCtrls; i++)
-                        ctrlCache[i] = ctrls[i];
-                    ctrlCache[numCtrls] = targs[targInd];
+                    int* ctrlCache = prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, M_PI/2);
                 }
                 break;
@@ -516,14 +513,17 @@ void internal_applyCircuit(int id) {
             case OPCODE_Rz :
                 if (numParams != 1)
                     return local_gateWrongNumParamsError("Rz", numParams, 1, id, backup, mesOutcomeCache);
-                if (numTargs != 1)
-                    return local_gateWrongNumTargsError("Rz", numTargs, "1 target", id, backup, mesOutcomeCache);
-                if (numCtrls == 0)
-                    rotateZ(qureg, targs[targInd], params[paramInd]);
-                else if (numCtrls == 1)
-                    controlledRotateZ(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]);
-                else
+                if (numCtrls > 1)
                     return local_gateUnsupportedError("multi-controlled Rotate Z", id, backup, mesOutcomeCache);
+                if (numCtrls == 1 && numTargs > 1)
+                    return local_gateUnsupportedError("multi-controlled multi-rotateZ", id, backup, mesOutcomeCache);
+                if (numTargs == 1) {
+                    if (numCtrls == 0)
+                        rotateZ(qureg, targs[targInd], params[paramInd]);
+                    if (numCtrls == 1)
+                        controlledRotateZ(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]);
+                } else
+                    multiRotateZ(qureg, &targs[targInd], numTargs, params[paramInd]);
                 break;
             
             case OPCODE_U : 
