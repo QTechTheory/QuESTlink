@@ -290,9 +290,12 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
         		Circle[{col+.5,targ+.5-.4}, .4, {.7,\[Pi]-.7}],
         		Line[{{col+.5,targ+.5-.25}, {col+.5+.2,targ+.5+.3}}]
         		}, {targ, {targs}}]
-        drawGate[symb:(Deph|Depol), {}, {targ_}, col_] := {
-        	EdgeForm[Dashed],
-        	drawGate[If[symb===Deph,\[Phi],\[CapitalDelta]], {}, {targ}, col]}
+        drawGate[Deph, {}, {targ_}, col_] := {
+        	EdgeForm[Dashed], drawGate[\[Phi], {}, {targ}, col]}
+        drawGate[Depol, {}, {targ_}, col_] := {
+            EdgeForm[Dashed], drawGate[\[CapitalDelta], {}, {targ}, col]}
+        drawGate[Damp, {}, {targ_}, col_] := {
+            EdgeForm[Dashed], drawGate[\[Gamma], {}, {targ}, col]}
         drawGate[X, {}, {targ_}, col_] := {
             Circle[{col+.5,targ+.5},.25],
             Line[{{col+.5,targ+.5-.25},{col+.5,targ+.5+.25}}]
