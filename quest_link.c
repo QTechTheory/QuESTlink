@@ -247,6 +247,19 @@ void wrapper_calcInnerProduct(int id1, int id2) {
 }
 
 
+/* other modifications */
+
+int wrapper_collapseToOutcome(int id, int qb, int outcome) {
+    if (quregs[id].isCreated) {
+        collapseToOutcome(quregs[id], qb, outcome);
+        return id;
+    } else {
+        local_quregNotCreatedError(id);
+        return -1;
+    }
+}
+
+
 /* circuit execution */
 
 void local_backupQuregThenError(char* err_msg, int id, Qureg backup, int* mesOutcomeCache) {

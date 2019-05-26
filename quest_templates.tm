@@ -191,6 +191,15 @@
 :End:
 :Evaluate: QuEST`Private`AddWeightedStatesInternal::usage = "AddWeightedStatesInternal[facRe1,facIm1,qureg1, facRe2,facIm2,qureg2, facReOut,facImOut,quregOut] modifies quregOut to become (fac1 qureg1 + fac2 qureg2 + facOut qurgeOut)."
 
+:Begin:
+:Function:       wrapper_collapseToOutcome
+:Pattern:        QuEST`CollapseToOutcome[qureg_Integer, qubit_Integer, outcome_Integer]
+:Arguments:      { qureg, qubit, outcome }
+:ArgumentTypes:  { Integer, Integer, Integer }
+:ReturnType:     Integer
+:End:
+:Evaluate: QuEST`CollapseToOutcome::usage = "CollapseToOutcome[qureg, qubit, outcome] forces the target qubit to collapse to the given outcome."
+
 
 
 
