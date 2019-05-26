@@ -153,7 +153,7 @@ endif
 
 LIBS = -lm
 ifeq ($(OS), MACOSX)
-    LIBS += -lc++ $(WSTP_DIR)/macosx_libWSTPi4.36.a
+    LIBS += -lc++ $(WSTP_DIR)/macosx_libWSTPi4.36.a -framework Foundation
 else ifeq ($(OS), LINUX)
     LIBS += -lm -Wl,--no-as-needed -ldl -lutil -lpthread -luuid -lrt -lstdc++ $(WSTP_DIR)/linux_libWSTP64i4.a	
 endif
