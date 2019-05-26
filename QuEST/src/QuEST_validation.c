@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 // for QuEST-MMA
-# include "../wstp.h"
+# include "wstp.h"
     
 # include "QuEST.h"
 # include "QuEST_precision.h"
