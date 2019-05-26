@@ -1,4 +1,4 @@
-// Distributed under MIT licence. See https://github.com/aniabrown/QuEST/blob/master/LICENCE.txt for details 
+// Distributed under MIT licence. See https://github.com/QuEST-Kit/QuEST/blob/master/LICENCE.txt for details 
 
 /** @file
  * Internal functions used to implement the pure backend in ../QuEST_ops_pure.h. Do not call these functions
@@ -73,11 +73,11 @@ void statevec_controlledUnitaryDistributed (Qureg qureg, const int controlQubit,
         ComplexArray stateVecOut);
 
 void statevec_multiControlledUnitaryLocal(Qureg qureg, const int targetQubit,
-        long long int mask, ComplexMatrix2 u);
+        long long int ctrlQubitsMask, long long int ctrlFlipMask, ComplexMatrix2 u);
 
 void statevec_multiControlledUnitaryDistributed (Qureg qureg,
         const int targetQubit,
-        long long int mask,
+        long long int ctrlQubitsMask, long long int ctrlFlipMask,
         Complex rot1, Complex rot2,
         ComplexArray stateVecUp,
         ComplexArray stateVecLo,
