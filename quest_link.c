@@ -49,6 +49,7 @@
 #define OPCODE_Damp 12
 #define OPCODE_SWAP 13
 #define OPCODE_M 14
+#define OPCODE_P 15
 
 /**
  * Max number of quregs which can simultaneously exist
@@ -615,6 +616,33 @@ void internal_applyCircuit(int id) {
                 for (int q=0; q < numTargs; q++)
                     mesOutcomeCache[mesInd++] = measure(qureg, targs[targInd+q]);
                 break;
+            
+            case OPCODE_P:
+                if (numParams != 1 && numParams != numTargs) {
+                    char buffer[1000];
+                    sprintf(buffer, 
+                        "P[outcomes] specified a different number of binary outcomes (%d) than target qubits (%d)!",
+                        numParams, numTargs);
+                    return local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
+                }
+                if (numCtrls != 0)
+                    return local_gateUnsupportedError("controlled projector", id, backup, mesOutcomeCache);
+                if (numParams > 1)
+                    for (int q=0; q < numParams; q++)
+                        collapseToOutcome(qureg, targs[targInd+q], (int) params[paramInd+q]);
+                else {
+                    // check value isn't impossibly high
+                    if (params[paramInd] >= (1LL << numTargs)) {
+                        char buffer[1000];
+                        sprintf(buffer, "P[%d] was applied to %d qubits and exceeds their maximum represented value of %lld.",
+                            (int) params[paramInd], numTargs, (1LL << numTargs));
+                        return local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
+                    }
+                    // work out each bit outcome and apply; right most (least significant) bit acts on left-most target
+                    for (int q=0; q < numTargs; q++)
+                        collapseToOutcome(qureg, targs[targInd+numTargs-q-1], (((int) params[paramInd]) >> q) & 1);
+                }
+                break;        
                 
             default:            
                 return local_backupQuregThenError(

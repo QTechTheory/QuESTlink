@@ -75,13 +75,17 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     PackageExport[SWAP]
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
     PackageExport[M]
-    M::usage = "M is a desctructive measurement gate which measures the indicated qubits in the Z basis"
+    M::usage = "M is a desctructive measurement gate which measures the indicated qubits in the Z basis."
+    PackageExport[P]
+    P::usage = "
+P[val] is a projector onto {0,1} such that the target qubits represent val in binary (left most target takes the least significant digit in val).
+P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome"
             
     Begin["`Private`"]
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,S->7,T->8,U->9,Deph->10,Depol->11,Damp->12,SWAP->13,M->14,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,S->7,T->8,U->9,Deph->10,Depol->11,Damp->12,SWAP->13,M->14,P->15,_->-1}
         
         (* convert MMA matrix to QuESTs ComplexMatrix2 *)
         codifyMatrix[List[List[r0c0_, r0c1_], List[r1c0_, r1c1_]]] :=
