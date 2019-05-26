@@ -46,8 +46,9 @@
 #define OPCODE_U 9
 #define OPCODE_Deph 10
 #define OPCODE_Depol 11
-#define OPCODE_SWAP 12
-#define OPCODE_M 13
+#define OPCODE_Damp 12
+#define OPCODE_SWAP 13
+#define OPCODE_M 14
 
 /**
  * Max number of quregs which can simultaneously exist
@@ -199,6 +200,13 @@ int wrapper_applyOneQubitDepolariseError(int id, int qb1, qreal prob) {
 int wrapper_applyTwoQubitDepolariseError(int id, int qb1, int qb2, qreal prob) {
     if (quregs[id].isCreated)
         applyTwoQubitDepolariseError(quregs[id], qb1, qb2, prob);
+    else
+        local_quregNotCreatedError(id);
+    return id;
+}
+int wrapper_applyOneQubitDampingError(int id, int qb, qreal prob) {
+    if (quregs[id].isCreated)
+        applyOneQubitDampingError(quregs[id], qb, prob);
     else
         local_quregNotCreatedError(id);
     return id;
@@ -548,6 +556,18 @@ void internal_applyCircuit(int id) {
                     applyOneQubitDepolariseError(qureg, targs[targInd], params[paramInd]);
                 if (numTargs == 2)
                     applyTwoQubitDepolariseError(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
+                break;
+                
+            case OPCODE_Damp :
+                if (numParams != 1)
+                    return local_gateWrongNumParamsError("Damping", numParams, 1, id, backup, mesOutcomeCache);
+                if (numCtrls != 0)
+                    return local_gateUnsupportedError("controlled damping", id, backup, mesOutcomeCache);
+                if (numTargs != 1)
+                    return local_gateWrongNumTargsError("Damping", numTargs, "1 target", id, backup, mesOutcomeCache);
+                if (params[paramInd] == 0)
+                    break;
+                applyOneQubitDampingError(qureg, targs[targInd], params[paramInd]);
                 break;
                 
             case OPCODE_SWAP:

@@ -122,6 +122,15 @@
 :End:
 :Evaluate: QuEST`ApplyTwoQubitDephaseError::usage = "ApplyTwoQubitDephaseError[qureg, qb1, qb2 prob] adds dephasing noise to density matrix qureg."
 
+:Begin:
+:Function:       wrapper_applyOneQubitDampingError
+:Pattern:        QuEST`ApplyOneQubitDampingError[qureg_Integer, qb_Integer, prob_Real]
+:Arguments:      { qureg, qb, prob }
+:ArgumentTypes:  { Integer, Integer, Real }
+:ReturnType:     Integer
+:End:
+:Evaluate: QuEST`ApplyOneQubitDampingError::usage = "ApplyOneQubitDampingError[qureg, qubit, prob] applies amplitude damping with the given decay probability to density matrix qureg."
+
 
 
 

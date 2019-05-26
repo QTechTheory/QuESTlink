@@ -70,6 +70,8 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     Deph::usage = "Deph[prob] is a 1 or 2 qubit dephasing with probability prob of error."
     PackageExport[Depol]
     Depol::usage = "Depol[prob] is a 1 or 2 qubit depolarising with probability prob of error."
+    PackageExport[Damp]
+    Damp::usage = "Damp[prob] is 1 qubit amplitude damping with the givern decay probability."
     PackageExport[SWAP]
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
     PackageExport[M]
@@ -79,7 +81,7 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,S->7,T->8,U->9,Deph->10,Depol->11,SWAP->12,M->13,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,S->7,T->8,U->9,Deph->10,Depol->11,Damp->12,SWAP->13,M->14,_->-1}
         
         (* convert MMA matrix to QuESTs ComplexMatrix2 *)
         codifyMatrix[List[List[r0c0_, r0c1_], List[r1c0_, r1c1_]]] :=
