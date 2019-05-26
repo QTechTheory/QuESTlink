@@ -1,4 +1,4 @@
-// Distributed under MIT licence. See https://github.com/QuEST-Kit/QuEST/blob/master/LICENCE.txt for details
+// Distributed under MIT licence. See https://github.com/aniabrown/QuEST_GPU/blob/master/LICENCE.txt for details
 
 /** @file
  * Provides validation defined in QuEST_validation.c which is used exclusively by QuEST.c
@@ -23,13 +23,9 @@ void validateControlTarget(Qureg qureg, int controlQubit, int targetQubit, const
 
 void validateUniqueTargets(Qureg qureg, int qubit1, int qubit2, const char* caller);
 
-void validateMultiTargets(Qureg qurge, int* targetQubits, const int numTargetQubits, const char* caller);
-
 void validateMultiControls(Qureg qureg, int* controlQubits, const int numControlQubits, const char* caller);
 
 void validateMultiControlsTarget(Qureg qureg, int* controlQubits, const int numControlQubits, const int targetQubit, const char* caller);
-
-void validateControlState(int* controlState, const int numControlQubits, const char* caller);
 
 void validateUnitaryMatrix(ComplexMatrix2 u, const char* caller);
 
@@ -69,9 +65,6 @@ void validateTwoQubitDepolProb(qreal prob, const char* caller);
 
 void validateOneQubitDampingProb(qreal prob, const char* caller);
 
-void validateOneQubitPauliProbs(qreal probX, qreal probY, qreal probZ, const char* caller);
-
-void validatePauliCodes(int* pauliCodes, int numPauliCodes, const char* caller);
 
 # ifdef __cplusplus
 }

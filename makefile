@@ -1,9 +1,3 @@
-# DEPRECATION WARNING!
-# QuEST has switched to using the cmake build system. 
-# See https://github.com/QuEST-Kit/QuEST/tree/master/examples#compiling
-# for more information.
-# This makefile is included as a backup in case of problems switching to the
-# new system but is less rigorously tested than the cmake system. Use at your own risk. 
 
 # This makefile builds the QuEST library and links/compiles user code
 # While attempting to accomodate as many platforms and compilers,
@@ -17,17 +11,23 @@
 #                                                                      #
 #======================================================================#
 
+# operating system, one of {MACOSX, LINUX}
+OS = LINUX
+
 # name of the executable to create
-EXE = demo
+EXE = quest_link
 
 # space-separated names (no file type) of all user source files (.c or .cpp) in the root directory
-SOURCES = tutorial_example
+SOURCES = quest_link quest_templates.tm
 
 # path to QuEST library from root directory
 QUEST_DIR = QuEST
 
+# path to WSTP libs from root directory 
+WSTP_DIR = WSTP
+
 # compiler to use, which should support both C and C++, to be wrapped by GPU/MPI compilers
-COMPILER = gcc
+COMPILER = gcc-8
 
 # type of above compiler, one of {GNU, INTEL, CLANG}, used for setting compiler flags
 COMPILER_TYPE = GNU
@@ -38,7 +38,7 @@ DISTRIBUTED = 0
 GPUACCELERATED = 0
 
 # GPU hardware dependent, lookup at https://developer.nvidia.com/cuda-gpus, write without fullstop
-GPU_COMPUTE_CAPABILITY = 30
+GPU_COMPUTE_CAPABILITY = 61
 
 # whether to suppress the below warnings about compiler compatibility
 SUPPRESS_WARNING = 0
@@ -59,6 +59,13 @@ SILENT = 0
 ifneq ($(MAKECMDGOALS), clean)
 ifneq ($(MAKECMDGOALS), veryclean)
 ifneq ($(SILENT), 1)
+
+    # check $OS is correct
+    ifneq ($(OS), LINUX)
+    ifneq ($(OS), MACOSX)
+        $(error OS must be LINUX or MACOSX)
+    endif
+    endif
 
     # check $COMPILER_TYPE is correct
     ifneq ($(COMPILER_TYPE), CLANG)
@@ -145,6 +152,11 @@ endif
 #
 
 LIBS = -lm
+ifeq ($(OS), MACOSX)
+    LIBS += -lc++ $(WSTP_DIR)/macosx_libWSTPi4.36.a -framework Foundation
+else ifeq ($(OS), LINUX)
+    LIBS += -lm -Wl,--no-as-needed -ldl -lutil -lpthread -luuid -lrt -lstdc++ $(WSTP_DIR)/linux_libWSTP64i4.a	
+endif
 
 
 #
@@ -160,7 +172,7 @@ ifeq ($(GPUACCELERATED), 1)
 else
     QUEST_INNER_DIR = $(QUEST_SRC_DIR)/CPU
 endif
-QUEST_INCLUDE = -I${QUEST_INCLUDE_DIR} -I$(QUEST_INNER_DIR) -I$(QUEST_COMMON_DIR)
+QUEST_INCLUDE = -I${QUEST_INCLUDE_DIR} -I$(QUEST_INNER_DIR) -I$(QUEST_COMMON_DIR) -I$(WSTP_DIR)
 
 
 #
@@ -263,7 +275,6 @@ OBJ += $(addsuffix .o, $(SOURCES))
 #	- CUDA won't compile .c files ($COMPILER will), only .cpp and .cu
 #	- MPICC will compile .c and .cpp files (wrapping $COMPILER)
 
-
 # GPU
 ifeq ($(GPUACCELERATED), 1)
 
@@ -302,7 +313,7 @@ else ifeq ($(DISTRIBUTED), 1)
 # CPU
 else
 
-  %.o: %.c
+  %.o: %.c quest_templates.tm.c
 	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
 	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
@@ -315,8 +326,6 @@ else
 	$(COMPILER) $(CPP_FLAGS)  -c $<
 
 endif
-
-
 
 #
 # --- build
@@ -348,6 +357,22 @@ test: $(OBJ)
 	$(COMPILER) $(C_FLAGS)  -shared -Wl,-soname,$(QUEST_LIB) $(QUEST_INCLUDE) -o $(LIB_NAME) $(OBJ) $(LIBS)
 
 
+
+#
+# --- generate C code from MMA templates 
+#
+
+ifeq ($(OS), MACOSX)
+    PREP = macosx_wsprep
+else ifeq ($(OS), LINUX)
+    PREP = linux_wsprep
+endif
+
+quest_templates.tm.c:
+	$(WSTP_DIR)/$(PREP) quest_templates.tm -o quest_templates.tm.c
+
+
+
 #
 # --- clean
 #
@@ -355,6 +380,7 @@ test: $(OBJ)
 .PHONY:		clean veryclean
 clean:
 			/bin/rm -f *.o $(EXE)
+			/bin/rm -f quest_templates.tm.c
 veryclean:	clean
 			/bin/rm -f *.h~ *.c~ makefile~
 
