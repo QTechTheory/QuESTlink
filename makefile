@@ -24,7 +24,7 @@ SOURCES = quest_link quest_templates.tm
 QUEST_DIR = QuEST
 
 # path to WSTP libs from root directory 
-WSTP_DIR = WSTPlibs
+WSTP_DIR = WSTP
 
 # compiler to use, which should support both C and C++, to be wrapped by GPU/MPI compilers
 COMPILER = gcc-8
