@@ -59,7 +59,9 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     PackageExport[Ry]
     Ry::usage = "Ry[theta] is a rotation of theta around the y-axis of the Bloch sphere." 
     PackageExport[Rz]
-    Rz::usage = "Rz[theta] is a rotation of theta around the z-axis of the Bloch sphere." 
+    Rz::usage = "Rz[theta] is a rotation of theta around the z-axis of the Bloch sphere. Multiple targets enacts Exp[-i \[Theta]/2 Za ... Zc]." 
+    PackageExport[R]
+    R::usage = "R[theta, paulis] is the unitary Exp[-i \[Theta]/2 paulis]."   
     PackageExport[S]
     S::usage = "S is the S gate, a.k.a. PI/2 gate."
     PackageExport[T]
@@ -79,13 +81,13 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     PackageExport[P]
     P::usage = "
 P[val] is a projector onto {0,1} such that the target qubits represent val in binary (left most target takes the least significant digit in val).
-P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome"
-            
+P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
+ 
     Begin["`Private`"]
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,S->7,T->8,U->9,Deph->10,Depol->11,Damp->12,SWAP->13,M->14,P->15,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,_->-1}
         
         (* convert MMA matrix to QuESTs ComplexMatrix2 *)
         codifyMatrix[List[List[r0c0_, r0c1_], List[r1c0_, r1c1_]]] :=
@@ -94,7 +96,7 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
              Re[r1c0],Im[r1c0],
              Re[r1c1],Im[r1c1]}
         
-        (* recognising gates *)
+        (* recognising and codifying gates *)
         gatePatterns = {
             Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[U,  (targs:_Integer..)|{targs:_Integer..}][matr:_List]] :> 
                 {getOpCode[U], {ctrls}, {targs}, codifyMatrix[matr]},
@@ -102,6 +104,8 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
                 {getOpCode[gate], {ctrls}, {targs}, {args}},
         	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {}},
+            R[param_, ({paulis:Subscript[(X|Y|Z),_Integer]..}|Verbatim[Times][paulis:Subscript[(X|Y|Z),_Integer]..])] :>
+                {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, {paulis}[[All,1]]/.{X->1,Y->2,Z->3}]},
         	Subscript[U, (targs:_Integer..)|{targs:_Integer..}][matr:_List] :> 
                 {getOpCode[U], {}, {targs}, codifyMatrix[matr]},
             Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}][args__] :> 
@@ -119,6 +123,7 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         (* checking circuit format *)
         isGateFormat[Subscript[_Symbol, (_Integer..)|{_Integer..}]] := True
         isGateFormat[Subscript[_Symbol, (_Integer..)|{_Integer..}][__]] := True
+        isGateFormat[R[_, ({Subscript[(X|Y|Z),_Integer]..}|Verbatim[Times][Subscript[(X|Y|Z),_Integer]..])]] := True
         isGateFormat[___] := False
         isCircuitFormat[circ_List] := AllTrue[circ,isGateFormat]
         isCircuitFormat[circ_?isGateFormat] := True

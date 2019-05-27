@@ -41,15 +41,16 @@
 #define OPCODE_Rx 4
 #define OPCODE_Ry 5
 #define OPCODE_Rz 6
-#define OPCODE_S 7
-#define OPCODE_T 8
-#define OPCODE_U 9
-#define OPCODE_Deph 10
-#define OPCODE_Depol 11
-#define OPCODE_Damp 12
-#define OPCODE_SWAP 13
-#define OPCODE_M 14
-#define OPCODE_P 15
+#define OPCODE_R 7
+#define OPCODE_S 8
+#define OPCODE_T 9
+#define OPCODE_U 10
+#define OPCODE_Deph 11
+#define OPCODE_Depol 12
+#define OPCODE_Damp 13
+#define OPCODE_SWAP 14
+#define OPCODE_M 15
+#define OPCODE_P 16
 
 /**
  * Max number of quregs which can simultaneously exist
@@ -524,6 +525,20 @@ void internal_applyCircuit(int id) {
                         controlledRotateZ(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]);
                 } else
                     multiRotateZ(qureg, &targs[targInd], numTargs, params[paramInd]);
+                break;
+                
+            case OPCODE_R:
+                if (numCtrls != 0)
+                    return local_gateUnsupportedError("controlled multi-rotate-Pauli", id, backup, mesOutcomeCache);
+                if (numTargs != numParams-1) {
+                    char buffer[1000];
+                    sprintf(buffer, 
+                        "An internel error in R occured! It received an unequal number of Pauli codes (%d) and target qubits! (%d)",
+                        numParams-1, numTargs);
+                    return local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
+                }
+                int paulis[100]; for (int p=0; p < numTargs; p++) paulis[p] = params[paramInd+1+p];
+                multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]);
                 break;
             
             case OPCODE_U : 
