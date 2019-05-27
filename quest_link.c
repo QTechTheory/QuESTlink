@@ -67,6 +67,10 @@ QuESTEnv env;
  */
 Qureg quregs[MAX_NUM_QUREGS];
 
+/**
+ * Buffer for creating error messages
+ */
+static char buffer[1000];
 
 /**
  * Reports an error message to MMA without aborting
@@ -82,7 +86,6 @@ void local_sendErrorToMMA(char* err_msg) {
 }
 
 void local_quregNotCreatedError(int id) {
-    char buffer[100];
     sprintf(buffer, "qureg (with id %d) has not been created.", id);
     local_sendErrorToMMA(buffer);
 }
@@ -273,7 +276,6 @@ void local_backupQuregThenError(char* err_msg, int id, Qureg backup, int* mesOut
 }
 
 void local_gateUnsupportedError(char* gate, int id, Qureg backup, int* mesOutcomeCache) {
-    char buffer[1000];
     sprintf(buffer, 
         "the gate '%s' is not supported. "
         "Aborting circuit and restoring qureg (id %d) to its original state.", 
@@ -282,7 +284,6 @@ void local_gateUnsupportedError(char* gate, int id, Qureg backup, int* mesOutcom
 }
 
 void local_gateWrongNumParamsError(char* gate, int wrongNumParams, int rightNumParams, int id, Qureg backup, int* mesOutcomeCache) {
-    char buffer[1000];
     sprintf(buffer,
         "the gate '%s' accepts %d parameters, but %d were passed. "
         "Aborting circuit and restoring qureg (id %d) to its original state.",
@@ -292,7 +293,6 @@ void local_gateWrongNumParamsError(char* gate, int wrongNumParams, int rightNumP
 
 /* rightNumTargs is a string so that it can be multiple e.g. "1 or 2" */
 void local_gateWrongNumTargsError(char* gate, int wrongNumTargs, char* rightNumTargs, int id, Qureg backup, int* mesOutcomeCache) {
-    char buffer[1000];
     sprintf(buffer,
         "the gate '%s' accepts %s, but %d were passed. "
         "Aborting circuit and restoring qureg (id %d) to its original state.",
@@ -531,7 +531,6 @@ void internal_applyCircuit(int id) {
                 if (numCtrls != 0)
                     return local_gateUnsupportedError("controlled multi-rotate-Pauli", id, backup, mesOutcomeCache);
                 if (numTargs != numParams-1) {
-                    char buffer[1000];
                     sprintf(buffer, 
                         "An internel error in R occured! It received an unequal number of Pauli codes (%d) and target qubits! (%d)",
                         numParams-1, numTargs);
@@ -634,7 +633,6 @@ void internal_applyCircuit(int id) {
             
             case OPCODE_P:
                 if (numParams != 1 && numParams != numTargs) {
-                    char buffer[1000];
                     sprintf(buffer, 
                         "P[outcomes] specified a different number of binary outcomes (%d) than target qubits (%d)!",
                         numParams, numTargs);
@@ -648,7 +646,6 @@ void internal_applyCircuit(int id) {
                 else {
                     // check value isn't impossibly high
                     if (params[paramInd] >= (1LL << numTargs)) {
-                        char buffer[1000];
                         sprintf(buffer, "P[%d] was applied to %d qubits and exceeds their maximum represented value of %lld.",
                             (int) params[paramInd], numTargs, (1LL << numTargs));
                         return local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
