@@ -22,6 +22,7 @@
 #include "wstp.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <QuEST.h>
 
 /*
@@ -300,6 +301,42 @@ void local_gateWrongNumTargsError(char* gate, int wrongNumTargs, char* rightNumT
     local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
 }
 
+qreal local_getMaxValidNoiseProb(int opcode, int numQubits) {
+    if (opcode == OPCODE_Damp)
+        return 1.0;
+    if (opcode == OPCODE_Deph) {
+        if (numQubits == 1)
+            return 1.0/2.0;
+        if (numQubits == 2)
+            return 3.0/4.0;
+    }
+    if (opcode == OPCODE_Depol) {
+        if (numQubits == 1)
+            return 3.0/4.0;
+        if (numQubits == 2)
+            return 15.0/16.0;
+    }
+    return -1;
+}
+
+int local_isValidProb(int opcode, int numQubits, qreal prob) {
+    return (prob > 0 && prob < local_getMaxValidNoiseProb(opcode, numQubits));
+}
+
+void local_noiseInvalidProbError(int opcode, int numQubits, qreal prob, int id, Qureg backup, int* mesOutcomeCache) {
+    sprintf(buffer, "%d-qubit ", numQubits);
+    switch (opcode) {
+        case OPCODE_Deph: sprintf(buffer+strlen(buffer), "dephasing"); break;
+        case OPCODE_Depol: sprintf(buffer+strlen(buffer), "depolarising"); break;
+        case OPCODE_Damp: sprintf(buffer+strlen(buffer), "amplitude damping"); break;
+    }
+    sprintf(buffer+strlen(buffer),
+        " was applied with probability %g which is outside its accepted range of [0, %g]. "
+        "Aborting circuit and restoring qureg (id %d) to its original state.",
+        prob, local_getMaxValidNoiseProb(opcode, numQubits), id);
+    local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
+}
+
 int* prepareCtrlCache(int* ctrls, int ctrlInd, int numCtrls, int addTarg) {
     static int ctrlCache[100]; 
     for (int i=0; i < numCtrls; i++)
@@ -565,6 +602,8 @@ void internal_applyCircuit(int id) {
                     return local_gateWrongNumTargsError("Dephasing", numTargs, "1 or 2 targets", id, backup, mesOutcomeCache);
                 if (params[paramInd] == 0)
                     break;
+                if (!local_isValidProb(op, numTargs, params[paramInd]))
+                    return local_noiseInvalidProbError(op, numTargs, params[paramInd], id, backup, mesOutcomeCache);
                 if (numTargs == 1)
                     applyOneQubitDephaseError(qureg, targs[targInd], params[paramInd]);
                 if (numTargs == 2)
@@ -580,6 +619,8 @@ void internal_applyCircuit(int id) {
                     return local_gateWrongNumTargsError("Depolarising", numTargs, "1 or 2 targets", id, backup, mesOutcomeCache);
                 if (params[paramInd] == 0)
                     break;
+                if (!local_isValidProb(op, numTargs, params[paramInd]))
+                    return local_noiseInvalidProbError(op, numTargs, params[paramInd], id, backup, mesOutcomeCache);
                 if (numTargs == 1)
                     applyOneQubitDepolariseError(qureg, targs[targInd], params[paramInd]);
                 if (numTargs == 2)
@@ -595,6 +636,8 @@ void internal_applyCircuit(int id) {
                     return local_gateWrongNumTargsError("Damping", numTargs, "1 target", id, backup, mesOutcomeCache);
                 if (params[paramInd] == 0)
                     break;
+                if (!local_isValidProb(op, numTargs, params[paramInd]))
+                    return local_noiseInvalidProbError(op, numTargs, params[paramInd], id, backup, mesOutcomeCache);
                 applyOneQubitDampingError(qureg, targs[targInd], params[paramInd]);
                 break;
                 
