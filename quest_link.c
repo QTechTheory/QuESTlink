@@ -693,7 +693,7 @@ void internal_applyCircuit(int id) {
                             (int) params[paramInd], numTargs, (1LL << numTargs));
                         return local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
                     }
-                    // work out each bit outcome and apply; right most (least significant) bit acts on left-most target
+                    // work out each bit outcome and apply; right most (least significant) bit acts on right-most target
                     for (int q=0; q < numTargs; q++)
                         collapseToOutcome(qureg, targs[targInd+numTargs-q-1], (((int) params[paramInd]) >> q) & 1);
                 }

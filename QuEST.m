@@ -80,7 +80,7 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     M::usage = "M is a desctructive measurement gate which measures the indicated qubits in the Z basis."
     PackageExport[P]
     P::usage = "
-P[val] is a projector onto {0,1} such that the target qubits represent val in binary (left most target takes the least significant digit in val).
+P[val] is a projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
 P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
  
     Begin["`Private`"]
