@@ -20,6 +20,8 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     
     Operator::usage = "Operator[gates] converts a product of gates into a right-to-left circuit."
     
+    CalcExpectedValue::usage = "CalcExpectedValue[qureg, paulis] evaluates the expected value of a product of Paulis."
+    
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
     
     GetMatrix::usage = "GetMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
@@ -207,6 +209,12 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         		]},
         		QuEST`InitStateFromAmps[qureg, Re[flatelems], Im[flatelems]]
         	]
+            
+        (* compute the expected value of a Pauli product *)
+        CalcExpectedValue[qureg_Integer, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]] :=
+            CalcExpectedValueInternal[qureg, {paulis}[[All,1]]/.{X->1,Y->2,Z->3}, {paulis}[[All,2]]]
+        CalcExpectedValue[qureg_Integer, Subscript[pauli:(X|Y|Z),targ:_Integer]] :=
+            CalcExpectedValueInternal[qureg, {pauli}/.{X->1,Y->2,Z->3}, {targ}]
         
         getIgorLink[id_] :=
         	LinkConnect[

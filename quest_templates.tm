@@ -174,6 +174,15 @@
 :Evaluate: QuEST`Private`ApplyCircuitInner::usage = "ApplyCircuitInner[qureg, opcodes, ctrls, numCtrlsPerOps, targs, numTargsPerOp, params, numParamsPerOps] applies a circuit (decomposed into codes) to the given qureg."
 
 :Begin:
+:Function:       internal_calcExpectedValue
+:Pattern:        QuEST`Private`CalcExpectedValueInternal[qureg_Integer, paulis_List, targets_List]
+:Arguments:      { qureg, paulis, targets }
+:ArgumentTypes:  { Integer, Manual }
+:ReturnType:     Real
+:End:
+:Evaluate: QuEST`Private`CalcExpectedValueInternal::usage = "CalcExpectedValueInternal[qureg, paulis, targets] returns the expected value of the qureg under the given pauli product."
+
+:Begin:
 :Function:       internal_getStateVec
 :Pattern:        QuEST`Private`GetStateVecInternal[qureg_Integer]
 :Arguments:      { qureg }

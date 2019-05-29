@@ -769,6 +769,67 @@ int internal_addWeightedStates(
     return outID;
 }
 
+
+
+
+/* Evaluates the expected value of a Pauli product */
+qreal internal_calcExpectedValue(int id) {
+    
+    // get arguments from MMA link
+    int numPaulis;
+    int *pauliCodes;
+    WSGetInteger32List(stdlink, &pauliCodes, &numPaulis);
+    int *targs;
+    WSGetInteger32List(stdlink, &targs, &numPaulis);
+    
+    // ensure qureg exists
+    Qureg qureg = quregs[id];
+    if (!qureg.isCreated) {
+        local_quregNotCreatedError(id);
+        WSPutFunction(stdlink, "Abort", 0);
+        return -1; // @ hmm is this a problem?
+    }
+    
+    // backup of original state (to restore at end)
+    Qureg backup;
+    if (qureg.isDensityMatrix)
+        backup = createDensityQureg(qureg.numQubitsRepresented, env);
+    else
+        backup = createQureg(qureg.numQubitsRepresented, env);
+    cloneQureg(backup, qureg);
+    
+    // ensure QuEST core applies ops like matrix products, not unitares
+    int quregIsDensity = qureg.isDensityMatrix;
+    qureg.isDensityMatrix = 0;
+    
+    // apply each of the Paulis
+    for (int p=0; p < numPaulis; p++) {
+        switch(pauliCodes[p]) {
+            case 1: pauliX(qureg, targs[p]); break;
+            case 2: pauliY(qureg, targs[p]); break;
+            case 3: pauliZ(qureg, targs[p]); break;
+        }
+    }
+    
+    // restore density flag, in case it was changed
+    qureg.isDensityMatrix = quregIsDensity;
+    
+    // compute the expected value
+    qreal value;
+    if (quregIsDensity)
+        value = calcTotalProb(qureg); // Trace(ops qureg)
+    else
+        value = calcInnerProduct(backup, qureg).real; // <qureg|ops|qureg>
+    
+    // restore original state
+    cloneQureg(qureg, backup);
+    destroyQureg(backup, env);
+    
+    return value;
+}
+
+
+
 /**
  * Frees all quregs
  */
