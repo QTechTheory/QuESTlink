@@ -36,9 +36,9 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
                     
     DestroyQuESTEnv::usage = "DestroyQuESTEnv[link] disconnects from the QuEST link, which may be the remote Igor server, clearing some QuEST function definitions (but not those provided by the QuEST package)."
     
-    AddWeightedStates::usage = "AddWeightedStates[fac1, q1, fac2, q2, facOut, qOut] modifies qureg qOut to be (facOut qOut + fac1 q1 + fac2 q2)."
+    AddWeightedStates::usage = "AddWeightedStates[fac1, q1, fac2, q2, facOut, qOut] modifies qureg qOut to be (facOut qOut + fac1 q1 + fac2 q2). qOut can be one of q1 an q2."
 
-    SetWeightedStates::usage = "SetWeightedStates[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + fac2 q2)."
+    SetWeightedStates::usage = "SetWeightedStates[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + fac2 q2). qOut can be one of q1 an q2."
             
     DrawCircuit::usage = "
 DrawCircuit[circuit] generates a circuit diagram.
