@@ -38,7 +38,7 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     
     AddWeightedStates::usage = "AddWeightedStates[fac1, q1, fac2, q2, facOut, qOut] modifies qureg qOut to be (facOut qOut + fac1 q1 + fac2 q2)."
 
-    SetWeightedStates::usage = "AddWeightedStates[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + fac2 q2)."
+    SetWeightedStates::usage = "SetWeightedStates[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + fac2 q2)."
             
     DrawCircuit::usage = "
 DrawCircuit[circuit] generates a circuit diagram.
