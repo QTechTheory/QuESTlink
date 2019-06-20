@@ -20,6 +20,23 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+
+/*
+ * added for Mathematica frontend 
+ */
+ 
+ void addWeightedStates(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Complex facOut, Qureg out) {
+     validateMatchingQuregTypes(qureg1, qureg2, __func__);
+     validateMatchingQuregTypes(qureg1, out, __func__);
+     validateMatchingQuregDims(qureg1, qureg2,  __func__);
+     validateMatchingQuregDims(qureg1, out, __func__);
+     
+     statevec_addWeightedStates(fac1, qureg1, fac2, qureg2, facOut, out);
+     
+     qasm_recordComment(out, "Here, the register was modified to an undisclosed and possibly unphysical state.");
+ } 
     
     
 /*
@@ -143,7 +160,9 @@ void initPureState(Qureg qureg, Qureg pure) {
 }
 
 void initStateFromAmps(Qureg qureg, qreal* reals, qreal* imags) {
-    validateStateVecQureg(qureg, __func__);
+    
+    // For MMA (commented) so that density matrices can use init'd in this way 
+    //validateStateVecQureg(qureg, __func__);
     
     statevec_setAmps(qureg, 0, reals, imags, qureg.numAmpsTotal);
     

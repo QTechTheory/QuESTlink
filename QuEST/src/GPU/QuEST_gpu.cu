@@ -46,14 +46,69 @@ __forceinline__ __device__ long long int insertZeroBit(long long int number, int
 }
 
 
-/*
- * state vector and density matrix operations 
- */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+
+
+/** 
+ * added for MMA-wrapper 
+ */
+ 
+ __global__ void statevec_addWeightedStatesKernel(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Complex facOut, Qureg out) {
+         
+     long long int ampInd = blockIdx.x*blockDim.x + threadIdx.x;
+     long long int numAmpsToVisit = qureg1.numAmpsPerChunk;
+     if (ampInd >= numAmpsToVisit) return;
+     
+     qreal *vecRe1 = qureg1.stateVec.real;
+     qreal *vecIm1 = qureg1.stateVec.imag;
+     qreal *vecRe2 = qureg2.stateVec.real;
+     qreal *vecIm2 = qureg2.stateVec.imag;
+     qreal *vecReOut = out.stateVec.real;
+     qreal *vecImOut = out.stateVec.imag;
+     
+     qreal facRe1 = fac1.real; 
+     qreal facIm1 = fac1.imag;
+     qreal facRe2 = fac2.real;
+     qreal facIm2 = fac2.imag;
+     qreal facReOut = facOut.real;
+     qreal facImOut = facOut.imag;
+     
+     qreal re1,im1, re2,im2, reOut,imOut;
+     long long int index = ampInd;
+     re1 = vecRe1[index]; im1 = vecIm1[index];
+     re2 = vecRe2[index]; im2 = vecIm2[index];
+     reOut = vecReOut[index];
+     imOut = vecImOut[index];
+     
+     vecReOut[index] = (facReOut*reOut - facImOut*imOut) + (facRe1*re1 - facIm1*im1) + (facRe2*re2 - facIm2*im2);
+     vecImOut[index] = (facReOut*imOut + facImOut*reOut) + (facRe1*im1 + facIm1*re1) + (facRe2*im2 + facIm2*re2);
+ }
+ void statevec_addWeightedStates(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Complex facOut, Qureg out) {
+     
+     long long int numAmpsToVisit = qureg1.numAmpsPerChunk;
+     
+     int threadsPerCUDABlock, CUDABlocks;
+     threadsPerCUDABlock = 128;
+     CUDABlocks = ceil(numAmpsToVisit / (qreal) threadsPerCUDABlock);
+     statevec_addWeightedStatesKernel<<<CUDABlocks, threadsPerCUDABlock>>>(
+         fac1, qureg1, fac2, qureg2, facOut, out
+     );
+ }
+ 
+
+  
+  
+  
+
+
+
+
+/*
+ * state vector and density matrix operations 
+ */
 
 void statevec_setAmps(Qureg qureg, long long int startInd, qreal* reals, qreal* imags, long long int numAmps) {
     
