@@ -84,19 +84,22 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     P::usage = "
 P[val] is a projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
 P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
+    PackageExport[Kraus]
+    Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
  
     Begin["`Private`"]
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,_->-1}
         
-        (* convert MMA matrix to QuESTs ComplexMatrix2 *)
-        codifyMatrix[List[List[r0c0_, r0c1_], List[r1c0_, r1c1_]]] :=
-            {Re[r0c0],Im[r0c0],
-             Re[r0c1],Im[r0c1],
-             Re[r1c0],Im[r1c0],
-             Re[r1c1],Im[r1c1]}
+        (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
+        codifyMatrix[matr_] :=
+            Riffle[Re @ Flatten @ matr, Im @ Flatten @ matr]
+            
+        (* convert multiple MMA matrices into {#matrices, ... flattened matrices ...} *)
+        codifyMatrices[matrs_] :=
+            Prepend[Join @@ (codifyMatrix /@ matrs), Length @ matrs]
         
         (* recognising and codifying gates *)
         gatePatterns = {
@@ -110,6 +113,8 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
                 {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, {paulis}[[All,1]]/.{X->1,Y->2,Z->3}]},
         	Subscript[U, (targs:_Integer..)|{targs:_Integer..}][matr:_List] :> 
                 {getOpCode[U], {}, {targs}, codifyMatrix[matr]},
+            Subscript[Kraus, (targs:_Integer..)|{targs:_Integer..}][matrs_List] :>
+                {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
             Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}][args__] :> 
                 {getOpCode[gate], {}, {targs}, {args}},
         	Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}] :> 

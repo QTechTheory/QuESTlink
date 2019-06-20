@@ -52,6 +52,7 @@
 #define OPCODE_SWAP 14
 #define OPCODE_M 15
 #define OPCODE_P 16
+#define OPCODE_Kraus 17
 
 /**
  * Max number of quregs which can simultaneously exist
@@ -697,7 +698,68 @@ void internal_applyCircuit(int id) {
                     for (int q=0; q < numTargs; q++)
                         collapseToOutcome(qureg, targs[targInd+numTargs-q-1], (((int) params[paramInd]) >> q) & 1);
                 }
-                break;        
+                break;
+                
+            case OPCODE_Kraus:
+                ; // empty post-label statement, courtesy of weird C99 standard
+                int numKrausOps = (int) params[paramInd];
+                if (numCtrls != 0)
+                    return local_gateUnsupportedError("controlled Kraus map", id, backup, mesOutcomeCache);
+                if (numTargs != 1 && numTargs != 2)
+                    return local_gateWrongNumTargsError("Kraus map", numTargs, "1 or 2 targets", id, backup, mesOutcomeCache);
+                if ((numKrausOps < 1) ||
+                    (numTargs == 1 && numKrausOps > 4 ) ||
+                    (numTargs == 2 && numKrausOps > 16))
+                {
+                    sprintf(buffer, 
+                        "%d operators were passed to single-qubit Krauss[ops], which accepts only >0 and <=%d operators!",
+                        numKrausOps, (numTargs==1)? 4:16);
+                    return local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
+                }
+                if (numTargs == 1 && (numParams-1) != 2*2*2*numKrausOps)
+                    return local_backupQuregThenError("one-qubit Kraus expects 2-by-2 matrices!", id, backup, mesOutcomeCache);
+                if (numTargs == 2 && (numParams-1) != 4*4*2*numKrausOps)
+                    return local_backupQuregThenError("two-qubit Kraus expects 4-by-4 matrices!", id, backup, mesOutcomeCache);
+
+                if (numTargs == 1) {
+                    ComplexMatrix2 krausOps[4];
+                    int opElemInd = 1 + paramInd;
+                    for (int n=0; n < numKrausOps; n++) {
+                        krausOps[n].r0c0.real = params[opElemInd++]; krausOps[n].r0c0.imag = params[opElemInd++];
+                        krausOps[n].r0c1.real = params[opElemInd++]; krausOps[n].r0c1.imag = params[opElemInd++];
+                        krausOps[n].r1c0.real = params[opElemInd++]; krausOps[n].r1c0.imag = params[opElemInd++];
+                        krausOps[n].r1c1.real = params[opElemInd++]; krausOps[n].r1c1.imag = params[opElemInd++];
+                    }
+                    applyOneQubitKrausMap(qureg, targs[targInd], krausOps, numKrausOps);
+                } 
+                else if (numTargs == 2) {
+                    ComplexMatrix4 krausOps[16];
+                    int opElemInd = 1 + paramInd;
+                    for (int n=0; n < numKrausOps; n++) {
+                        krausOps[n].r0c0.real = params[opElemInd++]; krausOps[n].r0c0.imag = params[opElemInd++];
+                        krausOps[n].r0c1.real = params[opElemInd++]; krausOps[n].r0c1.imag = params[opElemInd++];
+                        krausOps[n].r0c2.real = params[opElemInd++]; krausOps[n].r0c2.imag = params[opElemInd++];
+                        krausOps[n].r0c3.real = params[opElemInd++]; krausOps[n].r0c3.imag = params[opElemInd++];
+
+                        krausOps[n].r1c0.real = params[opElemInd++]; krausOps[n].r1c0.imag = params[opElemInd++];
+                        krausOps[n].r1c1.real = params[opElemInd++]; krausOps[n].r1c1.imag = params[opElemInd++];
+                        krausOps[n].r1c2.real = params[opElemInd++]; krausOps[n].r1c2.imag = params[opElemInd++];
+                        krausOps[n].r1c3.real = params[opElemInd++]; krausOps[n].r1c3.imag = params[opElemInd++];
+                        
+                        krausOps[n].r2c0.real = params[opElemInd++]; krausOps[n].r2c0.imag = params[opElemInd++];
+                        krausOps[n].r2c1.real = params[opElemInd++]; krausOps[n].r2c1.imag = params[opElemInd++];
+                        krausOps[n].r2c2.real = params[opElemInd++]; krausOps[n].r2c2.imag = params[opElemInd++];
+                        krausOps[n].r2c3.real = params[opElemInd++]; krausOps[n].r2c3.imag = params[opElemInd++];
+                        
+                        krausOps[n].r3c0.real = params[opElemInd++]; krausOps[n].r3c0.imag = params[opElemInd++];
+                        krausOps[n].r3c1.real = params[opElemInd++]; krausOps[n].r3c1.imag = params[opElemInd++];
+                        krausOps[n].r3c2.real = params[opElemInd++]; krausOps[n].r3c2.imag = params[opElemInd++];
+                        krausOps[n].r3c3.real = params[opElemInd++]; krausOps[n].r3c3.imag = params[opElemInd++];
+                    }
+                    
+                    applyTwoQubitKrausMap(qureg, targs[targInd], targs[targInd+1], krausOps, numKrausOps);
+                } 
+                break;
                 
             default:            
                 return local_backupQuregThenError(
