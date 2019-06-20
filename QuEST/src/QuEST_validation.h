@@ -29,9 +29,15 @@ void validateMultiControls(Qureg qureg, int* controlQubits, const int numControl
 
 void validateMultiControlsTarget(Qureg qureg, int* controlQubits, const int numControlQubits, const int targetQubit, const char* caller);
 
+void validateMultiControlsMultiTargets(Qureg qureg, int* controlQubits, const int numControlQubits, int* targetQubits, const int numTargetQubits, const char* caller);
+
 void validateControlState(int* controlState, const int numControlQubits, const char* caller);
 
-void validateUnitaryMatrix(ComplexMatrix2 u, const char* caller);
+void validateOneQubitUnitaryMatrix(ComplexMatrix2 u, const char* caller);
+
+void validateTwoQubitUnitaryMatrix(Qureg qureg, ComplexMatrix4 u, const char* caller);
+
+void validateMultiQubitUnitaryMatrix(Qureg qureg, ComplexMatrixN u, int numTargs, const char* caller);
 
 void validateUnitaryComplexPair(Complex alpha, Complex beta, const char* caller);
 
@@ -71,7 +77,15 @@ void validateOneQubitDampingProb(qreal prob, const char* caller);
 
 void validateOneQubitPauliProbs(qreal probX, qreal probY, qreal probZ, const char* caller);
 
-void validatePauliCodes(int* pauliCodes, int numPauliCodes, const char* caller);
+void validatePauliCodes(enum pauliOpType* pauliCodes, int numPauliCodes, const char* caller);
+
+void validateNumSumTerms(int numTerms, const char* caller);
+
+void validateMatrixInit(ComplexMatrixN matr, const char* caller);
+
+void validateOneQubitKrausMap(Qureg qureg, ComplexMatrix2* ops, int numOps, const char* caller);
+
+void validateTwoQubitKrausMap(Qureg qureg, ComplexMatrix4* ops, int numOps, const char* caller);
 
 # ifdef __cplusplus
 }

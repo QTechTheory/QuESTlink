@@ -50,9 +50,15 @@ void densmatr_twoQubitDepolarise(Qureg qureg, int qubit1, int qubit2, qreal depo
     densmatr_twoQubitDepolariseLocal(qureg, qubit1, qubit2, delta, gamma);
 }
 
-
 qreal densmatr_calcPurity(Qureg qureg) {
     return densmatr_calcPurityLocal(qureg);
+}
+
+qreal densmatr_calcHilbertSchmidtDistance(Qureg a, Qureg b) {
+    
+    qreal distSquared = densmatr_calcHilbertSchmidtDistanceSquaredLocal(a, b);
+    qreal dist = sqrt(distSquared);
+    return dist;
 }
 
 qreal densmatr_calcFidelity(Qureg qureg, Qureg pureState) {
@@ -289,4 +295,19 @@ void seedQuESTDefault(){
     unsigned long int key[2];
     getQuESTDefaultSeedKey(key);
     init_by_array(key, 2);
+}
+
+void statevec_multiControlledTwoQubitUnitary(Qureg qureg, long long int ctrlMask, const int q1, const int q2, ComplexMatrix4 u)
+{
+    statevec_multiControlledTwoQubitUnitaryLocal(qureg, ctrlMask, q1, q2, u);
+}
+
+void statevec_multiControlledMultiQubitUnitary(Qureg qureg, long long int ctrlMask, int* targs, const int numTargs, ComplexMatrixN u)
+{
+    statevec_multiControlledMultiQubitUnitaryLocal(qureg, ctrlMask, targs, numTargs, u);
+}
+
+void statevec_swapQubitAmps(Qureg qureg, int qb1, int qb2) 
+{
+    statevec_swapQubitAmpsLocal(qureg, qb1, qb2);
 }

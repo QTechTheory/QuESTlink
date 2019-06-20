@@ -38,7 +38,9 @@ qreal getVectorMagnitude(Vector vec);
 
 Complex getConjugateScalar(Complex scalar);
 
-ComplexMatrix2 getConjugateMatrix(ComplexMatrix2 matr);
+ComplexMatrix2 getConjugateMatrix2(ComplexMatrix2 matr);
+
+ComplexMatrix4 getConjugateMatrix4(ComplexMatrix4 matr);
 
 void ensureIndsIncrease(int* ind1, int* ind2);
 
@@ -49,6 +51,8 @@ void getZYZRotAnglesFromComplexPair(Complex alpha, Complex beta, qreal* rz2, qre
 void getComplexPairAndPhaseFromUnitary(ComplexMatrix2 u, Complex* alpha, Complex* beta, qreal* globalPhase);
 
 void shiftIndices(int* indices, int numIndices, int shift);
+
+void conjugateMatrixN(ComplexMatrixN u);
 
 void getQuESTDefaultSeedKey(unsigned long int *key);
 
@@ -69,6 +73,8 @@ qreal densmatr_calcPurity(Qureg qureg);
 
 qreal densmatr_calcFidelity(Qureg qureg, Qureg pureState);
 
+qreal densmatr_calcHilbertSchmidtDistance(Qureg a, Qureg b);
+
 qreal densmatr_calcProbOfOutcome(Qureg qureg, const int measureQubit, int outcome);
 
 void densmatr_collapseToKnownProbOutcome(Qureg qureg, const int measureQubit, int outcome, qreal outcomeProb);
@@ -88,8 +94,12 @@ void densmatr_twoQubitDepolarise(Qureg qureg, int qubit1, int qubit2, qreal depo
 void densmatr_oneQubitPauliError(Qureg qureg, int qubit, qreal pX, qreal pY, qreal pZ);
 
 void densmatr_addDensityMatrix(Qureg combineQureg, qreal otherProb, Qureg otherQureg);
+
+void densmatr_applyKrausMap(Qureg qureg, int target, ComplexMatrix2 *ops, int numOps);
+
+void densmatr_applyTwoQubitKrausMap(Qureg qureg, int target1, int target2, ComplexMatrix4 *ops, int numOps);    
     
-    
+
 /* 
  * operations upon state vectors
  */
@@ -162,9 +172,25 @@ qreal statevec_calcFidelity(Qureg qureg, Qureg pureState);
 
 Complex statevec_calcInnerProduct(Qureg bra, Qureg ket);
 
+qreal statevec_calcExpecValProd(Qureg qureg, int* targetQubits, enum pauliOpType* pauliCodes, int numTargets, Qureg workspace);
+
+qreal statevec_calcExpecValSum(Qureg qureg, enum pauliOpType* allCodes, qreal* termCoeffs, int numSumTerms, Qureg workspace);
+
 void statevec_compactUnitary(Qureg qureg, const int targetQubit, Complex alpha, Complex beta);
 
 void statevec_unitary(Qureg qureg, const int targetQubit, ComplexMatrix2 u);
+
+void statevec_twoQubitUnitary(Qureg qureg, const int targetQubit1, const int targetQubit2, ComplexMatrix4 u);
+
+void statevec_controlledTwoQubitUnitary(Qureg qureg, const int controlQubit, const int targetQubit1, const int targetQubit2, ComplexMatrix4 u);
+
+void statevec_multiControlledTwoQubitUnitary(Qureg qureg, long long int ctrlMask, const int targetQubit1, const int targetQubit2, ComplexMatrix4 u);
+
+void statevec_multiQubitUnitary(Qureg qureg, int* targets, const int numTargets, ComplexMatrixN u);
+
+void statevec_controlledMultiQubitUnitary(Qureg qureg, int ctrl, int* targets, const int numTargets, ComplexMatrixN u);
+
+void statevec_multiControlledMultiQubitUnitary(Qureg qureg, long long int ctrlMask, int* targs, const int numTargs, ComplexMatrixN u);
 
 void statevec_rotateX(Qureg qureg, const int rotQubit, qreal angle);
 
@@ -202,7 +228,7 @@ void statevec_collapseToKnownProbOutcome(Qureg qureg, const int measureQubit, in
 
 int statevec_measureWithStats(Qureg qureg, int measureQubit, qreal *outcomeProb);
 
-void statevec_swapGate(Qureg qureg, int qb1, int qb2);
+void statevec_swapQubitAmps(Qureg qureg, int qb1, int qb2);
 
 void statevec_sqrtSwapGate(Qureg qureg, int qb1, int qb2);
 
@@ -210,7 +236,7 @@ void statevec_sqrtSwapGateConj(Qureg qureg, int qb1, int qb2);
 
 void statevec_multiRotateZ(Qureg qureg, long long int mask, qreal angle);
 
-void statevec_multiRotatePauli(Qureg qureg, int* targetQubits, int* targetPaulis, int numTargets, qreal angle, int applyConj);
+void statevec_multiRotatePauli(Qureg qureg, int* targetQubits, enum pauliOpType* targetPaulis, int numTargets, qreal angle, int applyConj);
 
 # ifdef __cplusplus
 }

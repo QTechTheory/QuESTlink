@@ -71,16 +71,6 @@ void statevec_addWeightedStates(Complex fac1, Qureg qureg1, Complex fac2, Qureg 
     }
 }
 
-/** Get the value of the bit at a particular index in a number.
-  SCB edit: new definition of extractBit is much faster ***
- * @param[in] locationOfBitFromRight location of bit in theEncodedNumber
- * @param[in] theEncodedNumber number to search
- * @return the value of the bit in theEncodedNumber
- */
-static int extractBit (const int locationOfBitFromRight, const long long int theEncodedNumber)
-{
-    return (theEncodedNumber & ( 1LL << locationOfBitFromRight )) >> locationOfBitFromRight;
-}
 
 void densmatr_oneQubitDegradeOffDiagonal(Qureg qureg, const int targetQubit, qreal retain){
     const long long int numTasks = qureg.numAmpsPerChunk;
@@ -961,6 +951,41 @@ void densmatr_addDensityMatrix(Qureg combineQureg, qreal otherProb, Qureg otherQ
     }
 }
 
+/** computes Tr((a-b) conjTrans(a-b)) = sum of abs values of (a-b) */
+qreal densmatr_calcHilbertSchmidtDistanceSquaredLocal(Qureg a, Qureg b) {
+    
+    long long int index;
+    long long int numAmps = a.numAmpsPerChunk;
+        
+    qreal *aRe = a.stateVec.real;
+    qreal *aIm = b.stateVec.imag;
+    qreal *bRe = a.stateVec.real;
+    qreal *bIm = b.stateVec.imag;
+    
+    qreal trace = 0;
+    qreal difRe, difIm;
+    
+# ifdef _OPENMP
+# pragma omp parallel \
+    shared    (aRe,aIm, bRe,bIm, numAmps) \
+    private   (index,difRe,difIm) \
+    reduction ( +:trace )
+# endif 
+    {
+# ifdef _OPENMP
+# pragma omp for schedule  (static)
+# endif
+        for (index=0LL; index<numAmps; index++) {
+                        
+            difRe = aRe[index] - bRe[index];
+            difIm = aIm[index] - bIm[index];
+            trace += difRe*difRe + difIm*difIm;
+        }
+    }
+    
+    return trace;
+}
+
 /** computes a few dens-columns-worth of (vec^*T) dens * vec */
 qreal densmatr_calcFidelityLocal(Qureg qureg, Qureg pureState) {
         
@@ -1675,6 +1700,177 @@ void statevec_compactUnitaryLocal (Qureg qureg, const int targetQubit, Complex a
     }
 
 } 
+
+void statevec_multiControlledTwoQubitUnitaryLocal(Qureg qureg, long long int ctrlMask, const int q1, const int q2, ComplexMatrix4 u) {
+
+    // can't use qureg.stateVec as a private OMP var
+    qreal *reVec = qureg.stateVec.real;
+    qreal *imVec = qureg.stateVec.imag;
+    
+    long long int numTasks = qureg.numAmpsPerChunk >> 2; // each iteration updates 4 amplitudes
+    long long int thisTask;
+    long long int ind00, ind01, ind10, ind11;
+    qreal re00, re01, re10, re11;
+    qreal im00, im01, im10, im11;
+    
+# ifdef _OPENMP
+# pragma omp parallel \
+    default  (none) \
+    shared   (reVec,imVec,numTasks,ctrlMask,u) \
+    private  (thisTask, ind00,ind01,ind10,ind11, re00,re01,re10,re11, im00,im01,im10,im11) 
+# endif
+    {
+# ifdef _OPENMP
+# pragma omp for schedule (static)
+# endif
+        for (thisTask=0; thisTask<numTasks; thisTask++) {
+            
+            // determine ind00 of |..0..0..>
+            ind00 = insertZeroBit(insertZeroBit(thisTask, q1), q2);
+            
+            // skip amplitude if controls aren't in 1 state (overloaded for speed)
+            if (ctrlMask && ((ctrlMask&ind00) != ctrlMask))
+                continue;
+            
+            // inds of |..0..1..>, |..1..0..> and |..1..1..>
+            ind01 = flipBit(ind00, q1);
+            ind10 = flipBit(ind00, q2);
+            ind11 = flipBit(ind01, q2);
+
+            // extract statevec amplitudes 
+            re00 = reVec[ind00]; im00 = imVec[ind00];
+            re01 = reVec[ind01]; im01 = imVec[ind01];
+            re10 = reVec[ind10]; im10 = imVec[ind10];
+            re11 = reVec[ind11]; im11 = imVec[ind11];
+
+            // apply u * {amp00, amp01, amp10, amp11}
+            reVec[ind00] = 
+                u.r0c0.real*re00 - u.r0c0.imag*im00 +
+                u.r0c1.real*re01 - u.r0c1.imag*im01 +
+                u.r0c2.real*re10 - u.r0c2.imag*im10 +
+                u.r0c3.real*re11 - u.r0c3.imag*im11;
+            imVec[ind00] =
+                u.r0c0.imag*re00 + u.r0c0.real*im00 +
+                u.r0c1.imag*re01 + u.r0c1.real*im01 +
+                u.r0c2.imag*re10 + u.r0c2.real*im10 +
+                u.r0c3.imag*re11 + u.r0c3.real*im11;
+                
+            reVec[ind01] = 
+                u.r1c0.real*re00 - u.r1c0.imag*im00 +
+                u.r1c1.real*re01 - u.r1c1.imag*im01 +
+                u.r1c2.real*re10 - u.r1c2.imag*im10 +
+                u.r1c3.real*re11 - u.r1c3.imag*im11;
+            imVec[ind01] =
+                u.r1c0.imag*re00 + u.r1c0.real*im00 +
+                u.r1c1.imag*re01 + u.r1c1.real*im01 +
+                u.r1c2.imag*re10 + u.r1c2.real*im10 +
+                u.r1c3.imag*re11 + u.r1c3.real*im11;
+                
+            reVec[ind10] = 
+                u.r2c0.real*re00 - u.r2c0.imag*im00 +
+                u.r2c1.real*re01 - u.r2c1.imag*im01 +
+                u.r2c2.real*re10 - u.r2c2.imag*im10 +
+                u.r2c3.real*re11 - u.r2c3.imag*im11;
+            imVec[ind10] =
+                u.r2c0.imag*re00 + u.r2c0.real*im00 +
+                u.r2c1.imag*re01 + u.r2c1.real*im01 +
+                u.r2c2.imag*re10 + u.r2c2.real*im10 +
+                u.r2c3.imag*re11 + u.r2c3.real*im11;    
+                
+            reVec[ind11] = 
+                u.r3c0.real*re00 - u.r3c0.imag*im00 +
+                u.r3c1.real*re01 - u.r3c1.imag*im01 +
+                u.r3c2.real*re10 - u.r3c2.imag*im10 +
+                u.r3c3.real*re11 - u.r3c3.imag*im11;
+            imVec[ind11] =
+                u.r3c0.imag*re00 + u.r3c0.real*im00 +
+                u.r3c1.imag*re01 + u.r3c1.real*im01 +
+                u.r3c2.imag*re10 + u.r3c2.real*im10 +
+                u.r3c3.imag*re11 + u.r3c3.real*im11;    
+        }
+    }
+}
+
+void statevec_multiControlledMultiQubitUnitaryLocal(Qureg qureg, long long int ctrlMask, int* targs, const int numTargs, ComplexMatrixN u)
+{
+    // can't use qureg.stateVec as a private OMP var
+    qreal *reVec = qureg.stateVec.real;
+    qreal *imVec = qureg.stateVec.imag;
+    
+    long long int numTasks = qureg.numAmpsPerChunk >> numTargs;  // kernel called on every 1 in 2^numTargs amplitudes
+    long long int numTargAmps = u.numRows;  // num amps to be modified by each task
+    
+    // the global (between all nodes) index of this node's start index
+    long long int globalIndStart = qureg.chunkId*qureg.numAmpsPerChunk; 
+    
+    long long int thisTask;
+    long long int thisInd00; // this thread's index of |..0..0..> (target qubits = 0) 
+    long long int thisGlobalInd00; // the global (between all nodes) index of this thread's |..0..0..> state
+    long long int ind;   // each thread's iteration of amplitudes to modify
+    int i, t, r, c, g;  // each thread's iteration of amps and targets 
+    qreal reElem, imElem;  // each thread's iteration of u elements
+    
+    // each thread/task will record and modify numTargAmps amplitudes, but do so in global arrays
+    // (of course, tasks eliminated by the ctrlMask won't edit their allocation)
+    // strtucture: [thread0..., thread1..., ]
+    long long int ampInds[qureg.numAmpsPerChunk];  // = numTasks*numTargAmps
+    qreal reAmps[qureg.numAmpsPerChunk];
+    qreal imAmps[qureg.numAmpsPerChunk];
+    
+# ifdef _OPENMP
+# pragma omp parallel \
+    default  (none) \
+    shared   (reVec,imVec, numTasks,numTargAmps,globalIndStart, ctrlMask,targs,u, ampInds,reAmps,imAmps) \
+    private  (thisTask,thisInd00,thisGlobalInd00,ind,i,t,r,c,g,reElem,imElem) 
+# endif
+    {
+# ifdef _OPENMP
+# pragma omp for schedule (static)
+# endif
+        for (thisTask=0; thisTask<numTasks; thisTask++) {
+            
+            // find this task's start index (where all targs are 0)
+            thisInd00 = thisTask;
+            for (t=0; t < numTargs; t++)
+                thisInd00 = insertZeroBit(thisInd00, targs[t]);
+                
+            // this task only modifies amplitudes if control qubits are 1 for this state
+            thisGlobalInd00 = thisInd00 + globalIndStart;
+            if (ctrlMask && ((ctrlMask & thisGlobalInd00) != ctrlMask))
+                continue;
+                
+            // determine the indices and record values of this tasks's target amps
+            for (i=0; i < numTargAmps; i++) {
+                
+                // get statevec index of current target qubit assignment
+                ind = thisInd00;
+                for (t=0; t < numTargs; t++)
+                    if (extractBit(t, i))
+                        ind = flipBit(ind, targs[t]);
+                
+                // update this tasks's allocation of the global arrays
+                g = thisTask*numTargAmps + i; 
+                ampInds[g] = ind;
+                reAmps [g] = reVec[ind];
+                imAmps [g] = imVec[ind];
+            }
+            
+            // modify this tasks's target amplitudes
+            for (r=0; r < numTargAmps; r++) {
+                ind = ampInds[thisTask*numTargAmps + r];
+                reVec[ind] = 0;
+                imVec[ind] = 0;
+                for (c=0; c < numTargAmps; c++) {
+                    g = thisTask*numTargAmps + c;
+                    reElem = u.elems[r][c].real;
+                    imElem = u.elems[r][c].imag;
+                    reVec[ind] += reAmps[g]*reElem - imAmps[g]*imElem;
+                    imVec[ind] += reAmps[g]*imElem + imAmps[g]*reElem;
+                }
+            }
+        }
+    }
+}
 
 void statevec_unitaryLocal(Qureg qureg, const int targetQubit, ComplexMatrix2 u)
 {
@@ -3277,4 +3473,92 @@ void statevec_collapseToOutcomeDistributedSetZero(Qureg qureg)
     }
 }
 
+/** It is ensured that all amplitudes needing to be swapped are on this node.
+ * This means that amplitudes for |a 0..0..> to |a 1..1..> all exist on this node 
+ * and each node has a different bit-string prefix "a". The prefix 'a' (and ergo,
+ * the chunkID) don't enter the calculations for the offset of |a 0..1..> and 
+ * |a 1..0..> from |a 0..0..> and ergo are not featured below.
+ */
+void statevec_swapQubitAmpsLocal(Qureg qureg, int qb1, int qb2) {
+
+    // can't use qureg.stateVec as a private OMP var
+    qreal *reVec = qureg.stateVec.real;
+    qreal *imVec = qureg.stateVec.imag;
+    
+    long long int numTasks = qureg.numAmpsPerChunk >> 2; // each iteration updates 2 amps and skips 2 amps
+    long long int thisTask;
+    long long int ind00, ind01, ind10;
+    qreal re01, re10;
+    qreal im01, im10;
+    
+# ifdef _OPENMP
+# pragma omp parallel \
+    default  (none) \
+    shared   (reVec,imVec,numTasks,qb1,qb2) \
+    private  (thisTask, ind00,ind01,ind10, re01,re10, im01,im10) 
+# endif
+    {
+# ifdef _OPENMP
+# pragma omp for schedule (static)
+# endif
+        for (thisTask=0; thisTask<numTasks; thisTask++) {    
+            // determine ind00 of |..0..0..>, |..0..1..> and |..1..0..>
+            ind00 = insertZeroBit(insertZeroBit(thisTask, qb1), qb2);
+            ind01 = flipBit(ind00, qb1);
+            ind10 = flipBit(ind00, qb2);
+
+            // extract statevec amplitudes 
+            re01 = reVec[ind01]; im01 = imVec[ind01];
+            re10 = reVec[ind10]; im10 = imVec[ind10];
+
+            // swap 01 and 10 amps
+            reVec[ind01] = re10; reVec[ind10] = re01;
+            imVec[ind01] = im10; imVec[ind10] = im01;
+        }
+    }
+}
+
+/** qureg.pairStateVec contains the entire set of amplitudes of the paired node
+ * which includes the set of all amplitudes which need to be swapped between
+ * |..0..1..> and |..1..0..>
+ */
+void statevec_swapQubitAmpsDistributed(Qureg qureg, int pairRank, int qb1, int qb2) {
+    
+    // can't use qureg.stateVec as a private OMP var
+    qreal *reVec = qureg.stateVec.real;
+    qreal *imVec = qureg.stateVec.imag;
+    qreal *rePairVec = qureg.pairStateVec.real;
+    qreal *imPairVec = qureg.pairStateVec.imag;
+    
+    long long int numLocalAmps = qureg.numAmpsPerChunk;
+    long long int globalStartInd = qureg.chunkId * numLocalAmps;
+    long long int pairGlobalStartInd = pairRank * numLocalAmps;
+
+    long long int localInd, globalInd;
+    long long int pairLocalInd, pairGlobalInd;
+    
+# ifdef _OPENMP
+# pragma omp parallel \
+    default  (none) \
+    shared   (reVec,imVec,rePairVec,imPairVec,numLocalAmps,globalStartInd,pairGlobalStartInd,qb1,qb2) \
+    private  (localInd,globalInd, pairLocalInd,pairGlobalInd) 
+# endif
+    {
+# ifdef _OPENMP
+# pragma omp for schedule (static)
+# endif
+        for (localInd=0; localInd < numLocalAmps; localInd++) { 
+            
+            globalInd = globalStartInd + localInd;
+            if (isOddParity(globalInd, qb1, qb2)) {
+                
+                pairGlobalInd = flipBit(flipBit(globalInd, qb1), qb2);
+                pairLocalInd = pairGlobalInd - pairGlobalStartInd;
+                
+                reVec[localInd] = rePairVec[pairLocalInd];
+                imVec[localInd] = imPairVec[pairLocalInd];
+            }
+        }
+    }
+}
 
