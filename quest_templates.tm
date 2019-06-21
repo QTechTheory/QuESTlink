@@ -36,7 +36,7 @@
 :ArgumentTypes:  { Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`InitZeroState::usage = "InitZeroState[qureg] returns a state in |0>."
+:Evaluate: QuEST`InitZeroState::usage = "InitZeroState[qureg] sets the qureg to state |0> (and returns the qureg id)."
 
 :Begin:
 :Function:       wrapper_initPlusState
@@ -45,7 +45,7 @@
 :ArgumentTypes:  { Integer  }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`InitPlusState::usage = "InitPlusState[qureg] returns a state in |+>."
+:Evaluate: QuEST`InitPlusState::usage = "InitPlusState[qureg] sets the qureg to state |+> (and returns the qureg id)."
 
 :Begin:
 :Function:       wrapper_initClassicalState
@@ -54,7 +54,7 @@
 :ArgumentTypes:  { Integer, Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`InitClassicalState::usage = "InitClassicalState[qureg, ind] returns a state in basis state |ind>."
+:Evaluate: QuEST`InitClassicalState::usage = "InitClassicalState[qureg, ind] sets the qureg to basis state |ind> (and returns the qureg id)."
 
 :Begin:
 :Function:       wrapper_initPureState
@@ -63,7 +63,7 @@
 :ArgumentTypes:  { Integer, Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`InitPureState::usage = "InitPureState[targetQureg, pureQureg] puts targetQureg (statevec or density matrix) into the pureQureg (statevec) state."
+:Evaluate: QuEST`InitPureState::usage = "InitPureState[targetQureg, pureQureg] puts targetQureg (statevec or density matrix) into the pureQureg (statevec) state (and returns the targetQureg id)."
 
 :Begin:
 :Function:       wrapper_initStateFromAmps
@@ -72,7 +72,7 @@
 :ArgumentTypes:  { Integer, RealList, RealList }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`InitStateFromAmps::usage = "InitStateFromAmps[qureg, reals, imags] initialises the given qureg to have the supplied amplitudes."
+:Evaluate: QuEST`InitStateFromAmps::usage = "InitStateFromAmps[qureg, reals, imags] initialises the given qureg to have the supplied amplitudes (and returns the qureg id)."
 
 :Begin:
 :Function:       wrapper_cloneQureg

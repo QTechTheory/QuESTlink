@@ -12,8 +12,7 @@ BeginPackage["QuEST`"]
      * QuEST`Private`ApplyCircuitInternal. 
      *)
     
-    ApplyCircuit::usage = "
-ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit. Returns any measurement outcomes.
+    ApplyCircuit::usage = "ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
 ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg."
     
     Circuit::usage = "Circuit[gates] converts a product of gates into a left-to-right circuit, preserving order."
@@ -39,9 +38,8 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     AddWeightedStates::usage = "AddWeightedStates[fac1, q1, fac2, q2, facOut, qOut] modifies qureg qOut to be (facOut qOut + fac1 q1 + fac2 q2). qOut can be one of q1 an q2."
 
     SetWeightedStates::usage = "SetWeightedStates[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + fac2 q2). qOut can be one of q1 an q2."
-            
-    DrawCircuit::usage = "
-DrawCircuit[circuit] generates a circuit diagram.
+
+    DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram.
 DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagram."
             
     (* 
@@ -63,13 +61,13 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     PackageExport[Rz]
     Rz::usage = "Rz[theta] is a rotation of theta around the z-axis of the Bloch sphere. Multiple targets enacts Exp[-i \[Theta]/2 Za ... Zc]." 
     PackageExport[R]
-    R::usage = "R[theta, paulis] is the unitary Exp[-i \[Theta]/2 paulis]."   
+    R::usage = "R[theta, paulis]W is the unitary Exp[-i \[Theta]/2 paulis]."   
     PackageExport[S]
     S::usage = "S is the S gate, a.k.a. PI/2 gate."
     PackageExport[T]
     T::usage = "T is the T gate, a.k.a PI/4 gate."
     PackageExport[U]
-    U::usage = "U[matrix] is a general single-qubit unitary gate, enacting the given 2x2 matrix."
+    U::usage = "U[matrix] is a general 1 or 2 qubit unitary gate, enacting the given 2x2 or 4x4 matrix."
     PackageExport[Deph]
     Deph::usage = "Deph[prob] is a 1 or 2 qubit dephasing with probability prob of error."
     PackageExport[Depol]
@@ -81,8 +79,7 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     PackageExport[M]
     M::usage = "M is a desctructive measurement gate which measures the indicated qubits in the Z basis."
     PackageExport[P]
-    P::usage = "
-P[val] is a projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
+    P::usage = "P[val] is a projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
 P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
     PackageExport[Kraus]
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
