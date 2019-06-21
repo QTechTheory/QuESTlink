@@ -252,6 +252,24 @@ void wrapper_calcInnerProduct(int id1, int id2) {
     WSPutReal64(stdlink, res.real);
     WSPutReal64(stdlink, res.imag);
 }
+qreal wrapper_calcPurity(int id) {
+    if (!quregs[id].isCreated) {
+        local_quregNotCreatedError(id);
+        return -1;
+    }
+    return calcPurity(quregs[id]);
+}
+qreal wrapper_calcHilbertSchmidtDistance(int id1, int id2) {
+    if (!quregs[id1].isCreated) {
+        local_quregNotCreatedError(id1);
+        return -1;
+    }
+    if (!quregs[id2].isCreated) {
+        local_quregNotCreatedError(id2);
+        return -1;
+    }
+    return calcHilbertSchmidtDistance(quregs[id1], quregs[id2]);
+}
 
 
 /* other modifications */

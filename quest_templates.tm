@@ -161,6 +161,24 @@
 :End:
 :Evaluate: QuEST`CalcInnerProduct::usage = "CalcInnerProduct[qureg1, qureg2] returns the complex inner product between the given states."
 
+:Begin:
+:Function:       wrapper_calcPurity
+:Pattern:        QuEST`CalcPurity[qureg_Integer]
+:Arguments:      { qureg }
+:ArgumentTypes:  { Integer }
+:ReturnType:     Real
+:End:
+:Evaluate: QuEST`CalcPurity::usage = "CalcPurity[qureg] returns the purity of the given density matrix."
+
+:Begin:
+:Function:       wrapper_calcHilbertSchmidtDistance
+:Pattern:        QuEST`CalcHilbertSchmidtDistance[qureg1_Integer, qureg2_Integer]
+:Arguments:      { qureg1, qureg2 }
+:ArgumentTypes:  { Integer, Integer }
+:ReturnType:     Real
+:End:
+:Evaluate: QuEST`CalcHilbertSchmidtDistance::usage = "CalcHilbertSchmidtDistance[qureg1, qureg2] returns the Hilbert-Schmidt distance (Frobenius norm of the diference) between the given density matrices."
+
 
 
 
