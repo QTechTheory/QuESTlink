@@ -579,19 +579,47 @@ void internal_applyCircuit(int id) {
                 break;
             
             case OPCODE_U : 
-                if (numParams != 8)
-                    return local_gateWrongNumParamsError("U", numParams, 8, id, backup, mesOutcomeCache);
-                if (numTargs != 1)
-                    return local_gateWrongNumTargsError("U", numTargs, "1 target", id, backup, mesOutcomeCache);
-                ComplexMatrix2 u = {
-                    .r0c0={.real=params[paramInd+0], .imag=params[paramInd+1]},
-                    .r0c1={.real=params[paramInd+2], .imag=params[paramInd+3]},
-                    .r1c0={.real=params[paramInd+4], .imag=params[paramInd+5]},
-                    .r1c1={.real=params[paramInd+6], .imag=params[paramInd+7]}};
-                if (numCtrls == 0)
-                    unitary(qureg, targs[targInd], u);
-                else
-                    multiControlledUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], u);
+                if (numTargs == 1 && numParams != 2*2*2)
+                    return local_backupQuregThenError("single qubit U accepts only 2x2 matrices", id, backup, mesOutcomeCache);
+                if (numTargs == 2 && numParams != 4*4*2)
+                    return local_backupQuregThenError("two qubit U accepts only 4x4 matrices", id, backup, mesOutcomeCache);
+                if (numTargs != 1 && numTargs != 2)
+                    return local_gateWrongNumTargsError("U", numTargs, "1 or 2 targets", id, backup, mesOutcomeCache);
+                
+                if (numTargs == 1) {
+                    ComplexMatrix2 u = {
+                        .r0c0={.real=params[paramInd+0], .imag=params[paramInd+1]},
+                        .r0c1={.real=params[paramInd+2], .imag=params[paramInd+3]},
+                        .r1c0={.real=params[paramInd+4], .imag=params[paramInd+5]},
+                        .r1c1={.real=params[paramInd+6], .imag=params[paramInd+7]}};
+                    if (numCtrls == 0)
+                        unitary(qureg, targs[targInd], u);
+                    else
+                        multiControlledUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], u);
+                }
+                else if (numTargs == 2) {
+                    ComplexMatrix4 u = {
+                        .r0c0={.real=params[paramInd+0], .imag=params[paramInd+1]},
+                        .r0c1={.real=params[paramInd+2], .imag=params[paramInd+3]},
+                        .r0c2={.real=params[paramInd+4], .imag=params[paramInd+5]},
+                        .r0c3={.real=params[paramInd+6], .imag=params[paramInd+7]},
+                        .r1c0={.real=params[paramInd+8], .imag=params[paramInd+9]},
+                        .r1c1={.real=params[paramInd+10], .imag=params[paramInd+11]},
+                        .r1c2={.real=params[paramInd+12], .imag=params[paramInd+13]},
+                        .r1c3={.real=params[paramInd+14], .imag=params[paramInd+15]},
+                        .r2c0={.real=params[paramInd+16], .imag=params[paramInd+17]},
+                        .r2c1={.real=params[paramInd+18], .imag=params[paramInd+19]},
+                        .r2c2={.real=params[paramInd+20], .imag=params[paramInd+21]},
+                        .r2c3={.real=params[paramInd+22], .imag=params[paramInd+23]},
+                        .r3c0={.real=params[paramInd+24], .imag=params[paramInd+25]},
+                        .r3c1={.real=params[paramInd+26], .imag=params[paramInd+27]},
+                        .r3c2={.real=params[paramInd+28], .imag=params[paramInd+29]},
+                        .r3c3={.real=params[paramInd+30], .imag=params[paramInd+31]}};
+                    if (numCtrls == 0)
+                        twoQubitUnitary(qureg, targs[targInd], targs[targInd+1], u);
+                    else
+                        multiControlledTwoQubitUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], targs[targInd+1], u);
+                }
                 break;
                 
             case OPCODE_Deph :
