@@ -337,7 +337,7 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         	drawGate[If[symb===Deph,\[Phi],\[CapitalDelta]], {}, {targ1,targ2}, col]}
         drawGate[label_Symbol, {}, {targ1_,targ2_}/;Abs[targ2-targ1]===1, col_] := {
         	drawDoubleBox[Min[targ1,targ2], col],
-        	Text[SymbolName@label, {col+.5,targ1+.5+.5}]}
+        	Text[SymbolName@label, {col+.5,Min[targ1,targ2]+.5+.5}]}
         drawGate[label_Symbol, {}, {targ1_,targ2_}, col_] := 
         	With[{qb = getFixedThenBotTopSwappedQubits[{targ1,targ2}]}, {
         		drawSpecialSwap[qb[[3]], qb[[2]], col],
