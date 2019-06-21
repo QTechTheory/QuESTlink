@@ -318,6 +318,8 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
             EdgeForm[Dashed], drawGate[\[CapitalDelta], {}, {targ}, col]}
         drawGate[Damp, {}, {targ_}, col_] := {
             EdgeForm[Dashed], drawGate[\[Gamma], {}, {targ}, col]}
+        drawGate[Kraus, {}, {targ_}, col_] := {
+            EdgeForm[Dashed], drawGate[\[Kappa], {}, {targ}, col]}
         drawGate[X, {}, {targ_}, col_] := {
             Circle[{col+.5,targ+.5},.25],
             Line[{{col+.5,targ+.5-.25},{col+.5,targ+.5+.25}}]
@@ -335,6 +337,9 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         drawGate[symb:(Deph|Depol), {}, {targ1_,targ2_}, col_] := {
         	EdgeForm[Dashed],
         	drawGate[If[symb===Deph,\[Phi],\[CapitalDelta]], {}, {targ1,targ2}, col]}
+        drawGate[Kraus, {}, {targ1_,targ2_}, col_] := {
+        	EdgeForm[Dashed],
+        	drawGate[\[Kappa], {}, {targ1,targ2}, col]}
         drawGate[label_Symbol, {}, {targ1_,targ2_}/;Abs[targ2-targ1]===1, col_] := {
         	drawDoubleBox[Min[targ1,targ2], col],
         	Text[SymbolName@label, {col+.5,Min[targ1,targ2]+.5+.5}]}
