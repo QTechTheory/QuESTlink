@@ -259,6 +259,13 @@ qreal wrapper_calcPurity(int id) {
     }
     return calcPurity(quregs[id]);
 }
+qreal wrapper_calcTotalProb(int id) {
+    if (!quregs[id].isCreated) {
+        local_quregNotCreatedError(id);
+        return -1;
+    }
+    return calcTotalProb(quregs[id]);
+}
 qreal wrapper_calcHilbertSchmidtDistance(int id1, int id2) {
     if (!quregs[id1].isCreated) {
         local_quregNotCreatedError(id1);

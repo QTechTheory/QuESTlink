@@ -171,6 +171,15 @@
 :Evaluate: QuEST`CalcPurity::usage = "CalcPurity[qureg] returns the purity of the given density matrix."
 
 :Begin:
+:Function:       wrapper_calcTotalProb
+:Pattern:        QuEST`CalcTotalProb[qureg_Integer]
+:Arguments:      { qureg }
+:ArgumentTypes:  { Integer }
+:ReturnType:     Real
+:End:
+:Evaluate: QuEST`CalcTotalProb::usage = "CalcTotalProb[qureg] returns the total probability (normalisation) of the statevector (sum of abs-squared of amplitudes) or density matrix (trace), which should be 1."
+
+:Begin:
 :Function:       wrapper_calcHilbertSchmidtDistance
 :Pattern:        QuEST`CalcHilbertSchmidtDistance[qureg1_Integer, qureg2_Integer]
 :Arguments:      { qureg1, qureg2 }
