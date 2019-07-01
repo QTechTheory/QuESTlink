@@ -19,7 +19,7 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     
     Operator::usage = "Operator[gates] converts a product of gates into a right-to-left circuit."
     
-    CalcExpectedValue::usage = "CalcExpectedValue[qureg, paulis] evaluates the expected value of a product of Paulis."
+    CalcExpecPauliProd::usage = "CalcExpecPauliProd[qureg, paulis] evaluates the expected value of a product of Paulis."
     
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
     
@@ -98,7 +98,7 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         codifyMatrices[matrs_] :=
             Prepend[Join @@ (codifyMatrix /@ matrs), Length @ matrs]
         
-        (* recognising and codifying gates *)
+        (* recognising and codifying gates into {opcode, ctrls, targs, params} *)
         gatePatterns = {
             Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[U,  (targs:_Integer..)|{targs:_Integer..}][matr:_List]] :> 
                 {getOpCode[U], {ctrls}, {targs}, codifyMatrix[matr]},
@@ -213,10 +213,10 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         	]
             
         (* compute the expected value of a Pauli product *)
-        CalcExpectedValue[qureg_Integer, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]] :=
-            CalcExpectedValueInternal[qureg, {paulis}[[All,1]]/.{X->1,Y->2,Z->3}, {paulis}[[All,2]]]
-        CalcExpectedValue[qureg_Integer, Subscript[pauli:(X|Y|Z),targ:_Integer]] :=
-            CalcExpectedValueInternal[qureg, {pauli}/.{X->1,Y->2,Z->3}, {targ}]
+        CalcExpecPauliProd[qureg_Integer, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]] :=
+            CalcExpecPauliProdInternal[qureg, {paulis}[[All,1]]/.{X->1,Y->2,Z->3}, {paulis}[[All,2]]]
+        CalcExpecPauliProd[qureg_Integer, Subscript[pauli:(X|Y|Z),targ:_Integer]] :=
+            CalcExpecPauliProdInternal[qureg, {pauli}/.{X->1,Y->2,Z->3}, {targ}]
         
         getIgorLink[id_] :=
         	LinkConnect[
