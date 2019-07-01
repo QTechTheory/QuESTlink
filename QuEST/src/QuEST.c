@@ -634,6 +634,7 @@ void swapGate(Qureg qureg, int qb1, int qb2) {
 
 void sqrtSwapGate(Qureg qureg, int qb1, int qb2) {
     validateControlTarget(qureg, qb1, qb2, __func__);
+    validateMultiQubitMatrixFitsInNode(qureg, 2, __func__); // uses 2qb unitary in QuEST_common
 
     statevec_sqrtSwapGate(qureg, qb1, qb2);
     if (qureg.isDensityMatrix) {
@@ -845,22 +846,22 @@ qreal calcFidelity(Qureg qureg, Qureg pureState) {
         return statevec_calcFidelity(qureg, pureState);
 }
 
-qreal calcExpecValProd(Qureg qureg, int* targetQubits, enum pauliOpType* pauliCodes, int numTargets, Qureg workspace) {
+qreal calcExpecPauliProd(Qureg qureg, int* targetQubits, enum pauliOpType* pauliCodes, int numTargets, Qureg workspace) {
     validateMultiTargets(qureg, targetQubits, numTargets, __func__);
     validatePauliCodes(pauliCodes, numTargets, __func__);
     validateMatchingQuregTypes(qureg, workspace, __func__);
     validateMatchingQuregDims(qureg, workspace, __func__);
     
-    return statevec_calcExpecValProd(qureg, targetQubits, pauliCodes, numTargets, workspace);
+    return statevec_calcExpecPauliProd(qureg, targetQubits, pauliCodes, numTargets, workspace);
 }
 
-qreal calcExpecValSum(Qureg qureg, enum pauliOpType* allPauliCodes, qreal* termCoeffs, int numSumTerms, Qureg workspace) {
-    validateNumSumTerms(numSumTerms, __func__);
+qreal calcExpecPauliSum(Qureg qureg, enum pauliOpType* allPauliCodes, qreal* termCoeffs, int numSumTerms, Qureg workspace) {
+    validateNumPauliSumTerms(numSumTerms, __func__);
     validatePauliCodes(allPauliCodes, numSumTerms*qureg.numQubitsRepresented, __func__);
     validateMatchingQuregTypes(qureg, workspace, __func__);
     validateMatchingQuregDims(qureg, workspace, __func__);
     
-    return statevec_calcExpecValSum(qureg, allPauliCodes, termCoeffs, numSumTerms, workspace);
+    return statevec_calcExpecPauliSum(qureg, allPauliCodes, termCoeffs, numSumTerms, workspace);
 }
 
 qreal calcHilbertSchmidtDistance(Qureg a, Qureg b) {

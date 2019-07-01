@@ -39,6 +39,8 @@ void validateTwoQubitUnitaryMatrix(Qureg qureg, ComplexMatrix4 u, const char* ca
 
 void validateMultiQubitUnitaryMatrix(Qureg qureg, ComplexMatrixN u, int numTargs, const char* caller);
 
+void validateMultiQubitMatrixFitsInNode(Qureg qureg, int numTargets, const char* caller);
+
 void validateUnitaryComplexPair(Complex alpha, Complex beta, const char* caller);
 
 void validateVector(Vector vector, const char* caller);
@@ -73,19 +75,19 @@ void validateOneQubitDepolProb(qreal prob, const char* caller);
 
 void validateTwoQubitDepolProb(qreal prob, const char* caller);
 
-void validateOneQubitDampingProb(qreal prob, const char* caller);
-
 void validateOneQubitPauliProbs(qreal probX, qreal probY, qreal probZ, const char* caller);
 
 void validatePauliCodes(enum pauliOpType* pauliCodes, int numPauliCodes, const char* caller);
 
-void validateNumSumTerms(int numTerms, const char* caller);
+void validateNumPauliSumTerms(int numTerms, const char* caller);
 
 void validateMatrixInit(ComplexMatrixN matr, const char* caller);
 
 void validateOneQubitKrausMap(Qureg qureg, ComplexMatrix2* ops, int numOps, const char* caller);
 
 void validateTwoQubitKrausMap(Qureg qureg, ComplexMatrix4* ops, int numOps, const char* caller);
+
+void validateOneQubitDampingProb(qreal prob, const char* caller);
 
 # ifdef __cplusplus
 }

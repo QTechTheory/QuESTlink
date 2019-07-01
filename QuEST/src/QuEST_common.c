@@ -369,28 +369,28 @@ qreal statevec_calcFidelity(Qureg qureg, Qureg pureState) {
 
 void statevec_sqrtSwapGate(Qureg qureg, int qb1, int qb2) {
     
-    ComplexMatrix2 u;
-    u.r0c0.real = .5; u.r0c0.imag = .5;
-    u.r0c1.real = .5; u.r0c1.imag =-.5;
-    u.r1c0.real = .5; u.r1c0.imag =-.5;
+    ComplexMatrix4 u = {0};
+    u.r0c0.real=1;
+    u.r3c3.real=1;
     u.r1c1.real = .5; u.r1c1.imag = .5;
+    u.r1c2.real = .5; u.r1c2.imag =-.5;
+    u.r2c1.real = .5; u.r2c1.imag =-.5;
+    u.r2c2.real = .5; u.r2c2.imag = .5;
     
-    statevec_controlledNot(qureg, qb1, qb2);
-    statevec_controlledUnitary(qureg, qb2, qb1, u);
-    statevec_controlledNot(qureg, qb1, qb2);
+    statevec_twoQubitUnitary(qureg, qb1, qb2, u);
 }
 
 void statevec_sqrtSwapGateConj(Qureg qureg, int qb1, int qb2) {
     
-    ComplexMatrix2 u;
-    u.r0c0.real = .5; u.r0c0.imag =-.5;
-    u.r0c1.real = .5; u.r0c1.imag = .5;
-    u.r1c0.real = .5; u.r1c0.imag = .5;
+    ComplexMatrix4 u = {0};
+    u.r0c0.real=1;
+    u.r3c3.real=1;
     u.r1c1.real = .5; u.r1c1.imag =-.5;
+    u.r1c2.real = .5; u.r1c2.imag = .5;
+    u.r2c1.real = .5; u.r2c1.imag = .5;
+    u.r2c2.real = .5; u.r2c2.imag =-.5;
     
-    statevec_controlledNot(qureg, qb1, qb2);
-    statevec_controlledUnitary(qureg, qb2, qb1, u);
-    statevec_controlledNot(qureg, qb1, qb2);
+    statevec_twoQubitUnitary(qureg, qb1, qb2, u);
 }
 
 /** applyConj=1 will apply conjugate operation, else applyConj=0 */
@@ -432,7 +432,7 @@ void statevec_multiRotatePauli(
 }
 
 // <pauli> = <qureg|pauli|qureg> = qureg . pauli(qureg)
-qreal statevec_calcExpecValProd(Qureg qureg, int* targetQubits, enum pauliOpType* pauliCodes, int numTargets, Qureg workspace) {
+qreal statevec_calcExpecPauliProd(Qureg qureg, int* targetQubits, enum pauliOpType* pauliCodes, int numTargets, Qureg workspace) {
     
     statevec_cloneQureg(workspace, qureg);
     
@@ -457,7 +457,7 @@ qreal statevec_calcExpecValProd(Qureg qureg, int* targetQubits, enum pauliOpType
     return value;
 }
 
-qreal statevec_calcExpecValSum(Qureg qureg, enum pauliOpType* allCodes, qreal* termCoeffs, int numSumTerms, Qureg workspace) {
+qreal statevec_calcExpecPauliSum(Qureg qureg, enum pauliOpType* allCodes, qreal* termCoeffs, int numSumTerms, Qureg workspace) {
     
     int numQb = qureg.numQubitsRepresented;
     int targs[numQb];
@@ -466,7 +466,7 @@ qreal statevec_calcExpecValSum(Qureg qureg, enum pauliOpType* allCodes, qreal* t
         
     qreal value = 0;
     for (int t=0; t < numSumTerms; t++)
-        value += termCoeffs[t] * statevec_calcExpecValProd(qureg, targs, &allCodes[t*numQb], numQb, workspace);
+        value += termCoeffs[t] * statevec_calcExpecPauliProd(qureg, targs, &allCodes[t*numQb], numQb, workspace);
         
     return value;
 }
