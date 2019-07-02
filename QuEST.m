@@ -21,7 +21,7 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     
     CalcExpecPauliProd::usage = "CalcExpecPauliProd[qureg, paulis, workspace] evaluates the expected value of a product of Paulis. workspace must be a qureg of equal dimensions to qureg."
 
-    CalcExpecPauliSum::usage = "CalcExpecPauliSum[qureg, pauliSum, workspace] evaluates the expected value of a weighted sum of Pauli products. workspace must be a qureg of equal dimensions to qureg."
+    CalcExpecPauliSum::usage = "CalcExpecPauliSum[qureg, pauliSum, workspace] evaluates the expected value of a weighted sum of Pauli products, of a normalised qureg. workspace must be a qureg of equal dimensions to qureg."
 
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
     
@@ -228,6 +228,7 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         getPauliSumTermCodes[Verbatim[Times][___?NumericQ, paulis:pattPauli..]] := getOpCode /@ {paulis}[[All, 1]]
         getPauliSumTermTargs[pauli:pattPauli] := {pauli[[2]]}
         getPauliSumTermTargs[Verbatim[Times][___?NumericQ, paulis:pattPauli ..]] := {paulis}[[All, 2]]
+        (* sum of individual paulis or weighted pauli products *)
         pattPauliSum = Verbatim[Plus][ (pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
         CalcExpecPauliSum[qureg_Integer, paulis:pattPauliSum, workspace_Integer] := 
             With[{
@@ -243,6 +244,10 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         (* single term: pauli product, with or without coeff *)
         CalcExpecPauliSum[qureg_Integer, Verbatim[Times][coeff:_?NumericQ:1, paulis:pattPauli..], workspace_Integer] :=
             CalcExpecPauliSumInternal[qureg, workspace, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}]
+        (* constant plus pauli sum *)
+        pattConstPlusPauliSum = Verbatim[Plus][const_?NumericQ, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
+        CalcExpecPauliSum[qureg_Integer, blank:pattConstPlusPauliSum, workspace_Integer] := 
+            const + CalcExpecPauliSum[qureg, Plus @@ {pauliTerms}, workspace]
         
         getIgorLink[id_] :=
         	LinkConnect[
