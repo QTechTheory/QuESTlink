@@ -210,6 +210,15 @@
 :Evaluate: QuEST`Private`CalcExpecPauliProdInternal::usage = "CalcExpecPauliProdInternal[qureg, workspace, paulis, targets] returns the expected value of the qureg under the given pauli product. workspace must be a Qureg of equal dimensions to qureg."
 
 :Begin:
+:Function:       internal_calcExpecPauliSum
+:Pattern:        QuEST`Private`CalcExpecPauliSumInternal[qureg_Integer, workspace_Integer, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
+:Arguments:      { qureg, workspace, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm }
+:ArgumentTypes:  { Integer, Integer, Manual }
+:ReturnType:     Real
+:End:
+:Evaluate: QuEST`Private`CalcExpecPauliSumInternal::usage = "CalcExpecPauliSumInternal[qureg, workspace, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] returns the expected value of the qureg under the given sum of Pauli products, specified as flat lists. workspace must be a Qureg of equal dimensions to qureg."
+
+:Begin:
 :Function:       internal_getStateVec
 :Pattern:        QuEST`Private`GetStateVecInternal[qureg_Integer]
 :Arguments:      { qureg }

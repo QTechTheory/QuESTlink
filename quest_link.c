@@ -57,7 +57,13 @@
 /**
  * Max number of quregs which can simultaneously exist
  */
-# define MAX_NUM_QUREGS 1000
+#define MAX_NUM_QUREGS 1000
+
+/**
+ * Max number of target and control qubits which can be specified 
+ * for an individual gate 
+ */
+#define MAX_NUM_TARGS_CTRLS 100
 
 /**
  * Global instance of QuESTEnv, created when MMA is linked.
@@ -364,7 +370,7 @@ void local_noiseInvalidProbError(int opcode, int numQubits, qreal prob, int id, 
 }
 
 int* prepareCtrlCache(int* ctrls, int ctrlInd, int numCtrls, int addTarg) {
-    static int ctrlCache[100]; 
+    static int ctrlCache[MAX_NUM_TARGS_CTRLS]; 
     for (int i=0; i < numCtrls; i++)
         ctrlCache[i] = ctrls[ctrlInd + i];
     if (addTarg != -1)
@@ -599,7 +605,9 @@ void internal_applyCircuit(int id) {
                         numParams-1, numTargs);
                     return local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
                 }
-                int paulis[100]; for (int p=0; p < numTargs; p++) paulis[p] = params[paramInd+1+p];
+                int paulis[MAX_NUM_TARGS_CTRLS]; 
+                for (int p=0; p < numTargs; p++)
+                    paulis[p] = params[paramInd+1+p];
                 multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]);
                 break;
             
@@ -895,23 +903,68 @@ qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
     int *targs;
     WSGetInteger32List(stdlink, &targs, &numPaulis);
     
-    // ensure qureg exists
+    // ensure quregs exists
     Qureg qureg = quregs[quregId];
     if (!qureg.isCreated) {
         local_quregNotCreatedError(quregId);
         WSPutFunction(stdlink, "Abort", 0);
-        return -1;
+        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     Qureg workspace = quregs[workspaceId];
     if (!workspace.isCreated) {
         local_quregNotCreatedError(workspaceId);
         WSPutFunction(stdlink, "Abort", 0);
-        return -1;
+        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     
     return calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace);
 }
 
+qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
+    
+    // get arguments from MMA link
+    int numTerms, numPaulis;
+    qreal* termCoeffs;
+    WSGetReal64List(stdlink, &termCoeffs, &numTerms);
+    int* allPauliCodes;
+    WSGetInteger32List(stdlink, &allPauliCodes, &numPaulis);
+    int* allPauliTargets;
+    WSGetInteger32List(stdlink, &allPauliTargets, &numPaulis);
+    int* numPaulisPerTerm;
+    WSGetInteger32List(stdlink, &numPaulisPerTerm, &numTerms);
+    
+    // ensure quregs exists
+    Qureg qureg = quregs[quregId];
+    if (!qureg.isCreated) {
+        local_quregNotCreatedError(quregId);
+        WSPutFunction(stdlink, "Abort", 0);
+        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
+    }
+    Qureg workspace = quregs[workspaceId];
+    if (!workspace.isCreated) {
+        local_quregNotCreatedError(workspaceId);
+        WSPutFunction(stdlink, "Abort", 0);
+        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
+    }
+    
+    // convert {allPauliCodes}, {allPauliTargets}, {numPaulisPerTerm}, and
+    // qureg.numQubitsRepresented into {pauli-code-for-every-qubit}
+    int numQb = qureg.numQubitsRepresented;
+    int arrLen = numTerms * numQb;
+    int arrPaulis[arrLen];
+    for (int i=0; i < arrLen; i++)
+        arrPaulis[i] = 0;
+    
+    int allPaulisInd = 0;
+    for (int t=0;  t < numTerms; t++) {
+        for (int j=0; j < numPaulisPerTerm[t]; j++) {
+            int arrInd = t*numQb + allPauliTargets[allPaulisInd];
+            arrPaulis[arrInd] = allPauliCodes[allPaulisInd++];
+        }
+    }
+    
+    return calcExpecPauliSum(qureg, arrPaulis, termCoeffs, numTerms, workspace);
+}
 
 
 /**

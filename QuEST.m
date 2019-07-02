@@ -19,8 +19,10 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     
     Operator::usage = "Operator[gates] converts a product of gates into a right-to-left circuit."
     
-    CalcExpecPauliProd::usage = "CalcExpecPauliProd[qureg, paulis] evaluates the expected value of a product of Paulis."
-    
+    CalcExpecPauliProd::usage = "CalcExpecPauliProd[qureg, paulis, workspace] evaluates the expected value of a product of Paulis. workspace must be a qureg of equal dimensions to qureg."
+
+    CalcExpecPauliSum::usage = "CalcExpecPauliSum[qureg, pauliSum, workspace] evaluates the expected value of a weighted sum of Pauli products. workspace must be a qureg of equal dimensions to qureg."
+
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
     
     GetMatrix::usage = "GetMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
@@ -107,7 +109,7 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {}},
             R[param_, ({paulis:Subscript[(X|Y|Z),_Integer]..}|Verbatim[Times][paulis:Subscript[(X|Y|Z),_Integer]..])] :>
-                {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, {paulis}[[All,1]]/.{X->1,Y->2,Z->3}]},
+                {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
         	Subscript[U, (targs:_Integer..)|{targs:_Integer..}][matr:_List] :> 
                 {getOpCode[U], {}, {targs}, codifyMatrix[matr]},
             Subscript[Kraus, (targs:_Integer..)|{targs:_Integer..}][matrs_List] :>
@@ -213,10 +215,34 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         	]
             
         (* compute the expected value of a Pauli product *)
-        CalcExpecPauliProd[qureg_Integer, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]] :=
-            CalcExpecPauliProdInternal[qureg, {paulis}[[All,1]]/.{X->1,Y->2,Z->3}, {paulis}[[All,2]]]
-        CalcExpecPauliProd[qureg_Integer, Subscript[pauli:(X|Y|Z),targ:_Integer]] :=
-            CalcExpecPauliProdInternal[qureg, {pauli}/.{X->1,Y->2,Z->3}, {targ}]
+        pattPauli = Subscript[(X|Y|Z), _Integer];
+        CalcExpecPauliProd[qureg_Integer, Verbatim[Times][paulis:pattPauli..], workspace_Integer] :=
+            CalcExpecPauliProdInternal[qureg, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], workspace]
+        CalcExpecPauliProd[qureg_Integer, Subscript[pauli:(X|Y|Z),targ:_Integer], workspace_Integer] :=
+            CalcExpecPauliProdInternal[qureg, getOpcode /@ {pauli}, {targ}, workspace]
+            
+        (* compute the expected value of a weighted sum of Pauli products *)
+        getPauliSumTermCoeff[pauli:pattPauli] = 1;
+        getPauliSumTermCoeff[Verbatim[Times][coeff:_?NumericQ:1, ___]] := coeff
+        getPauliSumTermCodes[pauli:pattPauli] := {getOpCode @ pauli[[1]]}
+        getPauliSumTermCodes[Verbatim[Times][___?NumericQ, paulis:pattPauli..]] := getOpCode /@ {paulis}[[All, 1]]
+        getPauliSumTermTargs[pauli:pattPauli] := {pauli[[2]]}
+        getPauliSumTermTargs[Verbatim[Times][___?NumericQ, paulis:pattPauli ..]] := {paulis}[[All, 2]]
+        pattPauliSum = Verbatim[Plus][ (pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
+        CalcExpecPauliSum[qureg_Integer, paulis:pattPauliSum, workspace_Integer] := 
+            With[{
+                coeffs = getPauliSumTermCoeff /@ List @@ paulis,
+                codes = getPauliSumTermCodes /@ List @@ paulis,
+                targs = getPauliSumTermTargs /@ List @@ paulis
+                },
+                CalcExpecPauliSumInternal[qureg, workspace, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
+            ]
+        (* single term: single Pauli *)
+        CalcExpecPauliSum[qureg_Integer, pauli:pattPauli, workspace_Integer] :=
+            CalcExpecPauliSumInternal[qureg, workspace, {1}, {getOpCode @ pauli[[1]]}, {pauli[[2]]}, {1}]
+        (* single term: pauli product, with or without coeff *)
+        CalcExpecPauliSum[qureg_Integer, Verbatim[Times][coeff:_?NumericQ:1, paulis:pattPauli..], workspace_Integer] :=
+            CalcExpecPauliSumInternal[qureg, workspace, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}]
         
         getIgorLink[id_] :=
         	LinkConnect[
