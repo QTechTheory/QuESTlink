@@ -156,10 +156,12 @@ int wrapper_initClassicalState(int id, int stateInd) {
     return id;
 }
 int wrapper_initPureState(int quregID, int pureID) {
-    if (quregs[quregID].isCreated)
+    if (quregs[quregID].isCreated && quregs[pureID].isCreated)
         initPureState(quregs[quregID], quregs[pureID]);
-    else
+    else if (!quregs[quregID].isCreated)
         local_quregNotCreatedError(quregID);
+    else// if (!quregs[pureID].isCreated)
+        local_quregNotCreatedError(pureID);
     return quregID;
 }
 int wrapper_initStateFromAmps(int quregID, qreal* reals, int l1, qreal* imags, int l2) {
