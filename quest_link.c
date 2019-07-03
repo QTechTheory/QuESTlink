@@ -920,19 +920,40 @@ qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
     return calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace);
 }
 
-qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
+void local_loadPauliSumFromMMA(int numQb, int* numTerms, int** arrPaulis, qreal** termCoeffs) {
     
     // get arguments from MMA link
-    int numTerms, numPaulis;
-    qreal* termCoeffs;
-    WSGetReal64List(stdlink, &termCoeffs, &numTerms);
+    int numPaulis;
+    WSGetReal64List(stdlink, termCoeffs, numTerms);
     int* allPauliCodes;
     WSGetInteger32List(stdlink, &allPauliCodes, &numPaulis);
     int* allPauliTargets;
     WSGetInteger32List(stdlink, &allPauliTargets, &numPaulis);
     int* numPaulisPerTerm;
-    WSGetInteger32List(stdlink, &numPaulisPerTerm, &numTerms);
+    WSGetInteger32List(stdlink, &numPaulisPerTerm, numTerms);
     
+    // convert {allPauliCodes}, {allPauliTargets}, {numPaulisPerTerm}, and
+    // qureg.numQubitsRepresented into {pauli-code-for-every-qubit}
+    int arrLen = *numTerms * numQb;
+    *arrPaulis = malloc(arrLen * sizeof(int));
+    for (int i=0; i < arrLen; i++)
+        (*arrPaulis)[i] = 0;
+    
+    int allPaulisInd = 0;
+    for (int t=0;  t < *numTerms; t++) {
+        for (int j=0; j < numPaulisPerTerm[t]; j++) {
+            int arrInd = t*numQb + allPauliTargets[allPaulisInd];
+            (*arrPaulis)[arrInd] = allPauliCodes[allPaulisInd++];
+        }
+    }
+    
+    WSReleaseInteger32List(stdlink, allPauliCodes, numPaulis);
+    WSReleaseInteger32List(stdlink, allPauliTargets, numPaulis);
+    // arrPaulis and termCoeffs must be freed by caller using free and WSDisown respectively
+}
+
+qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
+        
     // ensure quregs exists
     Qureg qureg = quregs[quregId];
     if (!qureg.isCreated) {
@@ -947,23 +968,41 @@ qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     
-    // convert {allPauliCodes}, {allPauliTargets}, {numPaulisPerTerm}, and
-    // qureg.numQubitsRepresented into {pauli-code-for-every-qubit}
-    int numQb = qureg.numQubitsRepresented;
-    int arrLen = numTerms * numQb;
-    int arrPaulis[arrLen];
-    for (int i=0; i < arrLen; i++)
-        arrPaulis[i] = 0;
+    int numTerms; int* arrPaulis; qreal* termCoeffs;
+    local_loadPauliSumFromMMA(qureg.numQubitsRepresented, &numTerms, &arrPaulis, &termCoeffs);
     
-    int allPaulisInd = 0;
-    for (int t=0;  t < numTerms; t++) {
-        for (int j=0; j < numPaulisPerTerm[t]; j++) {
-            int arrInd = t*numQb + allPauliTargets[allPaulisInd];
-            arrPaulis[arrInd] = allPauliCodes[allPaulisInd++];
-        }
+    qreal val = calcExpecPauliSum(qureg, arrPaulis, termCoeffs, numTerms, workspace);
+    
+    free(arrPaulis);
+    WSReleaseReal64List(stdlink, termCoeffs, numTerms);
+    
+    return val;
+}
+
+
+void internal_applyPauliSum(int inId, int outId) {
+
+    // ensure quregs exists
+    Qureg inQureg = quregs[inId];
+    if (!inQureg.isCreated) {
+        local_quregNotCreatedError(inId);
+        WSPutFunction(stdlink, "Abort", 0);
+        return;
+    }
+    Qureg outQureg = quregs[outId];
+    if (!outQureg.isCreated) {
+        local_quregNotCreatedError(outId);
+        WSPutFunction(stdlink, "Abort", 0);
+        return;
     }
     
-    return calcExpecPauliSum(qureg, arrPaulis, termCoeffs, numTerms, workspace);
+    int numTerms; int* arrPaulis; qreal* termCoeffs;
+    local_loadPauliSumFromMMA(inQureg.numQubitsRepresented, &numTerms, &arrPaulis, &termCoeffs);
+    
+    applyPauliSum(inQureg, arrPaulis, termCoeffs, numTerms, outQureg);
+    
+    free(arrPaulis);
+    WSReleaseReal64List(stdlink, termCoeffs, numTerms);
 }
 
 

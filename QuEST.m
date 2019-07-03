@@ -23,6 +23,8 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
 
     CalcExpecPauliSum::usage = "CalcExpecPauliSum[qureg, pauliSum, workspace] evaluates the expected value of a weighted sum of Pauli products, of a normalised qureg. workspace must be a qureg of equal dimensions to qureg."
 
+    ApplyPauliSum::usage = "ApplyPauliSum[inQureg, pauliSum, outQureg] modifies outQureg to be the result of applying the weighted sum of Paulis to inQureg."
+
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
     
     GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
@@ -247,6 +249,30 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         pattConstPlusPauliSum = Verbatim[Plus][const_?NumericQ, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
         CalcExpecPauliSum[qureg_Integer, blank:pattConstPlusPauliSum, workspace_Integer] := 
             const + CalcExpecPauliSum[qureg, Plus @@ {pauliTerms}, workspace]
+            
+        (* apply a weighted sum of Pauli products to a qureg *)
+        ApplyPauliSum[inQureg_Integer, paulis:pattPauliSum, outQureg_Integer] :=
+            With[{
+                coeffs = getPauliSumTermCoeff /@ List @@ paulis,
+                codes = getPauliSumTermCodes /@ List @@ paulis,
+                targs = getPauliSumTermTargs /@ List @@ paulis
+                },
+                ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
+            ]
+        ApplyPauliSum[inQureg_Integer, pauli:pattPauli, outQureg_Integer] :=
+            ApplyPauliSumInternal[inQureg, outQureg, {1}, {getOpCode @ pauli[[1]]}, {pauli[[2]]}, {1}]
+        (* single term: pauli product, with or without coeff *)
+        ApplyPauliSum[inQureg_Integer, Verbatim[Times][coeff:_?NumericQ:1, paulis:pattPauli..], outQureg_Integer] :=
+            ApplyPauliSumInternal[inQureg, outQureg, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}]
+        (* constant plus pauli sum *)
+        ApplyPauliSum[inQureg_Integer, blank:pattConstPlusPauliSum, outQureg_Integer] := 
+                With[{
+                    coeffs = Append[getPauliSumTermCoeff /@ {pauliTerms}, const], (* add const as new term... *)
+                    codes = Append[getPauliSumTermCodes /@ {pauliTerms}, {0}],      (* with Identity=0 Pauli code... *)
+                    targs = Append[getPauliSumTermTargs /@ {pauliTerms}, {0}]       (* on the first (or any) quqbit *)
+                    },
+                    ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
+                ]
         
         getIgorLink[id_] :=
         	LinkConnect[
