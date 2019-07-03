@@ -116,6 +116,8 @@ void statevec_createQureg(Qureg *qureg, int numQubits, QuESTEnv env);
 
 void statevec_destroyQureg(Qureg qureg, QuESTEnv env);
 
+void statevec_initBlankState(Qureg qureg);
+
 void statevec_initZeroState(Qureg qureg);
 
 void statevec_initPlusState(Qureg qureg);
@@ -237,6 +239,10 @@ void statevec_sqrtSwapGateConj(Qureg qureg, int qb1, int qb2);
 void statevec_multiRotateZ(Qureg qureg, long long int mask, qreal angle);
 
 void statevec_multiRotatePauli(Qureg qureg, int* targetQubits, enum pauliOpType* targetPaulis, int numTargets, qreal angle, int applyConj);
+
+void statevec_setWeightedQureg(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Complex facOut, Qureg out);
+
+void statevec_applyPauliSum(Qureg inQureg, enum pauliOpType* allCodes, qreal* termCoeffs, int numSumTerms, Qureg outQureg);
 
 # ifdef __cplusplus
 }

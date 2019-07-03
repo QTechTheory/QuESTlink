@@ -126,6 +126,12 @@ void initZeroState(Qureg qureg) {
     qasm_recordInitZero(qureg);
 }
 
+void initBlankState(Qureg qureg) {
+    statevec_initBlankState(qureg);
+    
+    qasm_recordComment(qureg, "Here, the register was initialised to an unphysical all-zero-amplitudes 'state'.");
+}
+
 void initPlusState(Qureg qureg) {
     if (qureg.isDensityMatrix)
         densmatr_initPlusState(qureg);
@@ -167,22 +173,6 @@ void initStateFromAmps(Qureg qureg, qreal* reals, qreal* imags) {
     statevec_setAmps(qureg, 0, reals, imags, qureg.numAmpsTotal);
     
     qasm_recordComment(qureg, "Here, the register was initialised to an undisclosed given pure state.");
-}
-
-void setAmps(Qureg qureg, long long int startInd, qreal* reals, qreal* imags, long long int numAmps) {
-    validateStateVecQureg(qureg, __func__);
-    validateNumAmps(qureg, startInd, numAmps, __func__);
-    
-    statevec_setAmps(qureg, startInd, reals, imags, numAmps);
-    
-    qasm_recordComment(qureg, "Here, some amplitudes in the statevector were manually edited.");
-}
-
-void setDensityAmps(Qureg qureg, qreal* reals, qreal* imags) {
-    long long int numAmps = qureg.numAmpsTotal; 
-    statevec_setAmps(qureg, 0, reals, imags, numAmps);
-    
-    qasm_recordComment(qureg, "Here, some amplitudes in the density matrix were manually edited.");
 }
 
 void cloneQureg(Qureg targetQureg, Qureg copyQureg) {
@@ -798,6 +788,44 @@ void addDensityMatrix(Qureg combineQureg, qreal otherProb, Qureg otherQureg) {
     validateProb(otherProb, __func__);
     
     densmatr_addDensityMatrix(combineQureg, otherProb, otherQureg);
+}
+
+void setAmps(Qureg qureg, long long int startInd, qreal* reals, qreal* imags, long long int numAmps) {
+    validateStateVecQureg(qureg, __func__);
+    validateNumAmps(qureg, startInd, numAmps, __func__);
+    
+    statevec_setAmps(qureg, startInd, reals, imags, numAmps);
+    
+    qasm_recordComment(qureg, "Here, some amplitudes in the statevector were manually edited.");
+}
+
+void setDensityAmps(Qureg qureg, qreal* reals, qreal* imags) {
+    long long int numAmps = qureg.numAmpsTotal; 
+    statevec_setAmps(qureg, 0, reals, imags, numAmps);
+    
+    qasm_recordComment(qureg, "Here, some amplitudes in the density matrix were manually edited.");
+}
+
+void setWeightedQureg(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Complex facOut, Qureg out) {
+    validateMatchingQuregTypes(qureg1, qureg2, __func__);
+    validateMatchingQuregTypes(qureg1, out, __func__);
+    validateMatchingQuregDims(qureg1, qureg2,  __func__);
+    validateMatchingQuregDims(qureg1, out, __func__);
+
+    statevec_setWeightedQureg(fac1, qureg1, fac2, qureg2, facOut, out);
+
+    qasm_recordComment(out, "Here, the register was modified to an undisclosed and possibly unphysical state (setWeightedQureg).");
+} 
+
+void applyPauliSum(Qureg inQureg, enum pauliOpType* allPauliCodes, qreal* termCoeffs, int numSumTerms, Qureg outQureg) {
+    validateMatchingQuregTypes(inQureg, outQureg, __func__);
+    validateMatchingQuregDims(inQureg, outQureg, __func__);
+    validateNumPauliSumTerms(numSumTerms, __func__);
+    validatePauliCodes(allPauliCodes, numSumTerms*inQureg.numQubitsRepresented, __func__);
+    
+    statevec_applyPauliSum(inQureg, allPauliCodes, termCoeffs, numSumTerms, outQureg);
+    
+    qasm_recordComment(outQureg, "Here, the register was modified to an undisclosed and possibly unphysical state (applyPauliSum).");
 }
 
 
