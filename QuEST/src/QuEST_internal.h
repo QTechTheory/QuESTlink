@@ -15,15 +15,6 @@
 extern "C" {
 # endif
 
-
-/*
- * defined for Mathematica front-end 
- */
- 
-void statevec_addWeightedStates(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Complex facOut, Qureg out);
-
-
-
 /*
  * general functions
  */

@@ -21,24 +21,6 @@
 extern "C" {
 #endif
 
-
-
-/*
- * added for Mathematica frontend 
- */
- 
- void addWeightedStates(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Complex facOut, Qureg out) {
-     validateMatchingQuregTypes(qureg1, qureg2, __func__);
-     validateMatchingQuregTypes(qureg1, out, __func__);
-     validateMatchingQuregDims(qureg1, qureg2,  __func__);
-     validateMatchingQuregDims(qureg1, out, __func__);
-     
-     statevec_addWeightedStates(fac1, qureg1, fac2, qureg2, facOut, out);
-     
-     qasm_recordComment(out, "Here, the register was modified to an undisclosed and possibly unphysical state.");
- } 
-    
-    
 /*
  * state-vector management
  */
