@@ -25,9 +25,9 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
 
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
     
-    GetMatrix::usage = "GetMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
+    GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
             
-    SetMatrix::usage = "SetMatrix[qureg, matr] modifies qureg, overwriting its statevector or density matrix with that passed."
+    SetQuregMatrix::usage = "SetQuregMatrix[qureg, matr] modifies qureg, overwriting its statevector or density matrix with that passed."
             
     CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[id] connects to the remote Igor server (on port 50000+id and 50100+id) and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
              
@@ -182,7 +182,7 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         	Block[{}, DestroyQuregInternal[ReleaseHold@qureg]; Clear[qureg]]
 
         (* get a local matrix representation of the remote qureg. GetStateVecInternal provided by WSTP *)
-        GetMatrix[qureg_Integer] :=
+        GetQuregMatrix[qureg_Integer] :=
         	With[{data = GetStateVecInternal[qureg]},
         		Which[
         			data === -1,
@@ -197,7 +197,7 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         	]
 
         (* overwrite the state of a remote qureg. InitStateFromAmps provided by WSTP *)
-        SetMatrix[qureg_Integer, elems_List] :=
+        SetQuregMatrix[qureg_Integer, elems_List] :=
         	With[{flatelems = N @ 
         		Which[
         			(* vectors in various forms *)
