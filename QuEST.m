@@ -25,6 +25,8 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
 
     ApplyPauliSum::usage = "ApplyPauliSum[inQureg, pauliSum, outQureg] modifies outQureg to be the result of applying the weighted sum of Paulis to inQureg."
 
+    CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the matrix form of the given weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target."
+
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
     
     GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
@@ -273,6 +275,21 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
                     },
                     ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
                 ]
+                
+        (* convert a weighted sum of Pauli products into a matrix *)
+        CalcPauliSumMatrix[paulis:pattPauliSum] := 
+            With[{
+                arrs=With[{
+                    coeffs = getPauliSumTermCoeff /@ List @@ paulis,
+                    codes = getPauliSumTermCodes /@ List @@ paulis,
+                    targs = getPauliSumTermTargs /@ List @@ paulis
+                    },
+                    CalcPauliSumMatrixInternal[1+Max@Flatten@targs, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
+                ]},
+                (#[[1]] + I #[[2]])& /@ Partition[arrs,2] // Transpose
+            ]
+        CalcPauliSumMatrix[blank:pattConstPlusPauliSum] := 
+            const + CalcPauliSumMatrix[Plus @@ {pauliTerms}]
         
         getIgorLink[id_] :=
         	LinkConnect[

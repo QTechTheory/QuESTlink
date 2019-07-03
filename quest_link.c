@@ -981,21 +981,50 @@ qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
     return val;
 }
 
+void internal_calcPauliSumMatrix(int numQubits) {
+    
+    int numTerms; int* arrPaulis; qreal* termCoeffs;
+    local_loadPauliSumFromMMA(numQubits, &numTerms, &arrPaulis, &termCoeffs);
 
-void internal_applyPauliSum(int inId, int outId) {
+    // create states needed to apply Pauli products
+    Qureg inQureg = createQureg(numQubits, env);
+    Qureg outQureg = createQureg(numQubits, env);
+
+    // get result of paulis on each basis state
+    long long int dim = inQureg.numAmpsTotal;
+    WSPutFunction(stdlink, "List", 2*dim);
+    
+    for (long long int i=0; i < dim; i++) {
+        initClassicalState(inQureg, i);
+        applyPauliSum(inQureg, arrPaulis, termCoeffs, numTerms, outQureg);
+        
+        syncQuESTEnv(env);
+        copyStateFromGPU(outQureg); // does nothing on CPU
+        
+        WSPutReal64List(stdlink, outQureg.stateVec.real, dim);
+        WSPutReal64List(stdlink, outQureg.stateVec.imag, dim);
+    }    
+    
+    destroyQureg(inQureg, env);
+    destroyQureg(outQureg, env);
+    free(arrPaulis);
+    WSReleaseReal64List(stdlink, termCoeffs, numTerms);
+}
+
+int internal_applyPauliSum(int inId, int outId) {
 
     // ensure quregs exists
     Qureg inQureg = quregs[inId];
     if (!inQureg.isCreated) {
         local_quregNotCreatedError(inId);
         WSPutFunction(stdlink, "Abort", 0);
-        return;
+        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     Qureg outQureg = quregs[outId];
     if (!outQureg.isCreated) {
         local_quregNotCreatedError(outId);
         WSPutFunction(stdlink, "Abort", 0);
-        return;
+        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     
     int numTerms; int* arrPaulis; qreal* termCoeffs;
@@ -1005,6 +1034,7 @@ void internal_applyPauliSum(int inId, int outId) {
     
     free(arrPaulis);
     WSReleaseReal64List(stdlink, termCoeffs, numTerms);
+    return outId;
 }
 
 
