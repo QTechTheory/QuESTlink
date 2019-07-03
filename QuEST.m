@@ -36,10 +36,9 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     CreateDownloadedQuESTEnv::usage = "CreateDownloadedQuESTEnv[] downloads a MacOS-CPU-QuEST server from quest.qtechtheory.org, gives it permission to run then locally connects to it. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
                     
     DestroyQuESTEnv::usage = "DestroyQuESTEnv[link] disconnects from the QuEST link, which may be the remote Igor server or a loca instance, clearing some QuEST function definitions (but not those provided by the QuEST package)."
-    
-    AddWeightedStates::usage = "AddWeightedStates[fac1, q1, fac2, q2, facOut, qOut] modifies qureg qOut to be (facOut qOut + fac1 q1 + fac2 q2). qOut can be one of q1 an q2."
 
-    SetWeightedStates::usage = "SetWeightedStates[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + fac2 q2). qOut can be one of q1 an q2."
+    SetWeightedQureg::usage = "SetWeightedQureg[fac1, q1, fac2, q2, facOut, qOut] modifies qureg qOut to be (facOut qOut + fac1 q1 + fac2 q2). qOut can be one of q1 an q2.
+SetWeightedQureg[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + fac2 q2). qOut can be one of q1 an q2."
 
     DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram.
 DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagram."
@@ -272,15 +271,15 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         DestroyQuESTEnv[link_] := Uninstall @ link
         
         (* Im[0.] = 0, how annoying *)
-        AddWeightedStates[fac1_?NumericQ, q1_Integer, fac2_?NumericQ, q2_Integer, facOut_?NumericQ, qOut_Integer] :=
-            AddWeightedStatesInternal[
+        SetWeightedQureg[fac1_?NumericQ, q1_Integer, fac2_?NumericQ, q2_Integer, facOut_?NumericQ, qOut_Integer] :=
+            SetWeightedQuregInternal[
                 Re @ N @ fac1, N @ Im @ N @ fac1, q1,
                 Re @ N @ fac2, N @ Im @ N @ fac2, q2,
                 Re @ N @ facOut, N @ Im @ N @ facOut, qOut
             ]
             
-        SetWeightedStates[fac1_?NumericQ, q1_Integer, fac2_?NumericQ, q2_Integer, qOut_Integer] :=
-            AddWeightedStatesInternal[
+        SetWeightedQureg[fac1_?NumericQ, q1_Integer, fac2_?NumericQ, q2_Integer, qOut_Integer] :=
+            SetWeightedQuregInternal[
                 Re @ N @ fac1, N @ Im @ N @ fac1, q1,
                 Re @ N @ fac2, N @ Im @ N @ fac2, q2,
                 N @ 0, N @ 0, qOut

@@ -873,7 +873,7 @@ void internal_getStateVec(int id) {
     WSPutReal64List(stdlink, qureg.stateVec.imag, qureg.numAmpsTotal);
 }
 
-int internal_addWeightedStates(
+int internal_setWeightedQureg(
     double facRe1, double facIm1, int qureg1, 
     double facRe2, double facIm2, int qureg2, 
     double facReOut, double facImOut, int outID
@@ -885,7 +885,7 @@ int internal_addWeightedStates(
     else if (!quregs[outID].isCreated)
         local_quregNotCreatedError(outID);
     else 
-        addWeightedStates(
+        setWeightedQureg(
             (Complex) {.real=facRe1, .imag=facIm1}, quregs[qureg1],
             (Complex) {.real=facRe2, .imag=facIm2}, quregs[qureg2],
             (Complex) {.real=facReOut, .imag=facImOut}, quregs[outID]);
