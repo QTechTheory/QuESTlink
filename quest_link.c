@@ -369,7 +369,7 @@ void local_noiseInvalidProbError(int opcode, int numQubits, qreal prob, int id, 
     local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
 }
 
-int* prepareCtrlCache(int* ctrls, int ctrlInd, int numCtrls, int addTarg) {
+int* local_prepareCtrlCache(int* ctrls, int ctrlInd, int numCtrls, int addTarg) {
     static int ctrlCache[MAX_NUM_TARGS_CTRLS]; 
     for (int i=0; i < numCtrls; i++)
         ctrlCache[i] = ctrls[ctrlInd + i];
@@ -491,7 +491,7 @@ void internal_applyCircuit(int id) {
                 if (numCtrls == 0)
                     sGate(qureg, targs[targInd]);
                 else {
-                    int* ctrlCache = prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
+                    int* ctrlCache = local_prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, M_PI/2);
                 }
                 break;
@@ -504,7 +504,7 @@ void internal_applyCircuit(int id) {
                 if (numCtrls == 0)
                     tGate(qureg, targs[targInd]);
                 else {
-                    int* ctrlCache = prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
+                    int* ctrlCache = local_prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, M_PI/4);
                 }
                 break;
@@ -549,7 +549,7 @@ void internal_applyCircuit(int id) {
                 if (numCtrls == 0)
                     pauliZ(qureg, targs[targInd]);
                 else {
-                    int* ctrlCache = prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
+                    int* ctrlCache = local_prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledPhaseFlip(qureg, ctrlCache, numCtrls+1);
                 }
                 break;
@@ -718,7 +718,7 @@ void internal_applyCircuit(int id) {
                         .r0c1 = {.real=1, .imag=0},
                         .r1c0 = {.real=1, .imag=0},
                         .r1c1 = {.real=0, .imag=0}};
-                    int* ctrlCache = prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
+                    int* ctrlCache = local_prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledUnitary(qureg, ctrlCache, numCtrls+1, targs[targInd+1], u);
                     ctrlCache[numCtrls] = targs[targInd+1];
                     multiControlledUnitary(qureg, ctrlCache, numCtrls+1, targs[targInd], u);
