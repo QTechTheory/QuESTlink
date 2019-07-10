@@ -299,7 +299,7 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
                     
         CreateRemoteQuESTEnv[port_Integer] := Install @ getIgorLink @ port
                     
-        CreateLocalQuESTEnv[] := With[{fn=NotebookDirectory[] <> "quest_link"},
+        CreateLocalQuESTEnv[] := With[{fn="quest_link"},
             If[FileExistsQ[fn], Install[fn],  Echo["Local quest_link executable not found!", "Error: "]; $Failed]
         ]
         
