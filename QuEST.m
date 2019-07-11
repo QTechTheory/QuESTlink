@@ -102,6 +102,9 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         (* convert multiple MMA matrices into {#matrices, ... flattened matrices ...} *)
         codifyMatrices[matrs_] :=
             Prepend[Join @@ (codifyMatrix /@ matrs), Length @ matrs]
+            
+        (* sub-gate patterns *)
+        pattPauli = Subscript[(X|Y|Z), _Integer];
         
         (* recognising and codifying gates into {opcode, ctrls, targs, params} *)
         gatePatterns = {
@@ -111,7 +114,7 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
                 {getOpCode[gate], {ctrls}, {targs}, {args}},
         	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {}},
-            R[param_, ({paulis:Subscript[(X|Y|Z),_Integer]..}|Verbatim[Times][paulis:Subscript[(X|Y|Z),_Integer]..])] :>
+            R[param_, ({paulis:pattPauli..}|Verbatim[Times][paulis:pattPauli..]|paulis:pattPauli__)] :>
                 {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
         	Subscript[U, (targs:_Integer..)|{targs:_Integer..}][matr:_List] :> 
                 {getOpCode[U], {}, {targs}, codifyMatrix[matr]},
@@ -132,7 +135,7 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         (* checking circuit format *)
         isGateFormat[Subscript[_Symbol, (_Integer..)|{_Integer..}]] := True
         isGateFormat[Subscript[_Symbol, (_Integer..)|{_Integer..}][__]] := True
-        isGateFormat[R[_, ({Subscript[(X|Y|Z),_Integer]..}|Verbatim[Times][Subscript[(X|Y|Z),_Integer]..])]] := True
+        isGateFormat[R[_, (pattPauli|{pattPauli..}|Verbatim[Times][pattPauli..])]] := True
         isGateFormat[___] := False
         isCircuitFormat[circ_List] := AllTrue[circ,isGateFormat]
         isCircuitFormat[circ_?isGateFormat] := True
@@ -218,7 +221,6 @@ P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is
         	]
             
         (* compute the expected value of a Pauli product *)
-        pattPauli = Subscript[(X|Y|Z), _Integer];
         CalcExpecPauliProd[qureg_Integer, Verbatim[Times][paulis:pattPauli..], workspace_Integer] :=
             CalcExpecPauliProdInternal[qureg, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], workspace]
         CalcExpecPauliProd[qureg_Integer, Subscript[pauli:(X|Y|Z),targ:_Integer], workspace_Integer] :=
