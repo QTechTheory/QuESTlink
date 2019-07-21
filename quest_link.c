@@ -21,6 +21,7 @@
 
 #include "wstp.h"
 #include <stdio.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <QuEST.h>
@@ -78,7 +79,7 @@ Qureg quregs[MAX_NUM_QUREGS];
 /**
  * Buffer for creating error messages
  */
-static char buffer[1000];
+static char errorMsgBuffer[1000];
 
 /**
  * Reports an error message to MMA without aborting
@@ -93,9 +94,9 @@ void local_sendErrorToMMA(char* err_msg) {
     WSNewPacket(stdlink);
 }
 
-void local_quregNotCreatedError(int id) {
-    sprintf(buffer, "qureg (with id %d) has not been created.", id);
-    local_sendErrorToMMA(buffer);
+void local_sendQuregNotCreatedError(int id) {
+    sprintf(errorMsgBuffer, "qureg (with id %d) has not been created.", id);
+    local_sendErrorToMMA(errorMsgBuffer);
 }
 
 
@@ -127,7 +128,7 @@ int wrapper_destroyQureg(int id) {
         destroyQureg(quregs[id], env);
         quregs[id].isCreated = 0;
     } else
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
     return id;
 }
 
@@ -138,37 +139,37 @@ int wrapper_initZeroState(int id) {
     if (quregs[id].isCreated)
         initZeroState(quregs[id]);
     else
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
     return id;
 }
 int wrapper_initPlusState(int id) {
     if (quregs[id].isCreated)
         initPlusState(quregs[id]);
     else
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
     return id;
 }
 int wrapper_initClassicalState(int id, int stateInd) {
     if (quregs[id].isCreated)
         initClassicalState(quregs[id], stateInd);
     else
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
     return id;
 }
 int wrapper_initPureState(int quregID, int pureID) {
     if (quregs[quregID].isCreated && quregs[pureID].isCreated)
         initPureState(quregs[quregID], quregs[pureID]);
     else if (!quregs[quregID].isCreated)
-        local_quregNotCreatedError(quregID);
+        local_sendQuregNotCreatedError(quregID);
     else// if (!quregs[pureID].isCreated)
-        local_quregNotCreatedError(pureID);
+        local_sendQuregNotCreatedError(pureID);
     return quregID;
 }
 int wrapper_initStateFromAmps(int quregID, qreal* reals, int l1, qreal* imags, int l2) {
     Qureg qureg = quregs[quregID];
     
     if (!qureg.isCreated)
-        local_quregNotCreatedError(quregID);
+        local_sendQuregNotCreatedError(quregID);
     else if (l1 != l2 || l1 != qureg.numAmpsTotal)
         local_sendErrorToMMA("incorrect number of amplitudes supplied! State has not been changed.");
     else
@@ -177,9 +178,9 @@ int wrapper_initStateFromAmps(int quregID, qreal* reals, int l1, qreal* imags, i
 }
 int wrapper_cloneQureg(int outID, int inID) {
     if (!quregs[outID].isCreated)
-        local_quregNotCreatedError(outID);
+        local_sendQuregNotCreatedError(outID);
     else if (!quregs[inID].isCreated)
-        local_quregNotCreatedError(inID);
+        local_sendQuregNotCreatedError(inID);
     else
         cloneQureg(quregs[outID], quregs[inID]);
     return outID;
@@ -195,35 +196,35 @@ int wrapper_applyOneQubitDephaseError(int id, int qb1, qreal prob) {
     if (quregs[id].isCreated)
         applyOneQubitDephaseError(quregs[id], qb1, prob);
     else
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
     return id;
 }
 int wrapper_applyTwoQubitDephaseError(int id, int qb1, int qb2, qreal prob) {
     if (quregs[id].isCreated)
         applyTwoQubitDephaseError(quregs[id], qb1, qb2, prob);
     else
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
     return id;
 }
 int wrapper_applyOneQubitDepolariseError(int id, int qb1, qreal prob) {
     if (quregs[id].isCreated)
         applyOneQubitDepolariseError(quregs[id], qb1, prob);
     else
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
     return id;
 }
 int wrapper_applyTwoQubitDepolariseError(int id, int qb1, int qb2, qreal prob) {
     if (quregs[id].isCreated)
         applyTwoQubitDepolariseError(quregs[id], qb1, qb2, prob);
     else
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
     return id;
 }
 int wrapper_applyOneQubitDampingError(int id, int qb, qreal prob) {
     if (quregs[id].isCreated)
         applyOneQubitDampingError(quregs[id], qb, prob);
     else
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
     return id;
 }
 
@@ -234,26 +235,26 @@ qreal wrapper_calcProbOfOutcome(int id, int qb, int outcome) {
     if (quregs[id].isCreated)
         return calcProbOfOutcome(quregs[id], qb, outcome);
     else {
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
         return -1;
     }
 }
 qreal wrapper_calcFidelity(int id1, int id2) {
     if (!quregs[id1].isCreated) {
-        local_quregNotCreatedError(id1);
+        local_sendQuregNotCreatedError(id1);
         return -1;
     }
     if (!quregs[id2].isCreated) {
-        local_quregNotCreatedError(id2);
+        local_sendQuregNotCreatedError(id2);
         return -1;
     }
     return calcFidelity(quregs[id1], quregs[id2]);
 }
 void wrapper_calcInnerProduct(int id1, int id2) {
     if (!quregs[id1].isCreated)
-        return local_quregNotCreatedError(id1);
+        return local_sendQuregNotCreatedError(id1);
     if (!quregs[id2].isCreated)
-        return local_quregNotCreatedError(id2);
+        return local_sendQuregNotCreatedError(id2);
         
     Complex res = calcInnerProduct(quregs[id1], quregs[id2]);
     WSPutFunction(stdlink, "Complex", 2);
@@ -262,25 +263,25 @@ void wrapper_calcInnerProduct(int id1, int id2) {
 }
 qreal wrapper_calcPurity(int id) {
     if (!quregs[id].isCreated) {
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
         return -1;
     }
     return calcPurity(quregs[id]);
 }
 qreal wrapper_calcTotalProb(int id) {
     if (!quregs[id].isCreated) {
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
         return -1;
     }
     return calcTotalProb(quregs[id]);
 }
 qreal wrapper_calcHilbertSchmidtDistance(int id1, int id2) {
     if (!quregs[id1].isCreated) {
-        local_quregNotCreatedError(id1);
+        local_sendQuregNotCreatedError(id1);
         return -1;
     }
     if (!quregs[id2].isCreated) {
-        local_quregNotCreatedError(id2);
+        local_sendQuregNotCreatedError(id2);
         return -1;
     }
     return calcHilbertSchmidtDistance(quregs[id1], quregs[id2]);
@@ -294,7 +295,7 @@ int wrapper_collapseToOutcome(int id, int qb, int outcome) {
         collapseToOutcome(quregs[id], qb, outcome);
         return id;
     } else {
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
         return -1;
     }
 }
@@ -302,37 +303,31 @@ int wrapper_collapseToOutcome(int id, int qb, int outcome) {
 
 /* circuit execution */
 
-void local_backupQuregThenError(char* err_msg, int id, Qureg backup, int* mesOutcomeCache) {
-    local_sendErrorToMMA(err_msg);
-    cloneQureg(quregs[id], backup);
-    destroyQureg(backup, env);
-    free(mesOutcomeCache);
-    WSPutFunction(stdlink, "Abort", 0);
+// @DEBUG "Aborting circuit and restoring qureg (id %d) to its original state."
+
+int local_circuitError(char* msg, ...) {
+    va_list argp;
+    va_start(argp, msg);
+    vsprintf(errorMsgBuffer, msg, argp);
+    va_end(argp);
+    return 0;
 }
 
-void local_gateUnsupportedError(char* gate, int id, Qureg backup, int* mesOutcomeCache) {
-    sprintf(buffer, 
-        "the gate '%s' is not supported. "
-        "Aborting circuit and restoring qureg (id %d) to its original state.", 
-        gate, id);
-    local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
+int local_gateUnsupportedError(char* gate) {
+    return local_circuitError("the gate '%s' is not supported.", gate);
 }
 
-void local_gateWrongNumParamsError(char* gate, int wrongNumParams, int rightNumParams, int id, Qureg backup, int* mesOutcomeCache) {
-    sprintf(buffer,
-        "the gate '%s' accepts %d parameters, but %d were passed. "
-        "Aborting circuit and restoring qureg (id %d) to its original state.",
-        gate, rightNumParams, wrongNumParams, id);
-    local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
+int local_gateWrongNumParamsError(char* gate, int wrongNumParams, int rightNumParams) {
+    return local_circuitError(
+        "the gate '%s' accepts %d parameters, but %d were passed.",
+        gate, rightNumParams, wrongNumParams);
 }
 
 /* rightNumTargs is a string so that it can be multiple e.g. "1 or 2" */
-void local_gateWrongNumTargsError(char* gate, int wrongNumTargs, char* rightNumTargs, int id, Qureg backup, int* mesOutcomeCache) {
-    sprintf(buffer,
-        "the gate '%s' accepts %s, but %d were passed. "
-        "Aborting circuit and restoring qureg (id %d) to its original state.",
-        gate, rightNumTargs, wrongNumTargs, id);
-    local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
+int local_gateWrongNumTargsError(char* gate, int wrongNumTargs, char* rightNumTargs) {
+    return local_circuitError(
+        "the gate '%s' accepts %s, but %d were passed.",
+        gate, rightNumTargs, wrongNumTargs);
 }
 
 qreal local_getMaxValidNoiseProb(int opcode, int numQubits) {
@@ -357,18 +352,16 @@ int local_isValidProb(int opcode, int numQubits, qreal prob) {
     return (prob > 0 && prob < local_getMaxValidNoiseProb(opcode, numQubits));
 }
 
-void local_noiseInvalidProbError(int opcode, int numQubits, qreal prob, int id, Qureg backup, int* mesOutcomeCache) {
-    sprintf(buffer, "%d-qubit ", numQubits);
-    switch (opcode) {
-        case OPCODE_Deph: sprintf(buffer+strlen(buffer), "dephasing"); break;
-        case OPCODE_Depol: sprintf(buffer+strlen(buffer), "depolarising"); break;
-        case OPCODE_Damp: sprintf(buffer+strlen(buffer), "amplitude damping"); break;
-    }
-    sprintf(buffer+strlen(buffer),
-        " was applied with probability %g which is outside its accepted range of [0, %g]. "
-        "Aborting circuit and restoring qureg (id %d) to its original state.",
-        prob, local_getMaxValidNoiseProb(opcode, numQubits), id);
-    local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
+int local_noiseInvalidProbError(int opcode, int numQubits, qreal prob) {
+    char* opStr = "";
+    if (opcode == OPCODE_Deph) opStr = "dephasing";
+    if (opcode == OPCODE_Depol) opStr = "depolarising";
+    if (opcode == OPCODE_Damp) opStr = "amplitude damping";
+    qreal maxProb = local_getMaxValidNoiseProb(opcode, numQubits);
+    
+    return local_circuitError(
+        "%d-qubit %s was applied with probability %g which is outside its accepted range of [0, %g].", 
+        numQubits, opStr, prob, maxProb);
 }
 
 int* local_prepareCtrlCache(int* ctrls, int ctrlInd, int numCtrls, int addTarg) {
@@ -380,90 +373,34 @@ int* local_prepareCtrlCache(int* ctrls, int ctrlInd, int numCtrls, int addTarg) 
     return ctrlCache;
 }
 
-/** 
- * Applies a given circuit to the identified qureg.
- * The circuit is expressed as lists of opcodes (identifying gates),
- * the total flat sequence control qubits, a list denoting how many of
- * the control qubits apply to each operation, their target qubits (flat list),
- * a list denotating how many targets each operation has, their parameters 
- * (flat list) and a list denoting how many params each operation has.
- * Returns a list of measurement outcome of any performed measurements in the circuit.
- * The original qureg of the state is restored when this function
- * is aborted by the calling MMA, or aborted due to encountering
- * an invalid gate. In this case, Abort[] is returned.
- * However, a user error caught by the QuEST backend
- * (e.g. same target and control qubit) will result in the link being
- * destroyed.
+/* returns 1 if successful, else 0, upon which caller must error and abort.
+ * if returns 0, errors messages will be written to global errorMsgBuffer
+ * @param mesOutcomeCache may be NULL
  */
-void internal_applyCircuit(int id) {
-    
-    // get arguments from MMA link
-    int numOps;
-    int *opcodes;
-    WSGetInteger32List(stdlink, &opcodes, &numOps);
-    int totalNumCtrls;
-    int *ctrls;
-    int *numCtrlsPerOp;
-    WSGetInteger32List(stdlink, &ctrls, &totalNumCtrls);
-    WSGetInteger32List(stdlink, &numCtrlsPerOp, &numOps);
-    int totalNumTargs;
-    int *targs;
-    int *numTargsPerOp;
-    WSGetInteger32List(stdlink, &targs, &totalNumTargs);
-    WSGetInteger32List(stdlink, &numTargsPerOp, &numOps);
-    int totalNumParams;
-    qreal *params;
-    int *numParamsPerOp;
-    WSGetReal64List(stdlink, &params, &totalNumParams);
-    WSGetInteger32List(stdlink, &numParamsPerOp, &numOps);
-    
-    // ensure qureg exists
-    Qureg qureg = quregs[id];
-    if (!qureg.isCreated) {
-        local_quregNotCreatedError(id);
-        WSPutFunction(stdlink, "Abort", 0);
-        return;
-    }
-    
-    // backup of initial state in case of abort
-    Qureg backup;
-    if (qureg.isDensityMatrix)
-        backup = createDensityQureg(qureg.numQubitsRepresented, env);
-    else
-        backup = createQureg(qureg.numQubitsRepresented, env);
-    cloneQureg(backup, qureg);
-    
-    // count the total number of measurements performed in a circuit
-    int totalNumMesGates = 0;
-    int totalNumMeasurements = 0;
-    for (int opInd=0; opInd < numOps; opInd++)
-        if (opcodes[opInd] == OPCODE_M) {
-            totalNumMesGates++;
-            totalNumMeasurements += numTargsPerOp[opInd];
-        }
-    int* mesOutcomeCache = malloc(totalNumMeasurements * sizeof(int));
-    int mesInd = 0;
-    
+int local_applyGates(
+    Qureg qureg, int numOps, int* opcodes, 
+    int* ctrls, int* numCtrlsPerOp, 
+    int* targs, int* numTargsPerOp, 
+    qreal* params, int* numParamsPerOp,
+    int* mesOutcomeCache) {
+        
     int ctrlInd = 0;
     int targInd = 0;
     int paramInd = 0;
+    int mesInd = 0;
     
     // attempt to apply each gate
     for (int opInd=0; opInd < numOps; opInd++) {
         
+        //@TODO: benchmark time cost of abort checking!
+        
         // check whether the user has tried to abort
-        //if (WSAbort) { // why does WSAbort not exist??
         if (WSMessageReady(stdlink)) {
             int code, arg;
             WSGetMessage(stdlink, &code, &arg);
-            if (code == WSTerminateMessage || 
-                code == WSInterruptMessage || 
-                code == WSAbortMessage ||
-                code == WSImDyingMessage) {
-                    
-                return local_backupQuregThenError(
-                    "Circuit simulation aborted: restoring original qureg state.",
-                    id, backup, mesOutcomeCache);
+            if (code == WSTerminateMessage || code == WSInterruptMessage || 
+                code == WSAbortMessage     || code == WSImDyingMessage) {
+                return local_circuitError("Circuit simulation aborted.");
             }
         }
 
@@ -477,19 +414,19 @@ void internal_applyCircuit(int id) {
             
             case OPCODE_H :
                 if (numParams != 0)
-                    return local_gateWrongNumParamsError("Hadamard", numParams, 0, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("Hadamard", numParams, 0);
                 if (numCtrls != 0)
-                    return local_gateUnsupportedError("controlled Hadamard", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("controlled Hadamard");
                 if (numTargs != 1)
-                    return local_gateWrongNumTargsError("Hadamard", numTargs, "1 target", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("Hadamard", numTargs, "1 target");
                 hadamard(qureg, targs[targInd]);
                 break;
                 
             case OPCODE_S :
                 if (numParams != 0)
-                    return local_gateWrongNumParamsError("S gate", numParams, 0, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("S gate", numParams, 0);
                 if (numTargs != 1)
-                    return local_gateWrongNumTargsError("S gate", numTargs, "1 target", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("S gate", numTargs, "1 target");
                 if (numCtrls == 0)
                     sGate(qureg, targs[targInd]);
                 else {
@@ -500,9 +437,9 @@ void internal_applyCircuit(int id) {
                 
             case OPCODE_T :
                 if (numParams != 0)
-                    return local_gateWrongNumParamsError("T gate", numParams, 0, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("T gate", numParams, 0);
                 if (numTargs != 1)
-                    return local_gateWrongNumTargsError("T gate", numTargs, "1 target", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("T gate", numTargs, "1 target");
                 if (numCtrls == 0)
                     tGate(qureg, targs[targInd]);
                 else {
@@ -513,9 +450,9 @@ void internal_applyCircuit(int id) {
         
             case OPCODE_X :
                 if (numParams != 0)
-                    return local_gateWrongNumParamsError("X", numParams, 0, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("X", numParams, 0);
                 if (numTargs != 1)
-                    return local_gateWrongNumTargsError("X", numTargs, "1 target", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("X", numTargs, "1 target");
                 if (numCtrls == 0)
                     pauliX(qureg, targs[targInd]);
                 else if (numCtrls == 1)
@@ -532,22 +469,22 @@ void internal_applyCircuit(int id) {
                 
             case OPCODE_Y :
                 if (numParams != 0)
-                    return local_gateWrongNumParamsError("Y", numParams, 0, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("Y", numParams, 0);
                 if (numTargs != 1)
-                    return local_gateWrongNumTargsError("Y", numTargs, "1 target", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("Y", numTargs, "1 target");
                 if (numCtrls == 0)
                     pauliY(qureg, targs[targInd]);
                 else if (numCtrls == 1)
                     controlledPauliY(qureg, ctrls[ctrlInd], targs[targInd]);
                 else
-                    return local_gateUnsupportedError("controlled Y", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("controlled Y");
                 break;
                 
             case OPCODE_Z :
                 if (numParams != 0)
-                    return local_gateWrongNumParamsError("Z", numParams, 0, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("Z", numParams, 0);
                 if (numTargs != 1)
-                    return local_gateWrongNumTargsError("Z", numTargs, "1 target", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("Z", numTargs, "1 target");
                 if (numCtrls == 0)
                     pauliZ(qureg, targs[targInd]);
                 else {
@@ -558,37 +495,37 @@ void internal_applyCircuit(int id) {
         
             case OPCODE_Rx :
                 if (numParams != 1)
-                    return local_gateWrongNumParamsError("Rx", numParams, 1, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("Rx", numParams, 1);
                 if (numTargs != 1)
-                    return local_gateWrongNumTargsError("Rx", numTargs, "1 target", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("Rx", numTargs, "1 target");
                 if (numCtrls == 0)
                     rotateX(qureg, targs[targInd], params[paramInd]);
                 else if (numCtrls == 1)
                     controlledRotateX(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]);
                 else
-                    return local_gateUnsupportedError("multi-controlled Rotate X", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("multi-controlled Rotate X");
                 break;
                 
             case OPCODE_Ry :
                 if (numParams != 1)
-                    return local_gateWrongNumParamsError("Ry", numParams, 1, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("Ry", numParams, 1);
                 if (numTargs != 1)
-                    return local_gateWrongNumTargsError("Ry", numTargs, "1 target", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("Ry", numTargs, "1 target");
                 if (numCtrls == 0)
                     rotateY(qureg, targs[targInd], params[paramInd]);
                 else if (numCtrls == 1)
                     controlledRotateY(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]);
                 else
-                    return local_gateUnsupportedError("multi-controlled Rotate Y", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("multi-controlled Rotate Y");
                 break;
                 
             case OPCODE_Rz :
                 if (numParams != 1)
-                    return local_gateWrongNumParamsError("Rz", numParams, 1, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("Rz", numParams, 1);
                 if (numCtrls > 1)
-                    return local_gateUnsupportedError("multi-controlled Rotate Z", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("multi-controlled Rotate Z");
                 if (numCtrls == 1 && numTargs > 1)
-                    return local_gateUnsupportedError("multi-controlled multi-rotateZ", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("multi-controlled multi-rotateZ");
                 if (numTargs == 1) {
                     if (numCtrls == 0)
                         rotateZ(qureg, targs[targInd], params[paramInd]);
@@ -600,12 +537,12 @@ void internal_applyCircuit(int id) {
                 
             case OPCODE_R:
                 if (numCtrls != 0)
-                    return local_gateUnsupportedError("controlled multi-rotate-Pauli", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("controlled multi-rotate-Pauli");
                 if (numTargs != numParams-1) {
-                    sprintf(buffer, 
-                        "An internel error in R occured! It received an unequal number of Pauli codes (%d) and target qubits! (%d)",
+                    return local_circuitError(
+                        "An internel error in R occured! "
+                        "It received an unequal number of Pauli codes (%d) and target qubits! (%d)",
                         numParams-1, numTargs);
-                    return local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
                 }
                 int paulis[MAX_NUM_TARGS_CTRLS]; 
                 for (int p=0; p < numTargs; p++)
@@ -615,11 +552,11 @@ void internal_applyCircuit(int id) {
             
             case OPCODE_U : 
                 if (numTargs == 1 && numParams != 2*2*2)
-                    return local_backupQuregThenError("single qubit U accepts only 2x2 matrices", id, backup, mesOutcomeCache);
+                    return local_circuitError("single qubit U accepts only 2x2 matrices");
                 if (numTargs == 2 && numParams != 4*4*2)
-                    return local_backupQuregThenError("two qubit U accepts only 4x4 matrices", id, backup, mesOutcomeCache);
+                    return local_circuitError("two qubit U accepts only 4x4 matrices");
                 if (numTargs != 1 && numTargs != 2)
-                    return local_gateWrongNumTargsError("U", numTargs, "1 or 2 targets", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("U", numTargs, "1 or 2 targets");
                 
                 if (numTargs == 1) {
                     ComplexMatrix2 u = {
@@ -659,15 +596,15 @@ void internal_applyCircuit(int id) {
                 
             case OPCODE_Deph :
                 if (numParams != 1)
-                    return local_gateWrongNumParamsError("Dephasing", numParams, 1, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("Dephasing", numParams, 1);
                 if (numCtrls != 0)
-                    return local_gateUnsupportedError("controlled dephasing", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("controlled dephasing");
                 if (numTargs != 1 && numTargs != 2)
-                    return local_gateWrongNumTargsError("Dephasing", numTargs, "1 or 2 targets", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("Dephasing", numTargs, "1 or 2 targets");
                 if (params[paramInd] == 0)
                     break;
                 if (!local_isValidProb(op, numTargs, params[paramInd]))
-                    return local_noiseInvalidProbError(op, numTargs, params[paramInd], id, backup, mesOutcomeCache);
+                    return local_noiseInvalidProbError(op, numTargs, params[paramInd]);
                 if (numTargs == 1)
                     applyOneQubitDephaseError(qureg, targs[targInd], params[paramInd]);
                 if (numTargs == 2)
@@ -676,15 +613,15 @@ void internal_applyCircuit(int id) {
                 
             case OPCODE_Depol :
                 if (numParams != 1)
-                    return local_gateWrongNumParamsError("Depolarising", numParams, 1, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("Depolarising", numParams, 1);
                 if (numCtrls != 0)
-                    return local_gateUnsupportedError("controlled depolarising", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("controlled depolarising");
                 if (numTargs != 1 && numTargs != 2)
-                    return local_gateWrongNumTargsError("Depolarising", numTargs, "1 or 2 targets", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("Depolarising", numTargs, "1 or 2 targets");
                 if (params[paramInd] == 0)
                     break;
                 if (!local_isValidProb(op, numTargs, params[paramInd]))
-                    return local_noiseInvalidProbError(op, numTargs, params[paramInd], id, backup, mesOutcomeCache);
+                    return local_noiseInvalidProbError(op, numTargs, params[paramInd]);
                 if (numTargs == 1)
                     applyOneQubitDepolariseError(qureg, targs[targInd], params[paramInd]);
                 if (numTargs == 2)
@@ -693,23 +630,23 @@ void internal_applyCircuit(int id) {
                 
             case OPCODE_Damp :
                 if (numParams != 1)
-                    return local_gateWrongNumParamsError("Damping", numParams, 1, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("Damping", numParams, 1);
                 if (numCtrls != 0)
-                    return local_gateUnsupportedError("controlled damping", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("controlled damping");
                 if (numTargs != 1)
-                    return local_gateWrongNumTargsError("Damping", numTargs, "1 target", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("Damping", numTargs, "1 target");
                 if (params[paramInd] == 0)
                     break;
                 if (!local_isValidProb(op, numTargs, params[paramInd]))
-                    return local_noiseInvalidProbError(op, numTargs, params[paramInd], id, backup, mesOutcomeCache);
+                    return local_noiseInvalidProbError(op, numTargs, params[paramInd]);
                 applyOneQubitDampingError(qureg, targs[targInd], params[paramInd]);
                 break;
                 
             case OPCODE_SWAP:
                 if (numParams != 0)
-                    return local_gateWrongNumParamsError("SWAP", numParams, 0, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("SWAP", numParams, 0);
                 if (numTargs != 2)
-                    return local_gateWrongNumTargsError("Depolarising", numTargs, "2 targets", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("Depolarising", numTargs, "2 targets");
                 if (numCtrls == 0) {
                     controlledNot(qureg, targs[targInd],   targs[targInd+1]);
                     controlledNot(qureg, targs[targInd+1], targs[targInd  ]);
@@ -731,32 +668,33 @@ void internal_applyCircuit(int id) {
                 
             case OPCODE_M:
                 if (numParams != 0)
-                    return local_gateWrongNumParamsError("M", numParams, 0, id, backup, mesOutcomeCache);
+                    return local_gateWrongNumParamsError("M", numParams, 0);
                 if (numCtrls != 0)
-                    return local_gateUnsupportedError("controlled measurement", id, backup, mesOutcomeCache);
-                for (int q=0; q < numTargs; q++)
-                    mesOutcomeCache[mesInd++] = measure(qureg, targs[targInd+q]);
+                    return local_gateUnsupportedError("controlled measurement");
+                for (int q=0; q < numTargs; q++) {
+                    int outcomeVal = measure(qureg, targs[targInd+q]);
+                    if (mesOutcomeCache != NULL)
+                        mesOutcomeCache[mesInd++] = outcomeVal;
+                }
                 break;
             
             case OPCODE_P:
                 if (numParams != 1 && numParams != numTargs) {
-                    sprintf(buffer, 
+                    return local_circuitError(
                         "P[outcomes] specified a different number of binary outcomes (%d) than target qubits (%d)!",
                         numParams, numTargs);
-                    return local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
                 }
                 if (numCtrls != 0)
-                    return local_gateUnsupportedError("controlled projector", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("controlled projector");
                 if (numParams > 1)
                     for (int q=0; q < numParams; q++)
                         collapseToOutcome(qureg, targs[targInd+q], (int) params[paramInd+q]);
                 else {
                     // check value isn't impossibly high
-                    if (params[paramInd] >= (1LL << numTargs)) {
-                        sprintf(buffer, "P[%d] was applied to %d qubits and exceeds their maximum represented value of %lld.",
+                    if (params[paramInd] >= (1LL << numTargs))
+                        return local_circuitError(
+                            "P[%d] was applied to %d qubits and exceeds their maximum represented value of %lld.",
                             (int) params[paramInd], numTargs, (1LL << numTargs));
-                        return local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
-                    }
                     // work out each bit outcome and apply; right most (least significant) bit acts on right-most target
                     for (int q=0; q < numTargs; q++)
                         collapseToOutcome(qureg, targs[targInd+numTargs-q-1], (((int) params[paramInd]) >> q) & 1);
@@ -767,22 +705,19 @@ void internal_applyCircuit(int id) {
                 ; // empty post-label statement, courtesy of weird C99 standard
                 int numKrausOps = (int) params[paramInd];
                 if (numCtrls != 0)
-                    return local_gateUnsupportedError("controlled Kraus map", id, backup, mesOutcomeCache);
+                    return local_gateUnsupportedError("controlled Kraus map");
                 if (numTargs != 1 && numTargs != 2)
-                    return local_gateWrongNumTargsError("Kraus map", numTargs, "1 or 2 targets", id, backup, mesOutcomeCache);
+                    return local_gateWrongNumTargsError("Kraus map", numTargs, "1 or 2 targets");
                 if ((numKrausOps < 1) ||
                     (numTargs == 1 && numKrausOps > 4 ) ||
                     (numTargs == 2 && numKrausOps > 16))
-                {
-                    sprintf(buffer, 
+                    return local_circuitError(
                         "%d operators were passed to single-qubit Krauss[ops], which accepts only >0 and <=%d operators!",
                         numKrausOps, (numTargs==1)? 4:16);
-                    return local_backupQuregThenError(buffer, id, backup, mesOutcomeCache);
-                }
                 if (numTargs == 1 && (numParams-1) != 2*2*2*numKrausOps)
-                    return local_backupQuregThenError("one-qubit Kraus expects 2-by-2 matrices!", id, backup, mesOutcomeCache);
+                    return local_circuitError("one-qubit Kraus expects 2-by-2 matrices!");
                 if (numTargs == 2 && (numParams-1) != 4*4*2*numKrausOps)
-                    return local_backupQuregThenError("two-qubit Kraus expects 4-by-4 matrices!", id, backup, mesOutcomeCache);
+                    return local_circuitError("two-qubit Kraus expects 4-by-4 matrices!");
 
                 if (numTargs == 1) {
                     ComplexMatrix2 krausOps[4];
@@ -825,27 +760,108 @@ void internal_applyCircuit(int id) {
                 break;
                 
             default:            
-                return local_backupQuregThenError(
-                    "circuit contained an unknown gate. "
-                    "Aborting circuit and restoring original state.",
-                    id, backup, mesOutcomeCache);
+                return local_circuitError("circuit contained an unknown gate.");
         }
         ctrlInd += numCtrls;
         targInd += numTargs;
         paramInd += numParams;
     }
     
-    // return lists of measurement outcomes
-    mesInd = 0;
-    WSPutFunction(stdlink, "List", totalNumMesGates);
-    for (int opInd=0; opInd < numOps; opInd++) {
-        if (opcodes[opInd] == OPCODE_M) {
-            WSPutFunction(stdlink, "List", numTargsPerOp[opInd]);
-            for (int i=0; i < numTargsPerOp[opInd]; i++)
-                WSPutInteger(stdlink, mesOutcomeCache[mesInd++]);
-        }
+    // indicate success 
+    return 1;
+}
+
+void local_loadCircuit(
+    int* numOps, int** opcodes, int** ctrls, int** numCtrlsPerOp, 
+    int** targs, int** numTargsPerOp, qreal** params, int** numParamsPerOp) {
+
+    int totalNumCtrls, totalNumTargs, totalNumParams;
+
+    WSGetInteger32List(stdlink, opcodes, numOps);
+    
+    WSGetInteger32List(stdlink, ctrls, &totalNumCtrls);
+    WSGetInteger32List(stdlink, numCtrlsPerOp, numOps);
+
+    WSGetInteger32List(stdlink, targs, &totalNumTargs);
+    WSGetInteger32List(stdlink, numTargsPerOp, numOps);
+
+    WSGetReal64List(stdlink, params, &totalNumParams);
+    WSGetInteger32List(stdlink, numParamsPerOp, numOps);
+}
+
+/** 
+ * Applies a given circuit to the identified qureg.
+ * The circuit is expressed as lists of opcodes (identifying gates),
+ * the total flat sequence control qubits, a list denoting how many of
+ * the control qubits apply to each operation, their target qubits (flat list),
+ * a list denotating how many targets each operation has, their parameters 
+ * (flat list) and a list denoting how many params each operation has.
+ * Returns a list of measurement outcome of any performed measurements in the circuit.
+ * The original qureg of the state is restored when this function
+ * is aborted by the calling MMA, or aborted due to encountering
+ * an invalid gate. In this case, Abort[] is returned.
+ * However, a user error caught by the QuEST backend
+ * (e.g. same target and control qubit) will result in the link being
+ * destroyed.
+ */
+void internal_applyCircuit(int id) {
+    
+    // get arguments from MMA link
+    int numOps;
+    int *opcodes, *ctrls, *numCtrlsPerOp, *targs, *numTargsPerOp, *numParamsPerOp;
+    qreal* params;
+    local_loadCircuit(&numOps, &opcodes, &ctrls, &numCtrlsPerOp, &targs, &numTargsPerOp, &params, &numParamsPerOp);
+    
+    // ensure qureg exists
+    Qureg qureg = quregs[id];
+    if (!qureg.isCreated) {
+        local_sendQuregNotCreatedError(id);
+        WSPutFunction(stdlink, "Abort", 0);
+        return;
     }
     
+    // backup of initial state in case of abort
+    Qureg backup = createCloneQureg(qureg, env);
+    
+    // count the total number of measurements performed in a circuit
+    int totalNumMesGates = 0;
+    int totalNumMeasurements = 0;
+    for (int opInd=0; opInd < numOps; opInd++)
+        if (opcodes[opInd] == OPCODE_M) {
+            totalNumMesGates++;
+            totalNumMeasurements += numTargsPerOp[opInd];
+        }
+        
+    // prepare records of measurement outcomes
+    int* mesOutcomeCache = malloc(totalNumMeasurements * sizeof(int));
+    int mesInd = 0;
+    
+    // apply the circuit
+    int success = local_applyGates(
+        qureg, numOps, opcodes, 
+        ctrls, numCtrlsPerOp, 
+        targs, numTargsPerOp, 
+        params, numParamsPerOp,
+        mesOutcomeCache);
+    
+    if (success) {
+        // return lists of measurement outcomes
+        mesInd = 0;
+        WSPutFunction(stdlink, "List", totalNumMesGates);
+        for (int opInd=0; opInd < numOps; opInd++) {
+            if (opcodes[opInd] == OPCODE_M) {
+                WSPutFunction(stdlink, "List", numTargsPerOp[opInd]);
+                for (int i=0; i < numTargsPerOp[opInd]; i++)
+                    WSPutInteger(stdlink, mesOutcomeCache[mesInd++]);
+            }
+        }
+    } else {
+        // restore the qureg's original state and issue errors and Abort in Mathematica
+        cloneQureg(qureg, backup);
+        local_sendErrorToMMA(errorMsgBuffer);
+        WSPutFunction(stdlink, "Abort", 0);
+    }
+
     // clear data structures
     free(mesOutcomeCache);
     destroyQureg(backup, env);
@@ -859,7 +875,7 @@ void internal_applyCircuit(int id) {
 void internal_getStateVec(int id) {
     
     if (!quregs[id].isCreated) {
-        local_quregNotCreatedError(id);
+        local_sendQuregNotCreatedError(id);
         WSPutInteger(stdlink, -1);
         return;
     }
@@ -881,11 +897,11 @@ int internal_setWeightedQureg(
     double facReOut, double facImOut, int outID
 ) {
     if (!quregs[qureg1].isCreated)
-        local_quregNotCreatedError(qureg1);
+        local_sendQuregNotCreatedError(qureg1);
     else if (!quregs[qureg2].isCreated)
-        local_quregNotCreatedError(qureg2);
+        local_sendQuregNotCreatedError(qureg2);
     else if (!quregs[outID].isCreated)
-        local_quregNotCreatedError(outID);
+        local_sendQuregNotCreatedError(outID);
     else 
         setWeightedQureg(
             (Complex) {.real=facRe1, .imag=facIm1}, quregs[qureg1],
@@ -908,13 +924,13 @@ qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
     // ensure quregs exists
     Qureg qureg = quregs[quregId];
     if (!qureg.isCreated) {
-        local_quregNotCreatedError(quregId);
+        local_sendQuregNotCreatedError(quregId);
         WSPutFunction(stdlink, "Abort", 0);
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     Qureg workspace = quregs[workspaceId];
     if (!workspace.isCreated) {
-        local_quregNotCreatedError(workspaceId);
+        local_sendQuregNotCreatedError(workspaceId);
         WSPutFunction(stdlink, "Abort", 0);
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
@@ -959,13 +975,13 @@ qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
     // ensure quregs exists
     Qureg qureg = quregs[quregId];
     if (!qureg.isCreated) {
-        local_quregNotCreatedError(quregId);
+        local_sendQuregNotCreatedError(quregId);
         WSPutFunction(stdlink, "Abort", 0);
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     Qureg workspace = quregs[workspaceId];
     if (!workspace.isCreated) {
-        local_quregNotCreatedError(workspaceId);
+        local_sendQuregNotCreatedError(workspaceId);
         WSPutFunction(stdlink, "Abort", 0);
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
@@ -1016,13 +1032,13 @@ int internal_applyPauliSum(int inId, int outId) {
     // ensure quregs exists
     Qureg inQureg = quregs[inId];
     if (!inQureg.isCreated) {
-        local_quregNotCreatedError(inId);
+        local_sendQuregNotCreatedError(inId);
         WSPutFunction(stdlink, "Abort", 0);
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     Qureg outQureg = quregs[outId];
     if (!outQureg.isCreated) {
-        local_quregNotCreatedError(outId);
+        local_sendQuregNotCreatedError(outId);
         WSPutFunction(stdlink, "Abort", 0);
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
