@@ -156,6 +156,9 @@ typedef struct QuESTEnv
 /** exposed for MMA statevec access */
 void copyStateFromGPU(Qureg qureg);
 
+/** exposed for MMA get-deriv-of-circuits (deriv of controlled gates) */
+void projectToOne(Qureg qureg, const int measureQubit);
+
 
 /*
  * public functions

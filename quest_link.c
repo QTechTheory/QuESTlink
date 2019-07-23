@@ -380,13 +380,20 @@ int* local_prepareCtrlCache(int* ctrls, int ctrlInd, int numCtrls, int addTarg) 
 /* returns 1 if successful, else 0, upon which caller must error and abort.
  * if returns 0, errors messages will be written to global errorMsgBuffer
  * @param mesOutcomeCache may be NULL
+ * @param finalCtrlInd, finalTargInd and finalParamInd are modified to point to 
+ *  the final values of ctrlInd, targInd and paramInd, after the #numOps operation 
+ *  has been applied. If #numOps isn't smaller than the actual length of the 
+ *  circuit arrays, these indices will point out of bounds.
  */
 int local_applyGates(
-    Qureg qureg, int numOps, int* opcodes, 
+    Qureg qureg, 
+    int numOps, int* opcodes, 
     int* ctrls, int* numCtrlsPerOp, 
     int* targs, int* numTargsPerOp, 
     qreal* params, int* numParamsPerOp,
-    int* mesOutcomeCache) {
+    int* mesOutcomeCache,
+    int* finalCtrlInd, int* finalTargInd, int* finalParamInd
+    ) {
         
     int ctrlInd = 0;
     int targInd = 0;
@@ -550,7 +557,7 @@ int local_applyGates(
                 }
                 int paulis[MAX_NUM_TARGS_CTRLS]; 
                 for (int p=0; p < numTargs; p++)
-                    paulis[p] = params[paramInd+1+p];
+                    paulis[p] = (int) params[paramInd+1+p];
                 multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]);
                 break;
             
@@ -841,13 +848,16 @@ void internal_applyCircuit(int id) {
     int mesInd = 0;
     
     // apply the circuit
+    int finalCtrlInd, finalTargInd, finalParamInd; // ignored final inds
     int success = local_applyGates(
         qureg, numOps, opcodes, 
         ctrls, numCtrlsPerOp, 
         targs, numTargsPerOp, 
         params, numParamsPerOp,
-        mesOutcomeCache);
+        mesOutcomeCache,
+        &finalCtrlInd, &finalTargInd, &finalParamInd);
     
+    // if circuit contained no errors...
     if (success) {
         // return lists of measurement outcomes
         mesInd = 0;
@@ -860,7 +870,7 @@ void internal_applyCircuit(int id) {
             }
         }
     } else {
-        // restore the qureg's original state and issue errors and Abort in Mathematica
+        // otherwise restore the qureg's original state and issue errors and Abort in Mathematica
         cloneQureg(qureg, backup);
         local_sendErrorMsgBufferToMMA();
         WSPutFunction(stdlink, "Abort", 0);
@@ -869,6 +879,93 @@ void internal_applyCircuit(int id) {
     // clear data structures
     free(mesOutcomeCache);
     destroyQureg(backup, env);
+}
+
+/* quregs must be prior initialised and cloned to the initial state of the circuit.
+ * returns 0 if each circuit and derivative was performed successful, else returns 
+ * 1 and writes the error message to errorMsgBuffer
+ */
+int local_getDerivativeQuregs(
+    // variable (to be differentiated) info
+    Qureg* quregs, int* varOpInds, int numVars, 
+    // circuit info
+    int numOps, int* opcodes, 
+    int* ctrls, int* numCtrlsPerOp, 
+    int* targs, int* numTargsPerOp, 
+    qreal* params, int* numParamsPerOp) {
+        
+    /* note it's not trivial to re-use the previous variabele's qureg,
+       because we can't be sure the next variable occurs FURTHER in the circuit.
+       Ergo, each qureg will fully simulate the circuit but this at most doubles 
+       the runtime, since the full circuit suffix after a var needed simulation.
+     */
+
+    // don't record measurement outcomes
+    int* mesOutcomes = NULL;
+    
+    for (int v=0; v<numVars; v++) {
+        Qureg qureg = quregs[v];
+        int varOp = varOpInds[v];
+        
+        // indices AFTER last gate applied by circuit
+        int finalCtrlInd, finalTargInd, finalParamInd;
+        
+        // apply only gates up to and including the to-be-differentiated gate
+        int success = local_applyGates(
+            qureg, varOp+1, opcodes, 
+            ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp,
+            mesOutcomes, &finalCtrlInd, &finalTargInd, &finalParamInd);
+        if (!success)
+            return success; // errorMsgBuffer updated by local_applyGates
+
+        // details of (already applied) to-be-differentiated gate
+        int op = opcodes[varOp];
+        int numCtrls = numCtrlsPerOp[varOp];
+        int numTargs = numTargsPerOp[varOp];
+        int numParams = numParamsPerOp[varOp];
+
+        // wind back inds to point to the to-be-differentiated gate 
+        finalCtrlInd -= numCtrls;
+        finalTargInd -= numTargs;
+        finalParamInd -= numParams;
+        
+        // ignore control qubits and apply gate Paulis incurred by differentiation 
+        switch(op) {
+            case OPCODE_Rx :
+                for (int t=0; t < numTargs; t++) // multi-target X may be possible later 
+                    pauliX(qureg, targs[t+finalTargInd]); 
+                break;
+            case OPCODE_Ry :
+                for (int t=0; t < numTargs; t++) // multi-target Y may be possible later 
+                    pauliY(qureg, targs[t+finalTargInd]); 
+                break;
+            case OPCODE_Rz :
+                for (int t=0; t < numTargs; t++)
+                    pauliZ(qureg, targs[t+finalTargInd]); 
+                break;
+            case OPCODE_R:
+                for (int t=0; t < numTargs; t++) {
+                    int pauliCode = (int) params[t+finalParamInd+1];
+                    if (pauliCode == 1) pauliX(qureg, targs[t+finalTargInd]);
+                    if (pauliCode == 2) pauliY(qureg, targs[t+finalTargInd]);
+                    if (pauliCode == 3) pauliZ(qureg, targs[t+finalTargInd]);
+                }
+            default:            
+                return local_circuitError("Only Rx, Ry, Rz and R gates may be differentiated!");
+        }
+        
+        // differentiate control qubits by forcing them to 1, without renormalising
+        for (int c=0; c<numCtrls; c++)
+            projectToOne(qureg, ctrls[finalCtrlInd]);
+        
+        // adjust normalisation (multiply by -i/2)
+        Complex zero = (Complex) {.real=0, .imag=0};
+        Complex fac = (Complex) {.real=0, .imag=-0.5};
+        setWeightedQureg(zero, qureg, zero, qureg, fac, qureg);
+    }
+    
+    // indicate success
+    return 1;
 }
 
 /**

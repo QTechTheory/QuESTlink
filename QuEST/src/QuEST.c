@@ -21,6 +21,30 @@
 extern "C" {
 #endif
 
+
+/*
+ * Added for Mathematica front-end 
+ */
+ 
+void projectToOne(Qureg qureg, const int measureQubit) {
+     validateTarget(qureg, measureQubit, __func__);
+     
+     // effect |1><1| on qureg
+     int outcome=1;
+     qreal renorm=1.0;
+
+     if (qureg.isDensityMatrix)
+         densmatr_collapseToKnownProbOutcome(qureg, measureQubit, outcome, renorm);
+     else
+         statevec_collapseToKnownProbOutcome(qureg, measureQubit, outcome, renorm);
+     
+     qasm_recordMeasurement(qureg, measureQubit);
+ }
+
+
+
+
+
 /*
  * state-vector management
  */
