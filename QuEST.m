@@ -84,8 +84,8 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     PackageExport[M]
     M::usage = "M is a desctructive measurement gate which measures the indicated qubits in the Z basis."
     PackageExport[P]
-    P::usage = "P[val] is a projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
-P[outcomes] is a projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
+    P::usage = "P[val] is a (normalised) projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
+P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
     PackageExport[Kraus]
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
  
