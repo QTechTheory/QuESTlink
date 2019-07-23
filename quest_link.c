@@ -94,9 +94,13 @@ void local_sendErrorToMMA(char* err_msg) {
     WSNewPacket(stdlink);
 }
 
+void local_sendErrorMsgBufferToMMA(void) {
+    local_sendErrorToMMA(errorMsgBuffer);
+}
+
 void local_sendQuregNotCreatedError(int id) {
     sprintf(errorMsgBuffer, "qureg (with id %d) has not been created.", id);
-    local_sendErrorToMMA(errorMsgBuffer);
+    local_sendErrorMsgBufferToMMA();
 }
 
 
@@ -858,7 +862,7 @@ void internal_applyCircuit(int id) {
     } else {
         // restore the qureg's original state and issue errors and Abort in Mathematica
         cloneQureg(qureg, backup);
-        local_sendErrorToMMA(errorMsgBuffer);
+        local_sendErrorMsgBufferToMMA();
         WSPutFunction(stdlink, "Abort", 0);
     }
 
