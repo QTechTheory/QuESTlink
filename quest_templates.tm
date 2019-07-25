@@ -6,7 +6,7 @@
 :ArgumentTypes:  { Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`CreateQureg::usage = "CreateQureg[numQubits] returns the id of a newly created remote statevector."
+:Evaluate: QuEST`CreateQureg::usage = "CreateQureg[numQubits] returns the id of a newly created statevector."
 
 :Begin:
 :Function:       wrapper_createDensityQureg
@@ -15,7 +15,7 @@
 :ArgumentTypes:  { Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`CreateDensityQureg::usage = "CreateDensityQureg[numQubits] returns the id of a newly created remote density matrix."
+:Evaluate: QuEST`CreateDensityQureg::usage = "CreateDensityQureg[numQubits] returns the id of a newly created density matrix."
 
 :Begin:
 :Function:       wrapper_destroyQureg
@@ -24,7 +24,7 @@
 :ArgumentTypes:  { Integer }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`Private`DestroyQuregInternal::usage = "DestroyQuregInternal[numQubits] frees the memory of the remote qureg associated with the given id."
+:Evaluate: QuEST`Private`DestroyQuregInternal::usage = "DestroyQuregInternal[numQubits] frees the memory of the qureg associated with the given id."
 
 
 
