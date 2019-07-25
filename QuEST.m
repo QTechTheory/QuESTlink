@@ -112,21 +112,21 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         
         (* recognising and codifying gates into {opcode, ctrls, targs, params} *)
         gatePatterns = {
-            Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[U,  (targs:_Integer..)|{targs:_Integer..}][matr:_List]] :> 
+            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[U,  (targs:__Integer)|{targs:__Integer}][matr:_List]] :> 
                 {getOpCode[U], {ctrls}, {targs}, codifyMatrix[matr]},
-        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}][args__]] :> 
+        	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {args}},
-        	Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}]] :> 
+        	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {}},
             R[param_, ({paulis:pattPauli..}|Verbatim[Times][paulis:pattPauli..]|paulis:pattPauli__)] :>
                 {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
-        	Subscript[U, (targs:_Integer..)|{targs:_Integer..}][matr:_List] :> 
+        	Subscript[U, (targs:__Integer)|{targs:__Integer}][matr:_List] :> 
                 {getOpCode[U], {}, {targs}, codifyMatrix[matr]},
-            Subscript[Kraus, (targs:_Integer..)|{targs:_Integer..}][matrs_List] :>
+            Subscript[Kraus, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
                 {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
-            Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}][args__] :> 
+            Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__] :> 
                 {getOpCode[gate], {}, {targs}, {args}},
-        	Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}] :> 
+        	Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}] :> 
                 {getOpCode[gate], {}, {targs}, {}}
         };
 
@@ -137,8 +137,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             codifyCircuit @ {circuit}
             
         (* checking circuit format *)
-        isGateFormat[Subscript[_Symbol, (_Integer..)|{_Integer..}]] := True
-        isGateFormat[Subscript[_Symbol, (_Integer..)|{_Integer..}][__]] := True
+        isGateFormat[Subscript[_Symbol, (__Integer)|{__Integer}]] := True
+        isGateFormat[Subscript[_Symbol, (__Integer)|{__Integer}][__]] := True
         isGateFormat[R[_, (pattPauli|{pattPauli..}|Verbatim[Times][pattPauli..])]] := True
         isGateFormat[___] := False
         isCircuitFormat[circ_List] := AllTrue[circ,isGateFormat]
@@ -375,10 +375,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
          *)
          
         (* convert symbolic gate form to {symbol, ctrls, targets} *)
-        getSymbCtrlsTargs[Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}][args__]]] := {gate, {ctrls}, {targs}}
-        getSymbCtrlsTargs[Subscript[C, (ctrls:_Integer..)|{ctrls:_Integer..}][Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}]]] := {gate, {ctrls}, {targs}}
-        getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}][args__]] := {gate, {},{targs}}
-        getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:_Integer..)|{targs:_Integer..}]] := {gate, {}, {targs}}
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]]] := {gate, {ctrls}, {targs}}
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]]] := {gate, {ctrls}, {targs}}
+        getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] := {gate, {},{targs}}
+        getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] := {gate, {}, {targs}}
 
         (* deciding how to handle gate placement *)
         getQubitInterval[{ctrls___}, {targs___}] :=
