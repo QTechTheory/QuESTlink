@@ -94,6 +94,10 @@ void local_sendErrorToMMA(char* err_msg) {
     WSNewPacket(stdlink);
 }
 
+void local_sendFailedToMMA(void) {
+    WSPutSymbol(stdlink, "$Failed");
+}
+
 void local_sendErrorMsgBufferToMMA(void) {
     local_sendErrorToMMA(errorMsgBuffer);
 }
@@ -268,10 +272,16 @@ qreal wrapper_calcFidelity(int id1, int id2) {
     return calcFidelity(quregs[id1], quregs[id2]);
 }
 void wrapper_calcInnerProduct(int id1, int id2) {
-    if (!quregs[id1].isCreated)
-        return local_sendQuregNotCreatedError(id1);
-    if (!quregs[id2].isCreated)
-        return local_sendQuregNotCreatedError(id2);
+    if (!quregs[id1].isCreated) {
+        local_sendQuregNotCreatedError(id1);
+        local_sendFailedToMMA();
+        return;
+    }
+    if (!quregs[id2].isCreated) {
+        local_sendQuregNotCreatedError(id2);
+        local_sendFailedToMMA();
+        return;
+    }
         
     Complex res = calcInnerProduct(quregs[id1], quregs[id2]);
     WSPutFunction(stdlink, "Complex", 2);
@@ -322,7 +332,7 @@ int wrapper_collapseToOutcome(int id, int qb, int outcome) {
 
 // @DEBUG "Aborting circuit and restoring qureg (id %d) to its original state."
 
-int local_circuitError(char* msg, ...) {
+int local_writeToErrorMsgBuffer(char* msg, ...) {
     va_list argp;
     va_start(argp, msg);
     vsprintf(errorMsgBuffer, msg, argp);
@@ -331,18 +341,18 @@ int local_circuitError(char* msg, ...) {
 }
 
 int local_gateUnsupportedError(char* gate) {
-    return local_circuitError("the gate '%s' is not supported.", gate);
+    return local_writeToErrorMsgBuffer("the gate '%s' is not supported.", gate);
 }
 
 int local_gateWrongNumParamsError(char* gate, int wrongNumParams, int rightNumParams) {
-    return local_circuitError(
+    return local_writeToErrorMsgBuffer(
         "the gate '%s' accepts %d parameters, but %d were passed.",
         gate, rightNumParams, wrongNumParams);
 }
 
 /* rightNumTargs is a string so that it can be multiple e.g. "1 or 2" */
 int local_gateWrongNumTargsError(char* gate, int wrongNumTargs, char* rightNumTargs) {
-    return local_circuitError(
+    return local_writeToErrorMsgBuffer(
         "the gate '%s' accepts %s, but %d were passed.",
         gate, rightNumTargs, wrongNumTargs);
 }
@@ -376,7 +386,7 @@ int local_noiseInvalidProbError(int opcode, int numQubits, qreal prob) {
     if (opcode == OPCODE_Damp) opStr = "amplitude damping";
     qreal maxProb = local_getMaxValidNoiseProb(opcode, numQubits);
     
-    return local_circuitError(
+    return local_writeToErrorMsgBuffer(
         "%d-qubit %s was applied with probability %g which is outside its accepted range of [0, %g].", 
         numQubits, opStr, prob, maxProb);
 }
@@ -424,7 +434,7 @@ int local_applyGates(
             WSGetMessage(stdlink, &code, &arg);
             if (code == WSTerminateMessage || code == WSInterruptMessage || 
                 code == WSAbortMessage     || code == WSImDyingMessage) {
-                return local_circuitError("Circuit simulation aborted.");
+                return local_writeToErrorMsgBuffer("Circuit simulation aborted.");
             }
         }
 
@@ -563,9 +573,9 @@ int local_applyGates(
                 if (numCtrls != 0)
                     return local_gateUnsupportedError("controlled multi-rotate-Pauli");
                 if (numTargs != numParams-1) {
-                    return local_circuitError(
+                    return local_writeToErrorMsgBuffer(
                         "An internel error in R occured! "
-                        "It received an unequal number of Pauli codes (%d) and target qubits! (%d)",
+                        "The quest_link received an unequal number of Pauli codes (%d) and target qubits! (%d)",
                         numParams-1, numTargs);
                 }
                 int paulis[MAX_NUM_TARGS_CTRLS]; 
@@ -576,9 +586,9 @@ int local_applyGates(
             
             case OPCODE_U : 
                 if (numTargs == 1 && numParams != 2*2*2)
-                    return local_circuitError("single qubit U accepts only 2x2 matrices");
+                    return local_writeToErrorMsgBuffer("single qubit U accepts only 2x2 matrices");
                 if (numTargs == 2 && numParams != 4*4*2)
-                    return local_circuitError("two qubit U accepts only 4x4 matrices");
+                    return local_writeToErrorMsgBuffer("two qubit U accepts only 4x4 matrices");
                 if (numTargs != 1 && numTargs != 2)
                     return local_gateWrongNumTargsError("U", numTargs, "1 or 2 targets");
                 
@@ -704,7 +714,7 @@ int local_applyGates(
             
             case OPCODE_P:
                 if (numParams != 1 && numParams != numTargs) {
-                    return local_circuitError(
+                    return local_writeToErrorMsgBuffer(
                         "P[outcomes] specified a different number of binary outcomes (%d) than target qubits (%d)!",
                         numParams, numTargs);
                 }
@@ -716,7 +726,7 @@ int local_applyGates(
                 else {
                     // check value isn't impossibly high
                     if (params[paramInd] >= (1LL << numTargs))
-                        return local_circuitError(
+                        return local_writeToErrorMsgBuffer(
                             "P[%d] was applied to %d qubits and exceeds their maximum represented value of %lld.",
                             (int) params[paramInd], numTargs, (1LL << numTargs));
                     // work out each bit outcome and apply; right most (least significant) bit acts on right-most target
@@ -735,13 +745,13 @@ int local_applyGates(
                 if ((numKrausOps < 1) ||
                     (numTargs == 1 && numKrausOps > 4 ) ||
                     (numTargs == 2 && numKrausOps > 16))
-                    return local_circuitError(
+                    return local_writeToErrorMsgBuffer(
                         "%d operators were passed to single-qubit Krauss[ops], which accepts only >0 and <=%d operators!",
                         numKrausOps, (numTargs==1)? 4:16);
                 if (numTargs == 1 && (numParams-1) != 2*2*2*numKrausOps)
-                    return local_circuitError("one-qubit Kraus expects 2-by-2 matrices!");
+                    return local_writeToErrorMsgBuffer("one-qubit Kraus expects 2-by-2 matrices!");
                 if (numTargs == 2 && (numParams-1) != 4*4*2*numKrausOps)
-                    return local_circuitError("two-qubit Kraus expects 4-by-4 matrices!");
+                    return local_writeToErrorMsgBuffer("two-qubit Kraus expects 4-by-4 matrices!");
 
                 if (numTargs == 1) {
                     ComplexMatrix2 krausOps[4];
@@ -784,18 +794,23 @@ int local_applyGates(
                 break;
                 
             default:            
-                return local_circuitError("circuit contained an unknown gate.");
+                return local_writeToErrorMsgBuffer("circuit contained an unknown gate.");
         }
         ctrlInd += numCtrls;
         targInd += numTargs;
         paramInd += numParams;
     }
     
+    // update final pointers
+    *finalCtrlInd = ctrlInd;
+    *finalTargInd = targInd;
+    *finalParamInd = paramInd;
+    
     // indicate success 
     return 1;
 }
 
-void local_loadCircuit(
+void local_loadCircuitFromMMA(
     int* numOps, int** opcodes, int** ctrls, int** numCtrlsPerOp, 
     int** targs, int** numTargsPerOp, qreal** params, int** numParamsPerOp) {
 
@@ -834,7 +849,7 @@ void internal_applyCircuit(int id) {
     int numOps;
     int *opcodes, *ctrls, *numCtrlsPerOp, *targs, *numTargsPerOp, *numParamsPerOp;
     qreal* params;
-    local_loadCircuit(&numOps, &opcodes, &ctrls, &numCtrlsPerOp, &targs, &numTargsPerOp, &params, &numParamsPerOp);
+    local_loadCircuitFromMMA(&numOps, &opcodes, &ctrls, &numCtrlsPerOp, &targs, &numTargsPerOp, &params, &numParamsPerOp);
     
     // ensure qureg exists
     Qureg qureg = quregs[id];
@@ -885,6 +900,9 @@ void internal_applyCircuit(int id) {
     } else {
         // otherwise restore the qureg's original state and issue errors and Abort in Mathematica
         cloneQureg(qureg, backup);
+        sprintf(
+            errorMsgBuffer+strlen(errorMsgBuffer), 
+            " Aborting circuit and restore qureg (id %d) to its original state", id);
         local_sendErrorMsgBufferToMMA();
         WSPutFunction(stdlink, "Abort", 0);
     }
@@ -964,7 +982,7 @@ int local_getDerivativeQuregs(
                     if (pauliCode == 3) pauliZ(qureg, targs[t+finalTargInd]);
                 }
             default:            
-                return local_circuitError("Only Rx, Ry, Rz and R gates may be differentiated!");
+                return local_writeToErrorMsgBuffer("Only Rx, Ry, Rz and R gates may be differentiated!");
         }
         
         // differentiate control qubits by forcing them to 1, without renormalising
