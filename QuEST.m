@@ -15,6 +15,7 @@ BeginPackage["QuEST`"]
     ApplyCircuit::usage = "ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
 ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg."
     
+    CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] sets the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in Rx, Ry, Rz or R (and controlled) of the given circuit."
     Circuit::usage = "Circuit[gates] converts a product of gates into a left-to-right circuit, preserving order."
     
     Operator::usage = "Operator[gates] converts a product of gates into a right-to-left circuit."
@@ -140,6 +141,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         isCircuitFormat[circ_List] := AllTrue[circ,isGateFormat]
         isCircuitFormat[circ_?isGateFormat] := True
         isCircuitFormat[___] := False
+        
+        unpackEncodedCircuit[codes_List] :=
+            Sequence[
+                codes[[1]], 
+                Flatten @ codes[[2]], Length /@ codes[[2]], 
+                Flatten @ codes[[3]], Length /@ codes[[3]],
+                Flatten[N /@ codes[[4]]], Length /@ codes[[4]]
+            ]
                 
         (* applying a sequence of symoblic gates to a qureg. ApplyCircuitInternal provided by WSTP *)
         ApplyCircuit[circuit_?isCircuitFormat, qureg_Integer] :=
@@ -147,12 +156,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		{codes = codifyCircuit[circuit]},
         		If[
         			AllTrue[codes[[4]], NumericQ, 2],
-        			ApplyCircuitInternal[
-                        qureg, codes[[1]], 
-                        Flatten @ codes[[2]], Length /@ codes[[2]], 
-                        Flatten @ codes[[3]], Length /@ codes[[3]],
-                        Flatten[N /@ codes[[4]]], Length /@ codes[[4]]
-                    ], 
+        			ApplyCircuitInternal[qureg, unpackEncodedCircuit[codes]], 
         			Echo["Circuit contains non-numerical parameters!", "Error: "]; $Failed
         		]
         	]
@@ -163,6 +167,24 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		ApplyCircuit[circuit, outQureg]
         	]
         
+        (* apply the derivatives of a circuit on an initial state, storing the ersults in the given quregs *)    
+        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] :=
+            With[
+                {varOpInds = -1 + Position[circuit, _?(MemberQ[#])][[All, 1]] & /@ varVals[[All,1]], (* -1 maps indices from MMA to C *)
+                codes = codifyCircuit[(circuit /. varVals)]}, 
+                If[
+                    AllTrue[varOpInds, Length[#]==1&],
+                    If[
+                        AllTrue[codes[[4]], NumericQ, 2],
+                        CalcQuregDerivsInternal[
+                            initQureg, derivQuregs, Flatten[varOpInds], 
+                            unpackEncodedCircuit @ codes],
+                        Echo["The circuit contained variables not assigned values in varVals!", "Error: "]; $Failed
+                    ],
+                    Echo["Some variables appeared multiple times in the circuit, or not at all!", "Error: "]; $Failed
+                ]
+            ]
+            
         (* checking a product is a valid operator *)
         SetAttributes[isOperatorFormat, HoldAll]
         isOperatorFormat[op_Times] := isCircuitFormat[ReleaseHold[List @@@ Hold[op]]]

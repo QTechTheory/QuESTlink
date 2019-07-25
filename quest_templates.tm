@@ -206,6 +206,15 @@
 :End:
 :Evaluate: QuEST`CalcHilbertSchmidtDistance::usage = "CalcHilbertSchmidtDistance[qureg1, qureg2] returns the Hilbert-Schmidt distance (Frobenius norm of the diference) between the given density matrices."
 
+:Begin:
+:Function:       internal_calcQuregDerivs
+:Pattern:        QuEST`Private`CalcQuregDerivsInternal[initStateId_Integer, quregIds_List, varOpInds_List, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List]
+:Arguments:      { initStateId, quregIds, varOpInds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp }
+:ArgumentTypes:  { Integer, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`CalcQuregDerivsInternal::usage = "CalcQuregDerivsInternal[initStateId, quregIds, varOpInds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp] accepts a circuit (complete with rotation angles) and a nominated set of gates (by indices), sets each qureg to be the result of applying the derivative of the circuit w.r.t the nominated gates, upon the initial state."
+
 
 
 

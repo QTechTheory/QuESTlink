@@ -1013,6 +1013,62 @@ int local_getDerivativeQuregs(
     return 1;
 }
 
+void internal_calcQuregDerivs(int initStateId) {
+    
+    // get qureg ids (one for each var)
+    int* quregIds;
+    int numQuregs;
+    WSGetInteger32List(stdlink, &quregIds, &numQuregs);
+    
+    // get circuit indices of variables (ordered by return order)
+    int* varOpInds;
+    int numVars;
+    WSGetInteger32List(stdlink, &varOpInds, &numVars);
+
+    // get ansatz circuit from MMA link
+    int numOps;
+    int *opcodes, *ctrls, *numCtrlsPerOp, *targs, *numTargsPerOp, *numParamsPerOp;
+    qreal* params;
+    local_loadCircuitFromMMA(&numOps, &opcodes, &ctrls, &numCtrlsPerOp, &targs, &numTargsPerOp, &params, &numParamsPerOp);
+    
+    // check MMA-loaded args are valid
+    if (numQuregs != numVars) {
+        local_sendErrorToMMA("An equal number of quregs as variables must be passed.");
+        local_sendFailedToMMA();
+        return;
+    }
+    if (!quregs[initStateId].isCreated) {
+        local_sendQuregNotCreatedError(initStateId);
+        local_sendFailedToMMA();
+        return;
+    }
+    for (int i=0; i < numQuregs; i++)
+        if (!quregs[quregIds[i]].isCreated) {
+            local_sendQuregNotCreatedError(quregIds[i]);
+            local_sendFailedToMMA();
+            return;
+        }
+    // varOpInds validated by MMA caller
+            
+    // set all quregs to the initial state
+    for (int q=0; q < numQuregs; q++)
+        cloneQureg(quregs[quregIds[q]], quregs[initStateId]);
+            
+    // compute derivatives 
+    int success = local_getDerivativeQuregs(
+        quregIds, varOpInds, numVars, 
+        numOps, opcodes, 
+        ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp);
+        
+    if (!success) {
+        local_sendErrorMsgBufferToMMA();
+        local_sendFailedToMMA();
+    }
+    
+    // need to send anything to fulfill MMA return
+    WSPutInteger(stdlink, initStateId);
+}
+
 /**
  * puts a Qureg into MMA, with the structure of
  * {numQubits, isDensityMatrix, realAmps, imagAmps}.
