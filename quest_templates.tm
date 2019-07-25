@@ -26,6 +26,24 @@
 :End:
 :Evaluate: QuEST`Private`DestroyQuregInternal::usage = "DestroyQuregInternal[numQubits] frees the memory of the qureg associated with the given id."
 
+:Begin:
+:Function:       callable_createQuregs
+:Pattern:        QuEST`CreateQuregs[numQubits_Integer, numQuregs_Integer]
+:Arguments:      { numQubits, numQuregs }
+:ArgumentTypes:  { Integer, Integer }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`CreateQuregs::usage = "CreateQuregs[numQubits, numQuregs] returns a list of ids of a newly created statevectors."
+
+:Begin:
+:Function:       callable_createDensityQuregs
+:Pattern:        QuEST`CreateDensityQuregs[numQubits_Integer, numQuregs_Integer]
+:Arguments:      { numQubits, numQuregs }
+:ArgumentTypes:  { Integer, Integer }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`CreateDensityQuregs::usage = "CreateDensityQuregs[numQubits, numQuregs] returns a list of ids of a newly created density matrices."
+
 
 
 

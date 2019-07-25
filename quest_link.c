@@ -136,6 +136,19 @@ int wrapper_destroyQureg(int id) {
     return id;
 }
 
+void callable_createQuregs(int numQubits, int numQuregs) {
+    int ids[numQuregs];
+    for (int i=0; i < numQuregs; i++)
+        ids[i] = wrapper_createQureg(numQubits);
+    WSPutIntegerList(stdlink, ids, numQuregs);
+}
+
+void callable_createDensityQuregs(int numQubits, int numQuregs) {
+    int ids[numQuregs];
+    for (int i=0; i < numQuregs; i++)
+        ids[i] = wrapper_createDensityQureg(numQubits);
+    WSPutIntegerList(stdlink, ids, numQuregs);
+} 
 
 /** initial states */
 
