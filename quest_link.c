@@ -330,8 +330,6 @@ int wrapper_collapseToOutcome(int id, int qb, int outcome) {
 
 /* circuit execution */
 
-// @DEBUG "Aborting circuit and restoring qureg (id %d) to its original state."
-
 int local_writeToErrorMsgBuffer(char* msg, ...) {
     va_list argp;
     va_start(argp, msg);
@@ -918,7 +916,7 @@ void internal_applyCircuit(int id) {
  */
 int local_getDerivativeQuregs(
     // variable (to be differentiated) info
-    Qureg* quregs, int* varOpInds, int numVars, 
+    int* quregIds, int* varOpInds, int numVars, 
     // circuit info
     int numOps, int* opcodes, 
     int* ctrls, int* numCtrlsPerOp, 
@@ -935,7 +933,7 @@ int local_getDerivativeQuregs(
     int* mesOutcomes = NULL;
     
     for (int v=0; v<numVars; v++) {
-        Qureg qureg = quregs[v];
+        Qureg qureg = quregs[quregIds[v]];
         int varOp = varOpInds[v];
         
         // indices AFTER last gate applied by circuit
@@ -981,6 +979,7 @@ int local_getDerivativeQuregs(
                     if (pauliCode == 2) pauliY(qureg, targs[t+finalTargInd]);
                     if (pauliCode == 3) pauliZ(qureg, targs[t+finalTargInd]);
                 }
+                break;
             default:            
                 return local_writeToErrorMsgBuffer("Only Rx, Ry, Rz and R gates may be differentiated!");
         }
@@ -993,6 +992,21 @@ int local_getDerivativeQuregs(
         Complex zero = (Complex) {.real=0, .imag=0};
         Complex fac = (Complex) {.real=0, .imag=-0.5};
         setWeightedQureg(zero, qureg, zero, qureg, fac, qureg);
+        
+        // wind forward inds to point to the next gate 
+        finalCtrlInd += numCtrls;
+        finalTargInd += numTargs;
+        finalParamInd += numParams;
+
+        // apply the remainder of the circuit
+        success = local_applyGates(
+            qureg, numOps-(varOp+1), &opcodes[varOp+1], 
+            &ctrls[  finalCtrlInd], &numCtrlsPerOp[varOp+1], 
+            &targs[  finalTargInd], &numTargsPerOp[varOp+1], 
+            &params[finalParamInd], &numParamsPerOp[varOp+1],
+            mesOutcomes, &finalCtrlInd, &finalTargInd, &finalParamInd);
+        if (!success)
+            return success; // errorMsgBuffer updated by local_applyGates
     }
     
     // indicate success
