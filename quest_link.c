@@ -1069,6 +1069,41 @@ void internal_calcQuregDerivs(int initStateId) {
     WSPutInteger(stdlink, initStateId);
 }
 
+void internal_calcInnerProducts(int quregIds[], long numQuregs) {
+    
+    for (int i=0; i<numQuregs; i++) {
+        if (!quregs[quregIds[i]].isCreated) {
+            local_sendQuregNotCreatedError(quregIds[i]);
+            local_sendFailedToMMA();
+            return;
+        }
+    }
+    
+    long len = numQuregs * numQuregs;
+    qreal* matrRe = malloc(len * sizeof *matrRe);
+    qreal* matrIm = malloc(len * sizeof *matrIm);
+    
+    for (int r=0; r<numQuregs; r++) {
+        for (int c=0; c<numQuregs; c++) {
+            if (c >= r) {
+                Complex val = calcInnerProduct(quregs[quregIds[r]], quregs[quregIds[c]]);
+                matrRe[r*numQuregs + c] = val.real;
+                matrIm[r*numQuregs + c] = val.imag;
+            } else {
+                matrRe[r*numQuregs + c] =   matrRe[c*numQuregs + r];
+                matrIm[r*numQuregs + c] = - matrIm[c*numQuregs + r]; // conjugate transpose
+            }
+        }
+    }
+    
+    WSPutFunction(stdlink, "List", 2);
+    WSPutReal64List(stdlink, matrRe, len);
+    WSPutReal64List(stdlink, matrIm, len);
+    
+    free(matrRe);
+    free(matrIm);
+}
+
 /**
  * puts a Qureg into MMA, with the structure of
  * {numQubits, isDensityMatrix, realAmps, imagAmps}.
