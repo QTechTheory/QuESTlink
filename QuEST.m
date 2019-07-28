@@ -93,12 +93,14 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
 P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
     PackageExport[Kraus]
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
+    PackageExport[G]
+    G::usage = "G[phi] applies a global phase rotation of phi, by premultiplying Exp[i phi]."
  
     Begin["`Private`"]
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,_->-1}
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
         codifyMatrix[matr_] :=
@@ -128,7 +130,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__] :> 
                 {getOpCode[gate], {}, {targs}, {args}},
         	Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}] :> 
-                {getOpCode[gate], {}, {targs}, {}}
+                {getOpCode[gate], {}, {targs}, {}},
+            G[arg_] :> 
+                {getOpCode[G], {}, {}, {arg}}
         };
 
         (* converting gate sequence to code lists: {opcodes, ctrls, targs, params} *)
@@ -141,6 +145,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         isGateFormat[Subscript[_Symbol, (__Integer)|{__Integer}]] := True
         isGateFormat[Subscript[_Symbol, (__Integer)|{__Integer}][__]] := True
         isGateFormat[R[_, (pattPauli|{pattPauli..}|Verbatim[Times][pattPauli..])]] := True
+        isGateFormat[G[_]] := True
         isGateFormat[___] := False
         isCircuitFormat[circ_List] := AllTrue[circ,isGateFormat]
         isCircuitFormat[circ_?isGateFormat] := True

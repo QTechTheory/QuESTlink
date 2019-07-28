@@ -63,6 +63,7 @@
 #define OPCODE_M 15
 #define OPCODE_P 16
 #define OPCODE_Kraus 17
+#define OPCODE_G 18
 
 /**
  * Max number of quregs which can simultaneously exist
@@ -795,6 +796,19 @@ int local_applyGates(
                     applyTwoQubitKrausMap(qureg, targs[targInd], targs[targInd+1], krausOps, numKrausOps);
                 } 
                 break;
+            case OPCODE_G :
+                if (numParams != 1)
+                    return local_gateWrongNumParamsError("Global phase", numParams, 1);
+                if (numCtrls != 0)
+                    return local_gateUnsupportedError("controlled global phase");
+                if (numTargs != 0)
+                    return local_gateWrongNumTargsError("Global phase", numTargs, "0 targets");
+                if (params[paramInd] == 0)
+                    break;
+                Complex zero = (Complex) {.real=0, .imag=0};
+                Complex fac = (Complex) {.real=cos(params[paramInd]), .imag=sin(params[paramInd])};
+                setWeightedQureg(zero, qureg, zero, qureg, fac, qureg); // exp(i param)|qureg>
+                break;
                 
             default:            
                 return local_writeToErrorMsgBuffer("circuit contained an unknown gate.");
@@ -963,19 +977,29 @@ int local_getDerivativeQuregs(
         finalTargInd -= numTargs;
         finalParamInd -= numParams;
         
+        // choices of re-normalisation
+        Complex negHalfI = (Complex) {.real=0, .imag=-0.5};
+        Complex posI = (Complex) {.real=0, .imag=1};
+        Complex zero = (Complex) {.real=0, .imag=0};
+        
+        Complex normFac;
+        
         // ignore control qubits and apply gate Paulis incurred by differentiation 
         switch(op) {
-            case OPCODE_Rx :
+            case OPCODE_Rx:
                 for (int t=0; t < numTargs; t++) // multi-target X may be possible later 
                     pauliX(qureg, targs[t+finalTargInd]); 
+                normFac = negHalfI;
                 break;
-            case OPCODE_Ry :
+            case OPCODE_Ry:
                 for (int t=0; t < numTargs; t++) // multi-target Y may be possible later 
                     pauliY(qureg, targs[t+finalTargInd]); 
+                normFac = negHalfI;
                 break;
-            case OPCODE_Rz :
+            case OPCODE_Rz:
                 for (int t=0; t < numTargs; t++)
                     pauliZ(qureg, targs[t+finalTargInd]); 
+                normFac = negHalfI;
                 break;
             case OPCODE_R:
                 for (int t=0; t < numTargs; t++) {
@@ -984,6 +1008,11 @@ int local_getDerivativeQuregs(
                     if (pauliCode == 2) pauliY(qureg, targs[t+finalTargInd]);
                     if (pauliCode == 3) pauliZ(qureg, targs[t+finalTargInd]);
                 }
+                normFac = negHalfI;
+                break;
+            case OPCODE_G:
+                ; // no additional gate introduced by derivative
+                normFac = posI;
                 break;
             default:            
                 return local_writeToErrorMsgBuffer("Only Rx, Ry, Rz and R gates may be differentiated!");
@@ -993,10 +1022,8 @@ int local_getDerivativeQuregs(
         for (int c=0; c<numCtrls; c++)
             projectToOne(qureg, ctrls[finalCtrlInd]);
         
-        // adjust normalisation (multiply by -i/2)
-        Complex zero = (Complex) {.real=0, .imag=0};
-        Complex fac = (Complex) {.real=0, .imag=-0.5};
-        setWeightedQureg(zero, qureg, zero, qureg, fac, qureg);
+        // adjust normalisation
+        setWeightedQureg(zero, qureg, zero, qureg, normFac, qureg);
         
         // wind forward inds to point to the next gate 
         finalCtrlInd += numCtrls;
