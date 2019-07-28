@@ -179,14 +179,15 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* apply the derivatives of a circuit on an initial state, storing the ersults in the given quregs *)    
         CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] :=
             With[
-                {varOpInds = -1 + Position[circuit, _?(MemberQ[#])][[All, 1]] & /@ varVals[[All,1]], (* -1 maps indices from MMA to C *)
+                {varOpInds = DeleteDuplicates /@ (Position[circuit, _?(MemberQ[#])][[All, 1]]& /@ varVals[[All,1]]),
+                (* unitaryGates =  select only of circ[[varOpInds[[All,1]]]]) *)
                 codes = codifyCircuit[(circuit /. varVals)]}, 
                 If[
                     AllTrue[varOpInds, Length[#]==1&],
                     If[
                         AllTrue[codes[[4]], NumericQ, 2],
                         CalcQuregDerivsInternal[
-                            initQureg, derivQuregs, Flatten[varOpInds], 
+                            initQureg, derivQuregs, Flatten[varOpInds]-1,  (* maps indices from MMA to C *)
                             unpackEncodedCircuit @ codes],
                         Echo["The circuit contained variables not assigned values in varVals!", "Error: "]; $Failed
                     ],
