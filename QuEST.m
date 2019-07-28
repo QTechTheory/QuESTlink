@@ -400,7 +400,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getNumQubitsInCircuit[circ_List] :=
         	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], \[Infinity]],    
         		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], \[Infinity]]]
-        needsSpecialSwap[(SWAP|M), _List] := False
+        needsSpecialSwap[(SWAP|M|Rz), _List] := False
         needsSpecialSwap[{R, (X|Y|Z)..}, _List] := False
         needsSpecialSwap[label_Symbol, targs_List] :=
         	And[Length[targs] === 2, Abs[targs[[1]] - targs[[2]]] > 1]
@@ -457,6 +457,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[SWAP, {}, {targs___}, col_] := {
         	(drawCross[#,col]&) /@ {targs},
         	Line[{{col+.5,.5+Min@targs},{col+.5,.5+Max@targs}}]}
+            
+        (* multi-qubit gate graphics *)
+        drawGate[Rz, {}, targs_List, col_] := {
+            Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
+            Sequence @@ (drawGate[Rz, {}, {#1}, col]& /@ targs)}
+        drawGate[{R, rots:(X|Y|Z)..}, {}, targs_List, col_] := {
+            Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
+            Sequence @@ MapThread[drawGate[#1/.{X->Rx,Y->Ry,Z->Rz}, {}, {#2}, col]&, {{rots}, targs}]}
         	
         (* two-qubit gate graphics *)
         drawGate[symb:(Deph|Depol), {}, {targ1_,targ2_}, col_] := {
@@ -473,11 +481,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		drawSpecialSwap[qb[[3]], qb[[2]], col],
         		drawGate[label, {}, {qb[[1]],qb[[2]]}, col+.5],
         		drawSpecialSwap[qb[[3]],qb[[2]],col+.5+1]}]
-                
-        (* multi-qubit gate graphics *)
-        drawGate[{R, rots:(X|Y|Z)..}, {}, targs_List, col_] := {
-            Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
-            Sequence @@ MapThread[drawGate[#1/.{X->Rx,Y->Ry,Z->Rz}, {}, {#2}, col]&, {{rots}, targs}]}
         		
         (* controlled gate graphics *)
         drawGate[SWAP, {ctrls__}, {targs__}, col_] := {
