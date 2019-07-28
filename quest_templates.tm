@@ -216,13 +216,23 @@
 :Evaluate: QuEST`Private`CalcQuregDerivsInternal::usage = "CalcQuregDerivsInternal[initStateId, quregIds, varOpInds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp] accepts a circuit (complete with rotation angles) and a nominated set of gates (by indices), sets each qureg to be the result of applying the derivative of the circuit w.r.t the nominated gates, upon the initial state."
 
 :Begin:
-:Function:       internal_calcInnerProducts
-:Pattern:        QuEST`Private`CalcInnerProductsInternal[quregIds_List]
+:Function:       internal_calcInnerProductsMatrix
+:Pattern:        QuEST`Private`CalcInnerProductsMatrixInternal[quregIds_List]
 :Arguments:      { quregIds }
 :ArgumentTypes:  { IntegerList }
 :ReturnType:     Manual
 :End:
-:Evaluate: QuEST`Private`CalcInnerProductsInternal::usage = "CalcInnerProductsInternal[quregIds] returns seperate 1D (appending rows) lists for the real and imag components of the matrix with ith-jth element CalcInnerProduct[quregIds[i], quregIds[j]]."
+:Evaluate: QuEST`Private`CalcInnerProductsMatrixInternal::usage = "CalcInnerProductsMatrixInternal[quregIds] returns seperate 1D (appending rows) lists for the real and imag components of the matrix with ith-jth element CalcInnerProduct[quregIds[i], quregIds[j]]."
+
+:Begin:
+:Function:       internal_calcInnerProductsVector
+:Pattern:        QuEST`Private`CalcInnerProductsVectorInternal[braId_Integer, ketIds_List]
+:Arguments:      { braId, ketIds }
+:ArgumentTypes:  { Integer, IntegerList }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`CalcInnerProductsVectorInternal::usage = "CalcInnerProductsVectorInternal[braId, ketIds] returns a vector with jth element CalcInnerProduct[braId, ketIds[j]]."
+
 
 
 

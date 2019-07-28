@@ -17,7 +17,8 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     
     CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] sets the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in Rx, Ry, Rz or R (and controlled) of the given circuit."
     
-    CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]]. Quregs must be equally-sized pure states."
+    CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
+CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element CalcInnerProduct[braId, ketId[i]]."
     
     Circuit::usage = "Circuit[gates] converts a product of gates into a left-to-right circuit, preserving order."
     
@@ -191,12 +192,18 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* compute a matrix of inner products; this is used in tandem with CalcQuregDerivs to populate the Li matrix *)
         CalcInnerProducts[quregIds:{__Integer}] := 
             With[
-                {data=CalcInnerProductsInternal[quregIds],
+                {data=CalcInnerProductsMatrixInternal[quregIds],
                 len=Length[quregIds]},
                 ArrayReshape[
                     MapThread[#1 + I #2 &, {data[[1]], data[[2]]}], 
                     {len, len}
                 ]
+            ]
+        (* computes a vector of inner products <braId|ketIds[i]> *)
+        CalcInnerProducts[braId_Integer, ketIds:{__Integer}] := 
+            With[
+                {data=CalcInnerProductsVectorInternal[braId, ketIds]},
+                MapThread[#1 + I #2 &, {data[[1]], data[[2]]}] 
             ]
 
         (* checking a product is a valid operator *)

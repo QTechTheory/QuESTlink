@@ -1069,8 +1069,46 @@ void internal_calcQuregDerivs(int initStateId) {
     WSPutInteger(stdlink, initStateId);
 }
 
-void internal_calcInnerProducts(int quregIds[], long numQuregs) {
+/* returns vector with ith element <qureg[braId]|qureg[ketIds[i]]> */
+void internal_calcInnerProductsVector(int braId, int ketIds[], long numKets) {
     
+    // check quregs are instantiated
+    if (!quregs[braId].isCreated) {
+        local_sendQuregNotCreatedError(braId);
+        WSPutSymbol(stdlink, "$Failed");;
+        return;
+    }
+    for (int i=0; i<numKets; i++) {
+        if (!quregs[ketIds[i]].isCreated) {
+            local_sendQuregNotCreatedError(ketIds[i]);
+            WSPutSymbol(stdlink, "$Failed");;
+            return;
+        }
+    }
+    
+    // calculate inner products 
+    qreal* vecRe = malloc(numKets * sizeof *vecRe);
+    qreal* vecIm = malloc(numKets * sizeof *vecIm);
+    for (int i=0; i<numKets; i++) {
+        Complex val = calcInnerProduct(quregs[braId], quregs[ketIds[i]]);
+        vecRe[i] = val.real;
+        vecIm[i] = val.imag;
+    }
+    
+    // send result to MMA
+    WSPutFunction(stdlink, "List", 2);
+    WSPutReal64List(stdlink, vecRe, numKets);
+    WSPutReal64List(stdlink, vecIm, numKets);
+    
+    free(vecRe);
+    free(vecIm);
+}
+
+
+/* returns Hermitian matrix with ith jth element <qureg[i]|qureg[j]> */
+void internal_calcInnerProductsMatrix(int quregIds[], long numQuregs) {
+    
+    // check all quregs are created
     for (int i=0; i<numQuregs; i++) {
         if (!quregs[quregIds[i]].isCreated) {
             local_sendQuregNotCreatedError(quregIds[i]);
@@ -1079,6 +1117,7 @@ void internal_calcInnerProducts(int quregIds[], long numQuregs) {
         }
     }
     
+    // store complex matrix as 2 flat real arrays
     long len = numQuregs * numQuregs;
     qreal* matrRe = malloc(len * sizeof *matrRe);
     qreal* matrIm = malloc(len * sizeof *matrIm);
