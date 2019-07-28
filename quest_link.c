@@ -16,6 +16,15 @@
  * 
  * Note the actual function names called from the MMA code differ from those 
  * below, as specified in quest_templates.tm
+ *
+ * There are a few layers of error-codes used in this file.
+ * callable_ and wrapper_ functions often return -1 directly to the user,
+ * to indicate user-error.
+ * local_ functions return 0 to indicate an error, the explanation of which has 
+ * been written to errorMsgBuffer.
+ * internal_ functions with a Manual return must raise the error and push 
+ * some kind of failed output (Abort, $Failed, -1) and avoid also returning a 
+ * C primitive which will choke the pipeline.
  */
 
 
@@ -92,10 +101,6 @@ void local_sendErrorToMMA(char* err_msg) {
     WSEndPacket(stdlink);
     WSNextPacket(stdlink);
     WSNewPacket(stdlink);
-}
-
-void local_sendFailedToMMA(void) {
-    WSPutSymbol(stdlink, "$Failed");
 }
 
 void local_sendErrorMsgBufferToMMA(void) {
@@ -274,12 +279,12 @@ qreal wrapper_calcFidelity(int id1, int id2) {
 void wrapper_calcInnerProduct(int id1, int id2) {
     if (!quregs[id1].isCreated) {
         local_sendQuregNotCreatedError(id1);
-        local_sendFailedToMMA();
+        WSPutSymbol(stdlink, "$Failed");;
         return;
     }
     if (!quregs[id2].isCreated) {
         local_sendQuregNotCreatedError(id2);
-        local_sendFailedToMMA();
+        WSPutSymbol(stdlink, "$Failed");;
         return;
     }
         
@@ -370,7 +375,7 @@ qreal local_getMaxValidNoiseProb(int opcode, int numQubits) {
         if (numQubits == 2)
             return 15.0/16.0;
     }
-    return -1;
+    return -1; // should never be reached
 }
 
 int local_isValidProb(int opcode, int numQubits, qreal prob) {
@@ -1034,18 +1039,18 @@ void internal_calcQuregDerivs(int initStateId) {
     // check MMA-loaded args are valid
     if (numQuregs != numVars) {
         local_sendErrorToMMA("An equal number of quregs as variables must be passed.");
-        local_sendFailedToMMA();
+        WSPutSymbol(stdlink, "$Failed");;
         return;
     }
     if (!quregs[initStateId].isCreated) {
         local_sendQuregNotCreatedError(initStateId);
-        local_sendFailedToMMA();
+        WSPutSymbol(stdlink, "$Failed");;
         return;
     }
     for (int i=0; i < numQuregs; i++)
         if (!quregs[quregIds[i]].isCreated) {
             local_sendQuregNotCreatedError(quregIds[i]);
-            local_sendFailedToMMA();
+            WSPutSymbol(stdlink, "$Failed");;
             return;
         }
     // varOpInds validated by MMA caller
@@ -1062,7 +1067,7 @@ void internal_calcQuregDerivs(int initStateId) {
         
     if (!success) {
         local_sendErrorMsgBufferToMMA();
-        local_sendFailedToMMA();
+        WSPutSymbol(stdlink, "$Failed");;
     }
     
     // need to send anything to fulfill MMA return
@@ -1112,7 +1117,7 @@ void internal_calcInnerProductsMatrix(int quregIds[], long numQuregs) {
     for (int i=0; i<numQuregs; i++) {
         if (!quregs[quregIds[i]].isCreated) {
             local_sendQuregNotCreatedError(quregIds[i]);
-            local_sendFailedToMMA();
+            WSPutSymbol(stdlink, "$Failed");;
             return;
         }
     }
