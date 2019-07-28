@@ -391,6 +391,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] := {gate, {},{targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] := {gate, {}, {targs}}
+        getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]]] := {{paulis}[[All,1]], {}, {paulis}[[All,2]]}
 
         (* deciding how to handle gate placement *)
         getQubitInterval[{ctrls___}, {targs___}] :=
@@ -399,8 +400,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], \[Infinity]],    
         		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], \[Infinity]]]
         needsSpecialSwap[(SWAP|M), _List] := False
+        needsSpecialSwap[{(X|Y|Z)..}, _List] := False
         needsSpecialSwap[label_Symbol, targs_List] :=
-        	And[Length[targs] > 1, Abs[targs[[1]] - targs[[2]]] > 1]
+        	And[Length[targs] === 2, Abs[targs[[1]] - targs[[2]]] > 1]
         getFixedThenBotTopSwappedQubits[{targ1_,targ2_}] :=
         	{Min[targ1,targ2],Min[targ1,targ2]+1,Max[targ1,targ2]}
             
@@ -470,6 +472,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		drawSpecialSwap[qb[[3]], qb[[2]], col],
         		drawGate[label, {}, {qb[[1]],qb[[2]]}, col+.5],
         		drawSpecialSwap[qb[[3]],qb[[2]],col+.5+1]}]
+                
+        (* multi-qubit gate graphics *)
+        drawGate[paulis:{(X|Y|Z)..}, {}, targs_List, col_] := {
+            Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
+            Sequence @@ MapThread[drawGate[#1/.{X->Rx,Y->Ry,Z->Rz}, {}, {#2}, col]&, {paulis, targs}]
+        }
         		
         (* controlled gate graphics *)
         drawGate[SWAP, {ctrls__}, {targs__}, col_] := {
