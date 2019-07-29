@@ -50,6 +50,7 @@ CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element Calc
 SetWeightedQureg[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + fac2 q2). qOut can be one of q1 an q2."
 
     DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram.
+DrawCircuit[circuit, numQubits] generates a circuit diagram with numQubits, useful for overriding the automated inferrence of the number of qubits if incorrect.
 DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagram."
             
     (* 
