@@ -584,9 +584,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         ]
         
         (* public function to fully render a circuit *)
-        DrawCircuit[circ_List, opts:OptionsPattern[]] :=
+        DrawCircuit[circ_List, numQubits_Integer, opts:OptionsPattern[]] :=
         Module[{numCols,qubitgraphics,gategraphics},
-        	{numCols,qubitgraphics,gategraphics} = generateCircuitGraphics[DeleteCases[circ,G[_]], getNumQubitsInCircuit@circ];
+        	{numCols,qubitgraphics,gategraphics} = generateCircuitGraphics[DeleteCases[circ,G[_]], numQubits];
         	Graphics[{
                 FaceForm[White], EdgeForm[Black],
                 qubitgraphics, gategraphics},
@@ -594,6 +594,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		ImageSize -> 30 (numCols+1)
         	]
         ]
+        DrawCircuit[circ_List, opts:OptionsPattern[]] :=
+            DrawCircuit[circ, getNumQubitsInCircuit[circ], opts]
             
     End[ ]
                                        
