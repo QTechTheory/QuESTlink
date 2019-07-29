@@ -104,7 +104,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
         codifyMatrix[matr_] :=
-            Riffle[Re @ Flatten @ matr, Im @ Flatten @ matr]
+            Riffle[Re @ N @ Flatten @ matr, Im @ N @ Flatten @ matr]
             
         (* convert multiple MMA matrices into {#matrices, ... flattened matrices ...} *)
         codifyMatrices[matrs_] :=
