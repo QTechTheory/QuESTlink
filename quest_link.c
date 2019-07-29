@@ -113,6 +113,14 @@ void local_sendQuregNotCreatedError(int id) {
     local_sendErrorMsgBufferToMMA();
 }
 
+int local_writeToErrorMsgBuffer(char* msg, ...) {
+    va_list argp;
+    va_start(argp, msg);
+    vsprintf(errorMsgBuffer, msg, argp);
+    va_end(argp);
+    return 0;
+}
+
 
 /* qureg allocation */
 
@@ -336,14 +344,6 @@ int wrapper_collapseToOutcome(int id, int qb, int outcome) {
 
 /* circuit execution */
 
-int local_writeToErrorMsgBuffer(char* msg, ...) {
-    va_list argp;
-    va_start(argp, msg);
-    vsprintf(errorMsgBuffer, msg, argp);
-    va_end(argp);
-    return 0;
-}
-
 int local_gateUnsupportedError(char* gate) {
     return local_writeToErrorMsgBuffer("the gate '%s' is not supported.", gate);
 }
@@ -403,6 +403,35 @@ int* local_prepareCtrlCache(int* ctrls, int ctrlInd, int numCtrls, int addTarg) 
         ctrlCache[numCtrls] = addTarg;
     return ctrlCache;
 }
+
+ComplexMatrix2 local_getMatrix2FromFlatList(qreal* list) {
+    return (ComplexMatrix2) {
+        .r0c0={.real=list[0], .imag=list[1]},
+        .r0c1={.real=list[2], .imag=list[3]},
+        .r1c0={.real=list[4], .imag=list[5]},
+        .r1c1={.real=list[6], .imag=list[7]}};
+}
+ComplexMatrix4 local_getMatrix4FromFlatList(qreal* list) {
+    return (ComplexMatrix4) {
+        .r0c0={.real=list[0], .imag=list[1]},
+        .r0c1={.real=list[2], .imag=list[3]},
+        .r0c2={.real=list[4], .imag=list[5]},
+        .r0c3={.real=list[6], .imag=list[7]},
+        .r1c0={.real=list[8], .imag=list[9]},
+        .r1c1={.real=list[10], .imag=list[11]},
+        .r1c2={.real=list[12], .imag=list[13]},
+        .r1c3={.real=list[14], .imag=list[15]},
+        .r2c0={.real=list[16], .imag=list[17]},
+        .r2c1={.real=list[18], .imag=list[19]},
+        .r2c2={.real=list[20], .imag=list[21]},
+        .r2c3={.real=list[22], .imag=list[23]},
+        .r3c0={.real=list[24], .imag=list[25]},
+        .r3c1={.real=list[26], .imag=list[27]},
+        .r3c2={.real=list[28], .imag=list[29]},
+        .r3c3={.real=list[30], .imag=list[31]}};
+}
+
+
 
 /* returns 1 if successful, else 0, upon which caller must error and abort.
  * if returns 0, errors messages will be written to global errorMsgBuffer
@@ -597,34 +626,14 @@ int local_applyGates(
                     return local_gateWrongNumTargsError("U", numTargs, "1 or 2 targets");
                 
                 if (numTargs == 1) {
-                    ComplexMatrix2 u = {
-                        .r0c0={.real=params[paramInd+0], .imag=params[paramInd+1]},
-                        .r0c1={.real=params[paramInd+2], .imag=params[paramInd+3]},
-                        .r1c0={.real=params[paramInd+4], .imag=params[paramInd+5]},
-                        .r1c1={.real=params[paramInd+6], .imag=params[paramInd+7]}};
+                    ComplexMatrix2 u = local_getMatrix2FromFlatList(&params[paramInd]);
                     if (numCtrls == 0)
                         unitary(qureg, targs[targInd], u);
                     else
                         multiControlledUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], u);
                 }
                 else if (numTargs == 2) {
-                    ComplexMatrix4 u = {
-                        .r0c0={.real=params[paramInd+0], .imag=params[paramInd+1]},
-                        .r0c1={.real=params[paramInd+2], .imag=params[paramInd+3]},
-                        .r0c2={.real=params[paramInd+4], .imag=params[paramInd+5]},
-                        .r0c3={.real=params[paramInd+6], .imag=params[paramInd+7]},
-                        .r1c0={.real=params[paramInd+8], .imag=params[paramInd+9]},
-                        .r1c1={.real=params[paramInd+10], .imag=params[paramInd+11]},
-                        .r1c2={.real=params[paramInd+12], .imag=params[paramInd+13]},
-                        .r1c3={.real=params[paramInd+14], .imag=params[paramInd+15]},
-                        .r2c0={.real=params[paramInd+16], .imag=params[paramInd+17]},
-                        .r2c1={.real=params[paramInd+18], .imag=params[paramInd+19]},
-                        .r2c2={.real=params[paramInd+20], .imag=params[paramInd+21]},
-                        .r2c3={.real=params[paramInd+22], .imag=params[paramInd+23]},
-                        .r3c0={.real=params[paramInd+24], .imag=params[paramInd+25]},
-                        .r3c1={.real=params[paramInd+26], .imag=params[paramInd+27]},
-                        .r3c2={.real=params[paramInd+28], .imag=params[paramInd+29]},
-                        .r3c3={.real=params[paramInd+30], .imag=params[paramInd+31]}};
+                    ComplexMatrix4 u = local_getMatrix4FromFlatList(&params[paramInd]);
                     if (numCtrls == 0)
                         twoQubitUnitary(qureg, targs[targInd], targs[targInd+1], u);
                     else
@@ -760,39 +769,15 @@ int local_applyGates(
                 if (numTargs == 1) {
                     ComplexMatrix2 krausOps[4];
                     int opElemInd = 1 + paramInd;
-                    for (int n=0; n < numKrausOps; n++) {
-                        krausOps[n].r0c0.real = params[opElemInd++]; krausOps[n].r0c0.imag = params[opElemInd++];
-                        krausOps[n].r0c1.real = params[opElemInd++]; krausOps[n].r0c1.imag = params[opElemInd++];
-                        krausOps[n].r1c0.real = params[opElemInd++]; krausOps[n].r1c0.imag = params[opElemInd++];
-                        krausOps[n].r1c1.real = params[opElemInd++]; krausOps[n].r1c1.imag = params[opElemInd++];
-                    }
+                    for (int n=0; n < numKrausOps; n++)
+                        krausOps[n] = local_getMatrix2FromFlatList(&params[opElemInd + 2*2*2*n]);
                     applyOneQubitKrausMap(qureg, targs[targInd], krausOps, numKrausOps);
                 } 
                 else if (numTargs == 2) {
                     ComplexMatrix4 krausOps[16];
                     int opElemInd = 1 + paramInd;
-                    for (int n=0; n < numKrausOps; n++) {
-                        krausOps[n].r0c0.real = params[opElemInd++]; krausOps[n].r0c0.imag = params[opElemInd++];
-                        krausOps[n].r0c1.real = params[opElemInd++]; krausOps[n].r0c1.imag = params[opElemInd++];
-                        krausOps[n].r0c2.real = params[opElemInd++]; krausOps[n].r0c2.imag = params[opElemInd++];
-                        krausOps[n].r0c3.real = params[opElemInd++]; krausOps[n].r0c3.imag = params[opElemInd++];
-
-                        krausOps[n].r1c0.real = params[opElemInd++]; krausOps[n].r1c0.imag = params[opElemInd++];
-                        krausOps[n].r1c1.real = params[opElemInd++]; krausOps[n].r1c1.imag = params[opElemInd++];
-                        krausOps[n].r1c2.real = params[opElemInd++]; krausOps[n].r1c2.imag = params[opElemInd++];
-                        krausOps[n].r1c3.real = params[opElemInd++]; krausOps[n].r1c3.imag = params[opElemInd++];
-                        
-                        krausOps[n].r2c0.real = params[opElemInd++]; krausOps[n].r2c0.imag = params[opElemInd++];
-                        krausOps[n].r2c1.real = params[opElemInd++]; krausOps[n].r2c1.imag = params[opElemInd++];
-                        krausOps[n].r2c2.real = params[opElemInd++]; krausOps[n].r2c2.imag = params[opElemInd++];
-                        krausOps[n].r2c3.real = params[opElemInd++]; krausOps[n].r2c3.imag = params[opElemInd++];
-                        
-                        krausOps[n].r3c0.real = params[opElemInd++]; krausOps[n].r3c0.imag = params[opElemInd++];
-                        krausOps[n].r3c1.real = params[opElemInd++]; krausOps[n].r3c1.imag = params[opElemInd++];
-                        krausOps[n].r3c2.real = params[opElemInd++]; krausOps[n].r3c2.imag = params[opElemInd++];
-                        krausOps[n].r3c3.real = params[opElemInd++]; krausOps[n].r3c3.imag = params[opElemInd++];
-                    }
-                    
+                    for (int n=0; n < numKrausOps; n++)
+                        krausOps[n] = local_getMatrix4FromFlatList(&params[opElemInd + 2*4*4*n]);
                     applyTwoQubitKrausMap(qureg, targs[targInd], targs[targInd+1], krausOps, numKrausOps);
                 } 
                 break;
