@@ -40,7 +40,18 @@ void projectToOne(Qureg qureg, const int measureQubit) {
      
      qasm_recordMeasurement(qureg, measureQubit);
  }
+ 
+ void applyOneQubitMatrix(Qureg qureg, int targetQubit,  ComplexMatrix2 u) {
+     validateTarget(qureg, targetQubit, __func__);
+     statevec_unitary(qureg, targetQubit, u);
+     qasm_recordComment(qureg, "Here, an undisclosed 1-qubit matrix was pre-multiplied.");
+ }
 
+void applyTwoQubitMatrix(Qureg qureg, int targetQubit1, int targetQubit2, ComplexMatrix4 u) {
+    validateMultiTargets(qureg, (int []) {targetQubit1, targetQubit2}, 2, __func__);
+    statevec_twoQubitUnitary(qureg, targetQubit1, targetQubit2, u);
+    qasm_recordComment(qureg, "Here, an undisclosed 2-qubit matrix was pre-multiplied.");
+}
 
 
 

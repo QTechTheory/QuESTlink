@@ -208,12 +208,12 @@
 
 :Begin:
 :Function:       internal_calcQuregDerivs
-:Pattern:        QuEST`Private`CalcQuregDerivsInternal[initStateId_Integer, quregIds_List, varOpInds_List, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List]
-:Arguments:      { initStateId, quregIds, varOpInds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp }
+:Pattern:        QuEST`Private`CalcQuregDerivsInternal[initStateId_Integer, quregIds_List, varOpInds_List, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, unitaryDerivs_List]
+:Arguments:      { initStateId, quregIds, varOpInds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, unitaryDerivs }
 :ArgumentTypes:  { Integer, Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: QuEST`Private`CalcQuregDerivsInternal::usage = "CalcQuregDerivsInternal[initStateId, quregIds, varOpInds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp] accepts a circuit (complete with rotation angles) and a nominated set of gates (by indices), sets each qureg to be the result of applying the derivative of the circuit w.r.t the nominated gates, upon the initial state."
+:Evaluate: QuEST`Private`CalcQuregDerivsInternal::usage = "CalcQuregDerivsInternal[initStateId, quregIds, varOpInds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, unitaryDerivs] accepts a circuit (complete with rotation angles) and a nominated set of gates (by indices), sets each qureg to be the result of applying the derivative of the circuit w.r.t the nominated gates, upon the initial state. The final argument encodes the derivative matrices of general unitaries."
 
 :Begin:
 :Function:       internal_calcInnerProductsMatrix

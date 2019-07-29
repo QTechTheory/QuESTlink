@@ -176,22 +176,31 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		ApplyCircuit[circuit, outQureg]
         	]
         
-        (* apply the derivatives of a circuit on an initial state, storing the ersults in the given quregs *)    
+        (* apply the derivatives of a circuit on an initial state, storing the ersults in the given quregs *)
+        extractUnitaryMatrix[Subscript[U, __Integer][u_List]] := u
+        extractUnitaryMatrix[Subscript[C, __Integer][Subscript[U, __Integer][u_List]]] := u
+        calcUnitaryDeriv[{param_ -> val_, gate_}] := 
+            D[extractUnitaryMatrix[gate], param] /. (param -> val)
         CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] :=
             With[
                 {varOpInds = DeleteDuplicates /@ (Position[circuit, _?(MemberQ[#])][[All, 1]]& /@ varVals[[All,1]]),
-                (* unitaryGates =  select only of circ[[varOpInds[[All,1]]]]) *)
                 codes = codifyCircuit[(circuit /. varVals)]}, 
-                If[
-                    AllTrue[varOpInds, Length[#]==1&],
-                    If[
-                        AllTrue[codes[[4]], NumericQ, 2],
+                Which[
+                    AnyTrue[varOpInds, Length[#]<1&],
+                    Echo["One or more variables were not present in the circuit!", "Error: "]; $Failed,
+                    AnyTrue[varOpInds, Length[#]>1&],
+                    Echo["One or more variables appeared multiple times in the circuit!", "Error: "]; $Failed,
+                    Not @ AllTrue[codes[[4]], NumericQ, 2],
+                    Echo["The circuit contained variables not assigned values in varVals!", "Error: "]; $Failed,
+                    True,
+                    With[{unitaryGates = Select[
+                        Flatten[{varVals, circuit[[varOpInds[[All,1]]]]}, {{2},{1}}], Not[FreeQ[#, U]] &]},
                         CalcQuregDerivsInternal[
                             initQureg, derivQuregs, Flatten[varOpInds]-1,  (* maps indices from MMA to C *)
-                            unpackEncodedCircuit @ codes],
-                        Echo["The circuit contained variables not assigned values in varVals!", "Error: "]; $Failed
-                    ],
-                    Echo["Some variables appeared multiple times in the circuit, or not at all!", "Error: "]; $Failed
+                            unpackEncodedCircuit @ codes,
+                            Flatten[codifyMatrix /@ calcUnitaryDeriv /@ unitaryGates]
+                        ]
+                    ]
                 ]
             ]
             

@@ -925,13 +925,12 @@ int local_getDerivativeQuregs(
     int numOps, int* opcodes, 
     int* ctrls, int* numCtrlsPerOp, 
     int* targs, int* numTargsPerOp, 
-    qreal* params, int* numParamsPerOp) {
+    qreal* params, int* numParamsPerOp,
+    // derivative matrices of general unitary gates in circuit
+    qreal* unitaryDerivs) {
         
-    /* note it's not trivial to re-use the previous variabele's qureg,
-       because we can't be sure the next variable occurs FURTHER in the circuit.
-       Ergo, each qureg will fully simulate the circuit but this at most doubles 
-       the runtime, since the full circuit suffix after a var needed simulation.
-     */
+    // index of the first (real) element of the next unitary derivative
+    int unitaryDerivInd = 0;
 
     // don't record measurement outcomes
     int* mesOutcomes = NULL;
@@ -966,6 +965,7 @@ int local_getDerivativeQuregs(
         Complex negHalfI = (Complex) {.real=0, .imag=-0.5};
         Complex posI = (Complex) {.real=0, .imag=1};
         Complex zero = (Complex) {.real=0, .imag=0};
+        Complex one = (Complex) {.real=1, .imag=0};
         
         Complex normFac;
         
@@ -999,8 +999,25 @@ int local_getDerivativeQuregs(
                 ; // no additional gate introduced by derivative
                 normFac = posI;
                 break;
+            case OPCODE_U:
+                // create a non-dynamic ComplexMatrixN instance 
+                if (numTargs == 1) {
+                    ComplexMatrix2 u2 = local_getMatrix2FromFlatList(&unitaryDerivs[unitaryDerivInd]);
+                    unitaryDerivInd += 2*2*2;
+                    applyOneQubitMatrix(qureg, targs[finalTargInd], u2);
+                } else if (numTargs == 2) {
+                    ComplexMatrix4 u4 = local_getMatrix4FromFlatList(&unitaryDerivs[unitaryDerivInd]);
+                    unitaryDerivInd += 2*4*4;
+                    applyTwoQubitMatrix(qureg, targs[finalTargInd], targs[finalTargInd+1], u4);
+                }
+                else {
+                    // general matrix N unpacking here; can do static
+                    return local_writeToErrorMsgBuffer("multi-qubit U deriv not yet implemented!");
+                }
+                normFac = one;
+                break;
             default:            
-                return local_writeToErrorMsgBuffer("Only Rx, Ry, Rz and R gates may be differentiated!");
+                return local_writeToErrorMsgBuffer("Only Rx, Ry, Rz, R and U gates may be differentiated!");
         }
         
         // differentiate control qubits by forcing them to 1, without renormalising
@@ -1048,6 +1065,10 @@ void internal_calcQuregDerivs(int initStateId) {
     qreal* params;
     local_loadCircuitFromMMA(&numOps, &opcodes, &ctrls, &numCtrlsPerOp, &targs, &numTargsPerOp, &params, &numParamsPerOp);
     
+    qreal* unitaryDerivs;
+    int numElems;
+    WSGetReal64List(stdlink, &unitaryDerivs, &numElems);
+    
     // check MMA-loaded args are valid
     if (numQuregs != numVars) {
         local_sendErrorToMMA("An equal number of quregs as variables must be passed.");
@@ -1075,11 +1096,13 @@ void internal_calcQuregDerivs(int initStateId) {
     int success = local_getDerivativeQuregs(
         quregIds, varOpInds, numVars, 
         numOps, opcodes, 
-        ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp);
+        ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, 
+        unitaryDerivs);
         
     if (!success) {
         local_sendErrorMsgBufferToMMA();
         WSPutSymbol(stdlink, "$Failed");;
+        return;
     }
     
     // need to send anything to fulfill MMA return
