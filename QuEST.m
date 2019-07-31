@@ -350,7 +350,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 (#[[1]] + I #[[2]])& /@ Partition[arrs,2] // Transpose
             ]
         CalcPauliSumMatrix[blank:pattConstPlusPauliSum] := 
-            const + CalcPauliSumMatrix[Plus @@ {pauliTerms}]
+            With[
+                {matr=CalcPauliSumMatrix[Plus @@ {pauliTerms}]},
+                matr + const IdentityMatrix @ Length @ matr 
+            ]
         
         getIgorLink[id_] :=
         	LinkConnect[
