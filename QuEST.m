@@ -72,7 +72,7 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     PackageExport[Rz]
     Rz::usage = "Rz[theta] is a rotation of theta around the z-axis of the Bloch sphere. Multiple targets enacts Exp[-i \[Theta]/2 Za ... Zc]." 
     PackageExport[R]
-    R::usage = "R[theta, paulis]W is the unitary Exp[-i \[Theta]/2 paulis]."   
+    R::usage = "R[theta, paulis] is the unitary Exp[-i \[Theta]/2 paulis]."   
     PackageExport[S]
     S::usage = "S is the S gate, a.k.a. PI/2 gate."
     PackageExport[T]
