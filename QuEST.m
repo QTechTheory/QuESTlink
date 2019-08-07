@@ -595,7 +595,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 FaceForm[White], EdgeForm[Black],
                 qubitgraphics, gategraphics},
                 opts,
-        		ImageSize -> 30 (numCols+1)
+        		ImageSize -> 30 (numCols+1),
+                Method -> {"ShrinkWrap" -> True}
         	]
         ]
         DrawCircuit[circ_List, opts:OptionsPattern[]] :=
