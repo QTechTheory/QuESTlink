@@ -66,9 +66,9 @@
 #define OPCODE_G 18
 
 /**
- * Max number of quregs which can simultaneously exist
+ * The initial number of maximum quregs represnetable before qureg-list resizing
  */
-#define MAX_NUM_QUREGS 1000
+#define INIT_MAX_NUM_QUREGS 1000
 
 /**
  * Max number of target and control qubits which can be specified 
@@ -84,7 +84,8 @@ QuESTEnv env;
 /**
  * Collection of instantiated Quregs
  */
-Qureg quregs[MAX_NUM_QUREGS];
+int currMaxNumQuregs;
+Qureg* quregs;
 
 /**
  * Buffer for creating error messages
@@ -124,25 +125,65 @@ int local_writeToErrorMsgBuffer(char* msg, ...) {
 
 /* qureg allocation */
 
-int local_getNextQuregID() {
-    for (int id=0; id < MAX_NUM_QUREGS; id++)
+/* returns 0 and sends an error to MMA if resize is unsuccessful 
+ * (old quregs maintained) else 1 */
+int local_resizeQuregs(void) {
+    
+    // copy quregs
+    Qureg copy[currMaxNumQuregs];
+    for (int i=0; i < currMaxNumQuregs; i++)
+        copy[i] = quregs[i];
+        
+    // attempt to resize quregs
+    free(quregs);
+    quregs = malloc(2*currMaxNumQuregs * sizeof *quregs);
+    
+    // if unsuccessful, restore old size
+    int success = !(quregs == NULL); 
+    if (!success) {
+        quregs = malloc(currMaxNumQuregs * sizeof *quregs);
+        local_sendErrorToMMA(
+            "Qureg allocation failed, since memory for a sufficiently large "
+            "array of quregs could not be allocated. The existing set of quregs "
+            "have not been affected");
+    }
+    
+    // restore elements
+    for (int i=0; i < currMaxNumQuregs; i++)
+        quregs[i] = copy[i];
+    
+    if (success)
+        currMaxNumQuregs *= 2;
+    return success;
+}
+
+/* returns -1 if no ids available (resizeQuregs failed) */
+int local_getNextQuregID(void) {
+    
+    // check for next id
+    for (int id=0; id < currMaxNumQuregs; id++)
         if (!quregs[id].isCreated)
             return id;
-    
-    local_sendErrorToMMA("Maximum number of quregs have been allocated!");
-    return -1;
+            
+    // if none are available, resize array
+    int success = local_resizeQuregs();
+    return (success)? currMaxNumQuregs : -1;
 }
 
 int wrapper_createQureg(int numQubits) {
-    int id = local_getNextQuregID();
-    quregs[id] = createQureg(numQubits, env);
-    quregs[id].isCreated = 1;
+    int id = local_getNextQuregID(); // will send error if unsuccessful
+    if (id != -1) {
+        quregs[id] = createQureg(numQubits, env);
+        quregs[id].isCreated = 1;
+    }
     return id;
 }
 int wrapper_createDensityQureg(int numQubits) {
-    int id = local_getNextQuregID();
-    quregs[id] = createDensityQureg(numQubits, env);
-    quregs[id].isCreated = 1;
+    int id = local_getNextQuregID(); // will send error if unsuccessful
+    if (id != -1) {
+        quregs[id] = createDensityQureg(numQubits, env);
+        quregs[id].isCreated = 1;
+    }
     return id;
 }
 int wrapper_destroyQureg(int id) {
@@ -156,15 +197,25 @@ int wrapper_destroyQureg(int id) {
 
 void callable_createQuregs(int numQubits, int numQuregs) {
     int ids[numQuregs];
-    for (int i=0; i < numQuregs; i++)
+    for (int i=0; i < numQuregs; i++) {
         ids[i] = wrapper_createQureg(numQubits);
+        if (ids[i] == -1) {
+            WSPutInteger(stdlink, -1);
+            return;
+        }
+    }
     WSPutIntegerList(stdlink, ids, numQuregs);
 }
 
 void callable_createDensityQuregs(int numQubits, int numQuregs) {
     int ids[numQuregs];
-    for (int i=0; i < numQuregs; i++)
+    for (int i=0; i < numQuregs; i++) {
         ids[i] = wrapper_createDensityQureg(numQubits);
+        if (ids[i] == -1) {
+            WSPutInteger(stdlink, -1);
+            return;
+        }
+    }
     WSPutIntegerList(stdlink, ids, numQuregs);
 } 
 
@@ -1375,7 +1426,7 @@ int internal_applyPauliSum(int inId, int outId) {
  */
 int callable_destroyAllQuregs(void) {
     
-    for (int id=0; id < MAX_NUM_QUREGS; id++) {
+    for (int id=0; id < currMaxNumQuregs; id++) {
         if (quregs[id].isCreated) {
             destroyQureg(quregs[id], env);
             quregs[id].isCreated = 0;
@@ -1391,8 +1442,8 @@ void callable_getAllQuregs(void) {
     
     // collect all created quregs
     int numQuregs = 0;
-    int idList[MAX_NUM_QUREGS];
-    for (int id=0; id < MAX_NUM_QUREGS; id++)
+    int idList[currMaxNumQuregs];
+    for (int id=0; id < currMaxNumQuregs; id++)
         if (quregs[id].isCreated)
             idList[numQuregs++] = id;
     
@@ -1406,8 +1457,12 @@ int main(int argc, char* argv[]) {
     // create the single, global QuEST execution env
     env = createQuESTEnv();
     
+    // create the dynamic list of quregs
+    currMaxNumQuregs = INIT_MAX_NUM_QUREGS;
+    quregs = malloc(currMaxNumQuregs * sizeof *quregs);
+    
     // indicate that no quregs have yet been created
-    for (int id=0; id < MAX_NUM_QUREGS; id++)
+    for (int id=0; id < currMaxNumQuregs; id++)
         quregs[id].isCreated = 0;
     
     // establish link with MMA
