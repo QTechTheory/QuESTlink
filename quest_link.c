@@ -456,30 +456,24 @@ int* local_prepareCtrlCache(int* ctrls, int ctrlInd, int numCtrls, int addTarg) 
 }
 
 ComplexMatrix2 local_getMatrix2FromFlatList(qreal* list) {
-    return (ComplexMatrix2) {
-        .r0c0={.real=list[0], .imag=list[1]},
-        .r0c1={.real=list[2], .imag=list[3]},
-        .r1c0={.real=list[4], .imag=list[5]},
-        .r1c1={.real=list[6], .imag=list[7]}};
+    int dim = 2;
+    ComplexMatrix2 m;
+    for (int r=0; r<dim; r++)
+        for (int c=0; c<dim; c++) {
+            m.real[r][c] = list[2*(dim*r+c)];
+            m.imag[r][c] = list[2*(dim*r+c)+1];
+        }
+    return m;
 }
 ComplexMatrix4 local_getMatrix4FromFlatList(qreal* list) {
-    return (ComplexMatrix4) {
-        .r0c0={.real=list[0], .imag=list[1]},
-        .r0c1={.real=list[2], .imag=list[3]},
-        .r0c2={.real=list[4], .imag=list[5]},
-        .r0c3={.real=list[6], .imag=list[7]},
-        .r1c0={.real=list[8], .imag=list[9]},
-        .r1c1={.real=list[10], .imag=list[11]},
-        .r1c2={.real=list[12], .imag=list[13]},
-        .r1c3={.real=list[14], .imag=list[15]},
-        .r2c0={.real=list[16], .imag=list[17]},
-        .r2c1={.real=list[18], .imag=list[19]},
-        .r2c2={.real=list[20], .imag=list[21]},
-        .r2c3={.real=list[22], .imag=list[23]},
-        .r3c0={.real=list[24], .imag=list[25]},
-        .r3c1={.real=list[26], .imag=list[27]},
-        .r3c2={.real=list[28], .imag=list[29]},
-        .r3c3={.real=list[30], .imag=list[31]}};
+    int dim = 4;
+    ComplexMatrix4 m;
+    for (int r=0; r<dim; r++)
+        for (int c=0; c<dim; c++) {
+            m.real[r][c] = list[2*(dim*r+c)];
+            m.imag[r][c] = list[2*(dim*r+c)+1];
+        }
+    return m;
 }
 
 
@@ -577,10 +571,8 @@ int local_applyGates(
                     controlledNot(qureg, ctrls[ctrlInd], targs[targInd]);
                 else {
                     ComplexMatrix2 u = {
-                        .r0c0 = {.real=0, .imag=0},
-                        .r0c1 = {.real=1, .imag=0},
-                        .r1c0 = {.real=1, .imag=0},
-                        .r1c1 = {.real=0, .imag=0}};
+                        .real={{0,1},{1,0}},
+                        .imag={{0}}};
                     multiControlledUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], u);
                 }
                 break;
@@ -751,10 +743,8 @@ int local_applyGates(
                     controlledNot(qureg, targs[targInd],   targs[targInd+1]);
                 } else {
                     ComplexMatrix2 u = {
-                        .r0c0 = {.real=0, .imag=0},
-                        .r0c1 = {.real=1, .imag=0},
-                        .r1c0 = {.real=1, .imag=0},
-                        .r1c1 = {.real=0, .imag=0}};
+                        .real={{0,1},{1,0}},
+                        .imag={{0}}};
                     int* ctrlCache = local_prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledUnitary(qureg, ctrlCache, numCtrls+1, targs[targInd+1], u);
                     ctrlCache[numCtrls] = targs[targInd+1];
