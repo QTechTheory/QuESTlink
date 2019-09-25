@@ -15,7 +15,6 @@
 extern "C" {
 # endif
 
-    
 /*
  * general functions
  */

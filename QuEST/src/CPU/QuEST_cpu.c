@@ -24,9 +24,16 @@
 # endif
 
 
-/*
- * state vector and density matrix operations
+/** 
+ * exposed for MMA-wrapper 
  */
+void copyStateFromGPU(Qureg qureg) {
+    // do nothing
+}
+
+
+
+
 
 void densmatr_oneQubitDegradeOffDiagonal(Qureg qureg, const int targetQubit, qreal retain){
     const long long int numTasks = qureg.numAmpsPerChunk;
