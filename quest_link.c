@@ -654,7 +654,7 @@ int local_applyGates(
                         "The quest_link received an unequal number of Pauli codes (%d) and target qubits! (%d)",
                         numParams-1, numTargs);
                 }
-                int paulis[MAX_NUM_TARGS_CTRLS]; 
+                enum pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
                 for (int p=0; p < numTargs; p++)
                     paulis[p] = (int) params[paramInd+1+p];
                 multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]);
@@ -1273,8 +1273,8 @@ qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
     
     // get arguments from MMA link
     int numPaulis;
-    int *pauliCodes;
-    WSGetInteger32List(stdlink, &pauliCodes, &numPaulis);
+    int *pauliIntCodes;
+    WSGetInteger32List(stdlink, &pauliIntCodes, &numPaulis);
     int *targs;
     WSGetInteger32List(stdlink, &targs, &numPaulis);
     
@@ -1292,10 +1292,15 @@ qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     
+    // safely cast pauli codes
+    enum pauliOpType pauliCodes[numPaulis];
+    for (int i=0; i<numPaulis; i++)
+        pauliCodes[i] = pauliIntCodes[i];
+    
     return calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace);
 }
 
-void local_loadPauliSumFromMMA(int numQb, int* numTerms, int** arrPaulis, qreal** termCoeffs) {
+void local_loadPauliSumFromMMA(int numQb, int* numTerms, enum pauliOpType** arrPaulis, qreal** termCoeffs) {
     
     // get arguments from MMA link
     int numPaulis;
@@ -1310,7 +1315,7 @@ void local_loadPauliSumFromMMA(int numQb, int* numTerms, int** arrPaulis, qreal*
     // convert {allPauliCodes}, {allPauliTargets}, {numPaulisPerTerm}, and
     // qureg.numQubitsRepresented into {pauli-code-for-every-qubit}
     int arrLen = *numTerms * numQb;
-    *arrPaulis = malloc(arrLen * sizeof(int));
+    *arrPaulis = malloc(arrLen * sizeof **arrPaulis);
     for (int i=0; i < arrLen; i++)
         (*arrPaulis)[i] = 0;
     
@@ -1343,7 +1348,7 @@ qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     
-    int numTerms; int* arrPaulis; qreal* termCoeffs;
+    int numTerms; enum pauliOpType* arrPaulis; qreal* termCoeffs;
     local_loadPauliSumFromMMA(qureg.numQubitsRepresented, &numTerms, &arrPaulis, &termCoeffs);
     
     qreal val = calcExpecPauliSum(qureg, arrPaulis, termCoeffs, numTerms, workspace);
@@ -1356,7 +1361,7 @@ qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
 
 void internal_calcPauliSumMatrix(int numQubits) {
     
-    int numTerms; int* arrPaulis; qreal* termCoeffs;
+    int numTerms; enum pauliOpType* arrPaulis; qreal* termCoeffs;
     local_loadPauliSumFromMMA(numQubits, &numTerms, &arrPaulis, &termCoeffs);
 
     // create states needed to apply Pauli products
@@ -1400,7 +1405,7 @@ int internal_applyPauliSum(int inId, int outId) {
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     
-    int numTerms; int* arrPaulis; qreal* termCoeffs;
+    int numTerms; enum pauliOpType* arrPaulis; qreal* termCoeffs;
     local_loadPauliSumFromMMA(inQureg.numQubitsRepresented, &numTerms, &arrPaulis, &termCoeffs);
     
     applyPauliSum(inQureg, arrPaulis, termCoeffs, numTerms, outQureg);
