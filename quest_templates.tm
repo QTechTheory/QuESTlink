@@ -105,49 +105,49 @@
 
 
 :Begin:
-:Function:       wrapper_applyOneQubitDepolariseError
-:Pattern:        QuEST`ApplyOneQubitDepolariseError[qureg_Integer, qb_Integer, prob_Real]
+:Function:       wrapper_mixDepolarising
+:Pattern:        QuEST`MixDepolarising[qureg_Integer, qb_Integer, prob_Real]
 :Arguments:      { qureg, qb, prob }
 :ArgumentTypes:  { Integer, Integer, Real }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`ApplyOneQubitDepolariseError::usage = "ApplyOneQubitDepolariseError[qureg, qubit, prob] adds depolarising noise to density matrix qureg."
+:Evaluate: QuEST`MixDepolarising::usage = "MixDepolarising[qureg, qubit, prob] adds depolarising noise to density matrix qureg."
 
 :Begin:
-:Function:       wrapper_applyTwoQubitDepolariseError
-:Pattern:        QuEST`ApplyTwoQubitDepolariseError[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
+:Function:       wrapper_mixTwoQubitDepolarising
+:Pattern:        QuEST`MixTwoQubitDepolarising[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
 :Arguments:      { qureg, qb1, qb2, prob }
 :ArgumentTypes:  { Integer, Integer, Integer, Real }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`ApplyTwoQubitDepolariseError::usage = "ApplyTwoQubitDepolariseError[qureg, qb1, qb2 prob] adds depolarising noise to density matrix qureg."
+:Evaluate: QuEST`MixTwoQubitDepolarising::usage = "MixTwoQubitDepolarising[qureg, qb1, qb2 prob] adds depolarising noise to density matrix qureg."
 
 :Begin:
-:Function:       wrapper_applyOneQubitDephaseError
-:Pattern:        QuEST`ApplyOneQubitDephaseError[qureg_Integer, qb_Integer, prob_Real]
+:Function:       wrapper_mixDephasing
+:Pattern:        QuEST`MixDephasing[qureg_Integer, qb_Integer, prob_Real]
 :Arguments:      { qureg, qb, prob }
 :ArgumentTypes:  { Integer, Integer, Real }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`ApplyOneQubitDephaseError::usage = "ApplyOneQubitDephaseError[qureg, qubit, prob] adds dephasing noise to density matrix qureg."
+:Evaluate: QuEST`MixDephasing::usage = "MixDephasing[qureg, qubit, prob] adds dephasing noise to density matrix qureg."
 
 :Begin:
-:Function:       wrapper_applyTwoQubitDephaseError
-:Pattern:        QuEST`ApplyTwoQubitDephaseError[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
+:Function:       wrapper_mixTwoQubitDephasing
+:Pattern:        QuEST`MixTwoQubitDephasing[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
 :Arguments:      { qureg, qb1, qb2, prob }
 :ArgumentTypes:  { Integer, Integer, Integer, Real }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`ApplyTwoQubitDephaseError::usage = "ApplyTwoQubitDephaseError[qureg, qb1, qb2 prob] adds dephasing noise to density matrix qureg."
+:Evaluate: QuEST`MixTwoQubitDephasing::usage = "MixTwoQubitDephasing[qureg, qb1, qb2 prob] adds dephasing noise to density matrix qureg."
 
 :Begin:
-:Function:       wrapper_applyOneQubitDampingError
-:Pattern:        QuEST`ApplyOneQubitDampingError[qureg_Integer, qb_Integer, prob_Real]
+:Function:       wrapper_mixDamping
+:Pattern:        QuEST`MixDamping[qureg_Integer, qb_Integer, prob_Real]
 :Arguments:      { qureg, qb, prob }
 :ArgumentTypes:  { Integer, Integer, Real }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`ApplyOneQubitDampingError::usage = "ApplyOneQubitDampingError[qureg, qubit, prob] applies amplitude damping with the given decay probability to density matrix qureg."
+:Evaluate: QuEST`MixDamping::usage = "MixDamping[qureg, qubit, prob] applies amplitude damping with the given decay probability to density matrix qureg."
 
 
 

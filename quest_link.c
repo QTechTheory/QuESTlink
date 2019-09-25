@@ -278,37 +278,37 @@ int wrapper_cloneQureg(int outID, int inID) {
 
 /** noise */
 
-int wrapper_applyOneQubitDephaseError(int id, int qb1, qreal prob) {
+int wrapper_mixDephasing(int id, int qb1, qreal prob) {
     if (quregs[id].isCreated)
-        applyOneQubitDephaseError(quregs[id], qb1, prob);
+        mixDephasing(quregs[id], qb1, prob);
     else
         local_sendQuregNotCreatedError(id);
     return id;
 }
-int wrapper_applyTwoQubitDephaseError(int id, int qb1, int qb2, qreal prob) {
+int wrapper_mixTwoQubitDephasing(int id, int qb1, int qb2, qreal prob) {
     if (quregs[id].isCreated)
-        applyTwoQubitDephaseError(quregs[id], qb1, qb2, prob);
+        mixTwoQubitDephasing(quregs[id], qb1, qb2, prob);
     else
         local_sendQuregNotCreatedError(id);
     return id;
 }
-int wrapper_applyOneQubitDepolariseError(int id, int qb1, qreal prob) {
+int wrapper_mixDepolarising(int id, int qb1, qreal prob) {
     if (quregs[id].isCreated)
-        applyOneQubitDepolariseError(quregs[id], qb1, prob);
+        mixDepolarising(quregs[id], qb1, prob);
     else
         local_sendQuregNotCreatedError(id);
     return id;
 }
-int wrapper_applyTwoQubitDepolariseError(int id, int qb1, int qb2, qreal prob) {
+int wrapper_mixTwoQubitDepolarising(int id, int qb1, int qb2, qreal prob) {
     if (quregs[id].isCreated)
-        applyTwoQubitDepolariseError(quregs[id], qb1, qb2, prob);
+        mixTwoQubitDepolarising(quregs[id], qb1, qb2, prob);
     else
         local_sendQuregNotCreatedError(id);
     return id;
 }
-int wrapper_applyOneQubitDampingError(int id, int qb, qreal prob) {
+int wrapper_mixDamping(int id, int qb, qreal prob) {
     if (quregs[id].isCreated)
-        applyOneQubitDampingError(quregs[id], qb, prob);
+        mixDamping(quregs[id], qb, prob);
     else
         local_sendQuregNotCreatedError(id);
     return id;
@@ -696,9 +696,9 @@ int local_applyGates(
                 if (!local_isValidProb(op, numTargs, params[paramInd]))
                     return local_noiseInvalidProbError(op, numTargs, params[paramInd]);
                 if (numTargs == 1)
-                    applyOneQubitDephaseError(qureg, targs[targInd], params[paramInd]);
+                    mixDephasing(qureg, targs[targInd], params[paramInd]);
                 if (numTargs == 2)
-                    applyTwoQubitDephaseError(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
+                    mixTwoQubitDephasing(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
                 break;
                 
             case OPCODE_Depol :
@@ -713,9 +713,9 @@ int local_applyGates(
                 if (!local_isValidProb(op, numTargs, params[paramInd]))
                     return local_noiseInvalidProbError(op, numTargs, params[paramInd]);
                 if (numTargs == 1)
-                    applyOneQubitDepolariseError(qureg, targs[targInd], params[paramInd]);
+                    mixDepolarising(qureg, targs[targInd], params[paramInd]);
                 if (numTargs == 2)
-                    applyTwoQubitDepolariseError(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
+                    mixTwoQubitDepolarising(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
                 break;
                 
             case OPCODE_Damp :
@@ -729,7 +729,7 @@ int local_applyGates(
                     break;
                 if (!local_isValidProb(op, numTargs, params[paramInd]))
                     return local_noiseInvalidProbError(op, numTargs, params[paramInd]);
-                applyOneQubitDampingError(qureg, targs[targInd], params[paramInd]);
+                mixDamping(qureg, targs[targInd], params[paramInd]);
                 break;
                 
             case OPCODE_SWAP:
@@ -812,14 +812,14 @@ int local_applyGates(
                     int opElemInd = 1 + paramInd;
                     for (int n=0; n < numKrausOps; n++)
                         krausOps[n] = local_getMatrix2FromFlatList(&params[opElemInd + 2*2*2*n]);
-                    applyOneQubitKrausMap(qureg, targs[targInd], krausOps, numKrausOps);
+                    mixKrausMap(qureg, targs[targInd], krausOps, numKrausOps);
                 } 
                 else if (numTargs == 2) {
                     ComplexMatrix4 krausOps[16];
                     int opElemInd = 1 + paramInd;
                     for (int n=0; n < numKrausOps; n++)
                         krausOps[n] = local_getMatrix4FromFlatList(&params[opElemInd + 2*4*4*n]);
-                    applyTwoQubitKrausMap(qureg, targs[targInd], targs[targInd+1], krausOps, numKrausOps);
+                    mixTwoQubitKrausMap(qureg, targs[targInd], targs[targInd+1], krausOps, numKrausOps);
                 } 
                 break;
             case OPCODE_G :
