@@ -36,7 +36,7 @@ Learn more about QuEST at [quest.qtechtheory.org](https://quest.qtechtheory.org)
 
 ## Getting started
 
-QuEST is contained entirely in the files in the `QuEST/` folder. To use QuEST, copy this folder to your computer and include `QuEST.h` in your `C` or `C++` code, and compile using cmake with the provided [CMakeLists.txt file](/CMakeLists.txt). See the [tutorial](/examples/README.md) for an introduction, and view the full API [here](https://quest-kit.github.io/QuEST/QuEST_8h.html).
+QuEST is contained entirely in the files in the `QuEST/` folder. To use QuEST, copy this folder to your computer and include `QuEST.h` in your `C` or `C++` code, and compile using cmake with the provided [CMakeLists.txt file](/CMakeLists.txt). See the [tutorial](/examples/README.md) for an introduction, and view the full API [here](https://quest-kit.github.io/QuEST/QuEST_8h.html). Doc for the [develop branch](https://github.com/QuEST-Kit/QuEST/tree/develop) (containing unreleased functions) is hosted [here](https://github.com/QuEST-Kit/QuEST-develop-doc).
 
 We also include example [submission scripts](examples/submissionScripts/) for using QuEST with SLURM and PBS. 
 
