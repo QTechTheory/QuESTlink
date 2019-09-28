@@ -176,14 +176,14 @@ typedef struct DiagonalOperator
  * in modifying .real and .imag. E.g. the following is valid code when 
  * when distributed between TWO nodes:
  *
- *    // create {1,2,3,4,5,6,7,8, 9,10,11,12,13,14,15,16}
- *    DiagonalOperator op = createDiagonalOperator(4, env); // 16 amplitudes total
- *    for (int i=0; i<8; i++) {
- *        if (env.rank == 0)
- *            op.real[i] = (i+1);
- *        if (env.rank == 1)
- *            op.real[i] = (i+1+8);
- *    }
+ *     // create {1,2,3,4,5,6,7,8, 9,10,11,12,13,14,15,16}
+ *     DiagonalOperator op = createDiagonalOperator(4, env); // 16 amplitudes total
+ *     for (int i=0; i<8; i++) {
+ *         if (env.rank == 0)
+ *             op.real[i] = (i+1);
+ *         if (env.rank == 1)
+ *             op.real[i] = (i+1+8);
+ *     }
  *
  * @returns a DiagonalOperator instance, with 2^n-length .real and .imag arrays
  * @param[in] numQubits number of qubits in the operator.
@@ -198,9 +198,9 @@ DiagonalOperator createDiagonalOperator(int numQubits, QuESTEnv env);
  */
 void destroyDiagonalOperator(DiagonalOperator op);
 
-/** Syncs the .real and .imag components of \p operator to GPU memory, where it 
+/** Syncs the .real and .imag components of \p op to GPU memory, where it 
  * persists until being sync'd again, or destroyed. This effectively copies 
- * \p operator.real and \p operator.imag to \p operator.deviceOperator, 
+ * \p op.real and \p op.imag to \p op.deviceOperator, 
  * though the latter should not be accessed directly since it sits in VRAM.
  * This function has no effect when called in CPU mode.
  *
@@ -208,16 +208,16 @@ void destroyDiagonalOperator(DiagonalOperator op);
  */
 void syncDiagonalOperator(DiagonalOperator op);
 
-/** Applies \p operator to \p qureg, which must be a pure state-vector of 
- * equal dimension (number of qubits) to \p operator. 
- * In CPU mode, \p operator.real and operator.imag are multiplied onto \p qureg.
+/** Applies \p op to \p qureg, which must be a pure state-vector of 
+ * equal dimension (number of qubits) to \p op. 
+ * In CPU mode, \p op.real and \p op.imag are multiplied onto \p qureg.
  * In GPU mode, those values at the last call to \p syncDiagonalOperator will be 
- * used (stored in \p operator.deviceOperator).
- * There is no requirement that \p operator be Hermitian.
+ * used (stored in \p op.deviceOperator).
+ * There is no requirement that \p op be Hermitian.
  *
- * @param[in,out] qureg A statevector of equal dimension to operator, to operate upon
+ * @param[in,out] qureg A statevector of equal dimension to \p op, to operate upon
  * @param[in] op An operator diagonal in the Z basis
- * @throws exitWithError if \p qureg.numQubitsRepresented != \p operator.numQubits,
+ * @throws exitWithError if \p qureg.numQubitsRepresented != \p op.numQubits,
  *     or if \p operator has not been allocated via createDiagonalOperator,
  *     or if \p qureg is not a statevector.
  */
