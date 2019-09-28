@@ -20,6 +20,22 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+
+/*
+ * added for Eliot Kapit
+ */
+
+void applyDiagonalOperator(Qureg qureg, DiagonalOperator op) {
+    validateDiagonalOperator(qureg, op, __func__);
+    validateStateVecQureg(qureg, __func__);
+
+    statevec_applyDiagonalOperator(qureg, op);
+    
+    qasm_recordComment(qureg, "Here, the register was modified to an undisclosed and possibly unphysical state (applyDiagonalOperator).");
+}
+
     
     
 /*

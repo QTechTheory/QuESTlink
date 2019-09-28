@@ -24,6 +24,82 @@
 # endif
 
 
+
+/*
+ * added for Eliot Kapit
+ */
+
+DiagonalOperator createDiagonalOperator(int numQubits, QuESTEnv env) {
+    
+    if (numQubits <= 0) {
+        printf("Cannot allocate 0-qubit operator!\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    // the 2^numQubits values will be evenly split between the env.numRanks nodes
+    DiagonalOperator op;
+    op.numQubits = numQubits;
+    op.numValsPerChunk = (1LL << numQubits) / env.numRanks;
+
+    // allocate CPU memory (initialised to zero)
+    op.real = (qreal*) calloc(op.numValsPerChunk, sizeof(qreal));
+    op.imag = (qreal*) calloc(op.numValsPerChunk, sizeof(qreal));
+
+    // check cpu memory allocation was successful
+    if ( !op.real || !op.imag ) {
+        printf("Could not allocate memory!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return op;
+}
+
+void destroyDiagonalOperator(DiagonalOperator op) {
+    free(op.real);
+    free(op.imag);
+}
+
+void syncDiagonalOperator(DiagonalOperator op) {
+    // nothing to do on CPU
+}
+
+void statevec_applyDiagonalOperator(Qureg qureg, DiagonalOperator op) {
+    
+    // each node/chunk modifies only its values in an embarrassingly parallelisable way
+    long long int numAmps = qureg.numAmpsPerChunk;
+    
+    qreal* stateRe = qureg.stateVec.real;
+    qreal* stateIm = qureg.stateVec.imag;
+    qreal* opRe = op.real;
+    qreal* opIm = op.imag;
+    
+    qreal a,b,c,d;
+    long long int index;
+
+# ifdef _OPENMP
+# pragma omp parallel \
+    shared    (stateRe,stateIm, opRe,opIm, numAmps) \
+    private   (index, a,b,c,d)
+# endif 
+    {
+# ifdef _OPENMP
+# pragma omp for schedule  (static)
+# endif
+        for (index=0LL; index<numAmps; index++) {
+            a = stateRe[index];
+            b = stateIm[index];
+            c = opRe[index];
+            d = opIm[index];
+
+            // (a + b i)(c + d i) = (a c - b d) + i (a d + b c)
+            stateRe[index] = a*c - b*d;
+            stateIm[index] = a*d + b*c;
+        }
+    }
+}
+
+
+
 /*
  * state vector and density matrix operations
  */
