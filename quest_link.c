@@ -278,37 +278,37 @@ int wrapper_cloneQureg(int outID, int inID) {
 
 /** noise */
 
-int wrapper_applyOneQubitDephaseError(int id, int qb1, qreal prob) {
+int wrapper_mixDephasing(int id, int qb1, qreal prob) {
     if (quregs[id].isCreated)
-        applyOneQubitDephaseError(quregs[id], qb1, prob);
+        mixDephasing(quregs[id], qb1, prob);
     else
         local_sendQuregNotCreatedError(id);
     return id;
 }
-int wrapper_applyTwoQubitDephaseError(int id, int qb1, int qb2, qreal prob) {
+int wrapper_mixTwoQubitDephasing(int id, int qb1, int qb2, qreal prob) {
     if (quregs[id].isCreated)
-        applyTwoQubitDephaseError(quregs[id], qb1, qb2, prob);
+        mixTwoQubitDephasing(quregs[id], qb1, qb2, prob);
     else
         local_sendQuregNotCreatedError(id);
     return id;
 }
-int wrapper_applyOneQubitDepolariseError(int id, int qb1, qreal prob) {
+int wrapper_mixDepolarising(int id, int qb1, qreal prob) {
     if (quregs[id].isCreated)
-        applyOneQubitDepolariseError(quregs[id], qb1, prob);
+        mixDepolarising(quregs[id], qb1, prob);
     else
         local_sendQuregNotCreatedError(id);
     return id;
 }
-int wrapper_applyTwoQubitDepolariseError(int id, int qb1, int qb2, qreal prob) {
+int wrapper_mixTwoQubitDepolarising(int id, int qb1, int qb2, qreal prob) {
     if (quregs[id].isCreated)
-        applyTwoQubitDepolariseError(quregs[id], qb1, qb2, prob);
+        mixTwoQubitDepolarising(quregs[id], qb1, qb2, prob);
     else
         local_sendQuregNotCreatedError(id);
     return id;
 }
-int wrapper_applyOneQubitDampingError(int id, int qb, qreal prob) {
+int wrapper_mixDamping(int id, int qb, qreal prob) {
     if (quregs[id].isCreated)
-        applyOneQubitDampingError(quregs[id], qb, prob);
+        mixDamping(quregs[id], qb, prob);
     else
         local_sendQuregNotCreatedError(id);
     return id;
@@ -456,30 +456,24 @@ int* local_prepareCtrlCache(int* ctrls, int ctrlInd, int numCtrls, int addTarg) 
 }
 
 ComplexMatrix2 local_getMatrix2FromFlatList(qreal* list) {
-    return (ComplexMatrix2) {
-        .r0c0={.real=list[0], .imag=list[1]},
-        .r0c1={.real=list[2], .imag=list[3]},
-        .r1c0={.real=list[4], .imag=list[5]},
-        .r1c1={.real=list[6], .imag=list[7]}};
+    int dim = 2;
+    ComplexMatrix2 m;
+    for (int r=0; r<dim; r++)
+        for (int c=0; c<dim; c++) {
+            m.real[r][c] = list[2*(dim*r+c)];
+            m.imag[r][c] = list[2*(dim*r+c)+1];
+        }
+    return m;
 }
 ComplexMatrix4 local_getMatrix4FromFlatList(qreal* list) {
-    return (ComplexMatrix4) {
-        .r0c0={.real=list[0], .imag=list[1]},
-        .r0c1={.real=list[2], .imag=list[3]},
-        .r0c2={.real=list[4], .imag=list[5]},
-        .r0c3={.real=list[6], .imag=list[7]},
-        .r1c0={.real=list[8], .imag=list[9]},
-        .r1c1={.real=list[10], .imag=list[11]},
-        .r1c2={.real=list[12], .imag=list[13]},
-        .r1c3={.real=list[14], .imag=list[15]},
-        .r2c0={.real=list[16], .imag=list[17]},
-        .r2c1={.real=list[18], .imag=list[19]},
-        .r2c2={.real=list[20], .imag=list[21]},
-        .r2c3={.real=list[22], .imag=list[23]},
-        .r3c0={.real=list[24], .imag=list[25]},
-        .r3c1={.real=list[26], .imag=list[27]},
-        .r3c2={.real=list[28], .imag=list[29]},
-        .r3c3={.real=list[30], .imag=list[31]}};
+    int dim = 4;
+    ComplexMatrix4 m;
+    for (int r=0; r<dim; r++)
+        for (int c=0; c<dim; c++) {
+            m.real[r][c] = list[2*(dim*r+c)];
+            m.imag[r][c] = list[2*(dim*r+c)+1];
+        }
+    return m;
 }
 
 
@@ -577,10 +571,8 @@ int local_applyGates(
                     controlledNot(qureg, ctrls[ctrlInd], targs[targInd]);
                 else {
                     ComplexMatrix2 u = {
-                        .r0c0 = {.real=0, .imag=0},
-                        .r0c1 = {.real=1, .imag=0},
-                        .r1c0 = {.real=1, .imag=0},
-                        .r1c1 = {.real=0, .imag=0}};
+                        .real={{0,1},{1,0}},
+                        .imag={{0}}};
                     multiControlledUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], u);
                 }
                 break;
@@ -662,7 +654,7 @@ int local_applyGates(
                         "The quest_link received an unequal number of Pauli codes (%d) and target qubits! (%d)",
                         numParams-1, numTargs);
                 }
-                int paulis[MAX_NUM_TARGS_CTRLS]; 
+                enum pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
                 for (int p=0; p < numTargs; p++)
                     paulis[p] = (int) params[paramInd+1+p];
                 multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]);
@@ -704,9 +696,9 @@ int local_applyGates(
                 if (!local_isValidProb(op, numTargs, params[paramInd]))
                     return local_noiseInvalidProbError(op, numTargs, params[paramInd]);
                 if (numTargs == 1)
-                    applyOneQubitDephaseError(qureg, targs[targInd], params[paramInd]);
+                    mixDephasing(qureg, targs[targInd], params[paramInd]);
                 if (numTargs == 2)
-                    applyTwoQubitDephaseError(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
+                    mixTwoQubitDephasing(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
                 break;
                 
             case OPCODE_Depol :
@@ -721,9 +713,9 @@ int local_applyGates(
                 if (!local_isValidProb(op, numTargs, params[paramInd]))
                     return local_noiseInvalidProbError(op, numTargs, params[paramInd]);
                 if (numTargs == 1)
-                    applyOneQubitDepolariseError(qureg, targs[targInd], params[paramInd]);
+                    mixDepolarising(qureg, targs[targInd], params[paramInd]);
                 if (numTargs == 2)
-                    applyTwoQubitDepolariseError(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
+                    mixTwoQubitDepolarising(qureg, targs[targInd], targs[targInd+1], params[paramInd]);
                 break;
                 
             case OPCODE_Damp :
@@ -737,7 +729,7 @@ int local_applyGates(
                     break;
                 if (!local_isValidProb(op, numTargs, params[paramInd]))
                     return local_noiseInvalidProbError(op, numTargs, params[paramInd]);
-                applyOneQubitDampingError(qureg, targs[targInd], params[paramInd]);
+                mixDamping(qureg, targs[targInd], params[paramInd]);
                 break;
                 
             case OPCODE_SWAP:
@@ -751,10 +743,8 @@ int local_applyGates(
                     controlledNot(qureg, targs[targInd],   targs[targInd+1]);
                 } else {
                     ComplexMatrix2 u = {
-                        .r0c0 = {.real=0, .imag=0},
-                        .r0c1 = {.real=1, .imag=0},
-                        .r1c0 = {.real=1, .imag=0},
-                        .r1c1 = {.real=0, .imag=0}};
+                        .real={{0,1},{1,0}},
+                        .imag={{0}}};
                     int* ctrlCache = local_prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledUnitary(qureg, ctrlCache, numCtrls+1, targs[targInd+1], u);
                     ctrlCache[numCtrls] = targs[targInd+1];
@@ -822,14 +812,14 @@ int local_applyGates(
                     int opElemInd = 1 + paramInd;
                     for (int n=0; n < numKrausOps; n++)
                         krausOps[n] = local_getMatrix2FromFlatList(&params[opElemInd + 2*2*2*n]);
-                    applyOneQubitKrausMap(qureg, targs[targInd], krausOps, numKrausOps);
+                    mixKrausMap(qureg, targs[targInd], krausOps, numKrausOps);
                 } 
                 else if (numTargs == 2) {
                     ComplexMatrix4 krausOps[16];
                     int opElemInd = 1 + paramInd;
                     for (int n=0; n < numKrausOps; n++)
                         krausOps[n] = local_getMatrix4FromFlatList(&params[opElemInd + 2*4*4*n]);
-                    applyTwoQubitKrausMap(qureg, targs[targInd], targs[targInd+1], krausOps, numKrausOps);
+                    mixTwoQubitKrausMap(qureg, targs[targInd], targs[targInd+1], krausOps, numKrausOps);
                 } 
                 break;
             case OPCODE_G :
@@ -1283,8 +1273,8 @@ qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
     
     // get arguments from MMA link
     int numPaulis;
-    int *pauliCodes;
-    WSGetInteger32List(stdlink, &pauliCodes, &numPaulis);
+    int *pauliIntCodes;
+    WSGetInteger32List(stdlink, &pauliIntCodes, &numPaulis);
     int *targs;
     WSGetInteger32List(stdlink, &targs, &numPaulis);
     
@@ -1302,10 +1292,15 @@ qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     
+    // safely cast pauli codes
+    enum pauliOpType pauliCodes[numPaulis];
+    for (int i=0; i<numPaulis; i++)
+        pauliCodes[i] = pauliIntCodes[i];
+    
     return calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace);
 }
 
-void local_loadPauliSumFromMMA(int numQb, int* numTerms, int** arrPaulis, qreal** termCoeffs) {
+void local_loadPauliSumFromMMA(int numQb, int* numTerms, enum pauliOpType** arrPaulis, qreal** termCoeffs) {
     
     // get arguments from MMA link
     int numPaulis;
@@ -1320,7 +1315,7 @@ void local_loadPauliSumFromMMA(int numQb, int* numTerms, int** arrPaulis, qreal*
     // convert {allPauliCodes}, {allPauliTargets}, {numPaulisPerTerm}, and
     // qureg.numQubitsRepresented into {pauli-code-for-every-qubit}
     int arrLen = *numTerms * numQb;
-    *arrPaulis = malloc(arrLen * sizeof(int));
+    *arrPaulis = malloc(arrLen * sizeof **arrPaulis);
     for (int i=0; i < arrLen; i++)
         (*arrPaulis)[i] = 0;
     
@@ -1353,7 +1348,7 @@ qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     
-    int numTerms; int* arrPaulis; qreal* termCoeffs;
+    int numTerms; enum pauliOpType* arrPaulis; qreal* termCoeffs;
     local_loadPauliSumFromMMA(qureg.numQubitsRepresented, &numTerms, &arrPaulis, &termCoeffs);
     
     qreal val = calcExpecPauliSum(qureg, arrPaulis, termCoeffs, numTerms, workspace);
@@ -1366,7 +1361,7 @@ qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
 
 void internal_calcPauliSumMatrix(int numQubits) {
     
-    int numTerms; int* arrPaulis; qreal* termCoeffs;
+    int numTerms; enum pauliOpType* arrPaulis; qreal* termCoeffs;
     local_loadPauliSumFromMMA(numQubits, &numTerms, &arrPaulis, &termCoeffs);
 
     // create states needed to apply Pauli products
@@ -1410,7 +1405,7 @@ int internal_applyPauliSum(int inId, int outId) {
         return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
     }
     
-    int numTerms; int* arrPaulis; qreal* termCoeffs;
+    int numTerms; enum pauliOpType* arrPaulis; qreal* termCoeffs;
     local_loadPauliSumFromMMA(inQureg.numQubitsRepresented, &numTerms, &arrPaulis, &termCoeffs);
     
     applyPauliSum(inQureg, arrPaulis, termCoeffs, numTerms, outQureg);
