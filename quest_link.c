@@ -983,24 +983,28 @@ int local_getDerivativeQuregs(
         // indices AFTER last gate applied by circuit
         int finalCtrlInd, finalTargInd, finalParamInd;
         
-        // apply only gates up to and including the to-be-differentiated gate
+        // apply only gates up to and including the to-be-differentiated gate,
+        // unless that gate is the general unitary
+        int op = opcodes[varOp];
+        int diffGateWasApplied = (op != OPCODE_U);
         int success = local_applyGates(
-            qureg, varOp+1, opcodes, 
+            qureg, (diffGateWasApplied)? varOp+1 : varOp, opcodes, 
             ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp,
             mesOutcomes, &finalCtrlInd, &finalTargInd, &finalParamInd);
         if (!success)
             return success; // errorMsgBuffer updated by local_applyGates
 
-        // details of (already applied) to-be-differentiated gate
-        int op = opcodes[varOp];
+        // details of (possibly already applied) to-be-differentiated gate
         int numCtrls = numCtrlsPerOp[varOp];
         int numTargs = numTargsPerOp[varOp];
         int numParams = numParamsPerOp[varOp];
 
         // wind back inds to point to the to-be-differentiated gate 
-        finalCtrlInd -= numCtrls;
-        finalTargInd -= numTargs;
-        finalParamInd -= numParams;
+        if (diffGateWasApplied) {
+            finalCtrlInd -= numCtrls;
+            finalTargInd -= numTargs;
+            finalParamInd -= numParams;
+        }
         
         // choices of re-normalisation
         Complex negHalfI = (Complex) {.real=0, .imag=-0.5};
@@ -1041,7 +1045,6 @@ int local_getDerivativeQuregs(
                 normFac = posI;
                 break;
             case OPCODE_U:
-                // create a non-dynamic ComplexMatrixN instance 
                 if (numTargs == 1) {
                     ComplexMatrix2 u2 = local_getMatrix2FromFlatList(&unitaryDerivs[unitaryDerivInd]);
                     unitaryDerivInd += 2*2*2;
@@ -1052,6 +1055,7 @@ int local_getDerivativeQuregs(
                     applyTwoQubitMatrix(qureg, targs[finalTargInd], targs[finalTargInd+1], u4);
                 }
                 else {
+                    // create a non-dynamic ComplexMatrixN instance 
                     // general matrix N unpacking here; can do static
                     return local_writeToErrorMsgBuffer("multi-qubit U deriv not yet implemented!");
                 }

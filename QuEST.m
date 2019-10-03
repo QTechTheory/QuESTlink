@@ -180,10 +180,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* apply the derivatives of a circuit on an initial state, storing the ersults in the given quregs *)
         extractUnitaryMatrix[Subscript[U, __Integer][u_List]] := u
         extractUnitaryMatrix[Subscript[C, __Integer][Subscript[U, __Integer][u_List]]] := u
-        calcUnitaryDeriv[{param_, gate_}, varVals_] := 
-            D[extractUnitaryMatrix[gate], param] /. varVals
-        calcUnitaryDerivs[paramGatePairs_, varVals_] :=
-            calcUnitaryDeriv[#, varVals]& /@ paramGatePairs
+        calcUnitaryDeriv[{param_, gate_}] := 
+            D[extractUnitaryMatrix[gate], param]
         CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] :=
             With[
                 {varOpInds = DeleteDuplicates /@ (Position[circuit, _?(MemberQ[#])][[All, 1]]& /@ varVals[[All,1]]),
@@ -201,7 +199,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         CalcQuregDerivsInternal[
                             initQureg, derivQuregs, Flatten[varOpInds]-1,  (* maps indices from MMA to C *)
                             unpackEncodedCircuit @ codes,
-                            Flatten[codifyMatrix /@ calcUnitaryDeriv[unitaryGates, varVals]]
+                            Flatten[codifyMatrix /@ (calcUnitaryDeriv /@ unitaryGates /. varVals)]
                         ]
                     ]
                 ]
