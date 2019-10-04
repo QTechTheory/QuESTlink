@@ -15,7 +15,7 @@ BeginPackage["QuEST`"]
     ApplyCircuit::usage = "ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
 ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg."
     
-    CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] sets the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in Rx, Ry, Rz or R (and controlled) of the given circuit. The initState is unchanged."
+    CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] sets the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in Rx, Ry, Rz, R or U (and controlled) of the given circuit ONCE (multiple times within a U matrix is allowed). The initState is unchanged. Note Rx[theta] is allowed, but Rx[f(theta)] is not. Furthermore U matrices must contain at most one parameter."
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
 CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element CalcInnerProduct[braId, ketId[i]]."
@@ -180,8 +180,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* apply the derivatives of a circuit on an initial state, storing the ersults in the given quregs *)
         extractUnitaryMatrix[Subscript[U, __Integer][u_List]] := u
         extractUnitaryMatrix[Subscript[C, __Integer][Subscript[U, __Integer][u_List]]] := u
-        calcUnitaryDeriv[{param_ -> val_, gate_}] := 
-            D[extractUnitaryMatrix[gate], param] /. (param -> val)
+        calcUnitaryDeriv[{param_, gate_}] := 
+            D[extractUnitaryMatrix[gate], param]
         CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] :=
             With[
                 {varOpInds = DeleteDuplicates /@ (Position[circuit, _?(MemberQ[#])][[All, 1]]& /@ varVals[[All,1]]),
@@ -195,11 +195,11 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     Echo["The circuit contained variables not assigned values in varVals!", "Error: "]; $Failed,
                     True,
                     With[{unitaryGates = Select[
-                        Flatten[{varVals, circuit[[varOpInds[[All,1]]]]}, {{2},{1}}], Not[FreeQ[#, U]] &]},
+                        Flatten[{varVals[[All,1]], circuit[[varOpInds[[All,1]]]]}, {{2},{1}}], Not[FreeQ[#, U]] &]},
                         CalcQuregDerivsInternal[
                             initQureg, derivQuregs, Flatten[varOpInds]-1,  (* maps indices from MMA to C *)
                             unpackEncodedCircuit @ codes,
-                            Flatten[codifyMatrix /@ calcUnitaryDeriv /@ unitaryGates]
+                            Flatten[codifyMatrix /@ (calcUnitaryDeriv /@ unitaryGates /. varVals)]
                         ]
                     ]
                 ]
