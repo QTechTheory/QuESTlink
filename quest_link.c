@@ -1068,7 +1068,7 @@ int local_getDerivativeQuregs(
                 normFac = one;
                 break;
             default:            
-                return local_writeToErrorMsgBuffer("Only Rx, Ry, Rz, R and U gates may be differentiated!");
+                return local_writeToErrorMsgBuffer("Only Rx, Ry, Rz, R, U and their controlled gates may be differentiated!");
         }
         
         // differentiate control qubits by forcing them to 1, without renormalising
