@@ -17,6 +17,7 @@ extern "C" {
 
 
 
+
 /*
  * added for Eliot Kapit
  */
@@ -24,7 +25,7 @@ extern "C" {
 void statevec_applyDiagonalOperator(Qureg qureg, DiagonalOperator op);
 
 
-    
+
 /*
  * general functions
  */

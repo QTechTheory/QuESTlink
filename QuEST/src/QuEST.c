@@ -23,6 +23,7 @@ extern "C" {
 
 
 
+
 /*
  * added for Eliot Kapit
  */
@@ -38,6 +39,42 @@ void applyDiagonalOperator(Qureg qureg, DiagonalOperator op) {
 
     
     
+
+/*
+ * Added for Mathematica front-end 
+ */
+ 
+void projectToOne(Qureg qureg, const int measureQubit) {
+     validateTarget(qureg, measureQubit, __func__);
+     
+     // effect |1><1| on qureg
+     int outcome=1;
+     qreal renorm=1.0;
+
+     if (qureg.isDensityMatrix)
+         densmatr_collapseToKnownProbOutcome(qureg, measureQubit, outcome, renorm);
+     else
+         statevec_collapseToKnownProbOutcome(qureg, measureQubit, outcome, renorm);
+     
+     qasm_recordMeasurement(qureg, measureQubit);
+ }
+ 
+ void applyOneQubitMatrix(Qureg qureg, int targetQubit,  ComplexMatrix2 u) {
+     validateTarget(qureg, targetQubit, __func__);
+     statevec_unitary(qureg, targetQubit, u);
+     qasm_recordComment(qureg, "Here, an undisclosed 1-qubit matrix was pre-multiplied.");
+ }
+
+void applyTwoQubitMatrix(Qureg qureg, int targetQubit1, int targetQubit2, ComplexMatrix4 u) {
+    validateMultiTargets(qureg, (int []) {targetQubit1, targetQubit2}, 2, __func__);
+    statevec_twoQubitUnitary(qureg, targetQubit1, targetQubit2, u);
+    qasm_recordComment(qureg, "Here, an undisclosed 2-qubit matrix was pre-multiplied.");
+}
+
+
+
+
+
 /*
  * state-vector management
  */
@@ -165,7 +202,9 @@ void initPureState(Qureg qureg, Qureg pure) {
 }
 
 void initStateFromAmps(Qureg qureg, qreal* reals, qreal* imags) {
-    validateStateVecQureg(qureg, __func__);
+    
+    // For MMA (commented) so that density matrices can use init'd in this way 
+    //validateStateVecQureg(qureg, __func__);
     
     statevec_setAmps(qureg, 0, reals, imags, qureg.numAmpsTotal);
     
