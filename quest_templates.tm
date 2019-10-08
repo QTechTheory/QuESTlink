@@ -1,3 +1,46 @@
+:: for Eliot Kapit
+
+:Begin:
+:Function:       internal_createDiagonalOperator
+:Pattern:        QuEST`Private`CreateDiagonalOperatorInternal[numQubits_Integer, reals_List, imags_List]
+:Arguments:      { numQubits, reals, imags }
+:ArgumentTypes:  { Integer, Manual }
+:ReturnType:     Integer
+:End:
+:Evaluate: QuEST`Private`CreateDiagonalOperatorInternal::usage = "CreateDiagonalOperatorInternal[numQubits, reals, imags] returns the id of a newly created DiagonalOperator, initialised to the given amplitudes."
+
+:Begin:
+:Function:       wrapper_destroyDiagonalOperator
+:Pattern:        QuEST`DestroyDiagonalOperator[op_Integer]
+:Arguments:      { op }
+:ArgumentTypes:  { Integer }
+:ReturnType:     Integer
+:End:
+:Evaluate: QuEST`DestroyDiagonalOperator::usage = "DestroyDiagonalOperator[op] destroys the DiagonalOperator with id op, and returns op."
+
+:Begin:
+:Function:       callable_destroyAllDiagonalOperators
+:Pattern:        QuEST`DestroyAllDiagonalOperators[]
+:Arguments:      { }
+:ArgumentTypes:  { }
+:ReturnType:     Integer
+:End:
+:Evaluate: QuEST`DestroyAllDiagonalOperators::usage = "DestroyAllDiagonalOperators[] destroys all DiagonalOperator instances, and returns -1."
+
+:Begin:
+:Function:       wrapper_applyDiagonalOperator
+:Pattern:        QuEST`ApplyDiagonalOperator[op_Integer, qureg_Integer]
+:Arguments:      { op, qureg }
+:ArgumentTypes:  { Integer, Integer }
+:ReturnType:     Integer
+:End:
+:Evaluate: QuEST`ApplyDiagonalOperator::usage = "ApplyDiagonalOperator[op, qureg] applies the DiagonalOperator (with id op) to the nominated Qureg (id), and returns qureg."
+
+
+
+
+
+:: main API
 
 :Begin:
 :Function:       wrapper_createQureg
@@ -271,7 +314,7 @@
 :ArgumentTypes:  { Integer, Integer, Manual }
 :ReturnType:     Integer
 :End:
-:Evaluate: QuEST`Private`ApplyPauliSumInternal::usage = "ApplyPauliSumInternal[inQureg, outQureg, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] modifies outQureg under the given sum of Pauli products, specified as flat lists. inQureg and outQureg must have the same type and equal dimensions."
+:Evaluate: QuEST`Private`ApplyPauliSumInternal::usage = "ApplyPauliSumInternal[inQureg, outQureg, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] modifies outQureg under the given sum of Pauli products, specified as flat lists. inQureg and outQureg must have the same type and equal dimensions. If successful, returns outQureg"
 
 :Begin:
 :Function:       internal_calcPauliSumMatrix

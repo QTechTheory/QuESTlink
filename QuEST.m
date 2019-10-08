@@ -11,6 +11,18 @@ BeginPackage["QuEST`"]
      * but will cause incorrect behaviour. When in doubt, give the full explicit name e.g. QuEST`CloneQureg or
      * QuEST`Private`ApplyCircuitInternal. 
      *)
+     
+     
+    
+    (* for Eliot Kapit *)
+    
+    CreateDiagonalOperator::usage = "CreateDiagonalOperator[numQubits, amplitudes] creates a persistent DiagonalOperator and initialises it to the specified amplitudes, returning its id."
+    
+    
+    
+    
+    
+    (* main API *) 
     
     ApplyCircuit::usage = "ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
 ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg."
@@ -98,6 +110,21 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     G::usage = "G[phi] applies a global phase rotation of phi, by premultiplying Exp[i phi]."
  
     Begin["`Private`"]
+    
+    
+        (* for Eliot Kapit *)
+    
+        CreateDiagonalOperator[numQubits_Integer, amps_List] :=
+            CreateDiagonalOperatorInternal[numQubits, Re[amps], Im[amps]]
+    
+    
+    
+    
+    
+    
+        (* main API *)
+    
+    
                
         (* opcodes *)
         getOpCode[gate_] :=

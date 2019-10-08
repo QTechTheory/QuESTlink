@@ -123,6 +123,112 @@ int local_writeToErrorMsgBuffer(char* msg, ...) {
 }
 
 
+
+
+
+
+/*
+ * added for Eliot Kapit
+ */
+
+/** Collection of instantiated DiagonalOperator */
+#define MAX_NUM_DIAG_OPS 1000
+DiagonalOperator diagOps[MAX_NUM_DIAG_OPS];
+int diagOpIsCreated[MAX_NUM_DIAG_OPS];
+
+int internal_createDiagonalOperator(int numQubits) {
+    
+    // load components
+    int numAmps;
+    qreal* reals;
+    qreal* imags; 
+    WSGetReal64List(stdlink, &reals, &numAmps);
+    WSGetReal64List(stdlink, &imags, &numAmps);
+    
+    if (numAmps != (1 << numQubits)) {
+        local_writeToErrorMsgBuffer(
+            "A %d-qubit DiagonalOperator requires %d complex amplitudes, "
+            "but only %d were supplied", numQubits, 1 << numQubits, numAmps);
+        local_sendErrorMsgBufferToMMA();
+        return -1;
+    }
+    
+    // find next available id
+    int ind = 0;
+    while (diagOpIsCreated[ind] && ind<MAX_NUM_DIAG_OPS)
+        ind++;
+        
+    // if full: error
+    if (ind == MAX_NUM_DIAG_OPS) {
+        local_writeToErrorMsgBuffer(
+            "Could not created DiagonalOperator; the maximum number (%d) has "
+            "already been created", MAX_NUM_DIAG_OPS);
+        local_sendErrorMsgBufferToMMA();
+        return -1;
+    }
+    
+    // create & record new op
+    DiagonalOperator op = createDiagonalOperator(numQubits, env);  
+    diagOpIsCreated[ind] = 1;
+    diagOps[ind] = op;
+    
+    // populate new op
+    for (int i=0; i<numAmps; i++) {
+        op.real[i] = reals[i];
+        op.imag[i] = imags[i];
+    }
+    syncDiagonalOperator(op);
+    
+    // free args
+    WSReleaseReal64List(stdlink, reals, numAmps);
+    WSReleaseReal64List(stdlink, imags, numAmps);
+    
+    return ind;
+}
+
+int wrapper_destroyDiagonalOperator(int ind) {
+    if (!diagOpIsCreated[ind]) {
+        local_sendErrorToMMA(
+            "The attemptedly-destroyed DiagonalOperator has not been created");
+        return -1;
+    }
+    destroyDiagonalOperator(diagOps[ind]);
+    diagOpIsCreated[ind] = 0;
+    return ind;
+}
+
+int callable_destroyAllDiagonalOperators(void) {
+    for (int i=0; i<MAX_NUM_DIAG_OPS; i++) {
+        if (diagOpIsCreated[i])
+            destroyDiagonalOperator(diagOps[i]);
+        diagOpIsCreated[i] = 0;
+    }
+    return -1;
+}
+
+int wrapper_applyDiagonalOperator(int opId, int quregId) {
+    if (!diagOpIsCreated[opId]) {
+        local_sendErrorToMMA(
+            "The DiagonalOperator has not been created");
+        return -1;
+    }
+    if (!quregs[quregId].isCreated) {
+        local_sendErrorToMMA(
+            "The Qureg has not been created");
+        return -1;
+    }
+    applyDiagonalOperator(quregs[quregId], diagOps[opId]);
+    return quregId;
+}
+
+
+
+
+
+
+
+
+
 /* qureg allocation */
 
 /* returns 0 and sends an error to MMA if resize is unsuccessful 
@@ -1463,6 +1569,10 @@ int main(int argc, char* argv[]) {
     // indicate that no quregs have yet been created
     for (int id=0; id < currMaxNumQuregs; id++)
         quregs[id].isCreated = 0;
+    
+    // indicate that no diagonal ops have yet been created
+    for (int i=0; i < MAX_NUM_DIAG_OPS; i++)
+        diagOpIsCreated[i] = 0;
     
     // establish link with MMA
 	return WSMain(argc, argv);

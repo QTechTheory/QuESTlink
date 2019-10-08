@@ -1,0 +1,197 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.3' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      7296,        189]
+NotebookOptionsPosition[      5048,        137]
+NotebookOutlinePosition[      6221,        170]
+CellTagsIndexPosition[      6009,        162]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", " ", "@", " ", 
+   RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Import", "[", "\"\<QuEST.m\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"CreateLocalQuESTEnv", "[", "]"}], ";"}]}], "Input",
+ CellChangeTimes->{{3.779542145716589*^9, 3.779542174374608*^9}},
+ CellLabel->"In[12]:=",ExpressionUUID->"44157226-ac2b-421d-b778-58309f5f8e50"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"?", "CreateDiagonalOperator"}], "\[IndentingNewLine]", 
+ RowBox[{"?", "ApplyDiagonalOperator"}], "\[IndentingNewLine]", 
+ RowBox[{"?", "DestroyDiagonalOperator"}], "\[IndentingNewLine]", 
+ RowBox[{"?", "DestroyAllDiagonalOperators"}]}], "Input",
+ CellChangeTimes->{{3.77954218043041*^9, 3.7795421957521477`*^9}},
+ CellLabel->"In[15]:=",ExpressionUUID->"3d44de0b-b625-4623-8916-83661c41759d"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["\<\"CreateDiagonalOperator[numQubits, amplitudes] creates a \
+persistent DiagonalOperator and initialises it to the specified amplitudes, \
+returning its id.\"\>"], "Print", "PrintUsage",
+ CellChangeTimes->{3.779542320646343*^9},
+ CellTags->
+  "Info153779545920-1232934",ExpressionUUID->"c61b11dc-9e40-40fc-bc7a-\
+a6584eefdfc5"],
+
+Cell[BoxData["\<\"ApplyDiagonalOperator[op, qureg] applies the \
+DiagonalOperator (with id op) to the nominated Qureg (id), and returns qureg.\
+\"\>"], "Print", "PrintUsage",
+ CellChangeTimes->{3.7795423207483673`*^9},
+ CellTags->
+  "Info163779545920-1232934",ExpressionUUID->"0a4bfe90-cacb-43f7-adb0-\
+a88880adb92a"],
+
+Cell[BoxData["\<\"DestroyDiagonalOperator[op] destroys the DiagonalOperator \
+with id op, and returns op.\"\>"], "Print", "PrintUsage",
+ CellChangeTimes->{3.779542320848906*^9},
+ CellTags->
+  "Info173779545920-1232934",ExpressionUUID->"e1e3d8c7-926c-43cb-977f-\
+d78eb3249123"],
+
+Cell[BoxData["\<\"DestroyAllDiagonalOperators[] destroys all DiagonalOperator \
+instances, and returns -1.\"\>"], "Print", "PrintUsage",
+ CellChangeTimes->{3.7795423209451437`*^9},
+ CellTags->
+  "Info183779545920-1232934",ExpressionUUID->"05de77a6-16e7-4bde-a66e-\
+df67500fc16a"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"\[Psi]", " ", "=", " ", 
+   RowBox[{"CreateQureg", "[", "2", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"GetQuregMatrix", " ", "@", " ", 
+  RowBox[{"InitPlusState", "[", "\[Psi]", "]"}]}]}], "Input",
+ CellChangeTimes->{{3.779542202657505*^9, 3.7795422329570436`*^9}},
+ CellLabel->"In[19]:=",ExpressionUUID->"0b72b1e7-775a-4140-884d-b15188c95009"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"0.5`", "\[VeryThinSpace]", "+", 
+    RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+   RowBox[{"0.5`", "\[VeryThinSpace]", "+", 
+    RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+   RowBox[{"0.5`", "\[VeryThinSpace]", "+", 
+    RowBox[{"0.`", " ", "\[ImaginaryI]"}]}], ",", 
+   RowBox[{"0.5`", "\[VeryThinSpace]", "+", 
+    RowBox[{"0.`", " ", "\[ImaginaryI]"}]}]}], "}"}]], "Output",
+ CellChangeTimes->{3.779542233263026*^9, 3.779542321142042*^9},
+ CellLabel->"Out[20]=",ExpressionUUID->"d6b336a4-c116-4b83-869a-9c2b4336a6d3"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"\[Sigma]", " ", "=", " ", 
+   RowBox[{"CreateDiagonalOperator", "[", 
+    RowBox[{"2", ",", " ", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"1", "\[ImaginaryI]"}], ",", 
+       RowBox[{"2", "\[ImaginaryI]"}], ",", 
+       RowBox[{"3", "\[ImaginaryI]"}], ",", 
+       RowBox[{"4", "\[ImaginaryI]"}]}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"GetQuregMatrix", " ", "@", " ", 
+  RowBox[{"ApplyDiagonalOperator", "[", 
+   RowBox[{"\[Sigma]", ",", " ", "\[Psi]"}], "]"}]}]}], "Input",
+ CellChangeTimes->{{3.779542237174801*^9, 3.7795422767333117`*^9}},
+ CellLabel->"In[21]:=",ExpressionUUID->"42c22e4b-1818-4b7d-9efb-f12c8571c6c9"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+    RowBox[{"0.5`", " ", "\[ImaginaryI]"}]}], ",", 
+   RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+    RowBox[{"1.`", " ", "\[ImaginaryI]"}]}], ",", 
+   RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+    RowBox[{"1.5`", " ", "\[ImaginaryI]"}]}], ",", 
+   RowBox[{"0.`", "\[VeryThinSpace]", "+", 
+    RowBox[{"2.`", " ", "\[ImaginaryI]"}]}]}], "}"}]], "Output",
+ CellChangeTimes->{3.779542277556753*^9, 3.779542321156681*^9},
+ CellLabel->"Out[22]=",ExpressionUUID->"1a17e80e-2126-4741-9e3e-463bcd71f24c"]
+}, Open  ]]
+},
+WindowSize->{808, 911},
+WindowMargins->{{Automatic, 406}, {53, Automatic}},
+FrontEndVersion->"11.3 for Linux x86 (64-bit) (March 6, 2018)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "Info153779545920-1232934"->{
+  Cell[1480, 44, 342, 6, 71, "Print",ExpressionUUID->"c61b11dc-9e40-40fc-bc7a-a6584eefdfc5",
+   CellTags->"Info153779545920-1232934"]},
+ "Info163779545920-1232934"->{
+  Cell[1825, 52, 317, 6, 71, "Print",ExpressionUUID->"0a4bfe90-cacb-43f7-adb0-a88880adb92a",
+   CellTags->"Info163779545920-1232934"]},
+ "Info173779545920-1232934"->{
+  Cell[2145, 60, 276, 5, 46, "Print",ExpressionUUID->"e1e3d8c7-926c-43cb-977f-d78eb3249123",
+   CellTags->"Info173779545920-1232934"]},
+ "Info183779545920-1232934"->{
+  Cell[2424, 67, 279, 5, 46, "Print",ExpressionUUID->"05de77a6-16e7-4bde-a66e-df67500fc16a",
+   CellTags->"Info183779545920-1232934"]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"Info153779545920-1232934", 5349, 147},
+ {"Info163779545920-1232934", 5516, 150},
+ {"Info173779545920-1232934", 5683, 153},
+ {"Info183779545920-1232934", 5850, 156}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 456, 10, 78, "Input",ExpressionUUID->"44157226-ac2b-421d-b778-58309f5f8e50"],
+Cell[CellGroupData[{
+Cell[1039, 34, 416, 6, 101, "Input",ExpressionUUID->"3d44de0b-b625-4623-8916-83661c41759d"],
+Cell[CellGroupData[{
+Cell[1480, 44, 342, 6, 71, "Print",ExpressionUUID->"c61b11dc-9e40-40fc-bc7a-a6584eefdfc5",
+ CellTags->"Info153779545920-1232934"],
+Cell[1825, 52, 317, 6, 71, "Print",ExpressionUUID->"0a4bfe90-cacb-43f7-adb0-a88880adb92a",
+ CellTags->"Info163779545920-1232934"],
+Cell[2145, 60, 276, 5, 46, "Print",ExpressionUUID->"e1e3d8c7-926c-43cb-977f-d78eb3249123",
+ CellTags->"Info173779545920-1232934"],
+Cell[2424, 67, 279, 5, 46, "Print",ExpressionUUID->"05de77a6-16e7-4bde-a66e-df67500fc16a",
+ CellTags->"Info183779545920-1232934"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2752, 78, 388, 7, 55, "Input",ExpressionUUID->"0b72b1e7-775a-4140-884d-b15188c95009"],
+Cell[3143, 87, 580, 12, 35, "Output",ExpressionUUID->"d6b336a4-c116-4b83-869a-9c2b4336a6d3"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3760, 104, 691, 16, 55, "Input",ExpressionUUID->"42c22e4b-1818-4b7d-9efb-f12c8571c6c9"],
+Cell[4454, 122, 578, 12, 35, "Output",ExpressionUUID->"1a17e80e-2126-4741-9e3e-463bcd71f24c"]
+}, Open  ]]
+}
+]
+*)
+
