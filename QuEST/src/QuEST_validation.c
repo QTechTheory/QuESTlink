@@ -62,7 +62,9 @@ typedef enum {
     E_INVALID_NUM_TWO_QUBIT_KRAUS_OPS,
     E_INVALID_NUM_N_QUBIT_KRAUS_OPS,
     E_INVALID_KRAUS_OPS,
-    E_MISMATCHING_NUM_TARGS_KRAUS_SIZE
+    E_MISMATCHING_NUM_TARGS_KRAUS_SIZE,
+    E_MISMATCHING_QUREG_DIAGONAL_OP_SIZE,
+    E_DIAGONAL_OP_NOT_INITIALISED
 } ErrorCode;
 
 static const char* errorMessages[] = {
@@ -107,7 +109,9 @@ static const char* errorMessages[] = {
     [E_INVALID_NUM_TWO_QUBIT_KRAUS_OPS] = "At least 1 and at most 16 two-qubit Kraus operators may be specified.",
     [E_INVALID_NUM_N_QUBIT_KRAUS_OPS] = "At least 1 and at most 4*N^2 of N-qubit Kraus operators may be specified.",
     [E_INVALID_KRAUS_OPS] = "The specified Kraus map is not a completely positive, trace preserving map.",
-    [E_MISMATCHING_NUM_TARGS_KRAUS_SIZE] = "Every Kraus operator must be of the same number of qubits as the number of targets."
+    [E_MISMATCHING_NUM_TARGS_KRAUS_SIZE] = "Every Kraus operator must be of the same number of qubits as the number of targets.",
+    [E_MISMATCHING_QUREG_DIAGONAL_OP_SIZE] = "The qureg must represent an equal number of qubits as that in the applied diagonal operator.",
+    [E_DIAGONAL_OP_NOT_INITIALISED] = "The diagonal operator has not been initialised through createDiagonalOperator()."
 };
 
 /* overwritten for MMA-QuEST */
@@ -147,6 +151,19 @@ void exitWithError(ErrorCode code, const char* func){
 void QuESTAssert(int isValid, ErrorCode code, const char* func){
     if (!isValid) exitWithError(code, func);
 }
+
+
+
+/*
+ * added for Eliot Kapit
+ */
+
+void validateDiagonalOperator(Qureg qureg, DiagonalOperator op, const char* caller) {
+    QuESTAssert(op.real != NULL && op.imag != NULL, E_DIAGONAL_OP_NOT_INITIALISED, caller);
+    QuESTAssert(qureg.numQubitsRepresented == op.numQubits, E_MISMATCHING_QUREG_DIAGONAL_OP_SIZE, caller);
+}
+
+
 
 int isComplexUnit(Complex alpha) {
     return (absReal(1 - sqrt(alpha.real*alpha.real + alpha.imag*alpha.imag)) < REAL_EPS); 

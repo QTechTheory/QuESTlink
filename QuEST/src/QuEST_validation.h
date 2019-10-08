@@ -13,6 +13,16 @@
 extern "C" {
 # endif
 
+
+
+/*
+ * added for Eliot Kapit
+ */
+
+void validateDiagonalOperator(Qureg qureg, DiagonalOperator op, const char* caller);
+ 
+ 
+
 void validateCreateNumQubits(int numQubits, const char* caller);
 
 void validateStateIndex(Qureg qureg, long long int stateInd, const char* caller);

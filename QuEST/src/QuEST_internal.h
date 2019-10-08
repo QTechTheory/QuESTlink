@@ -15,6 +15,17 @@
 extern "C" {
 # endif
 
+
+
+
+/*
+ * added for Eliot Kapit
+ */
+
+void statevec_applyDiagonalOperator(Qureg qureg, DiagonalOperator op);
+
+
+
 /*
  * general functions
  */

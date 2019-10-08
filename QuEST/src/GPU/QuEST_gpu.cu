@@ -139,6 +139,100 @@ extern "C" {
 #endif
 
 
+
+
+/*
+ * added for Eliot Kapit
+ */
+
+DiagonalOperator createDiagonalOperator(int numQubits, QuESTEnv env) {
+    if (numQubits <= 0) {
+        printf("Cannot allocate 0-qubit operator!\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    DiagonalOperator op;
+    op.numQubits = numQubits;
+    op.numValsPerChunk = (1LL << numQubits) / env.numRanks;
+
+    // allocate CPU memory (initialised to zero)
+    op.real = (qreal*) calloc(op.numValsPerChunk, sizeof(qreal));
+    op.imag = (qreal*) calloc(op.numValsPerChunk, sizeof(qreal));
+    // @TODO no handling of rank>1 allocation (no distributed GPU - that requires QuESTEnv passing)
+
+    // check cpu memory allocation was successful
+    if ( !op.real || !op.imag ) {
+        printf("Could not allocate memory!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // allocate GPU memory
+    size_t arrSize = op.numValsPerChunk * sizeof(qreal);
+    cudaMalloc(&(op.deviceOperator.real), arrSize);
+    cudaMalloc(&(op.deviceOperator.imag), arrSize);
+    
+    // check gpu memory allocation was successful
+    if (!op.deviceOperator.real || !op.deviceOperator.imag) {
+        printf("Could not allocate memory on GPU!\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    // initialise GPU memory to zero
+    cudaMemset(op.deviceOperator.real, 0, arrSize);
+    cudaMemset(op.deviceOperator.imag, 0, arrSize);
+    
+    return op;
+}
+
+void destroyDiagonalOperator(DiagonalOperator op) {
+    free(op.real);
+    free(op.imag);
+    cudaFree(op.deviceOperator.real);
+    cudaFree(op.deviceOperator.imag);
+}
+
+void syncDiagonalOperator(DiagonalOperator op) {
+    
+    size_t arrSize = (1LL << op.numQubits) * sizeof(qreal);
+    cudaDeviceSynchronize();
+    cudaMemcpy(op.deviceOperator.real, op.real, arrSize, cudaMemcpyHostToDevice);
+    cudaMemcpy(op.deviceOperator.imag, op.imag, arrSize, cudaMemcpyHostToDevice);
+}
+
+__global__ void statevec_applyDiagonalOperatorKernel(Qureg qureg, DiagonalOperator op) {
+    
+    // each thread modifies one value; a wasteful and inefficient strategy
+    long long int numTasks = qureg.numAmpsPerChunk;
+    long long int thisTask = blockIdx.x*blockDim.x + threadIdx.x;
+    if (thisTask >= numTasks) return;
+    
+    qreal* stateRe = qureg.deviceStateVec.real;
+    qreal* stateIm = qureg.deviceStateVec.imag;
+    qreal* opRe = op.deviceOperator.real;
+    qreal* opIm = op.deviceOperator.imag;
+    
+    qreal a = stateRe[thisTask];
+    qreal b = stateIm[thisTask];
+    qreal c = opRe[thisTask];
+    qreal d = opIm[thisTask];
+    
+    // (a + b i)(c + d i) = (a c - b d) + i (a d + b c)
+    stateRe[thisTask] = a*c - b*d;
+    stateIm[thisTask] = a*d + b*c;
+}
+
+void statevec_applyDiagonalOperator(Qureg qureg, DiagonalOperator op)
+{
+    int threadsPerCUDABlock, CUDABlocks;
+    threadsPerCUDABlock = 128;
+    CUDABlocks = ceil((qreal)(qureg.numAmpsPerChunk)/threadsPerCUDABlock);
+    statevec_applyDiagonalOperatorKernel<<<CUDABlocks, threadsPerCUDABlock>>>(qureg, op);
+}
+
+ 
+ 
+
+
 /*
  * state vector and density matrix operations 
  */

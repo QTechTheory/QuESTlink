@@ -22,6 +22,24 @@ extern "C" {
 #endif
 
 
+
+
+/*
+ * added for Eliot Kapit
+ */
+
+void applyDiagonalOperator(Qureg qureg, DiagonalOperator op) {
+    validateDiagonalOperator(qureg, op, __func__);
+    validateStateVecQureg(qureg, __func__);
+
+    statevec_applyDiagonalOperator(qureg, op);
+    
+    qasm_recordComment(qureg, "Here, the register was modified to an undisclosed and possibly unphysical state (applyDiagonalOperator).");
+}
+
+    
+    
+
 /*
  * Added for Mathematica front-end 
  */
@@ -52,6 +70,7 @@ void applyTwoQubitMatrix(Qureg qureg, int targetQubit1, int targetQubit2, Comple
     statevec_twoQubitUnitary(qureg, targetQubit1, targetQubit2, u);
     qasm_recordComment(qureg, "Here, an undisclosed 2-qubit matrix was pre-multiplied.");
 }
+
 
 
 

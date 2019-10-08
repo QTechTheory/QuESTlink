@@ -161,6 +161,88 @@ void applyTwoQubitMatrix(Qureg qureg, int targetQubit1, int targetQubit2, Comple
 
 
 /*
+ * added for Eliot Kapit
+ */
+
+/** Represents a diagonal compelx operator on the full Hilbert state of a Qureg */
+typedef struct DiagonalOperator
+{
+    int numQubits;
+    long long int numValsPerChunk;
+    qreal *real;
+    qreal *imag;
+    ComplexArray deviceOperator;
+} DiagonalOperator;
+
+/** Creates a DiagonalOperator representing a diagonal operator on the 
+ * full Hilbert space of a Qureg. This can only be applied to pure states 
+ * of an equal number of qubits, using applyDiagonalOperator. Note that there 
+ * is no requirement that the operator is Hermitian - any complex operator is 
+ * allowed.
+ *
+ * Allocates space for 2^n complex amplitudes, which are initially zero.
+ * This memory must later be freed with destroyDiagonalOperator.
+ *
+ * In GPU mode, this also creates persistent memory on the GPU.
+ * After modifying operator.real and .imag, the user must call syncDiagonalOperator()
+ * to modify the operator stored in the GPU.
+ * 
+ * In distributed mode, the memory for the diagonal operator is spread evenly 
+ * between the available nodes, such that each node contains only
+ * operator.numValsPerChunk complex values. Users must therefore exercise care 
+ * in modifying .real and .imag. E.g. the following is valid code when 
+ * when distributed between TWO nodes:
+ *
+ *     // create {1,2,3,4,5,6,7,8, 9,10,11,12,13,14,15,16}
+ *     DiagonalOperator op = createDiagonalOperator(4, env); // 16 amplitudes total
+ *     for (int i=0; i<8; i++) {
+ *         if (env.rank == 0)
+ *             op.real[i] = (i+1);
+ *         if (env.rank == 1)
+ *             op.real[i] = (i+1+8);
+ *     }
+ *
+ * @returns a DiagonalOperator instance, with 2^n-length .real and .imag arrays
+ * @param[in] numQubits number of qubits in the operator.
+ * @param[in] env object representing the execution environment (local, multinode etc)
+ * @throws exitWithError if \p numQubits <= 0
+ */
+DiagonalOperator createDiagonalOperator(int numQubits, QuESTEnv env);
+
+/** Destroys a DiagonalOperator, freeing CPU and (if allocated) GPU memory.
+
+ * @param[in] op an instantiated operator created with createDiagonalOperator
+ */
+void destroyDiagonalOperator(DiagonalOperator op);
+
+/** Syncs the .real and .imag components of \p op to GPU memory, where it 
+ * persists until being sync'd again, or destroyed. This effectively copies 
+ * \p op.real and \p op.imag to \p op.deviceOperator, 
+ * though the latter should not be accessed directly since it sits in VRAM.
+ * This function has no effect when called in CPU mode.
+ *
+ * @param[in] op an instantiated operator created with createDiagonalOperator
+ */
+void syncDiagonalOperator(DiagonalOperator op);
+
+/** Applies \p op to \p qureg, which must be a pure state-vector of 
+ * equal dimension (number of qubits) to \p op. 
+ * In CPU mode, \p op.real and \p op.imag are multiplied onto \p qureg.
+ * In GPU mode, those values at the last call to \p syncDiagonalOperator will be 
+ * used (stored in \p op.deviceOperator).
+ * There is no requirement that \p op be Hermitian.
+ *
+ * @param[in,out] qureg A statevector of equal dimension to \p op, to operate upon
+ * @param[in] op An operator diagonal in the Z basis
+ * @throws exitWithError if \p qureg.numQubitsRepresented != \p op.numQubits,
+ *     or if \p operator has not been allocated via createDiagonalOperator,
+ *     or if \p qureg is not a statevector.
+ */
+void applyDiagonalOperator(Qureg qureg, DiagonalOperator op);
+
+
+
+/*
  * public functions
  */
 
