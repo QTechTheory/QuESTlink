@@ -393,7 +393,6 @@ quest_templates.tm.c:
 	$(WSTP_DIR)/$(PREP) quest_templates.tm -o quest_templates.tm.c
 
 
-
 #
 # --- clean
 #
@@ -406,9 +405,15 @@ else ifeq ($(OS), WINDOWS)
     REM = del
 endif
 
+ifeq ($(OS), WINDOWS)
+    EXECFILE = $(EXE).exe
+else
+    EXECFILE = $(EXE)
+endif
+
 .PHONY:		clean veryclean
 clean:
-			$(REM) *.o $(EXE)
+			$(REM) *.o $(EXECFILE)
 			$(REM) quest_templates.tm.c
 veryclean:	clean
 			$(REM) *.h~ *.c~ makefile~
