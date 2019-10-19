@@ -101,6 +101,15 @@
 :End:
 :Evaluate: QuEST`CloneQureg::usage = "CloneQureg[dest, source] sets dest to be a copy of source."
 
+:Begin:
+:Function:       internal_getAmp
+:Pattern:        QuEST`Private`GetAmpInternal[qureg_Integer, row_Integer, col_Integer]
+:Arguments:      { qureg, row, col }
+:ArgumentTypes:  { Integer, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`GetAmpInternal::usage = "GetAmpInternal[qureg, row, col] returns complex amplitude with index [row] in a statevector qureg, or index [row][col] of a density matrix."
+
 
 
 

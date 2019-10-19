@@ -34,6 +34,9 @@ CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element Calc
 
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
     
+    GetAmp::usage = "GetAmp[qureg, index] returns the complex amplitude of the state-vector qureg at the given index.
+GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qureg at index [row, col]."
+    
     GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
             
     SetQuregMatrix::usage = "SetQuregMatrix[qureg, matr] modifies qureg, overwriting its statevector or density matrix with that passed."
@@ -392,7 +395,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 N @ 0, N @ 0, qOut
             ]
         
-        
+        GetAmp[qureg_Integer, index_Integer] := GetAmpInternal[qureg, index, -1]
+        GetAmp[qureg_Integer, row_Integer, col_Integer] := GetAmpInternal[qureg, row, col]
         
         
         (*
