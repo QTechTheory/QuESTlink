@@ -238,6 +238,48 @@ void callable_createDensityQuregs(int numQubits, int numQuregs) {
     free(ids);
 } 
 
+
+
+/** getters */
+void internal_getAmp(int quregID) {
+    Qureg qureg = quregs[quregID];
+    if (!qureg.isCreated)
+        return local_sendQuregNotCreatedError(quregID);
+        
+    // get args
+    long int row;
+    long int col;
+    WSGetInteger64(stdlink, &row);
+    WSGetInteger64(stdlink, &col);
+    
+    // ensure user supplied the correct number of args for the qureg type
+    if (qureg.isDensityMatrix && col==-1) {
+        local_sendErrorToMMA("GetAmp was called on a density matrix without suppling row and column.");
+        WSPutSymbol(stdlink, "$Failed");
+        return;
+    }
+    if (!qureg.isDensityMatrix && col!=-1) {
+        local_sendErrorToMMA("GetAmp was called on a state-vector, yet a column index was supplied.");
+        WSPutSymbol(stdlink, "$Failed");
+        return;
+    }
+    
+    // fetch amp (can throw internal QuEST errors)
+    Complex amp;
+    if (qureg.isDensityMatrix)
+        amp = getDensityAmp(qureg, row, col);
+    else
+        amp = getAmp(qureg, row);
+    
+    // return as complex number
+    WSPutFunction(stdlink, "Complex", 2);
+    WSPutReal64(stdlink, amp.real);
+    WSPutReal64(stdlink, amp.imag);
+}
+
+
+
+
 /** initial states */
 
 int wrapper_initZeroState(int id) {
