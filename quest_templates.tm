@@ -189,6 +189,15 @@
 :Evaluate: QuEST`CalcInnerProduct::usage = "CalcInnerProduct[qureg1, qureg2] returns the complex inner product between the given states."
 
 :Begin:
+:Function:       wrapper_calcDensityInnerProduct
+:Pattern:        QuEST`CalcDensityInnerProduct[qureg1_Integer, qureg2_Integer]
+:Arguments:      { qureg1, qureg2 }
+:ArgumentTypes:  { Integer, Integer }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`CalcDensityInnerProduct::usage = "CalcDensityInnerProduct[qureg1, qureg2] returns the real Hilbert schmidt scalar product between two given density matrices."
+
+:Begin:
 :Function:       wrapper_calcPurity
 :Pattern:        QuEST`CalcPurity[qureg_Integer]
 :Arguments:      { qureg }
@@ -242,7 +251,23 @@
 :End:
 :Evaluate: QuEST`Private`CalcInnerProductsVectorInternal::usage = "CalcInnerProductsVectorInternal[braId, ketIds] returns a vector with jth element CalcInnerProduct[braId, ketIds[j]]."
 
+:Begin:
+:Function:       internal_calcDensityInnerProductsMatrix
+:Pattern:        QuEST`Private`CalcDensityInnerProductsMatrixInternal[quregIds_List]
+:Arguments:      { quregIds }
+:ArgumentTypes:  { IntegerList }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`CalcDensityInnerProductsMatrixInternal::usage = "CalcDensityInnerProductsMatrixInternal[quregIds] returns a flattened real matrix (appending rows) with ith-jth element CalcDensityInnerProduct[quregIds[i], quregIds[j]]."
 
+:Begin:
+:Function:       internal_calcDensityInnerProductsVector
+:Pattern:        QuEST`Private`CalcDensityInnerProductsVectorInternal[rhoId_Integer, omegaIds_List]
+:Arguments:      { rhoId, omegaIds }
+:ArgumentTypes:  { Integer, IntegerList }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`CalcDensityInnerProductsVectorInternal::usage = "CalcDensityInnerProductsVectorInternal[rhoId, omegaIds] returns a vector with jth element CalcDensityInnerProduct[braId, ketIds[j]]."
 
 
 
