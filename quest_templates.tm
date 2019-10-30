@@ -189,6 +189,15 @@
 :Evaluate: QuEST`CalcInnerProduct::usage = "CalcInnerProduct[qureg1, qureg2] returns the complex inner product between the given states."
 
 :Begin:
+:Function:       wrapper_calcDensityInnerProduct
+:Pattern:        QuEST`CalcDensityInnerProduct[qureg1_Integer, qureg2_Integer]
+:Arguments:      { qureg1, qureg2 }
+:ArgumentTypes:  { Integer, Integer }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`CalcDensityInnerProduct::usage = "CalcDensityInnerProduct[qureg1, qureg2] returns the real Hilbert schmidt scalar product between two given density matrices."
+
+:Begin:
 :Function:       wrapper_calcPurity
 :Pattern:        QuEST`CalcPurity[qureg_Integer]
 :Arguments:      { qureg }
