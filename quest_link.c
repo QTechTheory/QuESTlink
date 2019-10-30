@@ -1210,6 +1210,34 @@ void internal_calcQuregDerivs(int initStateId) {
     WSPutInteger(stdlink, initStateId);
 }
 
+/* returns a real vector with ith element calcDensityInnerProduct(qureg[rhoId], qureg[omegaIds[i]]) */
+void internal_calcDensityInnerProductsVector(int rhoId, int omegaIds[], long numOmegas) {
+    
+    // check quregs are instantiated
+    if (!quregs[rhoId].isCreated) {
+        local_sendQuregNotCreatedError(rhoId);
+        WSPutSymbol(stdlink, "$Failed");;
+        return;
+    }
+    for (int i=0; i<numOmegas; i++) {
+        if (!quregs[omegaIds[i]].isCreated) {
+            local_sendQuregNotCreatedError(omegaIds[i]);
+            WSPutSymbol(stdlink, "$Failed");;
+            return;
+        }
+    }
+    
+    // calculate inner products 
+    qreal* prods = malloc(numOmegas * sizeof *prods);
+    for (int i=0; i<numOmegas; i++)
+        prods[i] = calcDensityInnerProduct(quregs[rhoId], quregs[omegaIds[i]]);
+
+    // send result to MMA
+    WSPutReal64List(stdlink, prods, numOmegas);
+    
+    free(prods);
+}
+
 /* returns vector with ith element <qureg[braId]|qureg[ketIds[i]]> */
 void internal_calcInnerProductsVector(int braId, int ketIds[], long numKets) {
     
@@ -1245,6 +1273,36 @@ void internal_calcInnerProductsVector(int braId, int ketIds[], long numKets) {
     free(vecIm);
 }
 
+/* returns real, symmetric matrix with ith jth element calcDensityInnerProduct(quregs[quregIds[i]], qureg[qurgIds[j]]) */
+void internal_calcDensityInnerProductsMatrix(int quregIds[], long numQuregs) {
+    
+    // check all quregs are created
+    for (int i=0; i<numQuregs; i++) {
+        if (!quregs[quregIds[i]].isCreated) {
+            local_sendQuregNotCreatedError(quregIds[i]);
+            WSPutSymbol(stdlink, "$Failed");;
+            return;
+        }
+    }
+    
+    // store real matrix as `nested pointers`
+    long len = numQuregs * numQuregs;
+    qreal* matr = malloc(len * sizeof *matr);
+    
+    for (int r=0; r<numQuregs; r++) {
+        for (int c=0; c<numQuregs; c++) {
+            if (c >= r) {
+                qreal val = calcDensityInnerProduct(quregs[quregIds[r]], quregs[quregIds[c]]);
+                matr[r*numQuregs + c] = val;
+            } else {
+                matr[r*numQuregs + c] = matr[c*numQuregs + r];
+            }
+        }
+    }
+    
+    WSPutReal64List(stdlink, matr, len);
+    free(matr);
+}
 
 /* returns Hermitian matrix with ith jth element <qureg[i]|qureg[j]> */
 void internal_calcInnerProductsMatrix(int quregIds[], long numQuregs) {

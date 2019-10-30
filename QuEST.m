@@ -18,7 +18,10 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
     CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] sets the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in Rx, Ry, Rz, R or U (and controlled) of the given circuit ONCE (multiple times within a U matrix is allowed). The initState is unchanged. Note Rx[theta] is allowed, but Rx[f(theta)] is not. Furthermore U matrices must contain at most one parameter."
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
-CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element CalcInnerProduct[braId, ketId[i]]."
+CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element CalcInnerProduct[braId, ketIds[i]]."
+
+    CalcDensityInnerProducts::usage = "CalcDensityInnerProducts[quregIds] returns a real, symmetric matrix with i-th j-th element CalcDensityInnerProduct[quregIds[i], quregIds[j]].
+CalcDensityInnerProducts[rhoId, omegaIds] returns a real vector with i-th element CalcDensityInnerProduct[rhoId, omegaIds[i]]."
     
     Circuit::usage = "Circuit[gates] converts a product of gates into a left-to-right circuit, preserving order."
     
@@ -224,6 +227,16 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {data=CalcInnerProductsVectorInternal[braId, ketIds]},
                 MapThread[#1 + I #2 &, {data[[1]], data[[2]]}] 
             ]
+            
+        (* compute a real symmetric matrix of density inner products *)
+        CalcDensityInnerProducts[quregIds:{__Integer}] :=
+            ArrayReshape[
+                CalcDensityInnerProductsMatrixInternal[quregIds],
+                {Length @ quregIds, Length @ quregIds}
+            ]
+        (* compute a real vector of density innere products *)
+        CalcDensityInnerProducts[rhoId_Integer, omegaIds:{__Integer}] :=
+            CalcDensityInnerProductsVectorInternal
 
         (* checking a product is a valid operator *)
         SetAttributes[isOperatorFormat, HoldAll]
