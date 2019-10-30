@@ -3,7 +3,32 @@
 /** @file
  * The QuEST API.
  * This file contains the comments used by doxygen for generating API doc
-*/
+ *
+ * The API is split into categories
+ * @defgroup unitary Unitaries
+ *      Unitary gates
+ * @defgroup normgate Gates
+ *      Non-unitary but norm-preserving gates, such as measurements
+ * @defgroup operator Operators
+ *      Non-physical operators which may be non-unitary, non-norm-preserving, even non-Hermitian
+ * @defgroup decoherence Decoherence 
+ *      Decoherence channels which act on density matrices to induce mixing
+ * @defgroup type Data structures
+ *      Precision-agnostic types and data structures for representing numbers, quantum states, and operators
+ * @defgroup calc Calculations
+ *      Calculations and property-getters which do not modify the studied quantum state
+ * @defgroup init State initialisations
+ *      Functions for preparing quantum states
+ * @defgroup qasm QASM Logging
+ *      Functions for recording performed gates to <a href="https://en.wikipedia.org/wiki/OpenQASM">QASM</a>
+ * @defgroup debug Debugging
+ *      Utilities for seeding and debugging, such as state-logging
+ *
+ * @author Ania Brown
+ * @author Tyson Jones
+ * @author Balint Koczor (Kraus maps)
+ * @author Nicolas Vogt of HQS (one-qubit damping)
+ */
 
 # ifndef QUEST_H
 # define QUEST_H
@@ -23,10 +48,18 @@ extern "C" {
 // hide these from doxygen
 /// \cond HIDDEN_SYMBOLS    
 
-// Codes for Z-axis phase gate variations
+/** Codes for Z-axis phase gate variations
+ *
+ * @ingroup type
+ * @author Ania Brown
+ */
 enum phaseGateType {SIGMA_Z=0, S_GATE=1, T_GATE=2};    
     
-/** A logger of QASM instructions */
+/** A logger of QASM instructions 
+ *
+ * @ingroup type
+ * @author Tyson Jones
+ */
 typedef struct {
     
     char* buffer;       // generated QASM string
@@ -38,6 +71,9 @@ typedef struct {
 
 /** Represents an array of complex numbers grouped into an array of 
  * real components and an array of coressponding complex components.
+ *
+ * @ingroup type
+ * @author Ania Brown
  */
 typedef struct ComplexArray
 {
@@ -53,10 +89,17 @@ typedef struct ComplexArray
  * public structures
  */
  
- // Codes for specifying Pauli operators 
+ /** Codes for specifying Pauli operators
+  *
+  * @ingroup type
+  * @author Tyson Jones
+  */
  enum pauliOpType {PAULI_I=0, PAULI_X=1, PAULI_Y=2, PAULI_Z=3};
 
 /** Represents one complex number.
+ *
+ * @ingroup type
+ * @author Ania Brown
  */
 typedef struct Complex
 {
@@ -65,6 +108,9 @@ typedef struct Complex
 } Complex;
 
 /** Represents a 2x2 matrix of complex numbers
+ * 
+ * @ingroup type
+ * @author Balint Koczor
  */
 typedef struct ComplexMatrix2
 {
@@ -73,6 +119,9 @@ typedef struct ComplexMatrix2
 } ComplexMatrix2;
 
 /** Represents a 4x4 matrix of complex numbers
+ *
+ * @ingroup type
+ * @author Balint Koczor
  */
 typedef struct ComplexMatrix4
 {
@@ -81,6 +130,9 @@ typedef struct ComplexMatrix4
 } ComplexMatrix4;
  
  /** Represents a general 2^N by 2^N matrix of complex numbers.
+  *
+  * @ingroup type
+  * @author Tyson Jones
   */
 typedef struct ComplexMatrixN
 {
@@ -90,6 +142,9 @@ typedef struct ComplexMatrixN
 } ComplexMatrixN;
 
 /** Represents a 3-vector of real numbers
+ *
+ * @ingroup type
+ * @author Ania Brown
  */
 typedef struct Vector
 {
@@ -98,6 +153,10 @@ typedef struct Vector
 
 /** Represents a system of qubits.
  * Qubits are zero-based
+ *
+ * @ingroup type
+ * @author Ania Brown
+ * @author Tyson Jones (density matrix)
  */
 typedef struct Qureg
 {
@@ -136,8 +195,11 @@ typedef struct Qureg
 } Qureg;
 
 /** Information about the environment the program is running in.
-In practice, this holds info about MPI ranks and helps to hide MPI initialization code
-*/
+ * In practice, this holds info about MPI ranks and helps to hide MPI initialization code
+ *
+ * @ingroup type
+ * @author Ania Brown
+ */
 typedef struct QuESTEnv
 {
     int rank;
@@ -169,10 +231,12 @@ void applyTwoQubitMatrix(Qureg qureg, int targetQubit1, int targetQubit2, Comple
  * one other chunk if running the distributed version. Define properties related to the size of the set of qubits.
  * The qubits are initialised in the zero state (i.e. initZeroState is automatically called)
  *
+ * @ingroup type
  * @returns an object representing the set of qubits
  * @param[in] numQubits number of qubits in the system
  * @param[in] env object representing the execution environment (local, multinode etc)
  * @throws exitWithError if \p numQubits <= 0
+ * @author Ania Brown
  */
 Qureg createQureg(int numQubits, QuESTEnv env);
 
@@ -181,21 +245,25 @@ Qureg createQureg(int numQubits, QuESTEnv env);
  * one other chunk if running the distributed version. Define properties related to the size of the set of qubits.
  * initZeroState is automatically called allocation, so that the density qureg begins in the zero state |0><0|.
  *
+ * @ingroup type
  * @returns an object representing the set of qubits
  * @param[in] numQubits number of qubits in the system
  * @param[in] env object representing the execution environment (local, multinode etc)
  * @throws exitWithError if \p numQubits <= 0
+ * @author Tyson Jones
  */
 Qureg createDensityQureg(int numQubits, QuESTEnv env);
 
 /** Create a new Qureg which is an exact clone of the passed qureg, which can be
  * either a statevector or a density matrix. That is, it will have the same 
  * dimensions as the passed qureg and begin in an identical quantum state.
- * This must be destroyed by the user later with destroyQureg
+ * This must be destroyed by the user later with destroyQureg()
  *
+ * @ingroup type
  * @returns an object representing the set of qubits
  * @param[in] qureg an existing qureg to be cloned
  * @param[in] env object representing the execution environment (local, multinode etc)
+ * @author Tyson Jones
  */
 Qureg createCloneQureg(Qureg qureg, QuESTEnv env);
 
@@ -203,8 +271,10 @@ Qureg createCloneQureg(Qureg qureg, QuESTEnv env);
  * Free memory allocated to state vector of probability amplitudes, including temporary vector for
  * values copied from another chunk if running the distributed version.
  *
+ * @ingroup type
  * @param[in,out] qureg object to be deallocated
  * @param[in] env object representing the execution environment (local, multinode etc)
+ * @author Ania Brown
  */
 void destroyQureg(Qureg qureg, QuESTEnv env);
 
@@ -218,9 +288,11 @@ void destroyQureg(Qureg qureg, QuESTEnv env);
  * One can instead use getStaticComplexMatrixN() to create a ComplexMatrixN struct 
  * in the stack (which doesn't need to be explicitly freed).
  *
+ * @ingroup type
  * @param[in] numQubits the number of qubits of which the returned ComplexMatrixN will correspond
  * @returns a dynamic ComplexMatrixN struct, that is one where the .real and .imag
  *  fields are arrays kept in the heap and must be freed.
+ * @author Tyson Jones
  */
 ComplexMatrixN createComplexMatrixN(int numQubits);
 
@@ -228,9 +300,11 @@ ComplexMatrixN createComplexMatrixN(int numQubits);
  *
  * It is invalid to attempt to destroy a matrix created with getStaticComplexMatrixN().
  *
+ * @ingroup type
  * @param[in] matr the dynamic matrix (created with createComplexMatrixN()) to deallocate
  * @throws exitWithError if \p matr was not yet allocated.
  * @throws malloc_error if \p matr was static (created with getStaticComplexMatrixN())
+ * @author Tyson Jones
  */
 void destroyComplexMatrixN(ComplexMatrixN matr);
 
@@ -249,10 +323,12 @@ void destroyComplexMatrixN(ComplexMatrixN matr);
  * This function is only callable in C, since C++ signatures cannot
  * contain variable-length 2D arrays 
  *
+ * @ingroup type
  * @param[in] m the matrix to initialise
  * @param[in] real matrix of real values; can be 2D array of array of pointers
  * @param[in] imag matrix of imaginary values; can be 2D array of array of pointers
  * @throws exitWithError if \p m has not been allocated (e.g. with createComplexMatrixN())
+ * @author Tyson Jones
  */
 void initComplexMatrixN(ComplexMatrixN m, qreal real[][1<<m.numQubits], qreal imag[][1<<m.numQubits]);
 #endif 
@@ -275,28 +351,41 @@ realComponentN, imagComponentN
 real, imag
 @endverbatim
  * so that files are easier to combine.
-
+ *
+ * @ingroup debug
  * @param[in,out] qureg object representing the set of qubits
+ * @author Ania Brown
  */
 void reportState(Qureg qureg);
 
 /** Print the current state vector of probability amplitudes for a set of qubits to standard out. 
  * For debugging purposes. Each rank should print output serially. 
  * Only print output for systems <= 5 qubits
+ *
+ * @ingroup debug
+ * @author Ania Brown
  */
 void reportStateToScreen(Qureg qureg, QuESTEnv env, int reportRank);
 
 /** Report metainformation about a set of qubits: number of qubits, number of probability amplitudes.
-
+ *
+ * @ingroup debug
  * @param[in] qureg object representing the set of qubits
+ * @author Ania Brown
  */
 void reportQuregParams(Qureg qureg);
 
 /** Get the number of qubits in a qureg object
+ *
+ * @ingroup calc
+ * @author Tyson Jones
  */
 int getNumQubits(Qureg qureg);
 
 /** Get the number of probability amplitudes in a qureg object, given by 2^numQubits
+ *
+ * @ingroup calc
+ * @author Tyson Jones
  */
 long long int getNumAmps(Qureg qureg);
 
@@ -304,14 +393,19 @@ long long int getNumAmps(Qureg qureg);
  * useful for iteratively building a state with e.g. \p setWeightedQureg,
  * and should not be confused with the zero state |0...0>
  *
+ * @ingroup init
  * @param[in,out] qureg the object representing the set of all qubits to initialise
+ * @author Tyson Jones
  */
 void initBlankState(Qureg qureg);
 
 /** Initialise a set of \f$ N \f$ qubits to the classical zero state 
  * \f$ {| 0 \rangle}^{\otimes N} \f$.
  *
+ * @ingroup init
  * @param[in,out] qureg the object representing the set of all qubits to initialise
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void initZeroState(Qureg qureg);
 
@@ -322,7 +416,10 @@ void initZeroState(Qureg qureg);
  * This is equivalent to applying a Hadamard to every qubit in the zero state: 
  * \f$ \hat{H}^{\otimes N} {|0\rangle}^{\otimes N} \f$
  *
+ * @ingroup init
  * @param[in,out] qureg the object representing the set of qubits to be initialised
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void initPlusState(Qureg qureg);
 
@@ -331,8 +428,10 @@ void initPlusState(Qureg qureg);
  * \f$ | 11 \dots 11 \rangle \f$ has \p stateInd \f$ 2^N - 1 \f$, etc.
  * Subsequent calls to getProbAmp will yield 0 for all indices except \p stateInd.
  *
+ * @ingroup init
  * @param[in,out] qureg the object representing the set of qubits to be initialised
  * @param[in] stateInd the index (0 to the number of amplitudes, exclusive) of the state to give probability 1
+ * @author Tyson Jones
  */
 void initClassicalState(Qureg qureg, long long int stateInd);
 
@@ -340,21 +439,36 @@ void initClassicalState(Qureg qureg, long long int stateInd);
  * If \p qureg is a state-vector, this merely makes \p qureg an identical copy of \p pure.
  * If \p qureg is a density matrix, this makes \p qureg 100% likely to be in the \p pure state.
  *
+ * @ingroup init
  * @param[in,out] qureg the object representing the set of qubits to be initialised
  * @param[in] pure the pure state to be copied or to give probability 1 in qureg
+ * @author Tyson Jones
  */
 void initPureState(Qureg qureg, Qureg pure);
+
+/** Initialises \p qureg to be in the un-normalised, non-physical state with 
+ * with n-th complex amplitude (2n/10 + i(2n+1)/10). This is used internally for 
+ * debugging and testing.
+ * 
+ * @ingroup debug
+ * @param[in,out] qureg the register to have its amplitudes overwritten
+ * @author Ania Brown
+ * @author Tyson Jones (doc)
+ */
+void initDebugState(Qureg qureg);
 
 /** Initialise qureg by specifying the complete statevector.
  * The real and imaginary components of the amplitudes are passed in separate arrays,
  * each of which must have length \p qureg.numAmpsTotal.
  * There is no automatic checking that the passed arrays are L2 normalised.
  *
+ * @ingroup init
  * @param[in,out] qureg the object representing the set of qubits to be initialised
  * @param[in] reals array of the real components of the new amplitudes
  * @param[in] imags array of the imaginary components of the new amplitudes
  * @throws exitWithError
  *      if \p qureg is not a statevector (i.e. is a density matrix)
+ * @author Tyson Jones
  */
 void initStateFromAmps(Qureg qureg, qreal* reals, qreal* imags);
 
@@ -363,6 +477,7 @@ void initStateFromAmps(Qureg qureg, qreal* reals, qreal* imags);
  * the new state may not be L2 normalised. This allows the user to initialise a custom state by 
  * setting batches of amplitudes.
  *
+ * @ingroup init
  * @param[in,out] qureg the statevector to modify
  * @param[in] startInd the index of the first amplitude in \p qureg's statevector to modify
  * @param[in] reals array of the real components of the new amplitudes
@@ -370,6 +485,7 @@ void initStateFromAmps(Qureg qureg, qreal* reals, qreal* imags);
  * @param[in] numAmps the length of each of the reals and imags arrays.
  * @throws exitWithError
  *      if \p qureg is not a statevector (i.e. is a density matrix)
+ * @author Tyson Jones
  */
 void setAmps(Qureg qureg, long long int startInd, qreal* reals, qreal* imags, long long int numAmps);
 
@@ -378,8 +494,10 @@ void setAmps(Qureg qureg, long long int startInd, qreal* reals, qreal* imags, lo
  * Only the quantum state is cloned, auxilary info (like recorded QASM) is unchanged.
  * copyQureg is unaffected.
  *
+ * @ingroup init
  * @param[in, out] targetQureg the qureg to have its quantum state overwritten
  * @param[in] copyQureg the qureg to have its quantum state cloned in targetQureg.
+ * @author Tyson Jones
  */
 void cloneQureg(Qureg targetQureg, Qureg copyQureg);
 
@@ -407,11 +525,13 @@ void cloneQureg(Qureg targetQureg, Qureg copyQureg);
     }
     \f]
  * 
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targetQubit qubit to undergo a phase shift
  * @param[in] angle amount by which to shift the phase in radians
  * @throws exitWithError
  *      if \p targetQubit is outside [0, \p qureg.numQubitsRepresented).
+ * @author Tyson Jones
  */
 void phaseShift(Qureg qureg, const int targetQubit, qreal angle);
 
@@ -446,13 +566,15 @@ void phaseShift(Qureg qureg, const int targetQubit, qreal angle);
                 \end{tikzpicture}
     }
     \f]
- * 
+ *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] idQubit1 first qubit in the state to phase shift
  * @param[in] idQubit2 second qubit in the state to phase shift
  * @param[in] angle amount by which to shift the phase in radians
  * @throws exitWithError
  *  if \p idQubit1 or \p idQubit2 are outside [0, \p qureg.numQubitsRepresented), or are equal
+ * @author Tyson Jones
  */
 void controlledPhaseShift(Qureg qureg, const int idQubit1, const int idQubit2, qreal angle);
 
@@ -483,6 +605,7 @@ void controlledPhaseShift(Qureg qureg, const int idQubit1, const int idQubit2, q
     }
    \f]
  * 
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubits array of qubits to phase shift
  * @param[in] numControlQubits the length of array \p controlQubits
@@ -492,9 +615,9 @@ void controlledPhaseShift(Qureg qureg, const int idQubit1, const int idQubit2, q
  *      or if any qubit index in \p controlQubits is outside
  *      [0, \p qureg.numQubitsRepresented]), 
  *      or if any qubit in \p controlQubits is repeated.
+ * @author Tyson Jones
  */
 void multiControlledPhaseShift(Qureg qureg, int *controlQubits, int numControlQubits, qreal angle);
-
 
 /** Apply the (two-qubit) controlled phase flip gate, also known as the controlled pauliZ gate.
  * For each state, if both input qubits have value one, multiply the amplitude of that state by -1. This applies the two-qubit unitary:
@@ -524,10 +647,12 @@ void multiControlledPhaseShift(Qureg qureg, int *controlQubits, int numControlQu
     }
     \f]
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] idQubit1, idQubit2 qubits to operate upon
  * @throws exitWithError 
  *  if \p idQubit1 or \p idQubit2 are outside [0, \p qureg.numQubitsRepresented), or are equal
+ * @author Tyson Jones
  */
 void controlledPhaseFlip (Qureg qureg, const int idQubit1, const int idQubit2);
 
@@ -567,6 +692,7 @@ void controlledPhaseFlip (Qureg qureg, const int idQubit1, const int idQubit2);
     }
    \f]
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubits array of input qubits
  * @param[in] numControlQubits number of input qubits
@@ -574,6 +700,7 @@ void controlledPhaseFlip (Qureg qureg, const int idQubit1, const int idQubit2);
  *      if \p numControlQubits is outside [1, \p qureg.numQubitsRepresented),
  *      or if any qubit in \p controlQubits is outside [0, \p qureg.numQubitsRepresented),
  *      or if any qubit in \p qubits is repeated.
+ * @author Tyson Jones
  */
 void multiControlledPhaseFlip(Qureg qureg, int *controlQubits, int numControlQubits);
 
@@ -600,9 +727,12 @@ void multiControlledPhaseFlip(Qureg qureg, int *controlQubits, int numControlQub
     }
     \f]
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targetQubit qubit to operate upon
  * @throws exitWithError if \p targetQubit is outside [0, \p qureg.numQubitsRepresented)
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void sGate(Qureg qureg, const int targetQubit);
 
@@ -629,9 +759,12 @@ void sGate(Qureg qureg, const int targetQubit);
     }
     \f]
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targetQubit qubit to operate upon
  * @throws exitWithError if \p targetQubit is outside [0, \p qureg.numQubitsRepresented)
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void tGate(Qureg qureg, const int targetQubit);
 
@@ -641,7 +774,9 @@ void tGate(Qureg qureg, const int targetQubit);
 * If something needs to be done to set up the execution environment, such as 
  * initializing MPI when running in distributed mode, it is handled here.
  *
+ * @ingroup type
  * @return object representing the execution environment. A single instance is used for each program
+ * @author Ania Brown
  */
 QuESTEnv createQuESTEnv(void);
 
@@ -649,82 +784,158 @@ QuESTEnv createQuESTEnv(void);
  * If something needs to be done to clean up the execution environment, such as 
  * finalizing MPI when running in distributed mode, it is handled here
  *
+ * @ingroup type
  * @param[in] env object representing the execution environment. A single instance is used for each program
+ * @author Ania Brown
  */
 void destroyQuESTEnv(QuESTEnv env);
 
 /** Guarantees that all code up to the given point has been executed on all nodes (if running in distributed mode)
  *
+ * @ingroup debug
  * @param[in] env object representing the execution environment. A single instance is used for each program
+ * @author Ania Brown
  */
 void syncQuESTEnv(QuESTEnv env);
 
 /** Performs a logical AND on all successCodes held by all processes. If any one process has a zero successCode
  * all processes will return a zero success code.
  *
+ * @ingroup debug
  * @param[in] successCode 1 if process task succeeded, 0 if process task failed
  * @returns 1 if all processes succeeded, 0 if any one process failed
+ * @author Ania Brown
  */ 
 int syncQuESTSuccess(int successCode);
 
 /** Report information about the QuEST environment
  *
+ * @ingroup debug
  * @param[in] env object representing the execution environment. A single instance is used for each program
+ * @author Ania Brown
  */
 void reportQuESTEnv(QuESTEnv env);
 
+/** Sets \p str to a string containing the number of qubits in \p qureg, and the 
+ * hardware facilities used (e.g. GPU, MPI and/or OMP).
+ * 
+ * @ingroup debug 
+ * @param[in] env object representing the execution environment. A single instance is used for each program
+ * @param[in] qureg the qureg of which to query the simulating hardware
+ * @param[out] str to be populated with the output string
+ * @author Ania Brown
+ */
 void getEnvironmentString(QuESTEnv env, Qureg qureg, char str[200]);
+
+/** In GPU mode, this copies the state-vector (or density matrix) from RAM 
+ * (qureg.stateVec) to VRAM / GPU-memory (qureg.deviceStateVec), which is the version 
+ * operated upon by other calls to the API. 
+ * In CPU mode, this function has no effect.
+ * In conjunction with copyStateFromGPU() (which should be called first), this allows 
+ * a user to directly modify the state-vector in a harware agnostic way.
+ * Note though that users should instead use setAmps() if possible.
+ *
+ * For example, to set the first real element to 1, one could do:
+ * 
+ *     copyStateFromGPU(qureg);
+ *     qureg.stateVec.real[0] = 1;
+ *     copyStateToGPU(qureg);
+ *
+ * Note users should never access qureg.deviceStateVec directly.
+ *
+ * @ingroup debug
+ * @param[in, out] qureg the qureg of which to copy .stateVec to .deviceStateVec in GPU mode
+ * @author Ania Brown 
+ * @author Tyson Jones (doc)
+ */
+void copyStateToGPU(Qureg qureg);
+
+/** In GPU mode, this copies the state-vector (or density matrix) from GPU memory 
+ * (qureg.deviceStateVec) to RAM (qureg.stateVec), where it can be accessed/modified 
+ * by the user.
+ * In CPU mode, this function has no effect.
+ * In conjunction with copyStateToGPU(), this allows a user to directly modify the 
+ * state-vector in a harware agnostic way.
+ * Note though that users should instead use setAmps() if possible.
+ *
+ * For example, to set the first real element to 1, one could do:
+ * 
+ *     copyStateFromGPU(qureg);
+ *     qureg.stateVec.real[0] = 1;
+ *     copyStateToGPU(qureg);
+ *
+ * Note users should never access qureg.deviceStateVec directly.
+ *
+ * @ingroup debug
+ * @param[in, out] qureg the qureg of which to copy .deviceStateVec to .stateVec in GPU mode
+ * @author Ania Brown 
+ * @author Tyson Jones (doc)
+ */
+void copyStateFromGPU(Qureg qureg);
 
 /** Get the complex amplitude at a given index in the state vector.
  *
+ * @ingroup calc
  * @param[in] qureg object representing a set of qubits
  * @param[in] index index in state vector of probability amplitudes
  * @return amplitude at index, returned as a Complex struct (with .real and .imag attributes)
  * @throws exitWithError
- *      if \p index is outside [0, \f$2^{N}\f$) where \f$N = \f$ \p qureg.numQubitsRepresented
+ *      if \p qureg is a density matrix,
+ *      or if \p index is outside [0, \f$2^{N}\f$) where \f$N = \f$ \p qureg.numQubitsRepresented
+ * @author Tyson Jones
  */
 Complex getAmp(Qureg qureg, long long int index);
 
 /** Get the real component of the complex probability amplitude at an index in the state vector.
- * For debugging purposes.
  *
+ * @ingroup calc
  * @param[in] qureg object representing a set of qubits
  * @param[in] index index in state vector of probability amplitudes
  * @return real component at that index
  * @throws exitWithError
- *      if \p index is outside [0, \f$2^{N}\f$) where \f$N = \f$ \p qureg.numQubitsRepresented
+ *      if \p qureg is a density matrix,
+ *      or if \p index is outside [0, \f$2^{N}\f$) where \f$N = \f$ \p qureg.numQubitsRepresented
+ * @author Ania Brown
  */
 qreal getRealAmp(Qureg qureg, long long int index);
 
 /** Get the imaginary component of the complex probability amplitude at an index in the state vector.
- * For debugging purposes.
  *
+ * @ingroup calc
  * @param[in] qureg object representing a set of qubits
  * @param[in] index index in state vector of probability amplitudes
  * @return imaginary component at that index
  * @throws exitWithError
- *      if \p index is outside [0, \f$2^{N}\f$) where \f$N = \f$ \p qureg.numQubitsRepresented
+ *      if \p qureg is a density matrix,
+ *      or if \p index is outside [0, \f$2^{N}\f$) where \f$N = \f$ \p qureg.numQubitsRepresented
+ * @author Ania Brown
  */
 qreal getImagAmp(Qureg qureg, long long int index);
 
-/** Get the probability of the state at an index in the full state vector.
+/** Get the probability of a state-vector at an index in the full state vector.
  *
+ * @ingroup calc
  * @param[in] qureg object representing a set of qubits
  * @param[in] index index in state vector of probability amplitudes
  * @return realEl*realEl + imagEl*imagEl
  * @throws exitWithError
- *      if \p index is outside [0, \f$2^{N}\f$) where \f$N = \f$ \p qureg.numQubitsRepresented
+ *      if \p qureg is a density matrix,
+ *      or if \p index is outside [0, \f$2^{N}\f$) where \f$N = \f$ \p qureg.numQubitsRepresented
+ * @author Ania Brown
  */
 qreal getProbAmp(Qureg qureg, long long int index);
 
 /** Get an amplitude from a density matrix at a given row and column.
  *
+ * @ingroup calc
  * @param[in] qureg object representing a density matrix
  * @param[in] row row of the desired amplitude in the density matrix
  * @param[in] col column of the desired amplitude in the density matrix
  * @return a Complex scalar representing the desired amplitude
  * @throws exitWithError
- *      if \p qureg is a statevector, or if \p row or \p col are outside [0, \f$2^{N}\f$) where \f$N = \f$ \p qureg.numQubitsRepresented
+ *      if \p qureg is a statevector, 
+ *      or if \p row or \p col are outside [0, \f$2^{N}\f$) where \f$N = \f$ \p qureg.numQubitsRepresented
+ * @author Tyson Jones
  */
 Complex getDensityAmp(Qureg qureg, long long int row, long long int col);
 
@@ -734,8 +945,11 @@ Complex getDensityAmp(Qureg qureg, long long int row, long long int col);
  * Note this calculation utilises Kahan summation for greaster accuracy, but is
  * not parallelised and so will be slower than other functions.
  *
+ * @ingroup calc
  * @param[in] qureg object representing a set of qubits
  * @return total probability
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 qreal calcTotalProb(Qureg qureg);
 
@@ -764,7 +978,8 @@ qreal calcTotalProb(Qureg qureg);
                 \end{tikzpicture}
     }
     \f]
- *                                                                    
+ *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targetQubit qubit to operate on
  * @param[in] alpha complex unitary parameter (row 1, column 1)
@@ -772,6 +987,8 @@ qreal calcTotalProb(Qureg qureg);
  * @throws exitWithError
  *      if \p targetQubit is outside [0, \p qureg.numQubitsRepresented),
  *      or if \p alpha, \p beta don't satisfy |\p alpha|^2 + |\p beta|^2 = 1.
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void compactUnitary(Qureg qureg, const int targetQubit, Complex alpha, Complex beta);
 
@@ -791,13 +1008,16 @@ void compactUnitary(Qureg qureg, const int targetQubit, Complex alpha, Complex b
                 \end{tikzpicture}
     }
     \f]
- *                                                                    
+ *
+ * @ingroup unitary                                                              
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targetQubit qubit to operate on
  * @param[in] u unitary matrix to apply
  * @throws exitWithError
  *      if \p targetQubit is outside [0, \p qureg.numQubitsRepresented),
  *      or matrix \p u is not unitary.
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void unitary(Qureg qureg, const int targetQubit, ComplexMatrix2 u);
 
@@ -823,12 +1043,14 @@ void unitary(Qureg qureg, const int targetQubit, ComplexMatrix2 u);
     }
     \f]
  *
- *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] rotQubit qubit to rotate
  * @param[in] angle angle by which to rotate in radians
  * @throws exitWithError
  *      if \p rotQubit is outside [0, \p qureg.numQubitsRepresented).
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void rotateX(Qureg qureg, const int rotQubit, qreal angle);
 
@@ -855,11 +1077,14 @@ void rotateX(Qureg qureg, const int rotQubit, qreal angle);
     }
     \f]
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] rotQubit qubit to rotate
  * @param[in] angle angle by which to rotate in radians
  * @throws exitWithError
  *      if \p rotQubit is outside [0, \p qureg.numQubitsRepresented).
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc, debug)
  */
 void rotateY(Qureg qureg, const int rotQubit, qreal angle);
 
@@ -886,20 +1111,24 @@ void rotateY(Qureg qureg, const int rotQubit, qreal angle);
     }
     \f]
  * 
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] rotQubit qubit to rotate
  * @param[in] angle angle by which to rotate in radians
  * @throws exitWithError
  *      if \p rotQubit is outside [0, \p qureg.numQubitsRepresented).
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void rotateZ(Qureg qureg, const int rotQubit, qreal angle);
 
-/** Rotate a single qubit by a given angle around a given vector on the Bloch-sphere.      
+/** Rotate a single qubit by a given angle around a given \ref Vector on the Bloch-sphere.      
  * The vector must not be zero (else an error is thrown), but needn't be unit magnitude.
  *
  * For angle \f$\theta\f$ and axis vector \f$\vec{n}\f$, applies \f$R_{\hat{n}} = \exp \left(- i \frac{\theta}{2} \hat{n} \cdot \vec{\sigma} \right) \f$
  * where \f$\vec{\sigma}\f$ is the vector of Pauli matrices.
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] rotQubit qubit to rotate
  * @param[in] angle angle by which to rotate in radians
@@ -907,6 +1136,8 @@ void rotateZ(Qureg qureg, const int rotQubit, qreal angle);
  * @throws exitWithError
  *      if \p rotQubit is outside [0, \p qureg.numQubitsRepresented),
  *      or if \p axis is the zero vector
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void rotateAroundAxis(Qureg qureg, const int rotQubit, qreal angle, Vector axis);
 
@@ -933,12 +1164,14 @@ void rotateAroundAxis(Qureg qureg, const int rotQubit, qreal angle, Vector axis)
     }
     \f] 
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubit qubit which has value 1 in the rotated states
  * @param[in] targetQubit qubit to rotate
  * @param[in] angle angle by which to rotate the target qubit in radians
  * @throws exitWithError
  *      if either \p controlQubit or \p targetQubit are outside [0, \p qureg.numQubitsRepresented) or are equal.
+ * @author Tyson Jones
  */
 void controlledRotateX(Qureg qureg, const int controlQubit, const int targetQubit, qreal angle);
 
@@ -964,12 +1197,14 @@ void controlledRotateX(Qureg qureg, const int controlQubit, const int targetQubi
     }
     \f] 
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubit qubit which has value 1 in the rotated states
  * @param[in] targetQubit qubit to rotate
  * @param[in] angle angle by which to rotate the target qubit in radians
  * @throws exitWithError
  *      if either \p controlQubit or \p targetQubit are outside [0, \p qureg.numQubitsRepresented) or are equal.
+ * @author Tyson Jones
  */
 void controlledRotateY(Qureg qureg, const int controlQubit, const int targetQubit, qreal angle);
 
@@ -995,12 +1230,14 @@ void controlledRotateY(Qureg qureg, const int controlQubit, const int targetQubi
     }
     \f] 
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubit qubit which has value 1 in the rotated states
  * @param[in] targetQubit qubit to rotate
  * @param[in] angle angle by which to rotate the target qubit in radians
  * @throws exitWithError
  *      if either \p controlQubit or \p targetQubit are outside [0, \p qureg.numQubitsRepresented) or are equal.
+ * @author Tyson Jones
  */
 void controlledRotateZ(Qureg qureg, const int controlQubit, const int targetQubit, qreal angle);
 
@@ -1029,6 +1266,7 @@ void controlledRotateZ(Qureg qureg, const int controlQubit, const int targetQubi
     }
     \f]
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubit qubit with value 1 in the rotated states
  * @param[in] targetQubit qubit to rotate
@@ -1037,6 +1275,7 @@ void controlledRotateZ(Qureg qureg, const int controlQubit, const int targetQubi
  * @throws exitWithError
  *      if either \p controlQubit or \p targetQubit are outside [0, \p qureg.numQubitsRepresented) or are equal
  *      or if \p axis is the zero vector
+ * @author Tyson Jones
  */
 void controlledRotateAroundAxis(Qureg qureg, const int controlQubit, const int targetQubit, qreal angle, Vector axis);
 
@@ -1072,7 +1311,8 @@ void controlledRotateAroundAxis(Qureg qureg, const int controlQubit, const int t
                 \end{tikzpicture}
     }
     \f]
- *                                                                    
+ *
+ * @ingroup unitary                                                             
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubit apply the target unitary if this qubit has value 1
  * @param[in] targetQubit qubit on which to apply the target unitary
@@ -1081,6 +1321,8 @@ void controlledRotateAroundAxis(Qureg qureg, const int controlQubit, const int t
  * @throws exitWithError
  *      if either \p controlQubit or \p targetQubit are outside [0, \p qureg.numQubitsRepresented) or are equal,
  *      or if \p alpha, \p beta don't satisfy |\p alpha|^2 + |\p beta|^2 = 1.
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void controlledCompactUnitary(Qureg qureg, const int controlQubit, const int targetQubit, Complex alpha, Complex beta);
 
@@ -1115,7 +1357,8 @@ void controlledCompactUnitary(Qureg qureg, const int controlQubit, const int tar
                 \end{tikzpicture}
     }
     \f]
- *                                                              
+ *
+ * @ingroup unitary                                                           
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubit apply unitary if this qubit is 1
  * @param[in] targetQubit qubit to operate on
@@ -1123,6 +1366,8 @@ void controlledCompactUnitary(Qureg qureg, const int controlQubit, const int tar
  * @throws exitWithError
  *      if either \p controlQubit or \p targetQubit are outside [0, \p qureg.numQubitsRepresented) or are equal,
  *      or if \p u is not unitary.
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void controlledUnitary(Qureg qureg, const int controlQubit, const int targetQubit, ComplexMatrix2 u);
 
@@ -1167,7 +1412,8 @@ void controlledUnitary(Qureg qureg, const int controlQubit, const int targetQubi
                 \end{tikzpicture}
     }
     \f]
- *                                                                
+ *
+ * @ingroup unitary                                                            
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubits applies unitary if all qubits in this array equal 1
  * @param[in] numControlQubits number of control qubits
@@ -1180,6 +1426,8 @@ void controlledUnitary(Qureg qureg, const int controlQubit, const int targetQubi
  *      or if any qubit in \p controlQubits is repeated,
  *      or if \p controlQubits contains \p targetQubit,
  *      or if \p u is not unitary.
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void multiControlledUnitary(Qureg qureg, int* controlQubits, const int numControlQubits, const int targetQubit, ComplexMatrix2 u);
 
@@ -1204,11 +1452,14 @@ void multiControlledUnitary(Qureg qureg, int* controlQubits, const int numContro
                 \end{tikzpicture}
     }
     \f]   
- * 
+ *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targetQubit qubit to operate on
  * @throws exitWithError
  *      if \p targetQubit is outside [0, \p qureg.numQubitsRepresented).
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void pauliX(Qureg qureg, const int targetQubit);
 
@@ -1234,11 +1485,14 @@ void pauliX(Qureg qureg, const int targetQubit);
                 \end{tikzpicture}
     }
     \f]      
- * 
+ *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targetQubit qubit to operate on
  * @throws exitWithError
  *      if \p targetQubit is outside [0, \p qureg.numQubitsRepresented).
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void pauliY(Qureg qureg, const int targetQubit);
 
@@ -1264,11 +1518,14 @@ void pauliY(Qureg qureg, const int targetQubit);
                 \end{tikzpicture}
     }
     \f]     
- * 
+ *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targetQubit qubit to operate on
  * @throws exitWithError
  *      if \p targetQubit is outside [0, \p qureg.numQubitsRepresented).
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void pauliZ(Qureg qureg, const int targetQubit);
 
@@ -1297,10 +1554,13 @@ void pauliZ(Qureg qureg, const int targetQubit);
     }
     \f]  
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targetQubit qubit to operate on
  * @throws exitWithError
  *      if \p targetQubit is outside [0, \p qureg.numQubitsRepresented).
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void hadamard(Qureg qureg, const int targetQubit);
 
@@ -1335,11 +1595,14 @@ void hadamard(Qureg qureg, const int targetQubit);
     }
     \f]  
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubit nots the target if this qubit is 1
  * @param[in] targetQubit qubit to not
  * @throws exitWithError
  *      if either \p controlQubit or \p targetQubit are outside [0, \p qureg.numQubitsRepresented), or are equal.
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix, doc)
  */
 void controlledNot(Qureg qureg, const int controlQubit, const int targetQubit);
 
@@ -1376,17 +1639,21 @@ void controlledNot(Qureg qureg, const int controlQubit, const int targetQubit);
     }
     \f]
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubit applies pauliY to the target if this qubit is 1
  * @param[in] targetQubit qubit to not
  * @throws exitWithError
  *      if either \p controlQubit or \p targetQubit are outside [0, \p qureg.numQubitsRepresented), or are equal.
+ * @author Tyson Jones
+ * @author Ania Brown (debug)
  */
 void controlledPauliY(Qureg qureg, const int controlQubit, const int targetQubit);
 
 /** Gives the probability of a specified qubit being measured in the given outcome (0 or 1).
  * This performs no actual measurement and does not change the state of the qubits.
  * 
+ * @ingroup calc
  * @param[in] qureg object representing the set of all qubits
  * @param[in] measureQubit qubit to study
  * @param[in] outcome for which to find the probability of the qubit being measured in
@@ -1394,6 +1661,8 @@ void controlledPauliY(Qureg qureg, const int controlQubit, const int targetQubit
  * @throws exitWithError
  *      if \p measureQubit is outside [0, \p qureg.numQubitsRepresented),
  *      or if \p outcome is not in {0, 1}.
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix)
  */
 qreal calcProbOfOutcome(Qureg qureg, const int measureQubit, int outcome);
 
@@ -1404,6 +1673,7 @@ qreal calcProbOfOutcome(Qureg qureg, const int measureQubit, int outcome);
  * Exits with error if the given outcome has ~zero probability, and so cannot be
  * collapsed into.
  * 
+ * @ingroup normgate
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] measureQubit qubit to measure
  * @param[in] outcome to force the measure qubit to enter
@@ -1412,6 +1682,8 @@ qreal calcProbOfOutcome(Qureg qureg, const int measureQubit, int outcome);
  *      if \p measureQubit is outside [0, \p qureg.numQubitsRepresented),
  *      or if \p outcome is not in {0, 1},
  *      or if the probability of \p outcome is zero (within machine epsilon)
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix)
  */
 qreal collapseToOutcome(Qureg qureg, const int measureQubit, int outcome);
 
@@ -1419,11 +1691,14 @@ qreal collapseToOutcome(Qureg qureg, const int measureQubit, int outcome);
  * Outcome probabilities are weighted by the state vector, which is irreversibly
  * changed after collapse to be consistent with the outcome.
  *
+ * @ingroup normgate
  * @param[in, out] qureg object representing the set of all qubits
  * @param[in] measureQubit qubit to measure
  * @return the measurement outcome, 0 or 1
  * @throws exitWithError
  *      if \p measureQubit is outside [0, \p qureg.numQubitsRepresented)
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix)
  */
 int measure(Qureg qureg, int measureQubit);
 
@@ -1432,12 +1707,15 @@ int measure(Qureg qureg, int measureQubit);
  * Outcome probabilities are weighted by the state vector, which is irreversibly
  * changed after collapse to be consistent with the outcome.
  *
+ * @ingroup normgate
  * @param[in, out] qureg object representing the set of all qubits
  * @param[in] measureQubit qubit to measure
  * @param[out] outcomeProb a pointer to a qreal which is set to the probability of the occurred outcome
  * @return the measurement outcome, 0 or 1
  * @throws exitWithError
  *      if \p measureQubit is outside [0, \p qureg.numQubitsRepresented)
+ * @author Ania Brown (state-vector)
+ * @author Tyson Jones (density matrix)
  */
 int measureWithStats(Qureg qureg, int measureQubit, qreal *outcomeProb);
 
@@ -1447,14 +1725,52 @@ int measureWithStats(Qureg qureg, int measureQubit, qreal *outcomeProb);
  * employs Kahan summation for greater accuracy.
  * Neither state-vector is modified.
  *
+ * @ingroup calc
  * @param[in] bra qureg to be the 'bra' (i.e. have its values conjugate transposed) in the inner product 
  * @param[in] ket qureg to be the 'ket' in the inner product 
  * @return the complex inner product of \p bra and \p ket 
  * @throws exitWithError
  *      if either \p bra or \p ket are not state-vectors, 
  *      or if \p bra and \p ket do not have equal dimensions.
+ * @author Tyson Jones
  */
 Complex calcInnerProduct(Qureg bra, Qureg ket);
+
+/** Computes the Hilbert-Schmidt scalar product
+ * (which is equivalent to the Frobenius inner product of matrices) 
+ * of two density matrices \p rho1 and \p rho2 of equivalent size.
+ * That is, we define the Hilbert-Schmidt scalar product
+ * \f[
+    ((\rho_1, \rho_2))_{HS} := \text{Tr}[ \rho_1^\dagger \rho_2 ],
+ * \f]
+ * which is equivalent to the sum of products of matrix elemets, i.e.,
+ * \f[
+    ((\rho_1, \rho_2))_{HS} = \sum\limits_i \sum\limits_j  (\rho_1)_{ij}^* (\rho_2)_{ij}
+ * \f]
+ * Assuming that both density matrices are Hermitian,
+ * the resulting scalar product is real and invariant under
+ * reordering its arguments as 
+ * \f[
+    ((\rho_1, \rho_2))_{HS} = ((\rho_2, \rho_1))_{HS}
+ * \f]
+ * Also note that if both \p rho1 and \p rho2 are density matrices of pure states
+ * \p bra and \p ket, then the equality holds
+ * \f[
+    ((\rho_1, \rho_2))_{HS} = |\langle \text{bra} | \text{ket} \rangle|^2.
+ * \f]
+ *
+ * @ingroup calc
+ * @param[in] rho1 qureg as a density matrix (to have its values conjugate transposed)
+ * @param[in] rho2 qureg as a density matrix
+ * @returns the real Hilbert-Schmidt scalar product of density matrices
+            \p rho1 and \p rho2 (assuming Hermiticity)
+ * @throws exitWithError
+ *      if \p rho1 and \p rho2 are not density matrices or
+ *      have mismatching dimensions.
+ * @author Balint Koczor (CPU)
+ * @author Tyson Jones (GPU)
+ */
+qreal calcDensityInnerProduct(Qureg rho1, Qureg rho2);
 
 /** Seed the Mersenne Twister used for random number generation in the QuEST environment with an example
  * defualt seed.
@@ -1464,6 +1780,10 @@ Complex calcInnerProduct(Qureg bra, Qureg ket);
  * appropriate to use for functions such as measure where all processes require the same random value.
  *
  * For more information about the MT, see http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html
+ * 
+ * @ingroup debug
+ * @author Ania Brown
+ * @author Balint Koczor (Windows compatibility)
  **/
 void seedQuESTDefault(void);
 
@@ -1474,33 +1794,62 @@ void seedQuESTDefault(void);
  * For a multi process code, the same seed is given to all process, therefore this seeding is only
  * appropriate to use for functions such as measure where all processes require the same random value.
  *
- * @param[in] seedArray Array of integers to use as seed. This allows the MT to be initialised with more 
- * than a 32-bit integer if required
- * @param[in] numSeeds Length of seedArray
- *
  * For more information about the MT, see http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/MT2002/emt19937ar.html
+ *
+ * @ingroup debug
+ * @param[in] seedArray Array of integers to use as seed. 
+ *  This allows the MT to be initialised with more than a 32-bit integer if required
+ * @param[in] numSeeds Length of seedArray
+ * @author Ania Brown
  **/
 void seedQuEST(unsigned long int *seedArray, int numSeeds);
 
-/** Enable QASM recording. Gates applied to qureg will here-after be added to growing QASM instructions,
- * progressively consuming more memory until stopped
+/** Enable QASM recording. Gates applied to qureg will here-after be added to a
+ * growing log of QASM instructions, progressively consuming more memory until 
+ * disabled with stopRecordingQASM(). The QASM log is bound to this qureg instance.
+ *
+ * @ingroup qasm
+ * @param[in,out] qureg The qureg to begin recording subsequent operations upon
+ * @author Tyson Jones
  */
 void startRecordingQASM(Qureg qureg);
 
 /** Disable QASM recording. The recorded QASM will be maintained in qureg
-and continue to be
- * added to if startRecordingQASM is recalled.
+ * and continue to be appended to if startRecordingQASM is recalled.
+ *
+ * Has no effect if \p qureg was not already recording operations.
+ *
+ * @ingroup qasm
+ * @param[in,out] qureg The qureg to halt recording subsequent operations upon
+ * @author Tyson Jones
  */
 void stopRecordingQASM(Qureg qureg);
 
-/** Clear all QASM so far recorded. This does not start or stop recording
+/** Clear all QASM so far recorded. This does not start or stop recording.
+ *
+ * @ingroup qasm
+ * @param[in,out] qureg The qureg of which to clear the QASM log
+ * @author Tyson Jones
  */
 void clearRecordedQASM(Qureg qureg);
 
-/** Print recorded QASM to stdout */
+/** Print recorded QASM to stdout. This does not clear the QASM log, nor does it 
+ * start or stop QASM recording.
+ * 
+ * @ingroup qasm
+ * @param[in] qureg Prints the QASM recorded for this qureg.
+ * @author Tyson Jones
+ */
 void printRecordedQASM(Qureg qureg);
 
-/** Writes recorded QASM to a file, throwing an error if inaccessible */
+/** Writes recorded QASM to a file, throwing an error if inaccessible.
+ *
+ * @ingroup qasm
+ * @param[in] qureg Writes the QASM recorded for this qureg to file
+ * @param[in] filename The filename of the file to contain the recorded QASM
+ * @throws exitWithError if \p filename cannot be written to
+ * @author Tyson Jones
+ */
 void writeRecordedQASMToFile(Qureg qureg, char* filename);
 
 /** Mixes a density matrix \p qureg to induce single-qubit dephasing noise.
@@ -1513,6 +1862,7 @@ void writeRecordedQASMToFile(Qureg qureg, char* filename);
  * where q = \p targetQubit.
  * \p prob cannot exceed 1/2, which maximally mixes \p targetQubit.
  *
+ * @ingroup decoherence
  * @param[in,out] qureg a density matrix
  * @param[in] targetQubit qubit upon which to induce dephasing noise
  * @param[in] prob the probability of the phase error occuring
@@ -1520,6 +1870,8 @@ void writeRecordedQASMToFile(Qureg qureg, char* filename);
  *      if \p qureg is not a density matrix,
  *      or if \p targetQubit is outside [0, \p qureg.numQubitsRepresented),
  *      or if \p prob is not in [0, 1/2]
+ * @author Tyson Jones (GPU, doc)
+ * @author Ania Brown (CPU, distributed)
  */
 void mixDephasing(Qureg qureg, const int targetQubit, qreal prob);
 
@@ -1537,6 +1889,7 @@ void mixDephasing(Qureg qureg, const int targetQubit, qreal prob);
  * where a = \p qubit1, b = \p qubit2.
  * \p prob cannot exceed 3/4, at which maximal mixing occurs.
  *
+ * @ingroup decoherence
  * @param[in,out] qureg a density matrix
  * @param[in] qubit1 qubit upon which to induce dephasing noise
  * @param[in] qubit2 qubit upon which to induce dephasing noise
@@ -1546,6 +1899,8 @@ void mixDephasing(Qureg qureg, const int targetQubit, qreal prob);
  *      or if either \p qubit1 or \p qubit2 is outside [0, \p qureg.numQubitsRepresented),
  *      or if \p qubit1 = \p qubit2,
  *      or if \p prob is not in [0, 3/4]
+ * @author Tyson Jones (GPU, doc)
+ * @author Ania Brown (CPU, distributed)
  */
 void mixTwoQubitDephasing(Qureg qureg, int qubit1, int qubit2, qreal prob);
 
@@ -1563,6 +1918,7 @@ void mixTwoQubitDephasing(Qureg qureg, int qubit1, int qubit2, qreal prob);
  * where q = \p targetQubit.
  * \p prob cannot exceed 3/4, at which maximal mixing occurs.
  *
+ * @ingroup decoherence
  * @param[in,out] qureg a density matrix
  * @param[in] targetQubit qubit upon which to induce depolarising noise
  * @param[in] prob the probability of the depolarising error occuring
@@ -1570,6 +1926,8 @@ void mixTwoQubitDephasing(Qureg qureg, int qubit1, int qubit2, qreal prob);
  *      if \p qureg is not a density matrix,
  *      or if \p targetQubit is outside [0, \p qureg.numQubitsRepresented),
  *      or if \p prob is not in [0, 3/4]
+ * @author Tyson Jones (GPU, doc)
+ * @author Ania Brown (CPU, distributed)
  */
 void mixDepolarising(Qureg qureg, const int targetQubit, qreal prob);
 
@@ -1585,6 +1943,7 @@ void mixDepolarising(Qureg qureg, const int targetQubit, qreal prob);
  * where q = \p targetQubit.
  * \p prob cannot exceed 1, at which total damping/decay occurs.
  *
+ * @ingroup decoherence
  * @param[in,out] qureg a density matrix
  * @param[in] targetQubit qubit upon which to induce depolarising noise
  * @param[in] prob the probability of the depolarising error occuring
@@ -1592,6 +1951,8 @@ void mixDepolarising(Qureg qureg, const int targetQubit, qreal prob);
  *      if \p qureg is not a density matrix,
  *      or if \p targetQubit is outside [0, \p qureg.numQubitsRepresented),
  *      or if \p prob is not in [0, 1]
+ * @author Nicolas Vogt (HQS)
+ * @author Ania Brown (patched)
  */
 void mixDamping(Qureg qureg, const int targetQubit, qreal prob);
 
@@ -1632,6 +1993,7 @@ void mixDamping(Qureg qureg, const int targetQubit, qreal prob);
  * where a = \p qubit1, b = \p qubit2.
  * \p prob cannot exceed 15/16, at which maximal mixing occurs.
  *
+ * @ingroup decoherence
  * @param[in,out] qureg a density matrix
  * @param[in] qubit1 qubit upon which to induce depolarising noise
  * @param[in] qubit2 qubit upon which to induce depolarising noise
@@ -1641,6 +2003,8 @@ void mixDamping(Qureg qureg, const int targetQubit, qreal prob);
  *      or if either \p qubit1 or \p qubit2 is outside [0, \p qureg.numQubitsRepresented),
  *      or if \p qubit1 = \p qubit2,
  *      or if \p prob is not in [0, 15/16]
+ * @author Tyson Jones (GPU, doc)
+ * @author Ania Brown (CPU, distributed)
  */
 void mixTwoQubitDepolarising(Qureg qureg, int qubit1, int qubit2, qreal prob);
 
@@ -1662,6 +2026,7 @@ void mixTwoQubitDepolarising(Qureg qureg, int qubit1, int qubit2, qreal prob);
  * This function operates by first converting the given Pauli probabilities into 
  * a single-qubit Kraus map (four 2x2 operators).
  *
+ * @ingroup decoherence
  * @param[in,out] qureg a density matrix
  * @param[in] targetQubit qubit to decohere
  * @param[in] probX the probability of inducing an X error
@@ -1673,12 +2038,15 @@ void mixTwoQubitDepolarising(Qureg qureg, int qubit1, int qubit2, qreal prob);
  *      or if any of \p probX, \p probY or \p probZ are not in [0, 1],
  *      or if any of p in {\p probX, \p probY or \p probZ} don't satisfy
  *      p <= (1 - \p probX - \p probY - \p probZ)
+ * @author Balint Koczor
+ * @author Tyson Jones (refactored, doc)
  */
 void mixPauli(Qureg qureg, int targetQubit, qreal probX, qreal probY, qreal probZ);
 
 /** Modifies combineQureg to become (1-prob)combineProb + prob otherQureg.
  * Both registers must be equal-dimension density matrices, and prob must be in [0, 1].
  *
+ * @ingroup decoherence
  * @param[in,out] combineQureg a density matrix to be modified
  * @param[in] prob the probability of \p otherQureg in the modified \p combineQureg
  * @param[in] otherQureg a density matrix to be mixed into \p combineQureg
@@ -1686,6 +2054,7 @@ void mixPauli(Qureg qureg, int targetQubit, qreal probX, qreal probY, qreal prob
  *      if either \p combineQureg or \p otherQureg are not density matrices,
  *      or if the dimensions of \p combineQureg and \p otherQureg do not match,
  *      or if \p prob is not in [0, 1]
+ * @author Tyson Jones
  */
 void mixDensityMatrix(Qureg combineQureg, qreal prob, Qureg otherQureg);
 
@@ -1697,12 +2066,14 @@ void mixDensityMatrix(Qureg combineQureg, qreal prob, Qureg otherQureg);
  *
  * This function does not accept state-vectors, which clearly have purity 1.
  *
+ * @ingroup calc
  * @param[in] qureg a density matrix of which to measure the purity
  * @return the purity
  * @throws exitWithError
  *      if either \p combineQureg or \p otherQureg are not density matrices,
  *      or if the dimensions of \p combineQureg and \p otherQureg do not match,
  *      or if \p prob is not in [0, 1]
+ * @author Tyson Jones
  */
 qreal calcPurity(Qureg qureg);
 
@@ -1719,12 +2090,14 @@ qreal calcPurity(Qureg qureg);
  * In either case, the fidelity lies in [0, 1].
  * The number of qubits represented in \p qureg and \p pureState must match.
  * 
+ * @ingroup calc
  * @param[in] qureg a density matrix or state vector
  * @param[in] pureState a state vector
  * @return the fidelity between the input registers
  * @throws exitWithError
  *      if the second argument (\p pureState) is not a statevector, 
  *      or if the number of qubits in \p qureg and \p pureState do not match
+ * @author Tyson Jones
  */
 qreal calcFidelity(Qureg qureg, Qureg pureState);
 
@@ -1761,11 +2134,13 @@ qreal calcFidelity(Qureg qureg, Qureg pureState);
    }
    \f]
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] qubit1 qubit to swap
  * @param[in] qubit2 other qubit to swap
  * @throws exitWithError
  *      if either \p qubit1 or \p qubit2 are outside [0, \p qureg.numQubitsRepresented), or are equal.
+ * @author Tyson Jones
  */
 void swapGate(Qureg qureg, int qubit1, int qubit2);
 
@@ -1806,11 +2181,13 @@ void swapGate(Qureg qureg, int qubit1, int qubit2);
    }
    \f]
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] qubit1 qubit to sqrt swap
  * @param[in] qubit2 other qubit to sqrt swap
  * @throws exitWithError
  *      if either \p qubit1 or \p qubit2 are outside [0, \p qureg.numQubitsRepresented), or are equal.
+ * @author Tyson Jones
  */
 void sqrtSwapGate(Qureg qureg, int qb1, int qb2);
 
@@ -1847,7 +2224,8 @@ void sqrtSwapGate(Qureg qureg, int qb1, int qb2);
                 \end{tikzpicture}
     }
     \f]
- *                                                                
+ *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubits the indices of the control qubits 
  * @param[in] controlState the bit values (0 or 1) of each control qubit, upon which to condition
@@ -1862,6 +2240,7 @@ void sqrtSwapGate(Qureg qureg, int qb1, int qb2);
  *      or if \p controlQubits contains \p targetQubit,
  *      or if any element of controlState is not a bit (0 or 1),
  *      or if \p u is not unitary.
+ * @author Tyson Jones
  */
 void multiStateControlledUnitary(
     Qureg qureg, int* controlQubits, int* controlState, const int numControlQubits, 
@@ -1880,6 +2259,7 @@ void multiStateControlledUnitary(
  * \f$\exp(\pm i \theta/2)\f$ where the sign is determined by the parity of
  * the target qubits for that amplitude.
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] qubits a list of the indices of the target qubits 
  * @param[in] numQubits number of target qubits
@@ -1888,6 +2268,7 @@ void multiStateControlledUnitary(
  *      if \p numQubits is outside [1, \p qureg.numQubitsRepresented]),
  *      or if any qubit in \p qubits is outside [0, \p qureg.numQubitsRepresented])
  *      or if any qubit in \p qubits is repeated.
+ * @author Tyson Jones
  */
 void multiRotateZ(Qureg qureg, int* qubits, int numQubits, qreal angle);
 
@@ -1917,6 +2298,7 @@ void multiRotateZ(Qureg qureg, int* qubits, int numQubits, qreal angle);
  * primitive unitaries are performed on the statevector, and double this on 
  * density matrices.
  *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targetQubits a list of the indices of the target qubits 
  * @param[in] targetPaulis a list of the Pauli codes (0=PAULI_I, 1=PAULI_X, 2=PAULI_Y, 3=PAULI_Z) 
@@ -1927,6 +2309,7 @@ void multiRotateZ(Qureg qureg, int* qubits, int numQubits, qreal angle);
  *      if \p numQubits is outside [1, \p qureg.numQubitsRepresented]),
  *      or if any qubit in \p qubits is outside [0, \p qureg.numQubitsRepresented))
  *      or if any qubit in \p qubits is repeated.
+ * @author Tyson Jones
  */
 void multiRotatePauli(Qureg qureg, int* targetQubits, enum pauliOpType* targetPaulis, int numTargets, qreal angle);
 
@@ -1958,6 +2341,7 @@ void multiRotatePauli(Qureg qureg, int* targetQubits, enum pauliOpType* targetPa
  * or its trace (for density matrices). It therefore should scale linearly in time with the number of 
  * specified non-identity Pauli operators, which is bounded by the number of represented qubits.
  *
+ * @ingroup calc
  * @param[in] qureg the register of which to find the expected value, which is unchanged by this function
  * @param[in] targetQubits a list of the indices of the target qubits 
  * @param[in] pauliCodes a list of the Pauli codes (0=PAULI_I, 1=PAULI_X, 2=PAULI_Y, 3=PAULI_Z) 
@@ -1971,6 +2355,7 @@ void multiRotatePauli(Qureg qureg, int* targetQubits, enum pauliOpType* targetPa
  *      or if any qubit in \p targetQubits is repeated,
  *      or if any code in \p pauliCodes is not in {0,1,2,3},
  *      or if \p workspace is not of the same type and dimensions as \p qureg
+ * @author Tyson Jones
  */
 qreal calcExpecPauliProd(Qureg qureg, int* targetQubits, enum pauliOpType* pauliCodes, int numTargets, Qureg workspace);
 
@@ -2006,6 +2391,7 @@ qreal calcExpecPauliProd(Qureg qureg, int* targetQubits, enum pauliOpType* pauli
  * or its trace (for density matrices) multiplied with the corresponding coefficient, and summing these contributions. 
  * It therefore should scale linearly in time with the total number of non-identity specified Pauli operators.
  *
+ * @ingroup calc
  * @param[in] qureg the register of which to find the expected value, which is unchanged by this function
  * @param[in] allPauliCodes a list of the Pauli codes (0=PAULI_I, 1=PAULI_X, 2=PAULI_Y, 3=PAULI_Z) 
  *      of all Paulis involved in the products of terms. A Pauli must be specified for each qubit 
@@ -2018,6 +2404,7 @@ qreal calcExpecPauliProd(Qureg qureg, int* targetQubits, enum pauliOpType* pauli
  *      if any code in \p allPauliCodes is not in {0,1,2,3},
  *      or if numSumTerms <= 0,
  *      or if \p workspace is not of the same type and dimensions as \p qureg
+ * @author Tyson Jones
  */
 qreal calcExpecPauliSum(Qureg qureg, enum pauliOpType* allPauliCodes, qreal* termCoeffs, int numSumTerms, Qureg workspace);
 
@@ -2069,7 +2456,8 @@ qreal calcExpecPauliSum(Qureg qureg, enum pauliOpType* allPauliCodes, qreal* ter
  * Note that in distributed mode, this routine requires that each node contains at least 4 amplitudes.
  * This means an q-qubit register (state vector or density matrix) can be distributed 
  * by at most 2^q/4 nodes.
- *                                                   
+ * 
+ * @ingroup unitary                                            
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targetQubit1 first qubit to operate on, treated as least significant in \p u
  * @param[in] targetQubit2 second qubit to operate on, treated as most significant in \p u
@@ -2079,6 +2467,7 @@ qreal calcExpecPauliSum(Qureg qureg, enum pauliOpType* allPauliCodes, qreal* ter
  *      or if \p targetQubit1 equals \p targetQubit2,
  *      or matrix \p u is not unitary, 
  *      or if each node cannot fit 4 amplitudes in distributed mode.
+ * @author Tyson Jones
  */
 void twoQubitUnitary(Qureg qureg, const int targetQubit1, const int targetQubit2, ComplexMatrix4 u);
 
@@ -2130,7 +2519,8 @@ void twoQubitUnitary(Qureg qureg, const int targetQubit1, const int targetQubit2
  * Note that in distributed mode, this routine requires that each node contains at least 4 amplitudes.
  * This means an q-qubit register (state vector or density matrix) can be distributed 
  * by at most 2^q/4 nodes.
- *                                                                    
+ *
+ * @ingroup unitary                                                          
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubit the control qubit which must be in state 1 to effect the given unitary
  * @param[in] targetQubit1 first qubit to operate on, treated as least significant in \p u
@@ -2140,7 +2530,8 @@ void twoQubitUnitary(Qureg qureg, const int targetQubit1, const int targetQubit2
  *      if \p controlQubit, \p targetQubit1 or \p targetQubit2 are outside [0, \p qureg.numQubitsRepresented),
  *      or if any of \p controlQubit, \p targetQubit1 and \p targetQubit2 are equal,
  *      or matrix \p u is not unitary, 
-  *     or if each node cannot fit 4 amplitudes in distributed mode.
+ *     or if each node cannot fit 4 amplitudes in distributed mode.
+ * @author Tyson Jones
  */
 void controlledTwoQubitUnitary(Qureg qureg, const int controlQubit, const int targetQubit1, const int targetQubit2, ComplexMatrix4 u);
 
@@ -2199,7 +2590,8 @@ void controlledTwoQubitUnitary(Qureg qureg, const int controlQubit, const int ta
  * Note that in distributed mode, this routine requires that each node contains at least 4 amplitudes.
  * This means an q-qubit register (state vector or density matrix) can be distributed 
  * by at most 2^q/4 nodes.
- *                                                                    
+ *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] controlQubits the control qubits which all must be in state 1 to effect the given unitary
  * @param[in] numControlQubits the number of control qubits
@@ -2214,6 +2606,7 @@ void controlledTwoQubitUnitary(Qureg qureg, const int controlQubit, const int ta
  *      are in \p controlQubits,
  *      or if matrix \p u is not unitary,
  *      or if each node cannot fit 4 amplitudes in distributed mode.
+ * @author Tyson Jones
  */
 void multiControlledTwoQubitUnitary(Qureg qureg, int* controlQubits, const int numControlQubits, const int targetQubit1, const int targetQubit2, ComplexMatrix4 u);
 
@@ -2272,7 +2665,8 @@ void multiControlledTwoQubitUnitary(Qureg qureg, int* controlQubits, const int n
  * Note that in distributed mode, this routine requires that each node contains at least 2^\p numTargs amplitudes.
  * This means an q-qubit register (state vector or density matrix) can be distributed 
  * by at most 2^q / 2^\p numTargs nodes.
- *                                                                    
+ *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] targs a list of the target qubits, ordered least significant to most in \p u
  * @param[in] numTargs the number of target qubits
@@ -2282,6 +2676,7 @@ void multiControlledTwoQubitUnitary(Qureg qureg, int* controlQubits, const int n
  *      or if \p targs are not unique,
  *      or if matrix \p u is not unitary,
  *      or if a node cannot fit the required number of target amplitudes in distributed mode.
+ * @author Tyson Jones
  */
 void multiQubitUnitary(Qureg qureg, int* targs, const int numTargs, ComplexMatrixN u);
 
@@ -2333,7 +2728,8 @@ void multiQubitUnitary(Qureg qureg, int* targs, const int numTargs, ComplexMatri
  * Note that in distributed mode, this routine requires that each node contains at least 2^\p numTargs amplitudes.
  * This means an q-qubit register (state vector or density matrix) can be distributed 
  * by at most 2^q / 2^\p numTargs nodes.
- *                                                                    
+ *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] ctrl the control qubit
  * @param[in] targs a list of the target qubits, ordered least to most significant
@@ -2345,6 +2741,7 @@ void multiQubitUnitary(Qureg qureg, int* targs, const int numTargs, ComplexMatri
  *      or if \p targs contains \p ctrl,
  *      or if matrix \p u is not unitary,
  *      or if a node cannot fit the required number of target amplitudes in distributed mode.
+ * @author Tyson Jones
  */
 void controlledMultiQubitUnitary(Qureg qureg, int ctrl, int* targs, const int numTargs, ComplexMatrixN u);
 
@@ -2402,7 +2799,8 @@ void controlledMultiQubitUnitary(Qureg qureg, int ctrl, int* targs, const int nu
  * Note that in distributed mode, this routine requires that each node contains at least 2^\p numTargs amplitudes.
  * This means an q-qubit register (state vector or density matrix) can be distributed 
  * by at most 2^q / 2^\p numTargs nodes.
- *                                                                    
+ *
+ * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
  * @param[in] ctrls a list of the control qubits
  * @param[in] numCtrls the number of control qubits
@@ -2414,6 +2812,7 @@ void controlledMultiQubitUnitary(Qureg qureg, int ctrl, int* targs, const int nu
  *      or if \p ctrls and \p targs are not unique,
  *      or if matrix \p u is not unitary,
  *      or if a node cannot fit the required number of target amplitudes in distributed mode.
+ * @author Tyson Jones
  */
 void multiControlledMultiQubitUnitary(Qureg qureg, int* ctrls, const int numCtrls, int* targs, const int numTargs, ComplexMatrixN u);
 
@@ -2431,6 +2830,7 @@ void multiControlledMultiQubitUnitary(Qureg qureg, int* ctrls, const int numCtrl
  * Note that in distributed mode, this routine requires that each node contains at least 4 amplitudes.
  * This means an q-qubit register can be distributed by at most 2^(q-2) numTargs nodes.
  *
+ * @ingroup decoherence
  * @param[in,out] qureg the density matrix to which to apply the map
  * @param[in] target the target qubit of the map
  * @param[in] ops an array of at most 4 Kraus operators
@@ -2441,6 +2841,8 @@ void multiControlledMultiQubitUnitary(Qureg qureg, int* ctrls, const int numCtrl
  *      or if \p numOps is outside [1, 4],
  *      or if \p ops do not create a completely positive, trace preserving map,
  *      or if a node cannot fit 4 amplitudes in distributed mode.
+ * @author Balint Koczor
+ * @author Tyson Jones (refactored, doc)
  */
 void mixKrausMap(Qureg qureg, int target, ComplexMatrix2 *ops, int numOps);
 
@@ -2460,6 +2862,7 @@ void mixKrausMap(Qureg qureg, int target, ComplexMatrix2 *ops, int numOps);
  * Note that in distributed mode, this routine requires that each node contains at least 16 amplitudes.
  * This means an q-qubit register can be distributed by at most 2^(q-4) numTargs nodes.
  *
+ * @ingroup decoherence
  * @param[in,out] qureg the density matrix to which to apply the map
  * @param[in] target1 the least significant target qubit in \p ops
  * @param[in] target2 the most significant target qubit in \p ops
@@ -2472,6 +2875,8 @@ void mixKrausMap(Qureg qureg, int target, ComplexMatrix2 *ops, int numOps);
  *      or if \p numOps is outside [1, 16],
  *      or if \p ops do not create a completely positive, trace preserving map,
  *      or if a node cannot fit 16 amplitudes in distributed mode.
+ * @author Balint Koczor
+ * @author Tyson Jones (refactored, doc)
  */
 void mixTwoQubitKrausMap(Qureg qureg, int target1, int target2, ComplexMatrix4 *ops, int numOps);
 
@@ -2491,6 +2896,7 @@ void mixTwoQubitKrausMap(Qureg qureg, int target1, int target2, ComplexMatrix4 *
  * Note that in distributed mode, this routine requires that each node contains at least (2N)^2 amplitudes.
  * This means an q-qubit register can be distributed by at most 2^(q-2)/N^2 nodes.
  *
+ * @ingroup decoherence
  * @param[in,out] qureg the density matrix to which to apply the map
  * @param[in] targets a list of target qubit indices, the first of which is treated as least significant in each op in \p ops
  * @param[in] numTargets the length of \p targets
@@ -2504,6 +2910,8 @@ void mixTwoQubitKrausMap(Qureg qureg, int target1, int target2, ComplexMatrix4 *
  *      or if any ComplexMatrixN in \ops does not have op.numQubits == \p numTargets,
  *      or if \p ops do not create a completely positive, trace preserving map,
  *      or if a node cannot fit (2N)^2 amplitudes in distributed mode.
+ * @author Tyson Jones
+ * @author Balint Koczor
  */
 void mixMultiQubitKrausMap(Qureg qureg, int* targets, int numTargets, ComplexMatrixN* ops, int numOps);
 
@@ -2521,11 +2929,14 @@ void mixMultiQubitKrausMap(Qureg qureg, int* targets, int numTargets, ComplexMat
  * We caution this may differ by some definitions of the Hilbert Schmidt distance 
  * by a square-root.
  *
+ * @ingroup calc
  * @param[in] a a density matrix
  * @param[in] b an equally-sized density matrix
  * @throws exitWithError
  *      if either \p a or \p b are not density matrices,
  *      or if \p a and \p have mismatching dimensions.
+ * @author Balint Koczor
+ * @author Tyson Jones (refactored, doc)
  */
 qreal calcHilbertSchmidtDistance(Qureg a, Qureg b);
 
@@ -2538,6 +2949,7 @@ qreal calcHilbertSchmidtDistance(Qureg a, Qureg b);
  * \p qureg1, \p qureg2 and \p out must be all state-vectors, or all density matrices,
  * of equal dimensions. \p out can be one (or both) of \p qureg1 and \p qureg2.
  *
+ * @ingroup init
  * @param[in] fac1 the complex number by which to scale \p qureg1 in the output state 
  * @param[in] qureg1 the first qureg to add to \p out, which is itself unmodified
  * @param[in] fac2 the complex number by which to scale \p qureg2 in the output state 
@@ -2549,6 +2961,7 @@ qreal calcHilbertSchmidtDistance(Qureg a, Qureg b);
  * @throws exitWithError
  *      if \p qureg1, \p qureg2 and \p aren't all state-vectors or all density matrices,
  *      or if the dimensions of \p qureg1, \p qureg2 and \p aren't equal
+ * @author Tyson Jones
  */
 void setWeightedQureg(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Complex facOut, Qureg out);
 
@@ -2588,6 +3001,7 @@ void setWeightedQureg(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Co
  * to the initially-blanked \p outQureg. Ergo it should scale with the total number 
  * of Pauli operators specified (excluding identities), and the qureg dimension. 
  *
+ * @ingroup operator
  * @param[in] inQureg the register containing the state which \p outQureg will be set to, under
  *      the action of the Hermitiain operator specified by the Pauli codes. \p inQureg should be 
  *      unchanged, though may vary slightly due to numerical error.
@@ -2602,6 +3016,7 @@ void setWeightedQureg(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Co
  *      if any code in \p allPauliCodes is not in {0,1,2,3},
  *      or if numSumTerms <= 0,
  *      or if \p inQureg is not of the same type and dimensions as \p outQureg
+ * @author Tyson Jones
  */
 void applyPauliSum(Qureg inQureg, enum pauliOpType* allPauliCodes, qreal* termCoeffs, int numSumTerms, Qureg outQureg);
  
@@ -2633,6 +3048,7 @@ void applyPauliSum(Qureg inQureg, enum pauliOpType* allPauliCodes, qreal* termCo
  * This function is only callable in C, since C++ signatures cannot contain 
  * variable-length 2D arrays.
  *
+ * @ingroup type
  * @param[in] numQubits the number of qubits that the ComplexMatrixN corresponds to.
  *  note the .real and .imag arrays of the returned ComplexMatrixN will have 
  *  2^numQubits rows and columns.
@@ -2643,6 +3059,7 @@ void applyPauliSum(Qureg inQureg, enum pauliOpType* allPauliCodes, qreal* termCo
  * @returns a ComplexMatrixN struct with stack-stored .real and .imag arrays,
  *  which are actually the passed \p reStorage and \p imStorage arrays, populated 
  *  with pointers to the rows of \p re and \p im
+ * @author Tyson Jones
  */
 ComplexMatrixN bindArraysToStackComplexMatrixN(
     int numQubits, qreal re[][1<<numQubits], qreal im[][1<<numQubits], 
@@ -2691,6 +3108,9 @@ ComplexMatrixN bindArraysToStackComplexMatrixN(
  *
  * This macro is only callable in C, since it invokes the function 
  * bindArraysToStackComplexMatrixN() which is only callable in C.
+ *
+ * @ingroup type
+ * @author Tyson Jones
  */
 #define getStaticComplexMatrixN(numQubits, re, im) \
     bindArraysToStackComplexMatrixN( \
