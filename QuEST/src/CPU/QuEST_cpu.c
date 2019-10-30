@@ -27,7 +27,6 @@
 # endif
 
 
-
 /*
  * overloads for consistent API with GPU 
  */

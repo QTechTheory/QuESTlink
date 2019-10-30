@@ -133,7 +133,6 @@ __forceinline__ __device__ long long int insertZeroBits(long long int number, in
 }
 
 
-
 /*
  * state vector and density matrix operations 
  */
@@ -142,6 +141,10 @@ __forceinline__ __device__ long long int insertZeroBits(long long int number, in
 extern "C" {
 #endif
 
+
+/*
+ * state vector and density matrix operations 
+ */
 
 void statevec_setAmps(Qureg qureg, long long int startInd, qreal* reals, qreal* imags, long long int numAmps) {
     
