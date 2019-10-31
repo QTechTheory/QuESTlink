@@ -236,7 +236,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             ]
         (* compute a real vector of density innere products *)
         CalcDensityInnerProducts[rhoId_Integer, omegaIds:{__Integer}] :=
-            CalcDensityInnerProductsVectorInternal
+            CalcDensityInnerProductsVectorInternal[rhoId, omegaIds]
 
         (* checking a product is a valid operator *)
         SetAttributes[isOperatorFormat, HoldAll]
