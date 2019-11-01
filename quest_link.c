@@ -224,8 +224,11 @@ void callable_createDensityQuregs(int numQubits, int numQuregs) {
 /** getters */
 void internal_getAmp(int quregID) {
     Qureg qureg = quregs[quregID];
-    if (!qureg.isCreated)
-        return local_sendQuregNotCreatedError(quregID);
+    if (!qureg.isCreated) {
+        local_sendQuregNotCreatedError(quregID);
+        WSPutSymbol(stdlink, "$Failed");
+        return;
+    }
         
     // get args
     long int row;
@@ -256,6 +259,17 @@ void internal_getAmp(int quregID) {
     WSPutFunction(stdlink, "Complex", 2);
     WSPutReal64(stdlink, amp.real);
     WSPutReal64(stdlink, amp.imag);
+}
+
+void callable_isDensityMatrix(int quregID) {
+    Qureg qureg = quregs[quregID];
+    if (!qureg.isCreated) {
+        local_sendQuregNotCreatedError(quregID);
+        WSPutSymbol(stdlink, "$Failed");
+        return;
+    }
+        
+    WSPutInteger(stdlink, qureg.isDensityMatrix);
 }
 
 
