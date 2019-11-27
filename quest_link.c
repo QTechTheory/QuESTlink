@@ -901,9 +901,12 @@ int local_applyGates(
                     return local_gateWrongNumTargsError("Global phase", numTargs, "0 targets");
                 if (params[paramInd] == 0)
                     break;
-                Complex zero = (Complex) {.real=0, .imag=0};
-                Complex fac = (Complex) {.real=cos(params[paramInd]), .imag=sin(params[paramInd])};
-                setWeightedQureg(zero, qureg, zero, qureg, fac, qureg); // exp(i param)|qureg>
+		// phase does not change density matrices
+		if (!qureg.isDensityMatrix) {
+                    Complex zero = (Complex) {.real=0, .imag=0};
+                    Complex fac = (Complex) {.real=cos(params[paramInd]), .imag=sin(params[paramInd])};
+                    setWeightedQureg(zero, qureg, zero, qureg, fac, qureg); // exp(i param)|qureg>
+		}
                 break;
                 
             default:            
