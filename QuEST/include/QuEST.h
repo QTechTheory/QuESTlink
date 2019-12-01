@@ -26,7 +26,7 @@
  *
  * @author Ania Brown
  * @author Tyson Jones
- * @author Balint Koczor (Kraus maps)
+ * @author Balint Koczor
  * @author Nicolas Vogt of HQS (one-qubit damping)
  */
 
@@ -1123,7 +1123,8 @@ void rotateY(Qureg qureg, const int rotQubit, qreal angle);
 void rotateZ(Qureg qureg, const int rotQubit, qreal angle);
 
 /** Rotate a single qubit by a given angle around a given \ref Vector on the Bloch-sphere.      
- * The vector must not be zero (else an error is thrown), but needn't be unit magnitude.
+ * The vector must not be zero (else an error is thrown), but needn't be unit magnitude, since 
+ * it will be normalised by QuEST.
  *
  * For angle \f$\theta\f$ and axis vector \f$\vec{n}\f$, applies \f$R_{\hat{n}} = \exp \left(- i \frac{\theta}{2} \hat{n} \cdot \vec{\sigma} \right) \f$
  * where \f$\vec{\sigma}\f$ is the vector of Pauli matrices.
@@ -1751,14 +1752,27 @@ Complex calcInnerProduct(Qureg bra, Qureg ket);
  * the resulting scalar product is real and invariant under
  * reordering its arguments as 
  * \f[
-    ((\rho_1, \rho_2))_{HS} = ((\rho_2, \rho_1))_{HS}
+    ((\rho_1, \rho_2))_{HS} = ((\rho_2, \rho_1))_{HS} = \text{Tr}[\rho_1 \rho_2]
  * \f]
- * Also note that if both \p rho1 and \p rho2 are density matrices of pure states
+ * If both \p rho1 and \p rho2 are density matrices of pure states
  * \p bra and \p ket, then the equality holds
  * \f[
     ((\rho_1, \rho_2))_{HS} = |\langle \text{bra} | \text{ket} \rangle|^2.
  * \f]
- *
+ * If either or both of \p rho1 and \p rho2 are non Hermitian (i.e. invalid density 
+ * matrices), then this function returns the real component of the scalar product, 
+ * and discards the imaginary component. That is, it returns 
+ * \f[
+     \text{Re}\{ \text{Tr}[ \rho_1^\dagger \rho_2 ] \} = \text{Re}\{ \text{Tr}[ \rho_2^\dagger \rho_1 ] \}.
+ * \f]
+ * This is still sometimes useful, e.g. in calculating the inner product with an 
+ * anti-commutator, e.g. (for Hermitian \f$ \sigma \f$, \f$ \rho \f$, \f$ H \f$)
+ * \f[
+ *      ((\sigma, H \rho + \rho H))_{HS} = 2 \; \text{Re} \{ ((\sigma, H \rho))_{HS} \} 
+ * \f]
+ * where \f$ H \rho \f$ could be a weighted sum of Pauli products applied to \f$ \rho \f$ 
+ * through applyPauliSum().
+ * 
  * @ingroup calc
  * @param[in] rho1 qureg as a density matrix (to have its values conjugate transposed)
  * @param[in] rho2 qureg as a density matrix
@@ -1905,7 +1919,8 @@ void mixDephasing(Qureg qureg, const int targetQubit, qreal prob);
 void mixTwoQubitDephasing(Qureg qureg, int qubit1, int qubit2, qreal prob);
 
 /** Mixes a density matrix \p qureg to induce single-qubit homogeneous depolarising noise.
- * With probability \p prob, applies (uniformly) either Pauli X, Y, or Z to \p targetQubit.
+ * This is equivalent to, with probability \p prob, uniformly randomly applying 
+ * either Pauli X, Y, or Z to \p targetQubit.
  *
  * This transforms \p qureg = \f$\rho\f$ into the mixed state
  * \f[
@@ -1917,6 +1932,13 @@ void mixTwoQubitDephasing(Qureg qureg, int qubit1, int qubit2, qreal prob);
  * \f]
  * where q = \p targetQubit.
  * \p prob cannot exceed 3/4, at which maximal mixing occurs.
+ * The produced state is equivalently expressed as
+ * \f[
+ *      \left( 1 - \frac{4}{3} \text{prob} \right) \rho +
+ *      \left( \frac{4}{3} \text{prob} \right) \frac{\vec{\bf{1}}}{2}
+ * \f]
+ * where \f$ \frac{\vec{\bf{1}}}{2} \f$ is the maximally mixed state of the target 
+ * qubit.
  *
  * @ingroup decoherence
  * @param[in,out] qureg a density matrix
@@ -1931,28 +1953,34 @@ void mixTwoQubitDephasing(Qureg qureg, int qubit1, int qubit2, qreal prob);
  */
 void mixDepolarising(Qureg qureg, const int targetQubit, qreal prob);
 
-/** Mixes a density matrix \p qureg to induce single-qubit damping (decay to 0 state).
+/** Mixes a density matrix \p qureg to induce single-qubit amplitude damping (decay to 0 state).
  * With probability \p prob, applies damping (transition from 1 to 0 state).
  *
  * This transforms \p qureg = \f$\rho\f$ into the mixed state
  * \f[
- * (1 - \text{prob}) \, \rho + \text{prob} \; \left( 
- *      \sigma^{-} \, \rho \, sigma^{+} 
- * \right)
+    K_0 \rho K_0^\dagger + K_1 \rho K_1^\dagger
  * \f]
- * where q = \p targetQubit.
- * \p prob cannot exceed 1, at which total damping/decay occurs.
+ * where q = \p targetQubit and \f$K_0\f$ and \f$K_1\f$ are Kraus operators
+ * \f[
+        K_0 = \begin{pmatrix} 1 & 0 \\ 0 & \sqrt{1-\text{prob}} \end{pmatrix}, \;\;
+        K_1 = \begin{pmatrix} 0 & \sqrt{\text{prob}} \\ 0 & 0 \end{pmatrix}.
+ * \f]
+ * \p prob cannot exceed 1, at which total damping/decay occurs. Note that unlike
+ * mixDephasing() and mixDepolarising(), this function can increase the purity of a 
+ * mixed state (by, as \p prob becomes 1, gaining certainty that the qubit is in
+ * the 0 state).
  *
  * @ingroup decoherence
  * @param[in,out] qureg a density matrix
- * @param[in] targetQubit qubit upon which to induce depolarising noise
- * @param[in] prob the probability of the depolarising error occuring
+ * @param[in] targetQubit qubit upon which to induce amplitude damping
+ * @param[in] prob the probability of the damping
  * @throws exitWithError
  *      if \p qureg is not a density matrix,
  *      or if \p targetQubit is outside [0, \p qureg.numQubitsRepresented),
  *      or if \p prob is not in [0, 1]
- * @author Nicolas Vogt (HQS)
+ * @author Nicolas Vogt of HQS
  * @author Ania Brown (patched)
+ * @author Tyson Jones (doc)
  */
 void mixDamping(Qureg qureg, const int targetQubit, qreal prob);
 
@@ -1973,25 +2001,37 @@ void mixDamping(Qureg qureg, const int targetQubit, qreal prob);
  * or verbosely
  * \f[
  * (1 - \text{prob}) \, \rho + \frac{\text{prob}}{15} \; \left( 
- *      X_a \, \rho \, X_a + 
+ * \begin{aligned}
+ *      &X_a \, \rho \, X_a + 
  *      X_b \, \rho \, X_b + 
  *      Y_a \, \rho \, Y_a + 
  *      Y_b \, \rho \, Y_b + 
  *      Z_a \, \rho \, Z_a + 
- *      Z_b \, \rho \, Z_b + 
- *      X_a X_b \, \rho \, X_a X_b +
+ *      Z_b \, \rho \, Z_b 
+ *   \\
+ *    + &X_a X_b \, \rho \, X_a X_b +
  *      X_a Y_b \, \rho \, X_a Y_b +
  *      X_a Z_b \, \rho \, X_a Z_b +
- *      Y_a X_b \, \rho \, Y_a X_b +
- *      Y_a Y_b \, \rho \, Y_a Y_b +
+ *      Y_a X_b \, \rho \, Y_a X_b
+ * \\
+ *   + &Y_a Y_b \, \rho \, Y_a Y_b +
  *      Y_a Z_b \, \rho \, Y_a Z_b +
  *      Z_a X_b \, \rho \, Z_a X_b + 
  *      Z_a Y_b \, \rho \, Z_a Y_b + 
  *      Z_a Z_b \, \rho \, Z_a Z_b
+ * \end{aligned}
  * \right)
  * \f]
  * where a = \p qubit1, b = \p qubit2.
+ *
  * \p prob cannot exceed 15/16, at which maximal mixing occurs.
+ *
+ * The produced state is equivalently expressed as
+ * \f[ 
+ *      \left( 1 - \frac{16}{15} \text{prob} \right) \rho + \left( \frac{16}{15} \text{prob} \right) \frac{\vec{\bf{1}}}{2}
+ * \f]
+ * where \f$ \frac{\vec{\bf{1}}}{2} \f$ is the maximally mixed state of the two
+ * target qubits.
  *
  * @ingroup decoherence
  * @param[in,out] qureg a density matrix
@@ -2277,8 +2317,8 @@ void multiRotateZ(Qureg qureg, int* qubits, int numQubits, qreal angle);
  * \f[ 
     \exp \left( - i \theta/2 \bigotimes_{j} \hat{\sigma}_j\right)
  * \f]
- * where \f$\hat{\sigma}_j \in \{1, X, Y, Z\}\f$ is a Pauli operator (indicated by
- * codes 0, 1, 2, 3 respectively in \p targetPaulis, or by enums PAULI_I,
+ * where \f$\hat{\sigma}_j \in \{X, Y, Z\}\f$ is a Pauli operator (indicated by
+ * codes 1, 2, 3 respectively in \p targetPaulis, or by enums 
  * PAULI_X, PAULI_Y and PAULI_Z) operating upon the qubit 
  * \p targetQubits[j], and \f$\theta\f$ is the passed \p angle.
  *  The operators specified in \p targetPaulis act on the corresponding qubit in \p targetQubits. 
@@ -2286,10 +2326,17 @@ void multiRotateZ(Qureg qureg, int* qubits, int numQubits, qreal angle);
  * 
  *     multiRotatePauli(qureg, (int[]) {4,5,8,9}, (int[]) {0,1,2,3}, 4, .1)
  *
- * effects \f$ \exp \left( - i .1/2 X_5 Y_8 Z_9 \right) \f$ on \p qureg, 
+ * effects 
+ * \f[
+  \exp \left( - i .1/2 X_5 Y_8 Z_9 \right) 
+ * \f] on \p qureg, 
  * where unspecified qubits (along with those specified with Pauli code 0) are 
- * assumed to receive the identity operator. Note that specifying the identity 
- * Pauli (code=0) on a qubit is superfluous but allowed for convenience.
+ * assumed to receive the identity operator (excluded from exponentiation). 
+ * Note that specifying the identity 
+ * Pauli (code=0 or PAULI_I) on a qubit is superfluous but allowed for convenience.
+ * This is means a global phase factor of \f$ exp(-i \theta/2) \f$ is NOT induced 
+ * by supplying 0 pauli-codes. Hence, if all \p targetPaulis are identity, then 
+ * this function does nothing to \p qureg.
  *
  * This function effects this unitary by first rotating the qubits which are 
  * nominated to receive X or Y Paulis into alternate basis, performing 
@@ -2360,10 +2407,11 @@ void multiRotatePauli(Qureg qureg, int* targetQubits, enum pauliOpType* targetPa
 qreal calcExpecPauliProd(Qureg qureg, int* targetQubits, enum pauliOpType* pauliCodes, int numTargets, Qureg workspace);
 
 /** Computes the expected value of a sum of products of Pauli operators.
- * Letting \f$ \alpha = \sum_i c_i \otimes_j^{N} \hat{\sigma}_{i,j} \f$ be 
- * the operators indicated by \p allPauliCodes (where \f$ c_i \in \f$ \p termCoeffs and \f$ N = \f$ \p qureg.numQubitsRepresented), 
- * this function computes \f$ \langle \psi | \alpha | \psi \rangle \f$ 
- * if \p qureg = \f$ \psi \f$ is a statevector, and computes \f$ \text{Trace}(\alpha \rho) \f$ 
+ * Let \f$ H = \sum_i c_i \otimes_j^{N} \hat{\sigma}_{i,j} \f$ be 
+ * the operators indicated by \p allPauliCodes (where \f$ c_i \in \f$ \p termCoeffs 
+ * and \f$ N = \f$ \p qureg.numQubitsRepresented).
+ * This function computes \f$ \langle \psi | H | \psi \rangle \f$ 
+ * if \p qureg = \f$ \psi \f$ is a statevector, and computes \f$ \text{Trace}(H \rho) =\text{Trace}(\rho H) \f$ 
  * if \p qureg = \f$ \rho \f$ is a density matrix.
  *
  * \p allPauliCodes is an array of length \p numSumTerms*\p qureg.numQubitsRepresented
@@ -2817,8 +2865,13 @@ void controlledMultiQubitUnitary(Qureg qureg, int ctrl, int* targs, const int nu
 void multiControlledMultiQubitUnitary(Qureg qureg, int* ctrls, const int numCtrls, int* targs, const int numTargs, ComplexMatrixN u);
 
 /** Apply a general single-qubit Kraus map to a density matrix, as specified by at most 
- * four Kraus operators. A Kraus map is also referred to as a "operator-sum representation"
- * of a quantum channel. This allows one to simulate a general single-qubit noise process.
+ * four Kraus operators, \f$K_i\f$ (\p ops). A Kraus map is also referred to as 
+ * a "operator-sum representation" of a quantum channel, and enables the simulation of 
+ * general single-qubit noise process,
+ * by effecting 
+ * \f[
+    \rho \to \sum\limits_i^{\text{numOps}} K_i \rho K_i^\dagger
+ * \f]
  *
  * The Kraus map must be completely positive and trace preserving, which constrains each 
  * \f$ K_i \f$ in \p ops by
@@ -2966,14 +3019,14 @@ qreal calcHilbertSchmidtDistance(Qureg a, Qureg b);
 void setWeightedQureg(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Complex facOut, Qureg out);
 
 /** Modifies \p outQureg to be the result of applying the weighted sum of Pauli products (a Hermitian but not 
- * necessarily unitary operator) to \p inQureg. Note that afterward, \p outQureg may not longer be normalised and ergo not a
+ * necessarily unitary operator) to \p inQureg. Note that afterward, \p outQureg may no longer be normalised and ergo not a
  * statevector or density matrix. Users must therefore be careful passing \p outQureg to
  * other QuEST functions which assume normalisation in order to function correctly.
-
+ *
  * Letting \f$ \alpha = \sum_i c_i \otimes_j^{N} \hat{\sigma}_{i,j} \f$ be 
  * the operators indicated by \p allPauliCodes (where \f$ c_i \in \f$ \p termCoeffs and \f$ N = \f$ \p qureg.numQubitsRepresented), 
  * this function effects \f$ \alpha | \psi \rangle \f$ on statevector \f$ |\psi\rangle \f$
- * and $\alpha \rho$ (matrix multiplication) on density matrix \f$ \rho \f$.
+ * and \f$\alpha \rho\f$ (left matrix multiplication) on density matrix \f$ \rho \f$.
  *
  * \p allPauliCodes is an array of length \p numSumTerms*\p qureg.numQubitsRepresented
  * which specifies which Pauli operators to apply, where 0 = \p PAULI_I, 1 = \p PAULI_X, 
@@ -3019,6 +3072,46 @@ void setWeightedQureg(Complex fac1, Qureg qureg1, Complex fac2, Qureg qureg2, Co
  * @author Tyson Jones
  */
 void applyPauliSum(Qureg inQureg, enum pauliOpType* allPauliCodes, qreal* termCoeffs, int numSumTerms, Qureg outQureg);
+
+/** An internal function called when invalid arguments are passed to a QuEST API
+ * call, which the user can optionally override by redefining. This function is 
+ * a weak symbol, so that users can choose how input errors are handled, by 
+ * redefining it in their own code. Users must ensure that the triggered API 
+ * call does not continue (e.g. the user exits or throws an exception), else 
+ * QuEST will continue with the valid input and likely trigger a seg-fault.
+ * This function is triggered before any internal state-change, hence it is 
+ * safe to interrupt with exceptions.
+ *
+ * E.g. in C
+ * @code
+void invalidQuESTInputError(const char* errMsg, const char* errFunc) {
+ 
+     // log to file
+     printf("ERROR! Writing to file...\n");
+     FILE *fp = fopen("errorlog.txt", "w");
+     fprintf(fp, "incorrect usage of function '%s': %s", errFunc, errMsg);
+     fclose(fp);
+     
+     // exit
+     exit(1);
+} @endcode
+ * 
+ * This function is compatible with C++ exceptions, though note the user of 
+ * extern "C":
+ * @code
+extern "C" void invalidQuESTInputError(const char* errMsg, const char* errFunc) {
+
+    string err = "in function " + string(errFunc) + ": " + string(errMsg);
+    throw std::invalid_argument(err);
+} @endcode
+ *
+ * @ingroup debug
+ * @param[in] errMsg a string describing the nature of the argument error
+ * @param[in] errFunc the name of the invalidly-called API function
+ * @throws exitWithError unless overriden by the user
+ * @author Tyson Jones
+ */
+void invalidQuESTInputError(const char* errMsg, const char* errFunc);
  
 #ifndef __cplusplus
  // hide this function from doxygen

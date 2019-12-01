@@ -4,7 +4,8 @@
  * Provides validation of user input
  *
  * @author Tyson Jones
- * @author Ania Brown (exitWithError(), QuESTAssert(), original testing of qubit indices, unitarity, valid collapse probability)
+ * @author Ania Brown (exitWithError(), QuESTAssert(), original testing of:
+ *        qubit indices, unitarity, valid collapse probability)
  * @author Balint Koczor (Kraus maps)
  * @author Nicolas Vogt of HQS (one-qubit damping)
  */
@@ -20,7 +21,7 @@ extern "C" {
 # include "QuEST_precision.h"
 # include "QuEST_internal.h"
 # include "QuEST_validation.h"
-
+ 
 # include <stdio.h>
 # include <stdlib.h>
 
@@ -34,6 +35,7 @@ typedef enum {
     E_INVALID_OFFSET_NUM_AMPS,
     E_TARGET_IS_CONTROL,
     E_TARGET_IN_CONTROLS,
+    E_CONTROL_TARGET_COLLISION,
     E_TARGETS_NOT_UNIQUE,
     E_CONTROLS_NOT_UNIQUE,
     E_INVALID_NUM_TARGETS,
@@ -79,6 +81,7 @@ static const char* errorMessages[] = {
     [E_INVALID_OFFSET_NUM_AMPS] = "More amplitudes given than exist in the statevector from the given starting index.",
     [E_TARGET_IS_CONTROL] = "Control qubit cannot equal target qubit.",
     [E_TARGET_IN_CONTROLS] = "Control qubits cannot include target qubit.",
+    [E_CONTROL_TARGET_COLLISION] = "Control and target qubits must be disjoint.",
     [E_TARGETS_NOT_UNIQUE] = "The target qubits must be unique.",
     [E_CONTROLS_NOT_UNIQUE] = "The control qubits should be unique.",
     [E_INVALID_NUM_TARGETS] = "Invalid number of target qubits. Must be >0 and <=numQubits.",
@@ -116,7 +119,7 @@ static const char* errorMessages[] = {
 };
 
 /* overwritten for MMA-QuEST */
-void exitWithError(ErrorCode code, const char* func){
+void exitWithError(const char* errMsg, const char* func){
     
     // clear any MMA errors in the pipeline
     WSClearError(stdlink);
@@ -125,7 +128,7 @@ void exitWithError(ErrorCode code, const char* func){
     char err_msg[200];
     sprintf(err_msg, 
         "Incorrect use of function %s: %s",
-        func, errorMessages[code]);
+        func, errMsg);
     // echo error messages in MMA
     WSPutFunction(stdlink, "EvaluatePacket", 1);
     WSPutFunction(stdlink, "Echo", 2);
@@ -148,9 +151,14 @@ void exitWithError(ErrorCode code, const char* func){
     WSClose(stdlink);
     exit(code);
 }
+  
+#pragma weak invalidQuESTInputError
+void invalidQuESTInputError(const char* errMsg, const char* errFunc) {
+    exitWithError(errMsg, errFunc);
+}
 
 void QuESTAssert(int isValid, ErrorCode code, const char* func){
-    if (!isValid) exitWithError(code, func);
+    if (!isValid) invalidQuESTInputError(errorMessages[code], func);
 }
 
 int isComplexUnit(Complex alpha) {
@@ -215,44 +223,34 @@ int isMatrixNUnitary(ComplexMatrixN u) {
     return retVal;
 }
 
-#define macro_isCompletelyPositiveMap(ops, numOps, opDim, retVal) { \
-    /* dist_, elemRe_, elemIm_ and difRe_ must not exist in caller scope */ \
-    qreal dist_ = 0; \
-    qreal elemRe_, elemIm_, difRe_; \
-    for (int n=0; n<(numOps); n++) \
-        /* calculate Hilbert schmidt distance of ConjugateTranspose(op)*op to Identity matrix */ \
-        for (int r=0; r<(opDim); r++) \
-            for (int c=0; c<(opDim); c++) { \
-                /* elem = ConjugateTranspose(op)[r][...] (dot) op[...][c] */ \
-                elemRe_ = 0; \
-                elemIm_ = 0; \
-                for (int i=0; i<(opDim); i++) { \
-                    elemRe_ += ops[n].real[i][r]*ops[n].real[i][c] + ops[n].imag[i][r]*ops[n].imag[i][c]; \
-                    elemIm_ += ops[n].real[i][r]*ops[n].imag[i][c] - ops[n].imag[i][r]*ops[n].real[i][c]; \
+
+#define macro_isCompletelyPositiveMap(ops, numOps, opDim) { \
+    for (int r=0; r<(opDim); r++) { \
+        for (int c=0; c<(opDim); c++) { \
+            qreal elemRe_ = 0; \
+            qreal elemIm_ = 0; \
+            for (int n=0; n<(numOps); n++) { \
+                for (int k=0; k<(opDim); k++) { \
+                    elemRe_ += ops[n].real[k][r]*ops[n].real[k][c] + ops[n].imag[k][r]*ops[n].imag[k][c]; \
+                    elemIm_ += ops[n].real[k][r]*ops[n].imag[k][c] - ops[n].imag[k][r]*ops[n].real[k][c]; \
                 } \
-                /* Hilbert schmidt distance of element to that of identity matrix */ \
-                difRe_ = elemRe_ - ((r==c)? 1:0); \
-                dist_ += difRe_*difRe_ + elemIm_*elemIm_; \
             } \
-    retVal = (dist_ < REAL_EPS); \
+            qreal dist_ = absReal(elemIm_) + absReal(elemRe_ - ((r==c)? 1:0)); \
+            if (dist_ > REAL_EPS) \
+                return 0; \
+        } \
+    } \
+    return 1; \
 }
 int isCompletelyPositiveMap2(ComplexMatrix2 *ops, int numOps) {
-    int dim = 2;
-    int retVal;
-    macro_isCompletelyPositiveMap(ops, numOps, dim, retVal);
-    return retVal;
+    macro_isCompletelyPositiveMap(ops, numOps, 2);    
 }
 int isCompletelyPositiveMap4(ComplexMatrix4 *ops, int numOps) {
-    int dim = 4;
-    int retVal;
-    macro_isCompletelyPositiveMap(ops, numOps, dim, retVal);
-    return retVal;
+    macro_isCompletelyPositiveMap(ops, numOps, 4);
 }
 int isCompletelyPositiveMapN(ComplexMatrixN *ops, int numOps) {
-    int dim = 1 << ops[0].numQubits;
-    int retVal;
-    macro_isCompletelyPositiveMap(ops, numOps, dim, retVal);
-    return retVal;
+    int opDim = 1 << ops[0].numQubits;
+    macro_isCompletelyPositiveMap(ops, numOps, opDim);
 }
 
 int areUniqueQubits(int* qubits, int numQubits) {
@@ -307,7 +305,7 @@ void validateNumTargets(Qureg qureg, const int numTargetQubits, const char* call
 }
 
 void validateNumControls(Qureg qureg, const int numControlQubits, const char* caller) {
-    QuESTAssert(numControlQubits>0 && numControlQubits<=qureg.numQubitsRepresented, E_INVALID_NUM_CONTROLS, caller);
+    QuESTAssert(numControlQubits>0 && numControlQubits<qureg.numQubitsRepresented, E_INVALID_NUM_CONTROLS, caller);
 }
 
 void validateMultiTargets(Qureg qureg, int* targetQubits, const int numTargetQubits, const char* caller) {
@@ -339,7 +337,7 @@ void validateMultiControlsMultiTargets(Qureg qureg, int* controlQubits, const in
     long long int ctrlMask = getQubitBitMask(controlQubits, numControlQubits);
     long long int targMask = getQubitBitMask(targetQubits, numTargetQubits);
     int overlap = ctrlMask & targMask;
-    QuESTAssert(!overlap, E_TARGET_IN_CONTROLS, caller);
+    QuESTAssert(!overlap, E_CONTROL_TARGET_COLLISION, caller);
 }
 
 void validateControlState(int* controlState, const int numControlQubits, const char* caller) {
