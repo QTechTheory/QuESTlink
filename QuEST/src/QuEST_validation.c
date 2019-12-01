@@ -149,7 +149,7 @@ void exitWithError(const char* errMsg, const char* func){
     
     // kill link
     WSClose(stdlink);
-    exit(code);
+    exit(1);
 }
   
 #pragma weak invalidQuESTInputError
