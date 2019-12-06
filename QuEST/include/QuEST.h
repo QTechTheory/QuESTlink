@@ -2710,9 +2710,15 @@ void multiControlledTwoQubitUnitary(Qureg qureg, int* controlQubits, const int n
     }
     \f]
  *
- * Note that in distributed mode, this routine requires that each node contains at least 2^\p numTargs amplitudes.
- * This means an q-qubit register (state vector or density matrix) can be distributed 
- * by at most 2^q / 2^\p numTargs nodes.
+ * Note that in multithreaded mode, each thread will clone 2^\p numTargs amplitudes,
+ * and store these in the runtime stack.
+ * Using t threads, the total memory overhead of this function is t*2^\p numTargs.
+ * For many targets (e.g. 16 qubits), this may cause a stack-overflow / seg-fault 
+ * (e.g. on a 1 MiB stack).
+ * 
+ * Note too that in distributed mode, this routine requires that each node contains 
+ * at least 2^\p numTargs amplitudes in the register. This means an q-qubit register (state vector or density matrix) 
+ * can be distributed by at most 2^q / 2^\p numTargs nodes.
  *
  * @ingroup unitary
  * @param[in,out] qureg object representing the set of all qubits
@@ -2773,7 +2779,13 @@ void multiQubitUnitary(Qureg qureg, int* targs, const int numTargs, ComplexMatri
     }
     \f]
  *
- * Note that in distributed mode, this routine requires that each node contains at least 2^\p numTargs amplitudes.
+ * Note that in multithreaded mode, each thread will clone 2^\p numTargs amplitudes,
+ * and store these in the runtime stack.
+ * Using t threads, the total memory overhead of this function is t*2^\p numTargs.
+ * For many targets (e.g. 16 qubits), this may cause a stack-overflow / seg-fault 
+ * (e.g. on a 1 MiB stack).
+ *
+ * Note too that in distributed mode, this routine requires that each node contains at least 2^\p numTargs amplitudes.
  * This means an q-qubit register (state vector or density matrix) can be distributed 
  * by at most 2^q / 2^\p numTargs nodes.
  *
@@ -2843,6 +2855,12 @@ void controlledMultiQubitUnitary(Qureg qureg, int ctrl, int* targs, const int nu
                 \end{tikzpicture}
     }
     \f]
+ *
+ * Note that in multithreaded mode, each thread will clone 2^\p numTargs amplitudes,
+ * and store these in the runtime stack.
+ * Using t threads, the total memory overhead of this function is t*2^\p numTargs.
+ * For many targets (e.g. 16 qubits), this may cause a stack-overflow / seg-fault 
+ * (e.g. on a 1 MiB stack).
  *
  * Note that in distributed mode, this routine requires that each node contains at least 2^\p numTargs amplitudes.
  * This means an q-qubit register (state vector or density matrix) can be distributed 
