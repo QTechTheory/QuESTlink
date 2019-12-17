@@ -43,6 +43,8 @@ GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qure
     GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
             
     SetQuregMatrix::usage = "SetQuregMatrix[qureg, matr] modifies qureg, overwriting its statevector or density matrix with that passed."
+        
+    GetPauliSumFromCoeffs::usage = "GetPauliSumFromCoeffs[addr] opens or downloads the file at addr (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes, converting this to a symbolic weighted sum of Pauli products. Each line of the file is a separate term (a Pauli product), with format {coeff code1 code2 ... codeN} (exclude braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z term in the product respectively), for an N-qubit operator. Each line must have N+1 terms (including the real decimal coefficient at the beginning)."
             
     CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[ip, port1, port2] connects to a remote QuESTlink server at ip, at the given ports, and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
              
@@ -371,6 +373,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {matr=CalcPauliSumMatrix[Plus @@ {pauliTerms}]},
                 matr + const IdentityMatrix @ Length @ matr 
             ]
+        (* convert a list of Pauli coefficients and codes into a weighted (symbolic) sum of products *)
+        
+        GetPauliSumFromCoeffs[addr_String] :=
+            Plus @@ (#[[1]] Times @@ MapThread[
+                (   Subscript[Switch[#2, 0, Null, 1, X, 2, Y, 3, Z], #1 - 1] /. 
+                    Subscript[Null, _] -> Sequence[] & ), 
+                {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
+            ] &) /@ ReadList[addr, Number, RecordLists -> True];
         
         getIgorLink[id_] :=
         	LinkConnect[
