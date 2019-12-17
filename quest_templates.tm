@@ -231,7 +231,7 @@
 :ArgumentTypes:  { Integer, Integer }
 :ReturnType:     Real
 :End:
-:Evaluate: QuEST`CalcHilbertSchmidtDistance::usage = "CalcHilbertSchmidtDistance[qureg1, qureg2] returns the Hilbert-Schmidt distance (Frobenius norm of the diference) between the given density matrices."
+:Evaluate: QuEST`CalcHilbertSchmidtDistance::usage = "CalcHilbertSchmidtDistance[qureg1, qureg2] returns the Hilbert-Schmidt distance (Frobenius norm of the difference) between the given density matrices."
 
 :Begin:
 :Function:       internal_calcQuregDerivs

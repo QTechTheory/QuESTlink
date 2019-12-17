@@ -95,7 +95,7 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     PackageExport[SWAP]
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
     PackageExport[M]
-    M::usage = "M is a desctructive measurement gate which measures the indicated qubits in the Z basis."
+    M::usage = "M is a destructive measurement gate which measures the indicated qubits in the Z basis."
     PackageExport[P]
     P::usage = "P[val] is a (normalised) projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
 P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
