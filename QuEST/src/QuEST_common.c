@@ -89,13 +89,12 @@ Complex getConjugateScalar(Complex scalar) {
     return conjScalar;
 }
 
-#define macro_setConjugateMatrix(dest, src, dim) { \
+#define macro_setConjugateMatrix(dest, src, dim) \
     for (int i=0; i<dim; i++) \
         for (int j=0; j<dim; j++) { \
             dest.real[i][j] =   src.real[i][j]; \
             dest.imag[i][j] = - src.imag[i][j]; /* negative for conjugate */ \
-        } \
-}
+        } 
 ComplexMatrix2 getConjugateMatrix2(ComplexMatrix2 src) {
     ComplexMatrix2 conj;
     macro_setConjugateMatrix(conj, src, 2);
@@ -424,7 +423,7 @@ void statevec_multiRotatePauli(
     // rotate basis so that exp(Z) will effect exp(Y) and exp(X)
     for (int t=0; t < numTargets; t++) {
         if (targetPaulis[t] == PAULI_I)
-            mask -= 1LL << targetPaulis[t]; // remove target from mask
+            mask -= 1LL << targetQubits[t]; // remove target from mask
         if (targetPaulis[t] == PAULI_X)
             statevec_compactUnitary(qureg, targetQubits[t], uRyAlpha, uRyBeta);
         if (targetPaulis[t] == PAULI_Y)
@@ -432,7 +431,9 @@ void statevec_multiRotatePauli(
         // (targetPaulis[t] == 3) is Z basis
     }
     
-    statevec_multiRotateZ(qureg, mask, (applyConj)? -angle : angle);
+    // does nothing if there are no qubits to 'rotate'
+    if (mask != 0)
+        statevec_multiRotateZ(qureg, mask, (applyConj)? -angle : angle);
     
     // undo X and Y basis rotations
     uRxBeta.imag *= -1;
@@ -536,7 +537,7 @@ void statevec_controlledMultiQubitUnitary(Qureg qureg, int ctrl, int* targets, c
     statevec_multiControlledMultiQubitUnitary(qureg, ctrlMask, targets, numTargets, u);
 }
 
-#define macro_populateKrausOperator(superOp, ops, numOps, opDim) { \
+#define macro_populateKrausOperator(superOp, ops, numOps, opDim) \
     /* clear the superop */ \
     for (int r=0; r < (opDim)*(opDim); r++) \
         for (int c=0; c < (opDim)*(opDim); c++) { \
@@ -556,8 +557,8 @@ void statevec_controlledMultiQubitUnitary(Qureg qureg, int ctrl, int* targets, c
     					superOp->imag[i*(opDim) + k][j*(opDim) + l] += \
                             ops[n].real[i][j]*ops[n].imag[k][l] - \
                             ops[n].imag[i][j]*ops[n].real[k][l];  \
-                    } \
-}
+                    } 
+
 void populateKrausSuperOperator2(ComplexMatrix4* superOp, ComplexMatrix2* ops, int numOps) {
     int opDim = 2;
     macro_populateKrausOperator(superOp, ops, numOps, opDim);
@@ -606,8 +607,8 @@ void densmatr_mixKrausMap(Qureg qureg, int target, ComplexMatrix2 *ops, int numO
 #ifndef _WIN32
 ComplexMatrixN bindArraysToStackComplexMatrixN(
     int numQubits, qreal re[][1<<numQubits], qreal im[][1<<numQubits], 
-    qreal** reStorage, qreal** imStorage)
-{
+    qreal** reStorage, qreal** imStorage
+) {
     ComplexMatrixN m;
     m.numQubits = numQubits;
     m.real = reStorage;
@@ -620,18 +621,17 @@ ComplexMatrixN bindArraysToStackComplexMatrixN(
     }
     return m;
 }
-#define macro_initialiseStackComplexMatrixN(matrix, numQubits, real, imag) { \
+#define macro_initialiseStackComplexMatrixN(matrix, numQubits, real, imag) \
     /* reStorage_ and imStorage_ must not exist in calling scope */ \
     qreal* reStorage_[1<<(numQubits)]; \
     qreal* imStorage_[1<<(numQubits)]; \
-    matrix = bindArraysToStackComplexMatrixN((numQubits), real, imag, reStorage_, imStorage_); \
-}
-#define macro_allocStackComplexMatrixN(matrix, numQubits) { \
+    matrix = bindArraysToStackComplexMatrixN((numQubits), real, imag, reStorage_, imStorage_);
+
+#define macro_allocStackComplexMatrixN(matrix, numQubits) \
     /* reArr_, imArr_, reStorage_, and imStorage_ must not exist in calling scope */ \
     qreal reArr_[1<<(numQubits)][1<<(numQubits)]; \
     qreal imArr_[1<<(numQubits)][1<<(numQubits)]; \
-    macro_initialiseStackComplexMatrixN(matrix, (numQubits), reArr_, imArr_); \
-}
+    macro_initialiseStackComplexMatrixN(matrix, (numQubits), reArr_, imArr_);
 #endif
 
 void densmatr_mixTwoQubitKrausMap(Qureg qureg, int target1, int target2, ComplexMatrix4 *ops, int numOps) {
@@ -655,21 +655,39 @@ void densmatr_mixTwoQubitKrausMap(Qureg qureg, int target1, int target2, Complex
 
 void densmatr_mixMultiQubitKrausMap(Qureg qureg, int* targets, int numTargets, ComplexMatrixN* ops, int numOps) {
 
-    // hot-patch for MSVC support
-    #ifdef _WIN32
-      ComplexMatrixN superOp = createComplexMatrixN(2*numTargets); // anti-pattern: accesses QuEST.c API!
-    #else
-      ComplexMatrixN superOp;
-      macro_allocStackComplexMatrixN(superOp, 2*numTargets);
-    #endif
-
-    populateKrausSuperOperatorN(&superOp, ops, numOps);
-    densmatr_applyMultiQubitKrausSuperoperator(qureg, targets, numTargets, superOp);
+    ComplexMatrixN superOp;
     
-    // hot-patch for MSVC support
-    #ifdef _WIN32
-      destroyComplexMatrixN(superOp); // anti-pattern: accesses QuEST.c API!
-    #endif
+    /* superOp will contain 2^(4 numTargets) complex numbers.
+     * At double precision, superOp will cost additional memory:
+     * numTargs=1   ->   0.25 KiB
+     * numTargs=2   ->   4 KiB 
+     * numTargs=3   ->   64 KiB
+     * numTargs=4   ->   1 MiB
+     * numTargs=5   ->   16 MiB.
+     * At quad precision (usually 10 B per number, but possibly 16 B due to alignment),
+     * this costs at most double.
+     *
+     * Hence, if superOp is kept in the stack, numTargs >= 4 would exceed Windows' 1 MB 
+     * maximum stack-space allocation (numTargs >= 5 exceeding Linux' 8 MB). Therefore, 
+     * for numTargets < 4, superOp will be kept in the stack, else in the heap
+     */
+     
+#ifndef _WIN32
+    if (numTargets < 4) {
+        // everything must live in 'if' since this macro declares local vars
+        macro_allocStackComplexMatrixN(superOp, 2*numTargets);
+        populateKrausSuperOperatorN(&superOp, ops, numOps);
+        densmatr_applyMultiQubitKrausSuperoperator(qureg, targets, numTargets, superOp);
+    }
+    else {
+#endif
+        superOp = createComplexMatrixN(2*numTargets);
+        populateKrausSuperOperatorN(&superOp, ops, numOps);
+        densmatr_applyMultiQubitKrausSuperoperator(qureg, targets, numTargets, superOp);
+        destroyComplexMatrixN(superOp);
+#ifndef _WIN32
+    }
+#endif
 }
 
 void densmatr_mixPauli(Qureg qureg, int qubit, qreal probX, qreal probY, qreal probZ) {

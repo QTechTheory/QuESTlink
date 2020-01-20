@@ -110,6 +110,15 @@
 :End:
 :Evaluate: QuEST`Private`GetAmpInternal::usage = "GetAmpInternal[qureg, row, col] returns complex amplitude with index [row] in a statevector qureg, or index [row][col] of a density matrix."
 
+:Begin:
+:Function:       callable_isDensityMatrix
+:Pattern:        QuEST`IsDensityMatrix[qureg_Integer]
+:Arguments:      { qureg }
+:ArgumentTypes:  { Integer }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`IsDensityMatrix::usage = "IsDensityMatrix[qureg] returns 0 or 1 to indicate whether qureg is a statevector or density matrix (respectively)."
+
 
 
 
@@ -222,7 +231,7 @@
 :ArgumentTypes:  { Integer, Integer }
 :ReturnType:     Real
 :End:
-:Evaluate: QuEST`CalcHilbertSchmidtDistance::usage = "CalcHilbertSchmidtDistance[qureg1, qureg2] returns the Hilbert-Schmidt distance (Frobenius norm of the diference) between the given density matrices."
+:Evaluate: QuEST`CalcHilbertSchmidtDistance::usage = "CalcHilbertSchmidtDistance[qureg1, qureg2] returns the Hilbert-Schmidt distance (Frobenius norm of the difference) between the given density matrices."
 
 :Begin:
 :Function:       internal_calcQuregDerivs

@@ -43,13 +43,16 @@ GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qure
     GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
             
     SetQuregMatrix::usage = "SetQuregMatrix[qureg, matr] modifies qureg, overwriting its statevector or density matrix with that passed."
+        
+    GetPauliSumFromCoeffs::usage = "GetPauliSumFromCoeffs[addr] opens or downloads the file at addr (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes, converting this to a symbolic weighted sum of Pauli products. Each line of the file is a separate term (a Pauli product), with format {coeff code1 code2 ... codeN} (exclude braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z term in the product respectively), for an N-qubit operator. Each line must have N+1 terms (including the real decimal coefficient at the beginning)."
             
-    CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[id] connects to the remote Igor server (on port 50000+id and 50100+id) and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
+    CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[ip, port1, port2] connects to a remote QuESTlink server at ip, at the given ports, and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
              
-    CreateLocalQuESTEnv::usage = "CreateLocalQuESTEnv[] connects to a local Mathematica backend, running single-CPU QuEST. This requires a compatible 'quest_link' executable is in the same directory as the notebook. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
+    CreateLocalQuESTEnv::usage = "CreateLocalQuESTEnv[fn] connects to a local 'quest_link' executable, located at fn, running single-CPU QuEST. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link].
+CreateLocalQuESTEnv[] connects to a 'quest_link' executable in the working directory."
     
-    CreateDownloadedQuESTEnv::usage = "CreateDownloadedQuESTEnv[] downloads a MacOS-CPU-QuEST server from quest.qtechtheory.org, gives it permission to run then locally connects to it. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
-                    
+    CreateDownloadedQuESTEnv::usage = "CreateDownloadedQuESTEnv[os] downloads a single-CPU QuESTlink backend from qtechtheory.org, gives it permission to run then locally connects to it. os is a string indicating the user's operating system (currently only 'MacOS' is supported, which is default). This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
+    
     DestroyQuESTEnv::usage = "DestroyQuESTEnv[link] disconnects from the QuEST link, which may be the remote Igor server or a loca instance, clearing some QuEST function definitions (but not those provided by the QuEST package)."
 
     SetWeightedQureg::usage = "SetWeightedQureg[fac1, q1, fac2, q2, facOut, qOut] modifies qureg qOut to be (facOut qOut + fac1 q1 + fac2 q2). qOut can be one of q1 an q2.
@@ -94,7 +97,7 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
     PackageExport[SWAP]
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
     PackageExport[M]
-    M::usage = "M is a desctructive measurement gate which measures the indicated qubits in the Z basis."
+    M::usage = "M is a destructive measurement gate which measures the indicated qubits in the Z basis."
     PackageExport[P]
     P::usage = "P[val] is a (normalised) projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
 P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
@@ -236,7 +239,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             ]
         (* compute a real vector of density innere products *)
         CalcDensityInnerProducts[rhoId_Integer, omegaIds:{__Integer}] :=
-            CalcDensityInnerProductsVectorInternal
+            CalcDensityInnerProductsVectorInternal[rhoId, omegaIds]
 
         (* checking a product is a valid operator *)
         SetAttributes[isOperatorFormat, HoldAll]
@@ -255,14 +258,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         Operator[op_?isOperatorFormat] :=
             Reverse @ Circuit @ op
 
-        (* destroying a remote qureg, and clearing the local symbol *)
+        (* destroying a qureg, and clearing the local symbol *)
         SetAttributes[DestroyQureg, HoldAll];
         DestroyQureg[qureg_Integer] :=
         	DestroyQuregInternal[qureg]
         DestroyQureg[qureg_Symbol] :=
         	Block[{}, DestroyQuregInternal[ReleaseHold@qureg]; Clear[qureg]]
 
-        (* get a local matrix representation of the remote qureg. GetStateVecInternal provided by WSTP *)
+        (* get a local matrix representation of the qureg. GetStateVecInternal provided by WSTP *)
         GetQuregMatrix[qureg_Integer] :=
         	With[{data = GetStateVecInternal[qureg]},
         		Which[
@@ -277,7 +280,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		]
         	]
 
-        (* overwrite the state of a remote qureg. InitStateFromAmps provided by WSTP *)
+        (* overwrite the state of a qureg. InitStateFromAmps provided by WSTP *)
         SetQuregMatrix[qureg_Integer, elems_List] :=
         	With[{flatelems = N @ 
         		Which[
@@ -370,26 +373,43 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {matr=CalcPauliSumMatrix[Plus @@ {pauliTerms}]},
                 matr + const IdentityMatrix @ Length @ matr 
             ]
+        (* convert a list of Pauli coefficients and codes into a weighted (symbolic) sum of products *)
+        
+        GetPauliSumFromCoeffs[addr_String] :=
+            Plus @@ (#[[1]] Times @@ MapThread[
+                (   Subscript[Switch[#2, 0, Null, 1, X, 2, Y, 3, Z], #1 - 1] /. 
+                    Subscript[Null, _] -> Sequence[] & ), 
+                {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
+            ] &) /@ ReadList[addr, Number, RecordLists -> True];
         
         getIgorLink[id_] :=
         	LinkConnect[
         		With[{host="@129.67.85.74",startport=50000},
         		ToString[startport+id] <> host <> "," <> ToString[startport+id+100] <> host],
         		LinkProtocol->"TCPIP"]
+                
+        getRemoteLink[ip_, port1_, port2_] :=
+        	LinkConnect[
+        		With[{host="@"<>ip},
+        		ToString[port1] <> host <> "," <> ToString[port2] <> host],
+        		LinkProtocol->"TCPIP"]
                     
-        CreateRemoteQuESTEnv[port_Integer] := Install @ getIgorLink @ port
+        CreateRemoteQuESTEnv[ip_String, port1_Integer, port2_Integer] := Install @ getRemoteLink[ip, port1, port2]
                     
-        CreateLocalQuESTEnv[] := With[{fn="quest_link"},
-            If[FileExistsQ[fn], Install[fn],  Echo["Local quest_link executable not found!", "Error: "]; $Failed]
-        ]
+        CreateLocalQuESTEnv[fn_:"quest_link"] := If[
+            FileExistsQ[fn], 
+            Install[fn],  
+            Echo["Local quest_link executable not found!", "Error: "]; $Failed]
         
-        CreateDownloadedQuESTEnv[] := Module[{linkfile},
-            SetDirectory @ NotebookDirectory[];
-            linkfile = URLDownload["https://quest.qtechtheory.org/QuESTlink_MacOS_CPU", "quest_link"];
-            Run["chmod +x quest_link"];
-            Install[linkfile]
+        CreateDownloadedQuESTEnv[os_String:"MacOS"] := Module[{linkfile},
+            If[os == "MacOS",
+                linkfile = URLDownload["https://quest.qtechtheory.org/QuESTlink_MacOS_CPU", "quest_link"];
+                Run["chmod +x quest_link"];
+                Install[linkfile],
+                
+                Echo["Only MacOS is currently supported", "Error:"]; $Failed
+            ]
         ]
-            
                     
         DestroyQuESTEnv[link_] := Uninstall @ link
         

@@ -4,7 +4,8 @@
  * Provides validation of user input
  *
  * @author Tyson Jones
- * @author Ania Brown (exitWithError(), QuESTAssert(), original testing of qubit indices, unitarity, valid collapse probability)
+ * @author Ania Brown (exitWithError(), QuESTAssert(), original testing of:
+ *        qubit indices, unitarity, valid collapse probability)
  * @author Balint Koczor (Kraus maps)
  * @author Nicolas Vogt of HQS (one-qubit damping)
  */
@@ -20,7 +21,7 @@ extern "C" {
 # include "QuEST_precision.h"
 # include "QuEST_internal.h"
 # include "QuEST_validation.h"
-
+ 
 # include <stdio.h>
 # include <stdlib.h>
 
@@ -34,6 +35,7 @@ typedef enum {
     E_INVALID_OFFSET_NUM_AMPS,
     E_TARGET_IS_CONTROL,
     E_TARGET_IN_CONTROLS,
+    E_CONTROL_TARGET_COLLISION,
     E_TARGETS_NOT_UNIQUE,
     E_CONTROLS_NOT_UNIQUE,
     E_INVALID_NUM_TARGETS,
@@ -79,6 +81,7 @@ static const char* errorMessages[] = {
     [E_INVALID_OFFSET_NUM_AMPS] = "More amplitudes given than exist in the statevector from the given starting index.",
     [E_TARGET_IS_CONTROL] = "Control qubit cannot equal target qubit.",
     [E_TARGET_IN_CONTROLS] = "Control qubits cannot include target qubit.",
+    [E_CONTROL_TARGET_COLLISION] = "Control and target qubits must be disjoint.",
     [E_TARGETS_NOT_UNIQUE] = "The target qubits must be unique.",
     [E_CONTROLS_NOT_UNIQUE] = "The control qubits should be unique.",
     [E_INVALID_NUM_TARGETS] = "Invalid number of target qubits. Must be >0 and <=numQubits.",
@@ -107,7 +110,7 @@ static const char* errorMessages[] = {
     [E_INVALID_NUM_SUM_TERMS] = "Invalid number of terms in the Pauli sum. The number of terms must be >0.",
     [E_CANNOT_FIT_MULTI_QUBIT_MATRIX] = "The specified matrix targets too many qubits; the batches of amplitudes to modify cannot all fit in a single distributed node's memory allocation.",
     [E_INVALID_UNITARY_SIZE] = "The matrix size does not match the number of target qubits.",
-    [E_COMPLEX_MATRIX_NOT_INIT] = "The ComplexMatrixN wasn't initialised with createComplexMatrix().",
+    [E_COMPLEX_MATRIX_NOT_INIT] = "The ComplexMatrixN was not successfully created (possibly insufficient memory available).",
     [E_INVALID_NUM_ONE_QUBIT_KRAUS_OPS] = "At least 1 and at most 4 single qubit Kraus operators may be specified.",
     [E_INVALID_NUM_TWO_QUBIT_KRAUS_OPS] = "At least 1 and at most 16 two-qubit Kraus operators may be specified.",
     [E_INVALID_NUM_N_QUBIT_KRAUS_OPS] = "At least 1 and at most 4*N^2 of N-qubit Kraus operators may be specified.",
@@ -116,7 +119,7 @@ static const char* errorMessages[] = {
 };
 
 /* overwritten for MMA-QuEST */
-void exitWithError(ErrorCode code, const char* func){
+void exitWithError(const char* errMsg, const char* func){
     
     // clear any MMA errors in the pipeline
     WSClearError(stdlink);
@@ -125,7 +128,7 @@ void exitWithError(ErrorCode code, const char* func){
     char err_msg[200];
     sprintf(err_msg, 
         "Incorrect use of function %s: %s",
-        func, errorMessages[code]);
+        func, errMsg);
     // echo error messages in MMA
     WSPutFunction(stdlink, "EvaluatePacket", 1);
     WSPutFunction(stdlink, "Echo", 2);
@@ -146,11 +149,16 @@ void exitWithError(ErrorCode code, const char* func){
     
     // kill link
     WSClose(stdlink);
-    exit(code);
+    exit(1);
+}
+  
+#pragma weak invalidQuESTInputError
+void invalidQuESTInputError(const char* errMsg, const char* errFunc) {
+    exitWithError(errMsg, errFunc);
 }
 
 void QuESTAssert(int isValid, ErrorCode code, const char* func){
-    if (!isValid) exitWithError(code, func);
+    if (!isValid) invalidQuESTInputError(errorMessages[code], func);
 }
 
 int isComplexUnit(Complex alpha) {
@@ -215,44 +223,34 @@ int isMatrixNUnitary(ComplexMatrixN u) {
     return retVal;
 }
 
-#define macro_isCompletelyPositiveMap(ops, numOps, opDim, retVal) { \
-    /* dist_, elemRe_, elemIm_ and difRe_ must not exist in caller scope */ \
-    qreal dist_ = 0; \
-    qreal elemRe_, elemIm_, difRe_; \
-    for (int n=0; n<(numOps); n++) \
-        /* calculate Hilbert schmidt distance of ConjugateTranspose(op)*op to Identity matrix */ \
-        for (int r=0; r<(opDim); r++) \
-            for (int c=0; c<(opDim); c++) { \
-                /* elem = ConjugateTranspose(op)[r][...] (dot) op[...][c] */ \
-                elemRe_ = 0; \
-                elemIm_ = 0; \
-                for (int i=0; i<(opDim); i++) { \
-                    elemRe_ += ops[n].real[i][r]*ops[n].real[i][c] + ops[n].imag[i][r]*ops[n].imag[i][c]; \
-                    elemIm_ += ops[n].real[i][r]*ops[n].imag[i][c] - ops[n].imag[i][r]*ops[n].real[i][c]; \
+
+#define macro_isCompletelyPositiveMap(ops, numOps, opDim) { \
+    for (int r=0; r<(opDim); r++) { \
+        for (int c=0; c<(opDim); c++) { \
+            qreal elemRe_ = 0; \
+            qreal elemIm_ = 0; \
+            for (int n=0; n<(numOps); n++) { \
+                for (int k=0; k<(opDim); k++) { \
+                    elemRe_ += ops[n].real[k][r]*ops[n].real[k][c] + ops[n].imag[k][r]*ops[n].imag[k][c]; \
+                    elemIm_ += ops[n].real[k][r]*ops[n].imag[k][c] - ops[n].imag[k][r]*ops[n].real[k][c]; \
                 } \
-                /* Hilbert schmidt distance of element to that of identity matrix */ \
-                difRe_ = elemRe_ - ((r==c)? 1:0); \
-                dist_ += difRe_*difRe_ + elemIm_*elemIm_; \
             } \
-    retVal = (dist_ < REAL_EPS); \
+            qreal dist_ = absReal(elemIm_) + absReal(elemRe_ - ((r==c)? 1:0)); \
+            if (dist_ > REAL_EPS) \
+                return 0; \
+        } \
+    } \
+    return 1; \
 }
 int isCompletelyPositiveMap2(ComplexMatrix2 *ops, int numOps) {
-    int dim = 2;
-    int retVal;
-    macro_isCompletelyPositiveMap(ops, numOps, dim, retVal);
-    return retVal;
+    macro_isCompletelyPositiveMap(ops, numOps, 2);    
 }
 int isCompletelyPositiveMap4(ComplexMatrix4 *ops, int numOps) {
-    int dim = 4;
-    int retVal;
-    macro_isCompletelyPositiveMap(ops, numOps, dim, retVal);
-    return retVal;
+    macro_isCompletelyPositiveMap(ops, numOps, 4);
 }
 int isCompletelyPositiveMapN(ComplexMatrixN *ops, int numOps) {
-    int dim = 1 << ops[0].numQubits;
-    int retVal;
-    macro_isCompletelyPositiveMap(ops, numOps, dim, retVal);
-    return retVal;
+    int opDim = 1 << ops[0].numQubits;
+    macro_isCompletelyPositiveMap(ops, numOps, opDim);
 }
 
 int areUniqueQubits(int* qubits, int numQubits) {
@@ -307,7 +305,7 @@ void validateNumTargets(Qureg qureg, const int numTargetQubits, const char* call
 }
 
 void validateNumControls(Qureg qureg, const int numControlQubits, const char* caller) {
-    QuESTAssert(numControlQubits>0 && numControlQubits<=qureg.numQubitsRepresented, E_INVALID_NUM_CONTROLS, caller);
+    QuESTAssert(numControlQubits>0 && numControlQubits<qureg.numQubitsRepresented, E_INVALID_NUM_CONTROLS, caller);
 }
 
 void validateMultiTargets(Qureg qureg, int* targetQubits, const int numTargetQubits, const char* caller) {
@@ -339,7 +337,7 @@ void validateMultiControlsMultiTargets(Qureg qureg, int* controlQubits, const in
     long long int ctrlMask = getQubitBitMask(controlQubits, numControlQubits);
     long long int targMask = getQubitBitMask(targetQubits, numTargetQubits);
     int overlap = ctrlMask & targMask;
-    QuESTAssert(!overlap, E_TARGET_IN_CONTROLS, caller);
+    QuESTAssert(!overlap, E_CONTROL_TARGET_COLLISION, caller);
 }
 
 void validateControlState(int* controlState, const int numControlQubits, const char* caller) {
@@ -361,6 +359,12 @@ void validateTwoQubitUnitaryMatrix(Qureg qureg, ComplexMatrix4 u, const char* ca
 }
 
 void validateMatrixInit(ComplexMatrixN matr, const char* caller) {
+    
+    /* note that for (most) compilers which don't automatically initialise 
+     * pointers to NULL, this can only be used to check the mallocs in createComplexMatrixN
+     * succeeded. It can not be used to differentiate whether a user actually attempted 
+     * to initialise or create their ComplexMatrixN instance.
+     */
     QuESTAssert(matr.real != NULL && matr.imag != NULL, E_COMPLEX_MATRIX_NOT_INIT, caller);
 }
 
@@ -475,11 +479,11 @@ void validateNumPauliSumTerms(int numTerms, const char* caller) {
 void validateOneQubitKrausMap(Qureg qureg, ComplexMatrix2* ops, int numOps, const char* caller) {
     int opNumQubits = 1;
     int superOpNumQubits = 2*opNumQubits;
-    validateMultiQubitMatrixFitsInNode(qureg, superOpNumQubits, caller);
-    
     int maxNumOps = superOpNumQubits*superOpNumQubits;
     QuESTAssert(numOps > 0 && numOps <= maxNumOps, E_INVALID_NUM_ONE_QUBIT_KRAUS_OPS, caller);
-
+    
+    validateMultiQubitMatrixFitsInNode(qureg, superOpNumQubits, caller);
+    
     int isPos = isCompletelyPositiveMap2(ops, numOps);
     QuESTAssert(isPos, E_INVALID_KRAUS_OPS, caller);
 }
@@ -487,27 +491,27 @@ void validateOneQubitKrausMap(Qureg qureg, ComplexMatrix2* ops, int numOps, cons
 void validateTwoQubitKrausMap(Qureg qureg, ComplexMatrix4* ops, int numOps, const char* caller) {
     int opNumQubits = 2;
     int superOpNumQubits = 2*opNumQubits;
-    validateMultiQubitMatrixFitsInNode(qureg, superOpNumQubits, caller);
-    
     int maxNumOps = superOpNumQubits*superOpNumQubits;
     QuESTAssert(numOps > 0 && numOps <= maxNumOps, E_INVALID_NUM_TWO_QUBIT_KRAUS_OPS, caller);
+    
+    validateMultiQubitMatrixFitsInNode(qureg, superOpNumQubits, caller);
 
     int isPos = isCompletelyPositiveMap4(ops, numOps);
     QuESTAssert(isPos, E_INVALID_KRAUS_OPS, caller);
 }
 
 void validateMultiQubitKrausMap(Qureg qureg, int numTargs, ComplexMatrixN* ops, int numOps, const char* caller) {
+    int opNumQubits = numTargs;
+    int superOpNumQubits = 2*opNumQubits;
+    int maxNumOps = superOpNumQubits*superOpNumQubits;
+    QuESTAssert(numOps>0 && numOps <= maxNumOps, E_INVALID_NUM_N_QUBIT_KRAUS_OPS, caller);
+        
     for (int n=0; n<numOps; n++) {
         validateMatrixInit(ops[n], __func__);
         QuESTAssert(ops[n].numQubits == numTargs, E_MISMATCHING_NUM_TARGS_KRAUS_SIZE, caller);    
     }
-        
-    int opNumQubits = numTargs;
-    int superOpNumQubits = 2*opNumQubits;
-    validateMultiQubitMatrixFitsInNode(qureg, superOpNumQubits, caller);
     
-    int maxNumOps = superOpNumQubits*superOpNumQubits;
-    QuESTAssert(numOps>0 && numOps <= maxNumOps, E_INVALID_NUM_N_QUBIT_KRAUS_OPS, caller);
+    validateMultiQubitMatrixFitsInNode(qureg, superOpNumQubits, caller);
     
     int isPos = isCompletelyPositiveMapN(ops, numOps);
     QuESTAssert(isPos, E_INVALID_KRAUS_OPS, caller);

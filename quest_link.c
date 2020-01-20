@@ -243,8 +243,11 @@ void callable_createDensityQuregs(int numQubits, int numQuregs) {
 /** getters */
 void internal_getAmp(int quregID) {
     Qureg qureg = quregs[quregID];
-    if (!qureg.isCreated)
-        return local_sendQuregNotCreatedError(quregID);
+    if (!qureg.isCreated) {
+        local_sendQuregNotCreatedError(quregID);
+        WSPutSymbol(stdlink, "$Failed");
+        return;
+    }
         
     // get args
     long int row;
@@ -275,6 +278,17 @@ void internal_getAmp(int quregID) {
     WSPutFunction(stdlink, "Complex", 2);
     WSPutReal64(stdlink, amp.real);
     WSPutReal64(stdlink, amp.imag);
+}
+
+void callable_isDensityMatrix(int quregID) {
+    Qureg qureg = quregs[quregID];
+    if (!qureg.isCreated) {
+        local_sendQuregNotCreatedError(quregID);
+        WSPutSymbol(stdlink, "$Failed");
+        return;
+    }
+        
+    WSPutInteger(stdlink, qureg.isDensityMatrix);
 }
 
 
@@ -906,9 +920,12 @@ int local_applyGates(
                     return local_gateWrongNumTargsError("Global phase", numTargs, "0 targets");
                 if (params[paramInd] == 0)
                     break;
-                Complex zero = (Complex) {.real=0, .imag=0};
-                Complex fac = (Complex) {.real=cos(params[paramInd]), .imag=sin(params[paramInd])};
-                setWeightedQureg(zero, qureg, zero, qureg, fac, qureg); // exp(i param)|qureg>
+		// phase does not change density matrices
+		if (!qureg.isDensityMatrix) {
+                    Complex zero = (Complex) {.real=0, .imag=0};
+                    Complex fac = (Complex) {.real=cos(params[paramInd]), .imag=sin(params[paramInd])};
+                    setWeightedQureg(zero, qureg, zero, qureg, fac, qureg); // exp(i param)|qureg>
+		}
                 break;
                 
             default:            

@@ -7,6 +7,7 @@
  *
  * @author Ania Brown
  * @author Tyson Jones
+ * @author Balint Koczor
  */
 
 # include "QuEST.h"
@@ -1831,11 +1832,12 @@ void statevec_multiControlledMultiQubitUnitaryLocal(Qureg qureg, long long int c
     long long int thisInd00; // this thread's index of |..0..0..> (target qubits = 0) 
     long long int thisGlobalInd00; // the global (between all nodes) index of this thread's |..0..0..> state
     long long int ind;   // each thread's iteration of amplitudes to modify
-    int i, t, r, c, g;  // each thread's iteration of amps and targets 
+    int i, t, r, c;  // each thread's iteration of amps and targets 
     qreal reElem, imElem;  // each thread's iteration of u elements
     
-    // each thread/task will record and modify numTargAmps amplitudes, but do so in global arrays
+    // each thread/task will record and modify numTargAmps amplitudes, privately
     // (of course, tasks eliminated by the ctrlMask won't edit their allocation)
+
     // strtucture: [thread0..., thread1..., ]
     /*
      * hot-patch to remove VLA for MSVC support:
@@ -1859,8 +1861,8 @@ void statevec_multiControlledMultiQubitUnitaryLocal(Qureg qureg, long long int c
 # ifdef _OPENMP
 # pragma omp parallel \
     default  (none) \
-    shared   (reVec,imVec, numTasks,numTargAmps,globalIndStart, ctrlMask,targs,sortedTargs,u, ampInds,reAmps,imAmps) \
-    private  (thisTask,thisInd00,thisGlobalInd00,ind,i,t,r,c,g,reElem,imElem) 
+    shared   (reVec,imVec, numTasks,numTargAmps,globalIndStart, ctrlMask,targs,sortedTargs,u) \
+    private  (thisTask,thisInd00,thisGlobalInd00,ind,i,t,r,c,reElem,imElem,  ampInds,reAmps,imAmps) 
 # endif
     {
 # ifdef _OPENMP
@@ -1887,24 +1889,23 @@ void statevec_multiControlledMultiQubitUnitaryLocal(Qureg qureg, long long int c
                     if (extractBit(t, i))
                         ind = flipBit(ind, targs[t]);
                 
-                // update this tasks's allocation of the global arrays
-                g = thisTask*numTargAmps + i; 
-                ampInds[g] = ind;
-                reAmps [g] = reVec[ind];
-                imAmps [g] = imVec[ind];
+                // update this tasks's private arrays
+                ampInds[i] = ind;
+                reAmps [i] = reVec[ind];
+                imAmps [i] = imVec[ind];
             }
             
             // modify this tasks's target amplitudes
             for (r=0; r < numTargAmps; r++) {
-                ind = ampInds[thisTask*numTargAmps + r];
+                ind = ampInds[r];
                 reVec[ind] = 0;
                 imVec[ind] = 0;
+                
                 for (c=0; c < numTargAmps; c++) {
-                    g = thisTask*numTargAmps + c;
                     reElem = u.real[r][c];
                     imElem = u.imag[r][c];
-                    reVec[ind] += reAmps[g]*reElem - imAmps[g]*imElem;
-                    imVec[ind] += reAmps[g]*imElem + imAmps[g]*reElem;
+                    reVec[ind] += reAmps[c]*reElem - imAmps[c]*imElem;
+                    imVec[ind] += reAmps[c]*imElem + imAmps[c]*reElem;
                 }
             }
         }
