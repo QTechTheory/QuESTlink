@@ -1837,13 +1837,23 @@ void statevec_multiControlledMultiQubitUnitaryLocal(Qureg qureg, long long int c
     
     // each thread/task will record and modify numTargAmps amplitudes, privately
     // (of course, tasks eliminated by the ctrlMask won't edit their allocation)
-    long long int ampInds[numTargAmps];
-    qreal reAmps[numTargAmps];
-    qreal imAmps[numTargAmps];
 
+    // strtucture: [thread0..., thread1..., ]
+    /*
+     * hot-patch to remove VLA for MSVC support:
+     * qureg.numAmpsPerChunk < 2^50 = 
+     * OLD CODE:
+    long long int ampInds[qureg.numAmpsPerChunk];  // = numTasks*numTargAmps
+    qreal reAmps[qureg.numAmpsPerChunk];
+    qreal imAmps[qureg.numAmpsPerChunk];
+     */
+    long long int* ampInds = malloc(qureg.numAmpsPerChunk * sizeof *ampInds);
+    qreal* reAmps = malloc(qureg.numAmpsPerChunk * sizeof *reAmps);
+    qreal* imAmps = malloc(qureg.numAmpsPerChunk * sizeof *imAmps);
+    
     // we need a sorted targets list to find thisInd00 for each task.
     // we can't modify targets, because the user-ordering of targets matters in u
-    int sortedTargs[numTargs]; 
+    int sortedTargs[100]; // hot-patch to remove VLA
     for (int t=0; t < numTargs; t++) 
         sortedTargs[t] = targs[t];
     qsort(sortedTargs, numTargs, sizeof(int), qsortComp);
@@ -1900,6 +1910,14 @@ void statevec_multiControlledMultiQubitUnitaryLocal(Qureg qureg, long long int c
             }
         }
     }
+    
+    /*
+     * hot-patch to remove VLA for MSVC support:
+     * freeing above malloc'd arrays
+     */
+    free(ampInds);
+    free(reAmps);
+    free(imAmps);
 }
 
 void statevec_unitaryLocal(Qureg qureg, const int targetQubit, ComplexMatrix2 u)

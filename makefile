@@ -11,8 +11,8 @@
 #                                                                      #
 #======================================================================#
 
-# operating system, one of {MACOSX, LINUX}
-OS = LINUX
+# operating system, one of {WINDOWS, MACOSX, LINUX}
+OS = WINDOWS
 
 # name of the executable to create
 EXE = quest_link
@@ -23,14 +23,11 @@ SOURCES = quest_link quest_templates.tm
 # path to QuEST library from root directory
 QUEST_DIR = QuEST
 
-# path to WSTP libs from root directory 
-WSTP_DIR = WSTP
-
 # compiler to use, which should support both C and C++, to be wrapped by GPU/MPI compilers
-COMPILER = gcc-8
+COMPILER = cl
 
-# type of above compiler, one of {GNU, INTEL, CLANG}, used for setting compiler flags
-COMPILER_TYPE = GNU
+# type of above compiler, one of {GNU, INTEL, CLANG, MSVC}, used for setting compiler flags
+COMPILER_TYPE = MSVC
 
 # hardwares to target: 1 means use, 0 means don't use
 MULTITHREADED = 0
@@ -63,18 +60,22 @@ ifneq ($(SILENT), 1)
     # check $OS is correct
     ifneq ($(OS), LINUX)
     ifneq ($(OS), MACOSX)
-        $(error OS must be LINUX or MACOSX)
+		ifneq ($(OS), WINDOWS)
+        $(error OS must be WINDOWS, LINUX or MACOSX)
     endif
     endif
+		endif
 
     # check $COMPILER_TYPE is correct
     ifneq ($(COMPILER_TYPE), CLANG)
     ifneq ($(COMPILER_TYPE), GNU)
     ifneq ($(COMPILER_TYPE), INTEL)
-        $(error COMPILER_TYPE must be one of CLANG, GNU or INTEL)
+		ifneq ($(COMPILER_TYPE), MSVC)
+        $(error COMPILER_TYPE must be one of CLANG, GNU, MSVC or INTEL)
     endif
     endif
     endif
+		endif
 
     # distributed GPU not supported
     ifeq ($(DISTRIBUTED), 1)
@@ -146,19 +147,27 @@ endif
 #                                                                      #
 #======================================================================#
 
+# resolving paths
+# path to WSTP libs from root directory
+ifeq ($(OS), WINDOWS)
+    WSTP_DIR = WSTP/windows
+else
+    WSTP_DIR = WSTP/linux
+endif
 
 #
 # --- libraries
 #
 
-LIBS = -lm
 ifeq ($(OS), MACOSX)
-    LIBS += -lc++ $(WSTP_DIR)/macosx_libWSTPi4.36.a -framework Foundation
+    LIBS = -lm -lc++ $(WSTP_DIR)/macosx_libWSTPi4.36.a -framework Foundation
+else ifeq ($(OS), WINDOWS)
+    LIBS = kernel32.lib user32.lib gdi32.lib $(WSTP_DIR)/windows_wstp32i4.lib $(WSTP_DIR)/windows_wstp32i4m.lib $(WSTP_DIR)/windows_wstp32i4s.lib
 else ifeq ($(OS), LINUX)
+    LIBS = -lm -ldl -lutil -lpthread -luuid -lrt -lstdc++ $(WSTP_DIR)/linux_libWSTP64i4.a
     ifeq ($(GPUACCELERATED), 0)
         LIBS += -Wl,--no-as-needed
-	endif
-    LIBS += -ldl -lutil -lpthread -luuid -lrt -lstdc++ $(WSTP_DIR)/linux_libWSTP64i4.a	
+    endif
 endif
 
 
@@ -207,6 +216,8 @@ ifeq ($(MULTITHREADED), 1)
         THREAD_FLAGS = -fopenmp
     else ifeq ($(COMPILER_TYPE), INTEL)
         THREAD_FLAGS = -qopenmp
+    else ifeq ($(COMPILER_TYPE), MSVC)
+        THREAD_FLAGS = -openmp
     endif
 else
     THREAD_FLAGS =
@@ -216,11 +227,13 @@ endif
 C_CLANG_FLAGS = -O2 -std=c99 -mavx -Wall -DQuEST_PREC=$(PRECISION)
 C_GNU_FLAGS = -O2 -std=c99 -mavx -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 C_INTEL_FLAGS = -O2 -std=c99 -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
+C_MSVC_FLAGS = -O2 -W0 -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN32 -D_DEBUG -D_WINDOWS -Fo$@
 
 # c++
 CPP_CLANG_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION)
 CPP_GNU_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 CPP_INTEL_FLAGS = -O2 -std=c++11 -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
+CPP_MSVC_FLAGS = -O2 -W0 -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN32 -D_DEBUG -D_WINDOWS -Fo$@
 
 # wrappers
 CPP_CUDA_FLAGS = -O2 -arch=compute_$(GPU_COMPUTE_CAPABILITY) -code=sm_$(GPU_COMPUTE_CAPABILITY) -DQuEST_PREC=$(PRECISION) -ccbin $(COMPILER)
@@ -235,6 +248,9 @@ else ifeq ($(COMPILER_TYPE), GNU)
 else ifeq ($(COMPILER_TYPE), INTEL)
     C_FLAGS = $(C_INTEL_FLAGS)
     CPP_FLAGS = $(CPP_INTEL_FLAGS)
+else ifeq ($(COMPILER_TYPE), MSVC)
+    C_FLAGS = $(C_MSVC_FLAGS)
+    CPP_FLAGS = $(CPP_MSVC_FLAGS)
 endif
 
 ifeq ($(TEST), 1)
@@ -317,12 +333,12 @@ else ifeq ($(DISTRIBUTED), 1)
 else
 
   %.o: %.c quest_templates.tm.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(COMPILER) $(C_FLAGS) $(QUEST_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(COMPILER) $(C_FLAGS) $(QUEST_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
-	
+	$(COMPILER) $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+
   %.o: %.cpp
 	$(COMPILER) $(CPP_FLAGS) $(QUEST_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.cpp
@@ -369,23 +385,38 @@ ifeq ($(OS), MACOSX)
     PREP = macosx_wsprep
 else ifeq ($(OS), LINUX)
     PREP = linux_wsprep
+else ifeq ($(OS), WINDOWS)
+    PREP = windows_wsprep.exe
 endif
 
 quest_templates.tm.c:
 	$(WSTP_DIR)/$(PREP) quest_templates.tm -o quest_templates.tm.c
 
 
-
 #
 # --- clean
 #
 
+ifeq ($(OS), MACOSX)
+    REM = /bin/rm -f
+else ifeq ($(OS), LINUX)
+    REM = /bin/rm -f
+else ifeq ($(OS), WINDOWS)
+    REM = del
+endif
+
+ifeq ($(OS), WINDOWS)
+    EXECFILE = $(EXE).exe
+else
+    EXECFILE = $(EXE)
+endif
+
 .PHONY:		clean veryclean
 clean:
-			/bin/rm -f *.o $(EXE)
-			/bin/rm -f quest_templates.tm.c
+			$(REM) *.o $(EXECFILE)
+			$(REM) quest_templates.tm.c
 veryclean:	clean
-			/bin/rm -f *.h~ *.c~ makefile~
+			$(REM) *.h~ *.c~ makefile~
 
 
 

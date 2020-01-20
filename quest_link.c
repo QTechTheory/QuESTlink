@@ -130,7 +130,9 @@ int local_writeToErrorMsgBuffer(char* msg, ...) {
 int local_resizeQuregs(void) {
     
     // copy quregs
-    Qureg copy[currMaxNumQuregs];
+    //Qureg copy[currMaxNumQuregs]; 
+    Qureg* copy = malloc(currMaxNumQuregs * sizeof *copy); // hot-patch to remove VLA for MSCV support
+    
     for (int i=0; i < currMaxNumQuregs; i++)
         copy[i] = quregs[i];
         
@@ -154,6 +156,10 @@ int local_resizeQuregs(void) {
     
     if (success)
         currMaxNumQuregs *= 2;
+        
+    // free hot-patch array
+    free(copy);
+        
     return success;
 }
 
@@ -196,7 +202,11 @@ int wrapper_destroyQureg(int id) {
 }
 
 void callable_createQuregs(int numQubits, int numQuregs) {
-    int ids[numQuregs];
+  
+  
+    //int ids[numQuregs];
+    int* ids = malloc(numQuregs * sizeof *ids); // hot-patch to remove VLA
+    
     for (int i=0; i < numQuregs; i++) {
         ids[i] = wrapper_createQureg(numQubits);
         if (ids[i] == -1) {
@@ -205,10 +215,16 @@ void callable_createQuregs(int numQubits, int numQuregs) {
         }
     }
     WSPutIntegerList(stdlink, ids, numQuregs);
+    
+    // free hot-patch arr 
+    free(ids);
 }
 
 void callable_createDensityQuregs(int numQubits, int numQuregs) {
-    int ids[numQuregs];
+  
+  //int ids[numQuregs];
+  int* ids = malloc(numQuregs * sizeof *ids); // hot-patch to remove VLA
+  
     for (int i=0; i < numQuregs; i++) {
         ids[i] = wrapper_createDensityQureg(numQubits);
         if (ids[i] == -1) {
@@ -217,6 +233,9 @@ void callable_createDensityQuregs(int numQubits, int numQuregs) {
         }
     }
     WSPutIntegerList(stdlink, ids, numQuregs);
+    
+    // free hot-patch arr 
+    free(ids);
 } 
 
 
@@ -1428,11 +1447,18 @@ qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
     }
     
     // safely cast pauli codes
-    enum pauliOpType pauliCodes[numPaulis];
+    //enum pauliOpType pauliCodes[numPaulis];
+    enum pauliOpType* pauliCodes = malloc(numPaulis * sizeof *pauliCodes); // hot-patch to remove VLA
+    
     for (int i=0; i<numPaulis; i++)
         pauliCodes[i] = pauliIntCodes[i];
     
-    return calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace);
+    qreal val = calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace);
+    
+    // free hot-patched malloc 
+    free(pauliCodes);
+    
+    return val;
 }
 
 void local_loadPauliSumFromMMA(int numQb, int* numTerms, enum pauliOpType** arrPaulis, qreal** termCoeffs) {
@@ -1572,12 +1598,18 @@ void callable_getAllQuregs(void) {
     
     // collect all created quregs
     int numQuregs = 0;
-    int idList[currMaxNumQuregs];
+    
+    // int idList[currMaxNumQuregs];
+    int* idList = malloc(currMaxNumQuregs * sizeof *idList);   // hot-patch to remove VLA
+    
     for (int id=0; id < currMaxNumQuregs; id++)
         if (quregs[id].isCreated)
             idList[numQuregs++] = id;
     
     WSPutIntegerList(stdlink, idList, numQuregs);
+    
+    // free hot-patch arr 
+    free(idList); 
 }
 
 

@@ -479,7 +479,7 @@ qreal statevec_calcExpecPauliProd(Qureg qureg, int* targetQubits, enum pauliOpTy
 qreal statevec_calcExpecPauliSum(Qureg qureg, enum pauliOpType* allCodes, qreal* termCoeffs, int numSumTerms, Qureg workspace) {
     
     int numQb = qureg.numQubitsRepresented;
-    int targs[numQb];
+    int targs[100]; // hot-patch to remove VLA
     for (int q=0; q < numQb; q++)
         targs[q] = q;
         
@@ -493,7 +493,7 @@ qreal statevec_calcExpecPauliSum(Qureg qureg, enum pauliOpType* allCodes, qreal*
 void statevec_applyPauliSum(Qureg inQureg, enum pauliOpType* allCodes, qreal* termCoeffs, int numSumTerms, Qureg outQureg) {
     
     int numQb = inQureg.numQubitsRepresented;
-    int targs[numQb];
+    int targs[100]; // hot-patch to remove VLA
     for (int q=0; q < numQb; q++)
         targs[q] = q;
         
@@ -588,7 +588,7 @@ void densmatr_applyTwoQubitKrausSuperoperator(Qureg qureg, int target1, int targ
 
 void densmatr_applyMultiQubitKrausSuperoperator(Qureg qureg, int *targets, int numTargets, ComplexMatrixN superOp) {
     long long int ctrlMask = 0;
-    int allTargets[2*numTargets];
+    int allTargets[100]; // hot-patch to remove VLA
     for (int t=0; t < numTargets; t++) {
         allTargets[t] = targets[t];
         allTargets[t+numTargets] = targets[t] + qureg.numQubitsRepresented;
@@ -603,6 +603,8 @@ void densmatr_mixKrausMap(Qureg qureg, int target, ComplexMatrix2 *ops, int numO
     densmatr_applyKrausSuperoperator(qureg, target, superOp);
 }
 
+// hot-patch for MSVC support
+#ifndef _WIN32
 ComplexMatrixN bindArraysToStackComplexMatrixN(
     int numQubits, qreal re[][1<<numQubits], qreal im[][1<<numQubits], 
     qreal** reStorage, qreal** imStorage
@@ -630,13 +632,25 @@ ComplexMatrixN bindArraysToStackComplexMatrixN(
     qreal reArr_[1<<(numQubits)][1<<(numQubits)]; \
     qreal imArr_[1<<(numQubits)][1<<(numQubits)]; \
     macro_initialiseStackComplexMatrixN(matrix, (numQubits), reArr_, imArr_);
+#endif
 
 void densmatr_mixTwoQubitKrausMap(Qureg qureg, int target1, int target2, ComplexMatrix4 *ops, int numOps) {
     
-    ComplexMatrixN superOp;
-    macro_allocStackComplexMatrixN(superOp, 4);
+    // hot-patch for MSVC support
+    #ifdef _WIN32
+      ComplexMatrixN superOp = createComplexMatrixN(4); // anti-pattern: accesses QuEST.c API!
+    #else
+      ComplexMatrixN superOp;
+      macro_allocStackComplexMatrixN(superOp, 4);
+    #endif
+    
     populateKrausSuperOperator4(&superOp, ops, numOps);
     densmatr_applyTwoQubitKrausSuperoperator(qureg, target1, target2, superOp);
+    
+    // hot-patch for MSVC support
+    #ifdef _WIN32
+      destroyComplexMatrixN(superOp); // anti-pattern: accesses QuEST.c API!
+    #endif
 }
 
 void densmatr_mixMultiQubitKrausMap(Qureg qureg, int* targets, int numTargets, ComplexMatrixN* ops, int numOps) {
@@ -658,6 +672,7 @@ void densmatr_mixMultiQubitKrausMap(Qureg qureg, int* targets, int numTargets, C
      * for numTargets < 4, superOp will be kept in the stack, else in the heap
      */
      
+#ifndef _WIN32
     if (numTargets < 4) {
         // everything must live in 'if' since this macro declares local vars
         macro_allocStackComplexMatrixN(superOp, 2*numTargets);
@@ -665,18 +680,21 @@ void densmatr_mixMultiQubitKrausMap(Qureg qureg, int* targets, int numTargets, C
         densmatr_applyMultiQubitKrausSuperoperator(qureg, targets, numTargets, superOp);
     }
     else {
+#endif
         superOp = createComplexMatrixN(2*numTargets);
         populateKrausSuperOperatorN(&superOp, ops, numOps);
         densmatr_applyMultiQubitKrausSuperoperator(qureg, targets, numTargets, superOp);
         destroyComplexMatrixN(superOp);
+#ifndef _WIN32
     }
+#endif
 }
 
 void densmatr_mixPauli(Qureg qureg, int qubit, qreal probX, qreal probY, qreal probZ) {
     
     // convert pauli probabilities into Kraus map
     const int numOps = 4;
-    ComplexMatrix2 ops[numOps];
+    ComplexMatrix2 ops[4];
     for (int n=0; n < numOps; n++)
         ops[n] = (ComplexMatrix2) {.real={{0}}, .imag={{0}}};
     
