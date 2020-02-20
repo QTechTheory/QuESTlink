@@ -508,6 +508,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[SWAP, {}, {targs___}, col_] := {
         	(drawCross[#,col]&) /@ {targs},
         	Line[{{col+.5,.5+Min@targs},{col+.5,.5+Max@targs}}]}
+        drawGate[Rz, {ctrls__}, {targ_}, col_] := {
+            drawControls[{ctrls,targ},{targ},col],
+            Line[{{col+.5,.5+Min@ctrls},{col+.5,.5+Max@ctrls}}]}
             
         (* multi-qubit gate graphics *)
         drawGate[Rz, {}, targs_List, col_] := {
