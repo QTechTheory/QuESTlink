@@ -13,6 +13,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+// for QuEST-MMA
+# include "wstp.h"
     
 # include "QuEST.h"
 # include "QuEST_precision.h"
@@ -123,14 +126,40 @@ static const char* errorMessages[] = {
     [E_MISMATCHING_NUM_TARGS_KRAUS_SIZE] = "Every Kraus operator must be of the same number of qubits as the number of targets."
 };
 
-void exitWithError(const char* msg, const char* func) {
-    printf("!!!\n");
-    printf("QuEST Error in function %s: %s\n", func, msg);
-    printf("!!!\n");
-    printf("exiting..\n");
+/* overwritten for MMA-QuEST */
+void exitWithError(const char* errMsg, const char* func){
+    
+    // clear any MMA errors in the pipeline
+    WSClearError(stdlink);
+    
+    // create error message
+    char err_msg[200];
+    sprintf(err_msg, 
+        "Incorrect use of function %s: %s",
+        func, errMsg);
+    // echo error messages in MMA
+    WSPutFunction(stdlink, "EvaluatePacket", 1);
+    WSPutFunction(stdlink, "Echo", 2);
+    WSPutString(stdlink, err_msg);
+    WSPutString(stdlink, "Error: ");
+    WSEndPacket(stdlink);
+    
+    WSPutFunction(stdlink, "EvaluatePacket", 1);
+    WSPutFunction(stdlink, "Echo", 2);
+    WSPutString(stdlink, "The QuEST link has been killed (and qureg's cleared) and must be re-established");
+    WSPutString(stdlink, "Error: ");
+    WSEndPacket(stdlink);
+    
+    // abort the user's calling code
+    WSPutFunction(stdlink, "Abort", 0);
+    WSEndPacket(stdlink);
+    WSNextPacket(stdlink);
+    
+    // kill link
+    WSClose(stdlink);
     exit(1);
 }
-
+  
 #pragma weak invalidQuESTInputError
 void invalidQuESTInputError(const char* errMsg, const char* errFunc) {
     exitWithError(errMsg, errFunc);
