@@ -172,7 +172,6 @@ void initClassicalState(Qureg qureg, long long int stateInd) {
         statevec_initClassicalState(qureg, stateInd);
     
     qasm_recordInitClassical(qureg, stateInd);
-    
 }
 
 void initPureState(Qureg qureg, Qureg pure) {
@@ -544,7 +543,7 @@ void controlledPhaseShift(Qureg qureg, const int idQubit1, const int idQubit2, q
 }
 
 void multiControlledPhaseShift(Qureg qureg, int *controlQubits, int numControlQubits, qreal angle) {
-    validateMultiControls(qureg, controlQubits, numControlQubits, __func__);
+    validateMultiQubits(qureg, controlQubits, numControlQubits, __func__);
     
     statevec_multiControlledPhaseShift(qureg, controlQubits, numControlQubits, angle);
     if (qureg.isDensityMatrix) {
@@ -594,7 +593,7 @@ void controlledPhaseFlip(Qureg qureg, const int idQubit1, const int idQubit2) {
 }
 
 void multiControlledPhaseFlip(Qureg qureg, int *controlQubits, int numControlQubits) {
-    validateMultiControls(qureg, controlQubits, numControlQubits, __func__);
+    validateMultiQubits(qureg, controlQubits, numControlQubits, __func__);
     
     statevec_multiControlledPhaseFlip(qureg, controlQubits, numControlQubits);
     if (qureg.isDensityMatrix) {
@@ -712,28 +711,28 @@ long long int getNumAmps(Qureg qureg) {
 
 qreal getRealAmp(Qureg qureg, long long int index) {
     validateStateVecQureg(qureg, __func__);
-    validateStateIndex(qureg, index, __func__);
+    validateAmpIndex(qureg, index, __func__);
     
     return statevec_getRealAmp(qureg, index);
 }
 
 qreal getImagAmp(Qureg qureg, long long int index) {
     validateStateVecQureg(qureg, __func__);
-    validateStateIndex(qureg, index, __func__);
+    validateAmpIndex(qureg, index, __func__);
     
     return statevec_getImagAmp(qureg, index);
 }
 
 qreal getProbAmp(Qureg qureg, long long int index) {
     validateStateVecQureg(qureg, __func__);
-    validateStateIndex(qureg, index, __func__);
+    validateAmpIndex(qureg, index, __func__);
     
     return statevec_getProbAmp(qureg, index);
 }
 
 Complex getAmp(Qureg qureg, long long int index) {
     validateStateVecQureg(qureg, __func__);
-    validateStateIndex(qureg, index, __func__);
+    validateAmpIndex(qureg, index, __func__);
     
     Complex amp;
     amp.real = statevec_getRealAmp(qureg, index);
@@ -743,8 +742,8 @@ Complex getAmp(Qureg qureg, long long int index) {
 
 Complex getDensityAmp(Qureg qureg, long long int row, long long int col) {
     validateDensityMatrQureg(qureg, __func__);
-    validateStateIndex(qureg, row, __func__);
-    validateStateIndex(qureg, col, __func__);
+    validateAmpIndex(qureg, row, __func__);
+    validateAmpIndex(qureg, col, __func__);
     
     long long ind = row + col*(1LL << qureg.numQubitsRepresented);
     Complex amp;

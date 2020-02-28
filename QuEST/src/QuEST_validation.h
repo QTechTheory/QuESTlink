@@ -19,6 +19,8 @@ extern "C" {
 
 void validateCreateNumQubits(int numQubits, const char* caller);
 
+void validateAmpIndex(Qureg qureg, long long int ampInd, const char* caller);
+
 void validateStateIndex(Qureg qureg, long long int stateInd, const char* caller);
 
 void validateTarget(Qureg qureg, int targetQubit, const char* caller);
@@ -26,6 +28,8 @@ void validateTarget(Qureg qureg, int targetQubit, const char* caller);
 void validateControlTarget(Qureg qureg, int controlQubit, int targetQubit, const char* caller);
 
 void validateUniqueTargets(Qureg qureg, int qubit1, int qubit2, const char* caller);
+
+void validateMultiQubits(Qureg qureg, int* qubits, const int numQubits, const char* caller);
 
 void validateMultiTargets(Qureg qurge, int* targetQubits, const int numTargetQubits, const char* caller);
 

@@ -286,12 +286,12 @@ void destroyQureg(Qureg qureg, QuESTEnv env);
  * return from functions.
  * 
  * One can instead use getStaticComplexMatrixN() to create a ComplexMatrixN struct 
- * in the stack (which doesn't need to be explicitly freed).
+ * in the stack (which doesn't need to be later destroyed).
  *
  * @ingroup type
  * @param[in] numQubits the number of qubits of which the returned ComplexMatrixN will correspond
  * @returns a dynamic ComplexMatrixN struct, that is one where the .real and .imag
- *  fields are arrays kept in the heap and must be freed.
+ *  fields are arrays kept in the heap and must be later destroyed.
  * @author Tyson Jones
  */
 ComplexMatrixN createComplexMatrixN(int numQubits);
@@ -410,9 +410,11 @@ void initBlankState(Qureg qureg);
 void initZeroState(Qureg qureg);
 
 /** Initialise a set of \f$ N \f$ qubits to the plus state
- * \f$ {| + \rangle}^{\otimes N} = \frac{1}{\sqrt{2^N}} (| 0 \rangle + | 1 \rangle)^{\otimes N} \f$.
+ * \f$ {| + \rangle}^{\otimes N} = \frac{1}{\sqrt{2^N}} (| 0 \rangle + | 1 \rangle)^{\otimes N} \f$
+ * (and similarly \f$ |+\rangle \langle+| \f$ for density matrices).
  * This is the product state of \f$N\f$ qubits where every classical state is uniformly 
- * populated with real coefficient \f$\frac{1}{\sqrt{2^N}}\f$.
+ * populated (with real coefficient \f$\frac{1}{\sqrt{2^N}}\f$ in the state-vector 
+ * and \f$\frac{1}{{2^N}}\f$ in the density-matrix).
  * This is equivalent to applying a Hadamard to every qubit in the zero state: 
  * \f$ \hat{H}^{\otimes N} {|0\rangle}^{\otimes N} \f$
  *
@@ -423,14 +425,28 @@ void initZeroState(Qureg qureg);
  */
 void initPlusState(Qureg qureg);
 
-/** Initialise a set of \f$ N \f$ qubits to the classical state with index \p stateInd.
- * Note \f$ | 00 \dots 00 \rangle \f$ has \p stateInd 0, \f$ | 00 \dots 01 \rangle \f$ has \p stateInd 1, 
- * \f$ | 11 \dots 11 \rangle \f$ has \p stateInd \f$ 2^N - 1 \f$, etc.
- * Subsequent calls to getProbAmp will yield 0 for all indices except \p stateInd.
+/** Initialise a set of \f$ N \f$ qubits to the classical state (also known as a 
+ * "computational basis state") with index \p stateInd. State-vectors will be 
+ * initialised to \f$ | \text{stateInd} \rangle \f$, and density-matrices to
+ * \f$ | \text{stateInd} \rangle \langle \text{stateInd} | \f$
+ *
+ * Classical states are indexed from zero, so that \p stateInd = 0 produces
+ * \f$ | 00 \dots 00 \rangle \f$,
+ * and  \p stateInd = 1 produces \f$ | 00 \dots 01 \rangle \f$, and 
+ * \p stateInd = \f$ 2^N - 1 \f$ produces 
+ * \f$ | 11 \dots 11 \rangle \f$.
+ * Subsequent calls to getProbAmp will yield 0 for all indices except \p stateInd,
+ * and the phase of \p stateInd's amplitude will be 1 (real).
+ *
+ * This function can be used to initialise a \p Qureg in a specific binary state
+ * (e.g. \p 11001) using a binary literal (supported by only some compilers):
+ *
+ *      initClassicalState(qureg, 0b11001);
  *
  * @ingroup init
  * @param[in,out] qureg the object representing the set of qubits to be initialised
  * @param[in] stateInd the index (0 to the number of amplitudes, exclusive) of the state to give probability 1
+ * @throws exitWithError if \p stateInd is outside [0, 2^N-1].
  * @author Tyson Jones
  */
 void initClassicalState(Qureg qureg, long long int stateInd);
@@ -442,6 +458,8 @@ void initClassicalState(Qureg qureg, long long int stateInd);
  * @ingroup init
  * @param[in,out] qureg the object representing the set of qubits to be initialised
  * @param[in] pure the pure state to be copied or to give probability 1 in qureg
+ * @throws exitWithError if \p qureg and \p pure have mismatching dimensions, or if 
+ *  \p pure is a density matrix.
  * @author Tyson Jones
  */
 void initPureState(Qureg qureg, Qureg pure);
@@ -472,7 +490,7 @@ void initDebugState(Qureg qureg);
  */
 void initStateFromAmps(Qureg qureg, qreal* reals, qreal* imags);
 
-/** Edit qureg to adopt the subset of amplitudes passed in \p reals and \p imags.
+/** Overwrites a subset of the amplitudes in \p qureg, with those passed in \p reals and \p imags.
  * Only amplitudes with indices in [\p startInd, \p startInd + \p numAmps] will be changed, which means
  * the new state may not be L2 normalised. This allows the user to initialise a custom state by 
  * setting batches of amplitudes.
@@ -484,7 +502,10 @@ void initStateFromAmps(Qureg qureg, qreal* reals, qreal* imags);
  * @param[in] imags array of the imaginary components of the new amplitudes
  * @param[in] numAmps the length of each of the reals and imags arrays.
  * @throws exitWithError
- *      if \p qureg is not a statevector (i.e. is a density matrix)
+ *      if \p qureg is not a statevector (i.e. is a density matrix),
+ *      or if \p startInd is outside [0, \p qureg.numAmpsTotal],
+ *      or if \p numAmps is outside [0, \p qureg.numAmpsTotal],
+ *      or if \p numAmps + \p startInd is >= qureg.numAmpsTotal.
  * @author Tyson Jones
  */
 void setAmps(Qureg qureg, long long int startInd, qreal* reals, qreal* imags, long long int numAmps);
@@ -939,15 +960,28 @@ qreal getProbAmp(Qureg qureg, long long int index);
  */
 Complex getDensityAmp(Qureg qureg, long long int row, long long int col);
 
-/** A debugging function which calculates the probability of being in any state, which should always be 1.
- * For pure states, this is the norm of the entire state vector and for mixed states, is the trace of
- * the density matrix.
- * Note this calculation utilises Kahan summation for greaster accuracy, but is
+/** A debugging function which calculates the probability of the qubits in \p qureg 
+ * being in any state, which should always be 1 for correctly normalised states 
+ * (hence returning a real number).
+ * For state-vectors \f$ \psi \f$, this is the norm of the entire state-vector 
+ * (the sum of the absolute-value-squared of every amplitude):
+ * \f[
+ *      \sum\limits_i |\psi_i|^2
+ * \f]
+ * and for density matrices \f$ \rho \f$, it is the trace:
+ * \f[
+ *      \text{Trace}(\rho) = \sum\limits_i \rho_{i,i} \;
+ * \f]
+ *
+ * For un-normalised density matrices (those directly modified or initialised by the user), 
+ * this function returns the real component of the trace.
+ *
+ * Note this calculation utilises Kahan summation for greater accuracy, and hence is
  * not parallelised and so will be slower than other functions.
  *
  * @ingroup calc
  * @param[in] qureg object representing a set of qubits
- * @return total probability
+ * @return the total probability of the qubits in \p qureg being in any state
  * @author Ania Brown (state-vector)
  * @author Tyson Jones (density matrix, doc)
  */
@@ -1654,6 +1688,15 @@ void controlledPauliY(Qureg qureg, const int controlQubit, const int targetQubit
 /** Gives the probability of a specified qubit being measured in the given outcome (0 or 1).
  * This performs no actual measurement and does not change the state of the qubits.
  * 
+ * For state-vectors, this function works by summing the absolute-value-squared of every 
+ * amplitude in the state-vector for which \p measureQubit \p = \p 0. 
+ * If \p outcome \p = \p 1, it returns \p 1 minus this value. Hence for unnormalised 
+ * state-vectors, this result will differ from the absolute-value-squared of every 
+ * amplitude where \p measureQubit \p = \p outcome.
+ *
+ * For density matrices, this function sums the diagonal values (should be real)
+ * corresponding to \p measureQubit \p = \p 0 (returning 1 minus this if \p outcome \p = \p 1).
+ * 
  * @ingroup calc
  * @param[in] qureg object representing the set of all qubits
  * @param[in] measureQubit qubit to study
@@ -1667,12 +1710,18 @@ void controlledPauliY(Qureg qureg, const int controlQubit, const int targetQubit
  */
 qreal calcProbOfOutcome(Qureg qureg, const int measureQubit, int outcome);
 
-/** Updates the state vector to be consistent with measuring the measure qubit in the given outcome (0 or 1), and returns the probability of such a measurement outcome. 
- * This is effectively performing a measurement and forcing the outcome.
- * This is an irreversible change to the state vector, whereby incompatible states
- * in the state vector are given zero amplitude and the remaining states are renormalised.
- * Exits with error if the given outcome has ~zero probability, and so cannot be
+/** Updates \p qureg to be consistent with measuring \p measureQubit in the given 
+ * \p outcome (0 or 1), and returns the probability of such a measurement outcome. 
+ * This is effectively performing a projection, or a measurement with a forced outcome.
+ * This is an irreversible change to the state, whereby computational states
+ * inconsistant with the outcome are given zero amplitude and the \p qureg is renormalised.
+ * Exits with error if the given outcome has a near zero probability, and so cannot be
  * collapsed into.
+ *
+ * Note that the collapse probably used for renormalisation is calculated for 
+ * \p outcome \p = \p 0, and assumed 1 minus this probability if \p outcome \p = \p 1.
+ * Hence this routine will not correctly project un-normalised quregs onto 
+ * \p outcome \p = \p 1.
  * 
  * @ingroup normgate
  * @param[in,out] qureg object representing the set of all qubits
@@ -1721,10 +1770,17 @@ int measure(Qureg qureg, int measureQubit);
 int measureWithStats(Qureg qureg, int measureQubit, qreal *outcomeProb);
 
 /** Computes the inner product \f$ \langle \text{bra} | \text{ket} \rangle \f$ of two 
- * equal-size state vectors. The same \p qureg may be passed as both \p bra and \p ket, 
+ * equal-size state vectors, given by 
+ * \f[ 
+     \langle \text{bra} | \text{ket} \rangle = \sum_i {\text{bra}_i}^* \; \times \; \text{ket}_i 
+ * \f]
+ * The same \p qureg may be passed as both \p bra and \p ket, 
  * though we recommend users check state-vector normalisation with \p calcTotalProb which 
  * employs Kahan summation for greater accuracy.
  * Neither state-vector is modified.
+ *
+ * This function returns the correct inner product even if \p bra and \p ket are 
+ * not correctly normalised states.
  *
  * @ingroup calc
  * @param[in] bra qureg to be the 'bra' (i.e. have its values conjugate transposed) in the inner product 
@@ -1978,9 +2034,9 @@ void mixDepolarising(Qureg qureg, const int targetQubit, qreal prob);
  *      if \p qureg is not a density matrix,
  *      or if \p targetQubit is outside [0, \p qureg.numQubitsRepresented),
  *      or if \p prob is not in [0, 1]
- * @author Nicolas Vogt of HQS
- * @author Ania Brown (patched)
- * @author Tyson Jones (doc)
+ * @author Nicolas Vogt of HQS (local CPU)
+ * @author Ania Brown (GPU, patched local CPU)
+ * @author Tyson Jones (distributed, doc)
  */
 void mixDamping(Qureg qureg, const int targetQubit, qreal prob);
 
@@ -2105,6 +2161,10 @@ void mixDensityMatrix(Qureg combineQureg, qreal prob, Qureg otherQureg);
  * n is the number of qubits. The minimum purity is achieved for the maximally mixed state identity/2^n.
  *
  * This function does not accept state-vectors, which clearly have purity 1.
+ * 
+ * Note this function will give incorrect results for non-Hermitian Quregs (i.e. 
+ * invalid density matrices), which will disagree with \f$\text{Tr}(\rho^2)\f$.
+ * Instead, this function returns \f$\sum_{ij} |\rho_{ij}|^2 \f$.
  *
  * @ingroup calc
  * @param[in] qureg a density matrix of which to measure the purity
@@ -2117,17 +2177,21 @@ void mixDensityMatrix(Qureg combineQureg, qreal prob, Qureg otherQureg);
  */
 qreal calcPurity(Qureg qureg);
 
-/** Calculates the fidelity of qureg (a statevector or density matrix) against 
+/** Calculates the fidelity of \p qureg (a statevector or density matrix) against 
  * a reference pure state (necessarily a statevector).
- * For two pure states, this computes 
+ * If \p qureg is a state-vector, this function computes 
  * \f[ 
     |\langle \text{qureg} | \text{pureState} \rangle|^2
  * \f]
- * For a mixed and pure state, this computes 
+ * If \p qureg is a density matrix, this function computes 
  * \f[ 
     \langle \text{pureState} | \text{qureg} | \text{pureState} \rangle
  * \f]
- * In either case, the fidelity lies in [0, 1].
+ * In either case, the returned fidelity lies in [0, 1] (assuming both input 
+ * states have valid normalisation). If any of the input \p Quregs are not 
+ * normalised, this function will return the real component of the correct 
+ * linear algebra calculation.
+ *
  * The number of qubits represented in \p qureg and \p pureState must match.
  * 
  * @ingroup calc
@@ -2377,7 +2441,7 @@ void multiRotatePauli(Qureg qureg, int* targetQubits, enum pauliOpType* targetPa
  * applies to the least-significant qubit, i.e. that with index 0).
  *
  * \p workspace must be a register with the same type (statevector vs density matrix) and dimensions 
- * (numQubitsRepresented) as \p qureg, and is used as working space. When this function returns, \p qureg 
+ * (number of represented qubits) as \p qureg, and is used as working space. When this function returns, \p qureg 
  * will be unchanged and \p workspace will be set to \f$ \sigma | \psi \rangle \f$ (if \p qureg is a statevector)
  * or \f$ \sigma \rho \f$ (if \p qureg is a density matrix). NOTE that this last quantity is NOT the result of applying 
  * the paulis as unitaries, \f$ \sigma^\dagger \rho \sigma \f$, but is instead the result of their direct 
@@ -2429,7 +2493,7 @@ qreal calcExpecPauliProd(Qureg qureg, int* targetQubits, enum pauliOpType* pauli
  * applies to the least-significant qubit, i.e. that with index 0).
  * 
  * \p workspace must be a register with the same type (statevector vs density matrix) and dimensions 
- * (numQubitsRepresented) as \p qureg, and is used as working space. When this function returns, \p qureg 
+ * (number of represented qubits) as \p qureg, and is used as working space. When this function returns, \p qureg 
  * will be unchanged and \p workspace will be set to \p qureg pre-multiplied with the final Pauli product.
  * NOTE that if \p qureg is a density matrix, \p workspace will become \f$ \hat{\sigma} \rho \f$ 
  * which is itself not a density matrix (it is distinct from \f$ \hat{\sigma}^\dagger \rho \hat{\sigma} \f$).
@@ -3008,6 +3072,9 @@ void mixMultiQubitKrausMap(Qureg qureg, int* targets, int numTargets, ComplexMat
  * \f]
  * We caution this may differ by some definitions of the Hilbert Schmidt distance 
  * by a square-root.
+ *
+ * This function correctly returns the result of the above formulations even when 
+ * \p a and \p b are incorrectly normalised (i.e. are general matrices).
  *
  * @ingroup calc
  * @param[in] a a density matrix
