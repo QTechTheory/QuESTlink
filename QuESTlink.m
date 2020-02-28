@@ -61,6 +61,9 @@ SetWeightedQureg[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + 
     DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram.
 DrawCircuit[circuit, numQubits] generates a circuit diagram with numQubits, useful for overriding the automated inferrence of the number of qubits if incorrect.
 DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagram."
+
+    CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic expression for the given unitary circuit, which may contain undefined symbols. The number of qubits is inferred from the circuit indices (0 to maximum specified).
+CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the number of present qubits."
             
     (* 
      * gate symbols, needed exporting so that their use below does not refer to a private var      
@@ -432,6 +435,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         GetAmp[qureg_Integer, row_Integer, col_Integer] := GetAmpInternal[qureg, row, col]
         
         
+        
+        
         (*
          * Below is only front-end code for generating circuit diagrams from
          * from circuit the same format circuit specification
@@ -641,6 +646,128 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         ]
         DrawCircuit[circ_List, opts:OptionsPattern[]] :=
             DrawCircuit[circ, getNumQubitsInCircuit[circ], opts]
+            
+        
+        
+        
+        (*
+         * Below are front-end functions for 
+         * generating analytic expressions from
+         * circuit specifications
+         *)
+         
+        (* generate a swap matrix between any pair of qubits *)
+        getAnalSwapMatrix[qb1_, qb1_, numQb_] :=
+            IdentityMatrix @ Power[2,numQb]
+        getAnalSwapMatrix[qb1_, qb2_, numQb_] /; (qb1 > qb2) :=
+    	    getAnalSwapMatrix[qb2, qb1, numQb]
+        getAnalSwapMatrix[qb1_, qb2_, numQb_] := Module[
+           	{swap, iden, p0,l1,l0,p1, block=Power[2, qb2-qb1]},
+           	
+           	(* as per Lemma 3.1 of arxiv.org/pdf/1711.09765.pdf *)
+           	iden = IdentityMatrix[block/2];
+           	p0 = KroneckerProduct[iden, {{1,0},{0,0}}];
+           	l0 = KroneckerProduct[iden, {{0,1},{0,0}}];
+           	l1 = KroneckerProduct[iden, {{0,0},{1,0}}];
+           	p1 = KroneckerProduct[iden, {{0,0},{0,1}}];
+           	swap = ArrayFlatten[{{p0,l1},{l0,p1}}];
+           	
+           	(* pad swap matrix to full size *)
+           	If[qb1 > 0, 
+           		swap = KroneckerProduct[swap, IdentityMatrix@Power[2,qb1]]];
+           	If[qb2 < numQb-1, 
+           		swap = KroneckerProduct[IdentityMatrix@Power[2,numQb-qb2-1], swap]];
+           	swap
+        ]
+        
+        (* build a numQb-matrix from op matrix *)
+        getAnalFullMatrix[ctrls_, targs_, op_, numQb_] := Module[
+        	{swaps=IdentityMatrix@Power[2,numQb], unswaps, swap, newctrls, newtargs, i,j, matr},
+            
+            (* make copies of user lists so we don't modify *)
+        	unswaps = swaps;
+        	newctrls = ctrls;
+        	newtargs = targs;
+        	
+        	(* swap targs to {0,1,...} *)
+        	For[i=0, i<Length[newtargs], i++,
+        		If[i != newtargs[[i+1]],
+        			swap = getAnalSwapMatrix[i, newtargs[[i+1]], numQb];
+        			swaps = swap . swaps;
+        			unswaps = unswaps . swap;
+        			newctrls = newctrls /. i->newtargs[[i+1]];
+        			newtargs = newtargs /. i->newtargs[[i+1]];
+        		]
+        	];
+        	
+        	(* swap ctrls to {Length[targs], Length[targs]+1, ...} *)
+        	For[i=0, i<Length[newctrls], i++,
+        		j = Length[newtargs] + i;
+        		If[j != newctrls[[i+1]],
+        			swap = getAnalSwapMatrix[j, newctrls[[i+1]], numQb];
+        			swaps = swap . swaps;
+        			unswaps = unswaps . swap;
+        			newctrls = newctrls /. j->newctrls[[i+1]]
+        		]
+        	];
+        	
+        	(* create controlled(op) *)
+        	matr = IdentityMatrix @ Power[2, Length[ctrls]+Length[targs]];
+        	matr[[-Length[op];;,-Length[op];;]] = op;
+        	
+        	(* pad to full size *)
+        	If[numQb > Length[targs]+Length[ctrls],
+        		matr = KroneckerProduct[
+        			IdentityMatrix@Power[2, numQb-Length[ctrls]-Length[targs]], matr]
+        	];
+        	
+        	(* apply the swaps on controlled(op) *)
+        	matr = unswaps . matr . swaps;
+        	matr
+        ]
+        
+        (* map gate symbols to matrices *)
+        getAnalGateMatrix[Subscript[H, _]] = {{1,1},{1,-1}}/Sqrt[2];
+        getAnalGateMatrix[Subscript[X, _]] = PauliMatrix[1];
+        getAnalGateMatrix[Subscript[Y, _]] = PauliMatrix[2];
+        getAnalGateMatrix[Subscript[Z, _]] = PauliMatrix[3];
+        getAnalGateMatrix[Subscript[S, _]] = {{1,0},{0,I}};
+        getAnalGateMatrix[Subscript[T, _]] = {{1,0},{0,Exp[I \[Pi]/4]}};
+        getAnalGateMatrix[Subscript[SWAP, _,_]] = {{1,0,0,0},{0,0,1,0},{0,1,0,0},{0,0,0,1}};
+        getAnalGateMatrix[Subscript[U, __][m_]] = m;
+        getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
+        getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]];
+        getAnalGateMatrix[Subscript[Ry, _][a_]] = MatrixExp[-I a/2 PauliMatrix[2]];
+        getAnalGateMatrix[Subscript[Rz, _][a_]] = MatrixExp[-I a/2 PauliMatrix[3]];
+        getAnalGateMatrix[R[a_, pauli_]] := MatrixExp[-I a/2 getAnalGateMatrix @ pauli];
+        getAnalGateMatrix[R[a_, paulis_Times]] := MatrixExp[-I a/2 * KroneckerProduct @@ (getAnalGateMatrix /@ List @@ paulis)]
+        getAnalGateMatrix[Subscript[C, __][g_]] := getAnalGateMatrix[g]
+        
+        (* extract ctrls from gate symbols *)
+        getAnalGateControls[Subscript[C, c_List][___]] := c
+        getAnalGateControls[Subscript[C, c__][___]] := {c}
+        getAnalGateControls[_] := {}
+            
+        (* extract targets from gate symbols *)
+        getAnalGateTargets[Subscript[U, t_List][_]] := t
+        getAnalGateTargets[Subscript[U, t__][_]] := {t}
+        getAnalGateTargets[R[_, Subscript[_, t_]]] := {t}
+        getAnalGateTargets[R[_, paulis_Times]] := getAnalGateTargets /@ List @@ paulis // Flatten // Reverse
+        getAnalGateTargets[Subscript[C, __][g_]] := getAnalGateTargets[g]
+        getAnalGateTargets[Subscript[_, t__]] := {t}
+        getAnalGateTargets[Subscript[_, t__][_]] := {t}
+        
+        (* convert a symbolic circuit into an analytic matrix *)
+        CalcCircuitMatrix[gates_List, numQb_Integer] := With[{
+        	matrices = getAnalFullMatrix[
+        		getAnalGateControls@#, 
+        		getAnalGateTargets@#, 
+        		getAnalGateMatrix@#, numQb
+            ]& /@ gates},
+        	Dot @@ Reverse @ matrices
+        ]
+        CalcCircuitMatrix[gates_List] :=
+        	CalcCircuitMatrix[gates, 1 + Max @ Cases[gates, (Subscript[_, q__]|Subscript[_, q__][__]):> Max @ q, \[Infinity]]]
             
     End[ ]
                                        
