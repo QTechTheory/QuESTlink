@@ -27,7 +27,7 @@ QUEST_DIR = QuEST
 WSTP_DIR = WSTP
 
 # compiler to use, which should support both C and C++, to be wrapped by GPU/MPI compilers
-COMPILER = gcc-8
+COMPILER = g++-8
 
 # type of above compiler, one of {GNU, INTEL, CLANG}, used for setting compiler flags
 COMPILER_TYPE = GNU
@@ -316,14 +316,14 @@ else ifeq ($(DISTRIBUTED), 1)
 # CPU
 else
 
-  %.o: %.c quest_templates.tm.c
+  %.o: %.c
 	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
 	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
 	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
 	
-  %.o: %.cpp
+  %.o: %.cpp quest_templates.tm.cpp
 	$(COMPILER) $(CPP_FLAGS) $(QUEST_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.cpp
 	$(COMPILER) $(CPP_FLAGS)  -c $<
@@ -371,8 +371,8 @@ else ifeq ($(OS), LINUX)
     PREP = linux_wsprep
 endif
 
-quest_templates.tm.c:
-	$(WSTP_DIR)/$(PREP) quest_templates.tm -o quest_templates.tm.c
+quest_templates.tm.cpp:
+	$(WSTP_DIR)/$(PREP) quest_templates.tm -o quest_templates.tm.cpp
 
 
 
@@ -383,7 +383,7 @@ quest_templates.tm.c:
 .PHONY:		clean veryclean
 clean:
 			/bin/rm -f *.o $(EXE)
-			/bin/rm -f quest_templates.tm.c
+			/bin/rm -f quest_templates.tm.cpp
 veryclean:	clean
 			/bin/rm -f *.h~ *.c~ makefile~
 

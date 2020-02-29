@@ -136,12 +136,12 @@ int local_resizeQuregs(void) {
         
     // attempt to resize quregs
     free(quregs);
-    quregs = malloc(2*currMaxNumQuregs * sizeof *quregs);
+    quregs = (Qureg*) malloc(2*currMaxNumQuregs * sizeof *quregs);
     
     // if unsuccessful, restore old size
     int success = !(quregs == NULL); 
     if (!success) {
-        quregs = malloc(currMaxNumQuregs * sizeof *quregs);
+        quregs = (Qureg*) malloc(currMaxNumQuregs * sizeof *quregs);
         local_sendErrorToMMA(
             "Qureg allocation failed, since memory for a sufficiently large "
             "array of quregs could not be allocated. The existing set of quregs "
@@ -307,7 +307,7 @@ int wrapper_initPureState(int quregID, int pureID) {
         local_sendQuregNotCreatedError(pureID);
     return quregID;
 }
-int wrapper_initStateFromAmps(int quregID, qreal* reals, int l1, qreal* imags, int l2) {
+int wrapper_initStateFromAmps(int quregID, qreal* reals, long l1, qreal* imags, long l2) {
     Qureg qureg = quregs[quregID];
     
     if (!qureg.isCreated)
@@ -617,7 +617,7 @@ int local_applyGates(
                 }
                 break;
                 
-            case OPCODE_T :
+            case OPCODE_T : {
                 if (numParams != 0)
                     return local_gateWrongNumParamsError("T gate", numParams, 0);
                 if (numTargs != 1)
@@ -628,9 +628,10 @@ int local_applyGates(
                     int* ctrlCache = local_prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, M_PI/4);
                 }
+            }
                 break;
         
-            case OPCODE_X :
+            case OPCODE_X : {
                 if (numParams != 0)
                     return local_gateWrongNumParamsError("X", numParams, 0);
                 if (numTargs != 1)
@@ -645,6 +646,7 @@ int local_applyGates(
                         .imag={{0}}};
                     multiControlledUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], u);
                 }
+            }
                 break;
                 
             case OPCODE_Y :
@@ -660,7 +662,7 @@ int local_applyGates(
                     return local_gateUnsupportedError("controlled Y");
                 break;
                 
-            case OPCODE_Z :
+            case OPCODE_Z : {
                 if (numParams != 0)
                     return local_gateWrongNumParamsError("Z", numParams, 0);
                 if (numTargs != 1)
@@ -671,6 +673,7 @@ int local_applyGates(
                     int* ctrlCache = local_prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledPhaseFlip(qureg, ctrlCache, numCtrls+1);
                 }
+            }
                 break;
         
             case OPCODE_Rx :
@@ -715,7 +718,7 @@ int local_applyGates(
                     multiRotateZ(qureg, &targs[targInd], numTargs, params[paramInd]);
                 break;
                 
-            case OPCODE_R:
+            case OPCODE_R: {
                 if (numCtrls != 0)
                     return local_gateUnsupportedError("controlled multi-rotate-Pauli");
                 if (numTargs != numParams-1) {
@@ -726,11 +729,12 @@ int local_applyGates(
                 }
                 enum pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
                 for (int p=0; p < numTargs; p++)
-                    paulis[p] = (int) params[paramInd+1+p];
+                    paulis[p] = (pauliOpType) ((int) params[paramInd+1+p]);
                 multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]);
+            }
                 break;
             
-            case OPCODE_U : 
+            case OPCODE_U : {
                 if (numTargs == 1 && numParams != 2*2*2)
                     return local_writeToErrorMsgBuffer("single qubit U accepts only 2x2 matrices");
                 if (numTargs == 2 && numParams != 4*4*2)
@@ -752,6 +756,7 @@ int local_applyGates(
                     else
                         multiControlledTwoQubitUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], targs[targInd+1], u);
                 }
+            }
                 break;
                 
             case OPCODE_Deph :
@@ -802,7 +807,7 @@ int local_applyGates(
                 mixDamping(qureg, targs[targInd], params[paramInd]);
                 break;
                 
-            case OPCODE_SWAP:
+            case OPCODE_SWAP: {
                 if (numParams != 0)
                     return local_gateWrongNumParamsError("SWAP", numParams, 0);
                 if (numTargs != 2)
@@ -822,9 +827,10 @@ int local_applyGates(
                     ctrlCache[numCtrls] = targs[targInd];
                     multiControlledUnitary(qureg, ctrlCache, numCtrls+1, targs[targInd+1], u);
                 }
+            }
                 break;
                 
-            case OPCODE_M:
+            case OPCODE_M: {
                 if (numParams != 0)
                     return local_gateWrongNumParamsError("M", numParams, 0);
                 if (numCtrls != 0)
@@ -834,6 +840,7 @@ int local_applyGates(
                     if (mesOutcomeCache != NULL)
                         mesOutcomeCache[mesInd++] = outcomeVal;
                 }
+            }
                 break;
             
             case OPCODE_P:
@@ -859,7 +866,7 @@ int local_applyGates(
                 }
                 break;
                 
-            case OPCODE_Kraus:
+            case OPCODE_Kraus: {
                 ; // empty post-label statement, courtesy of weird C99 standard
                 int numKrausOps = (int) params[paramInd];
                 if (numCtrls != 0)
@@ -890,9 +897,11 @@ int local_applyGates(
                     for (int n=0; n < numKrausOps; n++)
                         krausOps[n] = local_getMatrix4FromFlatList(&params[opElemInd + 2*4*4*n]);
                     mixTwoQubitKrausMap(qureg, targs[targInd], targs[targInd+1], krausOps, numKrausOps);
-                } 
+                }
+            }
                 break;
-            case OPCODE_G :
+                
+            case OPCODE_G : {
                 if (numParams != 1)
                     return local_gateWrongNumParamsError("Global phase", numParams, 1);
                 if (numCtrls != 0)
@@ -901,12 +910,13 @@ int local_applyGates(
                     return local_gateWrongNumTargsError("Global phase", numTargs, "0 targets");
                 if (params[paramInd] == 0)
                     break;
-		// phase does not change density matrices
-		if (!qureg.isDensityMatrix) {
+                // phase does not change density matrices
+                if (!qureg.isDensityMatrix) {
                     Complex zero = (Complex) {.real=0, .imag=0};
                     Complex fac = (Complex) {.real=cos(params[paramInd]), .imag=sin(params[paramInd])};
                     setWeightedQureg(zero, qureg, zero, qureg, fac, qureg); // exp(i param)|qureg>
-		}
+                }
+            }
                 break;
                 
             default:            
@@ -988,7 +998,7 @@ void internal_applyCircuit(int id) {
         }
         
     // prepare records of measurement outcomes
-    int* mesOutcomeCache = malloc(totalNumMeasurements * sizeof(int));
+    int* mesOutcomeCache = (int*) malloc(totalNumMeasurements * sizeof(int));
     int mesInd = 0;
     
     // apply the circuit
@@ -1245,7 +1255,7 @@ void internal_calcDensityInnerProductsVector(int rhoId, int omegaIds[], long num
     }
     
     // calculate inner products 
-    qreal* prods = malloc(numOmegas * sizeof *prods);
+    qreal* prods = (qreal*) malloc(numOmegas * sizeof *prods);
     for (int i=0; i<numOmegas; i++)
         prods[i] = calcDensityInnerProduct(quregs[rhoId], quregs[omegaIds[i]]);
 
@@ -1273,8 +1283,8 @@ void internal_calcInnerProductsVector(int braId, int ketIds[], long numKets) {
     }
     
     // calculate inner products 
-    qreal* vecRe = malloc(numKets * sizeof *vecRe);
-    qreal* vecIm = malloc(numKets * sizeof *vecIm);
+    qreal* vecRe = (qreal*) malloc(numKets * sizeof *vecRe);
+    qreal* vecIm = (qreal*) malloc(numKets * sizeof *vecIm);
     for (int i=0; i<numKets; i++) {
         Complex val = calcInnerProduct(quregs[braId], quregs[ketIds[i]]);
         vecRe[i] = val.real;
@@ -1304,7 +1314,7 @@ void internal_calcDensityInnerProductsMatrix(int quregIds[], long numQuregs) {
     
     // store real matrix as `nested pointers`
     long len = numQuregs * numQuregs;
-    qreal* matr = malloc(len * sizeof *matr);
+    qreal* matr = (qreal*) malloc(len * sizeof *matr);
     
     for (int r=0; r<numQuregs; r++) {
         for (int c=0; c<numQuregs; c++) {
@@ -1335,8 +1345,8 @@ void internal_calcInnerProductsMatrix(int quregIds[], long numQuregs) {
     
     // store complex matrix as 2 flat real arrays
     long len = numQuregs * numQuregs;
-    qreal* matrRe = malloc(len * sizeof *matrRe);
-    qreal* matrIm = malloc(len * sizeof *matrIm);
+    qreal* matrRe = (qreal*) malloc(len * sizeof *matrRe);
+    qreal* matrIm = (qreal*) malloc(len * sizeof *matrIm);
     
     for (int r=0; r<numQuregs; r++) {
         for (int c=0; c<numQuregs; c++) {
@@ -1430,7 +1440,7 @@ qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
     // safely cast pauli codes
     enum pauliOpType pauliCodes[numPaulis];
     for (int i=0; i<numPaulis; i++)
-        pauliCodes[i] = pauliIntCodes[i];
+        pauliCodes[i] = (pauliOpType) pauliIntCodes[i];
     
     return calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace);
 }
@@ -1450,15 +1460,15 @@ void local_loadPauliSumFromMMA(int numQb, int* numTerms, enum pauliOpType** arrP
     // convert {allPauliCodes}, {allPauliTargets}, {numPaulisPerTerm}, and
     // qureg.numQubitsRepresented into {pauli-code-for-every-qubit}
     int arrLen = *numTerms * numQb;
-    *arrPaulis = malloc(arrLen * sizeof **arrPaulis);
+    *arrPaulis = (pauliOpType*) malloc(arrLen * sizeof **arrPaulis);
     for (int i=0; i < arrLen; i++)
-        (*arrPaulis)[i] = 0;
+        (*arrPaulis)[i] = PAULI_I;
     
     int allPaulisInd = 0;
     for (int t=0;  t < *numTerms; t++) {
         for (int j=0; j < numPaulisPerTerm[t]; j++) {
             int arrInd = t*numQb + allPauliTargets[allPaulisInd];
-            (*arrPaulis)[arrInd] = allPauliCodes[allPaulisInd++];
+            (*arrPaulis)[arrInd] = (pauliOpType) allPauliCodes[allPaulisInd++];
         }
     }
     
@@ -1589,7 +1599,7 @@ int main(int argc, char* argv[]) {
     
     // create the dynamic list of quregs
     currMaxNumQuregs = INIT_MAX_NUM_QUREGS;
-    quregs = malloc(currMaxNumQuregs * sizeof *quregs);
+    quregs = (Qureg*) malloc(currMaxNumQuregs * sizeof *quregs);
     
     // indicate that no quregs have yet been created
     for (int id=0; id < currMaxNumQuregs; id++)
