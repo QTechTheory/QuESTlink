@@ -35,6 +35,8 @@
 #include <string.h>
 #include <QuEST.h>
 
+#include <string>
+
 /*
  * PI constant needed for (multiControlled) sGate and tGate
  */
@@ -95,10 +97,10 @@ static char errorMsgBuffer[1000];
 /**
  * Reports an error message to MMA without aborting
  */
-void local_sendErrorToMMA(char* err_msg) {
+void local_sendErrorToMMA(std::string err_msg) {
     WSPutFunction(stdlink, "EvaluatePacket", 1);
     WSPutFunction(stdlink, "Echo", 2);
-    WSPutString(stdlink, err_msg);
+    WSPutString(stdlink, err_msg.c_str());
     WSPutString(stdlink, "Error: ");
     WSEndPacket(stdlink);
     WSNextPacket(stdlink);
@@ -114,10 +116,10 @@ void local_sendQuregNotCreatedError(int id) {
     local_sendErrorMsgBufferToMMA();
 }
 
-int local_writeToErrorMsgBuffer(char* msg, ...) {
+int local_writeToErrorMsgBuffer(std::string msg, ...) {
     va_list argp;
     va_start(argp, msg);
-    vsprintf(errorMsgBuffer, msg, argp);
+    vsprintf(errorMsgBuffer, msg.c_str(), argp);
     va_end(argp);
     return 0;
 }
@@ -465,18 +467,18 @@ int wrapper_collapseToOutcome(int id, int qb, int outcome) {
 
 /* circuit execution */
 
-int local_gateUnsupportedError(char* gate) {
+int local_gateUnsupportedError(std::string gate) {
     return local_writeToErrorMsgBuffer("the gate '%s' is not supported.", gate);
 }
 
-int local_gateWrongNumParamsError(char* gate, int wrongNumParams, int rightNumParams) {
+int local_gateWrongNumParamsError(std::string gate, int wrongNumParams, int rightNumParams) {
     return local_writeToErrorMsgBuffer(
         "the gate '%s' accepts %d parameters, but %d were passed.",
         gate, rightNumParams, wrongNumParams);
 }
 
 /* rightNumTargs is a string so that it can be multiple e.g. "1 or 2" */
-int local_gateWrongNumTargsError(char* gate, int wrongNumTargs, char* rightNumTargs) {
+int local_gateWrongNumTargsError(std::string gate, int wrongNumTargs, std::string rightNumTargs) {
     return local_writeToErrorMsgBuffer(
         "the gate '%s' accepts %s, but %d were passed.",
         gate, rightNumTargs, wrongNumTargs);
@@ -505,7 +507,7 @@ int local_isValidProb(int opcode, int numQubits, qreal prob) {
 }
 
 int local_noiseInvalidProbError(int opcode, int numQubits, qreal prob) {
-    char* opStr = "";
+    std::string opStr = "";
     if (opcode == OPCODE_Deph) opStr = "dephasing";
     if (opcode == OPCODE_Depol) opStr = "depolarising";
     if (opcode == OPCODE_Damp) opStr = "amplitude damping";
