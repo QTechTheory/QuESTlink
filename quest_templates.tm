@@ -4,7 +4,7 @@
 :Pattern:        QuEST`CreateQureg[numQubits_Integer]
 :Arguments:      { numQubits }
 :ArgumentTypes:  { Integer }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`CreateQureg::usage = "CreateQureg[numQubits] returns the id of a newly created statevector."
 
@@ -13,7 +13,7 @@
 :Pattern:        QuEST`CreateDensityQureg[numQubits_Integer]
 :Arguments:      { numQubits }
 :ArgumentTypes:  { Integer }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`CreateDensityQureg::usage = "CreateDensityQureg[numQubits] returns the id of a newly created density matrix."
 
@@ -22,7 +22,7 @@
 :Pattern:        QuEST`Private`DestroyQuregInternal[id_Integer]
 :Arguments:      { id }
 :ArgumentTypes:  { Integer }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`Private`DestroyQuregInternal::usage = "DestroyQuregInternal[numQubits] frees the memory of the qureg associated with the given id."
 
@@ -52,7 +52,7 @@
 :Pattern:        QuEST`InitZeroState[qureg_Integer]
 :Arguments:      { qureg }
 :ArgumentTypes:  { Integer }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`InitZeroState::usage = "InitZeroState[qureg] sets the qureg to state |0> (and returns the qureg id)."
 
@@ -61,7 +61,7 @@
 :Pattern:        QuEST`InitPlusState[qureg_Integer]
 :Arguments:      { qureg }
 :ArgumentTypes:  { Integer  }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`InitPlusState::usage = "InitPlusState[qureg] sets the qureg to state |+> (and returns the qureg id)."
 
@@ -70,7 +70,7 @@
 :Pattern:        QuEST`InitClassicalState[qureg_Integer, state_Integer]
 :Arguments:      { qureg, state }
 :ArgumentTypes:  { Integer, Integer }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`InitClassicalState::usage = "InitClassicalState[qureg, ind] sets the qureg to basis state |ind> (and returns the qureg id)."
 
@@ -79,7 +79,7 @@
 :Pattern:        QuEST`InitPureState[targetQureg_Integer, pureQureg_Integer]
 :Arguments:      { targetQureg, pureQureg }
 :ArgumentTypes:  { Integer, Integer }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`InitPureState::usage = "InitPureState[targetQureg, pureQureg] puts targetQureg (statevec or density matrix) into the pureQureg (statevec) state (and returns the targetQureg id)."
 
@@ -88,7 +88,7 @@
 :Pattern:        QuEST`InitStateFromAmps[qureg_Integer, reals_List, imags_List]
 :Arguments:      { qureg, reals, imags }
 :ArgumentTypes:  { Integer, RealList, RealList }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`InitStateFromAmps::usage = "InitStateFromAmps[qureg, reals, imags] initialises the given qureg to have the supplied amplitudes (and returns the qureg id)."
 
@@ -97,7 +97,7 @@
 :Pattern:        QuEST`CloneQureg[target_Integer, source_Integer]
 :Arguments:      { target, source }
 :ArgumentTypes:  { Integer, Integer }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`CloneQureg::usage = "CloneQureg[dest, source] sets dest to be a copy of source."
 
@@ -127,7 +127,7 @@
 :Pattern:        QuEST`MixDepolarising[qureg_Integer, qb_Integer, prob_Real]
 :Arguments:      { qureg, qb, prob }
 :ArgumentTypes:  { Integer, Integer, Real }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`MixDepolarising::usage = "MixDepolarising[qureg, qubit, prob] adds depolarising noise to density matrix qureg."
 
@@ -136,7 +136,7 @@
 :Pattern:        QuEST`MixTwoQubitDepolarising[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
 :Arguments:      { qureg, qb1, qb2, prob }
 :ArgumentTypes:  { Integer, Integer, Integer, Real }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`MixTwoQubitDepolarising::usage = "MixTwoQubitDepolarising[qureg, qb1, qb2 prob] adds depolarising noise to density matrix qureg."
 
@@ -145,7 +145,7 @@
 :Pattern:        QuEST`MixDephasing[qureg_Integer, qb_Integer, prob_Real]
 :Arguments:      { qureg, qb, prob }
 :ArgumentTypes:  { Integer, Integer, Real }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`MixDephasing::usage = "MixDephasing[qureg, qubit, prob] adds dephasing noise to density matrix qureg."
 
@@ -154,7 +154,7 @@
 :Pattern:        QuEST`MixTwoQubitDephasing[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
 :Arguments:      { qureg, qb1, qb2, prob }
 :ArgumentTypes:  { Integer, Integer, Integer, Real }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`MixTwoQubitDephasing::usage = "MixTwoQubitDephasing[qureg, qb1, qb2 prob] adds dephasing noise to density matrix qureg."
 
@@ -163,7 +163,7 @@
 :Pattern:        QuEST`MixDamping[qureg_Integer, qb_Integer, prob_Real]
 :Arguments:      { qureg, qb, prob }
 :ArgumentTypes:  { Integer, Integer, Real }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`MixDamping::usage = "MixDamping[qureg, qubit, prob] applies amplitude damping with the given decay probability to density matrix qureg."
 
@@ -175,7 +175,7 @@
 :Pattern:        QuEST`CalcProbOfOutcome[qureg_Integer, qb_Integer, outcome_Integer]
 :Arguments:      { qureg, qb, outcome }
 :ArgumentTypes:  { Integer, Integer, Integer }
-:ReturnType:     Real
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`CalcProbOfOutcome::usage = "CalcProbOfOutcome[qureg, qubit, outcome] returns the probability of measuring qubit in the given outcome."
 
@@ -184,7 +184,7 @@
 :Pattern:        QuEST`CalcFidelity[qureg1_Integer, qureg2_Integer]
 :Arguments:      { qureg1, qureg2 }
 :ArgumentTypes:  { Integer, Integer }
-:ReturnType:     Real
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`CalcFidelity::usage = "CalcFidelity[qureg1, qureg2] returns the fidelity between the given states."
 
@@ -211,7 +211,7 @@
 :Pattern:        QuEST`CalcPurity[qureg_Integer]
 :Arguments:      { qureg }
 :ArgumentTypes:  { Integer }
-:ReturnType:     Real
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`CalcPurity::usage = "CalcPurity[qureg] returns the purity of the given density matrix."
 
@@ -220,7 +220,7 @@
 :Pattern:        QuEST`CalcTotalProb[qureg_Integer]
 :Arguments:      { qureg }
 :ArgumentTypes:  { Integer }
-:ReturnType:     Real
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`CalcTotalProb::usage = "CalcTotalProb[qureg] returns the total probability (normalisation) of the statevector (sum of abs-squared of amplitudes) or density matrix (trace), which should be 1."
 
@@ -229,7 +229,7 @@
 :Pattern:        QuEST`CalcHilbertSchmidtDistance[qureg1_Integer, qureg2_Integer]
 :Arguments:      { qureg1, qureg2 }
 :ArgumentTypes:  { Integer, Integer }
-:ReturnType:     Real
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`CalcHilbertSchmidtDistance::usage = "CalcHilbertSchmidtDistance[qureg1, qureg2] returns the Hilbert-Schmidt distance (Frobenius norm of the difference) between the given density matrices."
 
@@ -294,7 +294,7 @@
 :Pattern:        QuEST`Private`CalcExpecPauliProdInternal[qureg_Integer, workspace_Integer, paulis_List, targets_List]
 :Arguments:      { qureg, workspace, paulis, targets }
 :ArgumentTypes:  { Integer, Integer, Manual }
-:ReturnType:     Real
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`Private`CalcExpecPauliProdInternal::usage = "CalcExpecPauliProdInternal[qureg, workspace, paulis, targets] returns the expected value of the qureg under the given pauli product. workspace must be a Qureg of equal dimensions to qureg."
 
@@ -303,7 +303,7 @@
 :Pattern:        QuEST`Private`CalcExpecPauliSumInternal[qureg_Integer, workspace_Integer, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
 :Arguments:      { qureg, workspace, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm }
 :ArgumentTypes:  { Integer, Integer, Manual }
-:ReturnType:     Real
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`Private`CalcExpecPauliSumInternal::usage = "CalcExpecPauliSumInternal[qureg, workspace, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] returns the expected value of the qureg under the given sum of Pauli products, specified as flat lists. workspace must be a Qureg of equal dimensions to qureg."
 
@@ -312,7 +312,7 @@
 :Pattern:        QuEST`Private`ApplyPauliSumInternal[inQureg_Integer, outQureg_Integer, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
 :Arguments:      { inQureg, outQureg, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm }
 :ArgumentTypes:  { Integer, Integer, Manual }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`Private`ApplyPauliSumInternal::usage = "ApplyPauliSumInternal[inQureg, outQureg, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] modifies outQureg under the given sum of Pauli products, specified as flat lists. inQureg and outQureg must have the same type and equal dimensions."
 
@@ -339,7 +339,7 @@
 :Pattern:        QuEST`Private`SetWeightedQuregInternal[facRe1_Real,facIm1_Real,qureg1_Integer, facRe2_Real,facIm2_Real,qureg2_Integer, facReOut_Real,facImOut_Real,quregOut_Integer]
 :Arguments:      { facRe1,facIm1,qureg1, facRe2,facIm2,qureg2, facReOut,facImOut,quregOut }
 :ArgumentTypes:  { Real, Real, Integer, Real, Real, Integer, Real, Real, Integer }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`Private`SetWeightedQuregInternal::usage = "SetWeightedQuregInternal[facRe1,facIm1,qureg1, facRe2,facIm2,qureg2, facReOut,facImOut,quregOut] modifies quregOut to become (fac1 qureg1 + fac2 qureg2 + facOut qurgeOut)."
 
@@ -348,7 +348,7 @@
 :Pattern:        QuEST`CollapseToOutcome[qureg_Integer, qubit_Integer, outcome_Integer]
 :Arguments:      { qureg, qubit, outcome }
 :ArgumentTypes:  { Integer, Integer, Integer }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`CollapseToOutcome::usage = "CollapseToOutcome[qureg, qubit, outcome] forces the target qubit to collapse to the given outcome."
 
@@ -360,7 +360,7 @@
 :Pattern:        QuEST`DestroyAllQuregs[]
 :Arguments:      { }
 :ArgumentTypes:  { }
-:ReturnType:     Integer
+:ReturnType:     Manual
 :End:
 :Evaluate: QuEST`DestroyAllQuregs::usage = "DestroyAllQuregs[] destroys all remote quregs."
 

@@ -34,7 +34,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <QuEST.h>
-
 #include <string>
 
 /*
@@ -172,39 +171,42 @@ int local_getNextQuregID(void) {
     return (success)? currMaxNumQuregs : -1;
 }
 
-int wrapper_createQureg(int numQubits) {
+void wrapper_createQureg(int numQubits) {
     int id = local_getNextQuregID(); // will send error if unsuccessful
     if (id != -1) {
         quregs[id] = createQureg(numQubits, env);
         quregs[id].isCreated = 1;
     }
-    return id;
+    WSPutInteger(stdlink, id);
 }
-int wrapper_createDensityQureg(int numQubits) {
+void wrapper_createDensityQureg(int numQubits) {
     int id = local_getNextQuregID(); // will send error if unsuccessful
     if (id != -1) {
         quregs[id] = createDensityQureg(numQubits, env);
         quregs[id].isCreated = 1;
     }
-    return id;
+    WSPutInteger(stdlink, id);
 }
-int wrapper_destroyQureg(int id) {
+void wrapper_destroyQureg(int id) {
     if (quregs[id].isCreated) {
         destroyQureg(quregs[id], env);
         quregs[id].isCreated = 0;
     } else
         local_sendQuregNotCreatedError(id);
-    return id;
+    WSPutInteger(stdlink, id);
 }
 
 void callable_createQuregs(int numQubits, int numQuregs) {
     int ids[numQuregs];
     for (int i=0; i < numQuregs; i++) {
-        ids[i] = wrapper_createQureg(numQubits);
-        if (ids[i] == -1) {
+        int id = local_getNextQuregID();
+        if (id == -1) {
             WSPutInteger(stdlink, -1);
             return;
         }
+        ids[i] = id;
+        quregs[id] = createQureg(numQubits, env);
+        quregs[id].isCreated = 1;
     }
     WSPutIntegerList(stdlink, ids, numQuregs);
 }
@@ -212,11 +214,14 @@ void callable_createQuregs(int numQubits, int numQuregs) {
 void callable_createDensityQuregs(int numQubits, int numQuregs) {
     int ids[numQuregs];
     for (int i=0; i < numQuregs; i++) {
-        ids[i] = wrapper_createDensityQureg(numQubits);
-        if (ids[i] == -1) {
+        int id = local_getNextQuregID();
+        if (id == -1) {
             WSPutInteger(stdlink, -1);
             return;
         }
+        ids[i] = id;
+        quregs[id] = createDensityQureg(numQubits, env);
+        quregs[id].isCreated = 1;
     }
     WSPutIntegerList(stdlink, ids, numQuregs);
 } 
@@ -279,37 +284,37 @@ void callable_isDensityMatrix(int quregID) {
 
 /** initial states */
 
-int wrapper_initZeroState(int id) {
+void wrapper_initZeroState(int id) {
     if (quregs[id].isCreated)
         initZeroState(quregs[id]);
     else
         local_sendQuregNotCreatedError(id);
-    return id;
+    WSPutInteger(stdlink, id);
 }
-int wrapper_initPlusState(int id) {
+void wrapper_initPlusState(int id) {
     if (quregs[id].isCreated)
         initPlusState(quregs[id]);
     else
         local_sendQuregNotCreatedError(id);
-    return id;
+    WSPutInteger(stdlink, id);
 }
-int wrapper_initClassicalState(int id, int stateInd) {
+void wrapper_initClassicalState(int id, int stateInd) {
     if (quregs[id].isCreated)
         initClassicalState(quregs[id], stateInd);
     else
         local_sendQuregNotCreatedError(id);
-    return id;
+    WSPutInteger(stdlink, id);
 }
-int wrapper_initPureState(int quregID, int pureID) {
+void wrapper_initPureState(int quregID, int pureID) {
     if (quregs[quregID].isCreated && quregs[pureID].isCreated)
         initPureState(quregs[quregID], quregs[pureID]);
     else if (!quregs[quregID].isCreated)
         local_sendQuregNotCreatedError(quregID);
     else// if (!quregs[pureID].isCreated)
         local_sendQuregNotCreatedError(pureID);
-    return quregID;
+    WSPutInteger(stdlink, quregID);
 }
-int wrapper_initStateFromAmps(int quregID, qreal* reals, long l1, qreal* imags, long l2) {
+void wrapper_initStateFromAmps(int quregID, qreal* reals, long l1, qreal* imags, long l2) {
     Qureg qureg = quregs[quregID];
     
     if (!qureg.isCreated)
@@ -318,16 +323,16 @@ int wrapper_initStateFromAmps(int quregID, qreal* reals, long l1, qreal* imags, 
         local_sendErrorToMMA("incorrect number of amplitudes supplied! State has not been changed.");
     else
         initStateFromAmps(qureg, reals, imags);
-    return quregID;
+    WSPutInteger(stdlink, quregID);
 }
-int wrapper_cloneQureg(int outID, int inID) {
+void wrapper_cloneQureg(int outID, int inID) {
     if (!quregs[outID].isCreated)
         local_sendQuregNotCreatedError(outID);
     else if (!quregs[inID].isCreated)
         local_sendQuregNotCreatedError(inID);
     else
         cloneQureg(quregs[outID], quregs[inID]);
-    return outID;
+    WSPutInteger(stdlink, outID);
 }
 
 
@@ -336,63 +341,68 @@ int wrapper_cloneQureg(int outID, int inID) {
 
 /** noise */
 
-int wrapper_mixDephasing(int id, int qb1, qreal prob) {
+void wrapper_mixDephasing(int id, int qb1, qreal prob) {
     if (quregs[id].isCreated)
         mixDephasing(quregs[id], qb1, prob);
     else
         local_sendQuregNotCreatedError(id);
-    return id;
+    WSPutInteger(stdlink, id);
 }
-int wrapper_mixTwoQubitDephasing(int id, int qb1, int qb2, qreal prob) {
+void wrapper_mixTwoQubitDephasing(int id, int qb1, int qb2, qreal prob) {
     if (quregs[id].isCreated)
         mixTwoQubitDephasing(quregs[id], qb1, qb2, prob);
     else
         local_sendQuregNotCreatedError(id);
-    return id;
+    WSPutInteger(stdlink, id);
 }
-int wrapper_mixDepolarising(int id, int qb1, qreal prob) {
+void wrapper_mixDepolarising(int id, int qb1, qreal prob) {
     if (quregs[id].isCreated)
         mixDepolarising(quregs[id], qb1, prob);
     else
         local_sendQuregNotCreatedError(id);
-    return id;
+    WSPutInteger(stdlink, id);
 }
-int wrapper_mixTwoQubitDepolarising(int id, int qb1, int qb2, qreal prob) {
+void wrapper_mixTwoQubitDepolarising(int id, int qb1, int qb2, qreal prob) {
     if (quregs[id].isCreated)
         mixTwoQubitDepolarising(quregs[id], qb1, qb2, prob);
     else
         local_sendQuregNotCreatedError(id);
-    return id;
+    WSPutInteger(stdlink, id);
 }
-int wrapper_mixDamping(int id, int qb, qreal prob) {
+void wrapper_mixDamping(int id, int qb, qreal prob) {
     if (quregs[id].isCreated)
         mixDamping(quregs[id], qb, prob);
     else
         local_sendQuregNotCreatedError(id);
-    return id;
+    WSPutInteger(stdlink, id);
 }
 
 
 /* calculations */
 
-qreal wrapper_calcProbOfOutcome(int id, int qb, int outcome) {
-    if (quregs[id].isCreated)
-        return calcProbOfOutcome(quregs[id], qb, outcome);
+void wrapper_calcProbOfOutcome(int id, int qb, int outcome) {
+    if (quregs[id].isCreated) {
+        WSPutReal64(stdlink, calcProbOfOutcome(quregs[id], qb, outcome));
+        return;
+    }
     else {
         local_sendQuregNotCreatedError(id);
-        return -1;
+        WSPutInteger(stdlink, -1);
+        return;
     }
 }
-qreal wrapper_calcFidelity(int id1, int id2) {
+void wrapper_calcFidelity(int id1, int id2) {
     if (!quregs[id1].isCreated) {
         local_sendQuregNotCreatedError(id1);
-        return -1;
+        WSPutInteger(stdlink, -1);
+        return;
     }
     if (!quregs[id2].isCreated) {
         local_sendQuregNotCreatedError(id2);
-        return -1;
+        WSPutInteger(stdlink, -1);
+        return;
     }
-    return calcFidelity(quregs[id1], quregs[id2]);
+    WSPutReal64(stdlink, calcFidelity(quregs[id1], quregs[id2]));
 }
 void wrapper_calcInnerProduct(int id1, int id2) {
     if (!quregs[id1].isCreated) {
@@ -425,42 +435,46 @@ void wrapper_calcDensityInnerProduct(int id1, int id2) {
     qreal res = calcDensityInnerProduct(quregs[id1], quregs[id2]);
     WSPutReal64(stdlink, res);
 }
-qreal wrapper_calcPurity(int id) {
+void wrapper_calcPurity(int id) {
     if (!quregs[id].isCreated) {
         local_sendQuregNotCreatedError(id);
-        return -1;
+        WSPutInteger(stdlink, -1);
+        return;
     }
-    return calcPurity(quregs[id]);
+    WSPutReal64(stdlink, calcPurity(quregs[id]));
 }
-qreal wrapper_calcTotalProb(int id) {
+void wrapper_calcTotalProb(int id) {
     if (!quregs[id].isCreated) {
         local_sendQuregNotCreatedError(id);
-        return -1;
+        WSPutInteger(stdlink, -1);
+        return;
     }
-    return calcTotalProb(quregs[id]);
+    WSPutReal64(stdlink, calcTotalProb(quregs[id]));
 }
-qreal wrapper_calcHilbertSchmidtDistance(int id1, int id2) {
+void wrapper_calcHilbertSchmidtDistance(int id1, int id2) {
     if (!quregs[id1].isCreated) {
         local_sendQuregNotCreatedError(id1);
-        return -1;
+        WSPutInteger(stdlink, -1);
+        return;
     }
     if (!quregs[id2].isCreated) {
         local_sendQuregNotCreatedError(id2);
-        return -1;
+        WSPutInteger(stdlink, -1);
+        return;
     }
-    return calcHilbertSchmidtDistance(quregs[id1], quregs[id2]);
+    WSPutReal64(stdlink, calcHilbertSchmidtDistance(quregs[id1], quregs[id2]));
 }
 
 
 /* other modifications */
 
-int wrapper_collapseToOutcome(int id, int qb, int outcome) {
+void wrapper_collapseToOutcome(int id, int qb, int outcome) {
     if (quregs[id].isCreated) {
         collapseToOutcome(quregs[id], qb, outcome);
-        return id;
+        WSPutInteger(stdlink, id);
     } else {
         local_sendQuregNotCreatedError(id);
-        return -1;
+        WSPutInteger(stdlink, -1);
     }
 }
 
@@ -1395,7 +1409,7 @@ void internal_getStateVec(int id) {
     WSPutReal64List(stdlink, qureg.stateVec.imag, qureg.numAmpsTotal);
 }
 
-int internal_setWeightedQureg(
+void internal_setWeightedQureg(
     double facRe1, double facIm1, int qureg1, 
     double facRe2, double facIm2, int qureg2, 
     double facReOut, double facImOut, int outID
@@ -1411,12 +1425,12 @@ int internal_setWeightedQureg(
             (Complex) {.real=facRe1, .imag=facIm1}, quregs[qureg1],
             (Complex) {.real=facRe2, .imag=facIm2}, quregs[qureg2],
             (Complex) {.real=facReOut, .imag=facImOut}, quregs[outID]);
-    return outID;
+    WSPutInteger(stdlink, outID);
 }
 
 
 /* Evaluates the expected value of a Pauli product */
-qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
+void internal_calcExpecPauliProd(int quregId, int workspaceId) {
     
     // get arguments from MMA link
     int numPaulis;
@@ -1430,13 +1444,13 @@ qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
     if (!qureg.isCreated) {
         local_sendQuregNotCreatedError(quregId);
         WSPutFunction(stdlink, "Abort", 0);
-        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
+        return;
     }
     Qureg workspace = quregs[workspaceId];
     if (!workspace.isCreated) {
         local_sendQuregNotCreatedError(workspaceId);
         WSPutFunction(stdlink, "Abort", 0);
-        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
+        return;
     }
     
     // safely cast pauli codes
@@ -1444,7 +1458,7 @@ qreal internal_calcExpecPauliProd(int quregId, int workspaceId) {
     for (int i=0; i<numPaulis; i++)
         pauliCodes[i] = (pauliOpType) pauliIntCodes[i];
     
-    return calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace);
+    WSPutReal64(stdlink, calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace));
 }
 
 void local_loadPauliSumFromMMA(int numQb, int* numTerms, enum pauliOpType** arrPaulis, qreal** termCoeffs) {
@@ -1479,20 +1493,20 @@ void local_loadPauliSumFromMMA(int numQb, int* numTerms, enum pauliOpType** arrP
     // arrPaulis and termCoeffs must be freed by caller using free and WSDisown respectively
 }
 
-qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
+void internal_calcExpecPauliSum(int quregId, int workspaceId) {
         
     // ensure quregs exists
     Qureg qureg = quregs[quregId];
     if (!qureg.isCreated) {
         local_sendQuregNotCreatedError(quregId);
         WSPutFunction(stdlink, "Abort", 0);
-        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
+        return;
     }
     Qureg workspace = quregs[workspaceId];
     if (!workspace.isCreated) {
         local_sendQuregNotCreatedError(workspaceId);
         WSPutFunction(stdlink, "Abort", 0);
-        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
+        return;
     }
     
     int numTerms; enum pauliOpType* arrPaulis; qreal* termCoeffs;
@@ -1503,7 +1517,7 @@ qreal internal_calcExpecPauliSum(int quregId, int workspaceId) {
     free(arrPaulis);
     WSReleaseReal64List(stdlink, termCoeffs, numTerms);
     
-    return val;
+    WSPutReal64(stdlink, val);
 }
 
 void internal_calcPauliSumMatrix(int numQubits) {
@@ -1536,20 +1550,20 @@ void internal_calcPauliSumMatrix(int numQubits) {
     WSReleaseReal64List(stdlink, termCoeffs, numTerms);
 }
 
-int internal_applyPauliSum(int inId, int outId) {
+void internal_applyPauliSum(int inId, int outId) {
 
     // ensure quregs exists
     Qureg inQureg = quregs[inId];
     if (!inQureg.isCreated) {
         local_sendQuregNotCreatedError(inId);
         WSPutFunction(stdlink, "Abort", 0);
-        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
+        return;
     }
     Qureg outQureg = quregs[outId];
     if (!outQureg.isCreated) {
         local_sendQuregNotCreatedError(outId);
         WSPutFunction(stdlink, "Abort", 0);
-        return -1; // @TODO NEEDS FIXING!! -1 stuck in pipeline
+        return;
     }
     
     int numTerms; enum pauliOpType* arrPaulis; qreal* termCoeffs;
@@ -1559,14 +1573,14 @@ int internal_applyPauliSum(int inId, int outId) {
     
     free(arrPaulis);
     WSReleaseReal64List(stdlink, termCoeffs, numTerms);
-    return outId;
+    WSPutInteger(stdlink, outId);
 }
 
 
 /**
  * Frees all quregs
  */
-int callable_destroyAllQuregs(void) {
+void callable_destroyAllQuregs(void) {
     
     for (int id=0; id < currMaxNumQuregs; id++) {
         if (quregs[id].isCreated) {
@@ -1574,7 +1588,7 @@ int callable_destroyAllQuregs(void) {
             quregs[id].isCreated = 0;
         }
     }
-    return -1;
+    WSPutInteger(stdlink, -1);
 }
 
 /** 
