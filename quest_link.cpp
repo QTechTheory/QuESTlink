@@ -1424,39 +1424,59 @@ void internal_calcExpecPauliProd(int quregId, int workspaceId) {
     WSPutReal64(stdlink, calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace));
 }
 
-void local_loadPauliSumFromMMA(int numQb, int* numTerms, enum pauliOpType** arrPaulis, qreal** termCoeffs) {
-    
+void local_loadEncodedPauliSumFromMMA(int* numPaulis, int* numTerms, qreal** termCoeffs, int** allPauliCodes, int** allPauliTargets, int** numPaulisPerTerm) {
     // get arguments from MMA link
-    int numPaulis;
     WSGetReal64List(stdlink, termCoeffs, numTerms);
-    int* allPauliCodes;
-    WSGetInteger32List(stdlink, &allPauliCodes, &numPaulis);
-    int* allPauliTargets;
-    WSGetInteger32List(stdlink, &allPauliTargets, &numPaulis);
-    int* numPaulisPerTerm;
-    WSGetInteger32List(stdlink, &numPaulisPerTerm, numTerms);
+    WSGetInteger32List(stdlink, allPauliCodes, numPaulis);    
+    WSGetInteger32List(stdlink, allPauliTargets, numPaulis);
+    WSGetInteger32List(stdlink, numPaulisPerTerm, numTerms);
+}
+
+// can throw exception if pauli targets are invalid indices.
+// in that event, arrPaulis will be freed internally, and remain NULL (if init'd by caller)
+pauliOpType* local_decodePauliSum(int numQb, int numTerms, int* allPauliCodes, int* allPauliTargets, int* numPaulisPerTerm) {
     
     // convert {allPauliCodes}, {allPauliTargets}, {numPaulisPerTerm}, and
     // qureg.numQubitsRepresented into {pauli-code-for-every-qubit}
-    int arrLen = *numTerms * numQb;
-    *arrPaulis = (pauliOpType*) malloc(arrLen * sizeof **arrPaulis);
+    int arrLen = numTerms * numQb;
+    pauliOpType* arrPaulis = (pauliOpType*) malloc(arrLen * sizeof *arrPaulis);
     for (int i=0; i < arrLen; i++)
-        (*arrPaulis)[i] = PAULI_I;
+        arrPaulis[i] = PAULI_I;
     
     int allPaulisInd = 0;
-    for (int t=0;  t < *numTerms; t++) {
+    for (int t=0;  t < numTerms; t++) {
         for (int j=0; j < numPaulisPerTerm[t]; j++) {
-            int arrInd = t*numQb + allPauliTargets[allPaulisInd];
-            (*arrPaulis)[arrInd] = (pauliOpType) allPauliCodes[allPaulisInd++];
+            int currTarget = allPauliTargets[allPaulisInd];
+            
+            
+            int arrInd = t*numQb + currTarget;
+            arrPaulis[arrInd] = (pauliOpType) allPauliCodes[allPaulisInd++];
         }
     }
     
+    // must be freed by caller
+    return arrPaulis;
+}
+
+void local_freePauliSum(int numPaulis, int numTerms, qreal* termCoeffs, int* allPauliCodes, int* allPauliTargets, int* numPaulisPerTerm, pauliOpType* arrPaulis) {
+    WSReleaseReal64List(stdlink, termCoeffs, numTerms);
     WSReleaseInteger32List(stdlink, allPauliCodes, numPaulis);
     WSReleaseInteger32List(stdlink, allPauliTargets, numPaulis);
-    // arrPaulis and termCoeffs must be freed by caller using free and WSDisown respectively
+    WSReleaseInteger32List(stdlink, numPaulisPerTerm, numTerms);
+    
+    // may be none if validation triggers clean-up before arrPaulis gets created
+    if (arrPaulis != NULL)
+        free(arrPaulis);
 }
 
 void internal_calcExpecPauliSum(int quregId, int workspaceId) {
+    
+    // must load MMA args before validation (these must all also be freed)
+    int numPaulis, numTerms;
+    qreal* termCoeffs;
+    int *allPauliCodes, *allPauliTargets, *numPaulisPerTerm;
+    local_loadEncodedPauliSumFromMMA(
+        &numPaulis, &numTerms, &termCoeffs, &allPauliCodes, &allPauliTargets, &numPaulisPerTerm);
         
     // ensure quregs exists
     Qureg qureg = quregs[quregId];
@@ -1469,28 +1489,44 @@ void internal_calcExpecPauliSum(int quregId, int workspaceId) {
     if (!local_isQuregCreated(workspaceId)) {
         local_sendQuregNotCreatedError(workspaceId);
         WSPutFunction(stdlink, "Abort", 0);
+    // init to null in case loading fails, to indicate no-cleanup needed
+    pauliOpType* arrPaulis = NULL;
+        // reformat MMA args into QuEST Hamil format (must be later freed)
+        arrPaulis = local_decodePauliSum(
+            qureg.numQubitsRepresented, numTerms, allPauliCodes, allPauliTargets, numPaulisPerTerm); // throws
+        
+        // compute return value
+        qreal val = calcExpecPauliSum(qureg, arrPaulis, termCoeffs, numTerms, workspace); // throws
+        WSPutReal64(stdlink, val);
+        
+        // cleanup
+        local_freePauliSum(numPaulis, numTerms, 
+            termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm, arrPaulis);
         return;
     }
-    
-    int numTerms; enum pauliOpType* arrPaulis; qreal* termCoeffs;
-    local_loadPauliSumFromMMA(qureg.numQubitsRepresented, &numTerms, &arrPaulis, &termCoeffs);
-    
-    qreal val = calcExpecPauliSum(qureg, arrPaulis, termCoeffs, numTerms, workspace);
-    
-    free(arrPaulis);
-    WSReleaseReal64List(stdlink, termCoeffs, numTerms);
-    
-    WSPutReal64(stdlink, val);
 }
 
 void internal_calcPauliSumMatrix(int numQubits) {
     
-    int numTerms; enum pauliOpType* arrPaulis; qreal* termCoeffs;
-    local_loadPauliSumFromMMA(numQubits, &numTerms, &arrPaulis, &termCoeffs);
+    // must load MMA args before validation (these must all also be freed)
+    int numPaulis, numTerms;
+    qreal* termCoeffs;
+    int *allPauliCodes, *allPauliTargets, *numPaulisPerTerm;
+    local_loadEncodedPauliSumFromMMA(
+        &numPaulis, &numTerms, &termCoeffs, &allPauliCodes, &allPauliTargets, &numPaulisPerTerm);
 
     // create states needed to apply Pauli products
     Qureg inQureg = createQureg(numQubits, env);
     Qureg outQureg = createQureg(numQubits, env);
+    
+    // init to null in case loading fails, to indicate no-cleanup needed
+    pauliOpType* arrPaulis = NULL;
+        // reformat MMA args into QuEST Hamil format (must be later freed)    
+        arrPaulis = local_decodePauliSum(
+            numQubits, numTerms, allPauliCodes, allPauliTargets, numPaulisPerTerm); // throws
+        
+        // check that applyPauliSum will succeed (small price to pay; can't interrupt loop!)
+        applyPauliSum(inQureg, arrPaulis, termCoeffs, numTerms, outQureg);
 
     // get result of paulis on each basis state
     long long int dim = inQureg.numAmpsTotal;
@@ -1507,13 +1543,21 @@ void internal_calcPauliSumMatrix(int numQubits) {
         WSPutReal64List(stdlink, outQureg.stateVec.imag, dim);
     }    
     
+    // clean up
+    local_freePauliSum(numPaulis, numTerms, 
+        termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm, arrPaulis);
     destroyQureg(inQureg, env);
     destroyQureg(outQureg, env);
-    free(arrPaulis);
-    WSReleaseReal64List(stdlink, termCoeffs, numTerms);
 }
 
 void internal_applyPauliSum(int inId, int outId) {
+    
+    // must load MMA args before validation (these must all also be freed)
+    int numPaulis, numTerms;
+    qreal* termCoeffs;
+    int *allPauliCodes, *allPauliTargets, *numPaulisPerTerm;
+    local_loadEncodedPauliSumFromMMA(
+        &numPaulis, &numTerms, &termCoeffs, &allPauliCodes, &allPauliTargets, &numPaulisPerTerm);
 
     // ensure quregs exists
     Qureg inQureg = quregs[inId];
@@ -1529,14 +1573,18 @@ void internal_applyPauliSum(int inId, int outId) {
         return;
     }
     
-    int numTerms; enum pauliOpType* arrPaulis; qreal* termCoeffs;
-    local_loadPauliSumFromMMA(inQureg.numQubitsRepresented, &numTerms, &arrPaulis, &termCoeffs);
+    // init to null in case loading fails, to indicate no-cleanup needed
+    pauliOpType* arrPaulis = NULL;
     
-    applyPauliSum(inQureg, arrPaulis, termCoeffs, numTerms, outQureg);
-    
-    free(arrPaulis);
-    WSReleaseReal64List(stdlink, termCoeffs, numTerms);
-    WSPutInteger(stdlink, outId);
+        // reformat MMA args into QuEST Hamil format (must be later freed)
+        arrPaulis = local_decodePauliSum(
+            inQureg.numQubitsRepresented, numTerms, allPauliCodes, allPauliTargets, numPaulisPerTerm); // throws
+        
+        applyPauliSum(inQureg, arrPaulis, termCoeffs, numTerms, outQureg); // throws
+        
+        // cleanup
+        local_freePauliSum(numPaulis, numTerms, 
+            termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm, arrPaulis);
 }
 
 
