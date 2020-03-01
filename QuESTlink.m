@@ -290,12 +290,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         DestroyQureg[qureg_Symbol] :=
         	Block[{}, DestroyQuregInternal[ReleaseHold@qureg]; Clear[qureg]]
 
-        (* get a local matrix representation of the qureg. GetStateVecInternal provided by WSTP *)
+        (* get a local matrix representation of the qureg. GetQuregMatrixInternal provided by WSTP *)
         GetQuregMatrix[qureg_Integer] :=
-        	With[{data = GetStateVecInternal[qureg]},
+        	With[{data = GetQuregMatrixInternal[qureg]},
         		Which[
-        			data === -1,
-        			$Failed,
+        			Or[data === $Failed, data === $Aborted],
+        			data,
         			data[[2]] === 0,
         			MapThread[#1 + I #2 &, {data[[3]], data[[4]]}],
         			data[[2]] === 1,
