@@ -146,30 +146,26 @@ void local_sendErrorAndAbort(std::string funcName, std::string errMsg) {
     // this closes the pipe; no further WSPut's should follow before control flow returns
 }
 
-bool local_isQuregCreated(int id) {
-    if (id < 0 || id >= (int) quregs.size())
-        return false;
-    return quregIsCreated[id];
-}
-
-void local_errorIfQuregNotCreated(int id) {
-    if (!local_isQuregCreated(id))
+void local_throwExcepIfQuregNotCreated(int id) {
+    if (id < 0)
+        throw QuESTException("", "qureg id " + std::to_string(id) + " is invalid (must be >= 0).");
+    if (id >= (int) quregs.size() || !quregIsCreated[id])
         throw QuESTException("", "qureg (with id " + std::to_string(id) + ") has not been created");
 }
 
-void local_errorGateUnsupported(std::string gate) {
-    throw QuESTException("", "the gate '" + gate + "' is not supported.");    
+QuESTException local_gateUnsupportedExcep(std::string gate) {
+    return QuESTException("", "the gate '" + gate + "' is not supported.");    
 }
 
-void local_errorWrongNumGateParams(std::string gate, int wrongNumParams, int rightNumParams) {
-    throw QuESTException("", 
+QuESTException local_wrongNumGateParamsExcep(std::string gate, int wrongNumParams, int rightNumParams) {
+    return QuESTException("", 
         "the gate '" + gate + "' accepts " + std::to_string(rightNumParams) + 
         " parameters, but " + std::to_string(wrongNumParams) + " were passed.");
 }
 
-void local_errorWrongNumGateTargs(std::string gate, int wrongNumTargs, std::string rightNumTargs) {
+QuESTException local_wrongNumGateTargsExcep(std::string gate, int wrongNumTargs, std::string rightNumTargs) {
     // rightNumTargs is a string so that it can be multiple e.g. "1 or 2"
-    throw QuESTException("",
+    return QuESTException("",
         "the gate '" + gate + "' accepts " + rightNumTargs + ", but " +
          std::to_string(wrongNumTargs) + " were passed.");
 }
@@ -223,7 +219,7 @@ void wrapper_createDensityQureg(int numQubits) {
 
 void wrapper_destroyQureg(int id) {
     try { 
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         
         destroyQureg(quregs[id], env); // throws
         quregIsCreated[id] = false;
@@ -237,7 +233,7 @@ void wrapper_destroyQureg(int id) {
 void callable_destroyAllQuregs(void) {
     
     for (size_t id=0; id < quregs.size(); id++) {
-        if (local_isQuregCreated(id)) {
+        if (quregIsCreated[id]) {
             destroyQureg(quregs[id], env);
             quregIsCreated[id] = false;
         }
@@ -299,7 +295,7 @@ void internal_getAmp(int quregID) {
     WSGetInteger64(stdlink, &col);
     
     try { 
-        local_errorIfQuregNotCreated(quregID); // throws
+        local_throwExcepIfQuregNotCreated(quregID); // throws
         
         // ensure user supplied the correct number of args for the qureg type
         Qureg qureg = quregs[quregID];
@@ -327,7 +323,7 @@ void internal_getAmp(int quregID) {
 
 void callable_isDensityMatrix(int quregID) {
     try { 
-        local_errorIfQuregNotCreated(quregID); // throws
+        local_throwExcepIfQuregNotCreated(quregID); // throws
         Qureg qureg = quregs[quregID];
         WSPutInteger(stdlink, qureg.isDensityMatrix);
         
@@ -345,7 +341,7 @@ void internal_getQuregMatrix(int id) {
     // superflous try-catch, but we want to grab the quregNotCreated error message
     // (and this also keeps the pattern consistent)
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
     
         Qureg qureg = quregs[id];
         syncQuESTEnv(env);       // does nothing on local
@@ -385,7 +381,7 @@ void callable_getAllQuregs(void) {
 
 void wrapper_initZeroState(int id) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         initZeroState(quregs[id]);
         WSPutInteger(stdlink, id);
         
@@ -396,7 +392,7 @@ void wrapper_initZeroState(int id) {
 
 void wrapper_initPlusState(int id) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         initPlusState(quregs[id]);
         WSPutInteger(stdlink, id);
         
@@ -407,7 +403,7 @@ void wrapper_initPlusState(int id) {
 
 void wrapper_initClassicalState(int id, int stateInd) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         initClassicalState(quregs[id], stateInd); // throws
         WSPutInteger(stdlink, id);
         
@@ -418,8 +414,8 @@ void wrapper_initClassicalState(int id, int stateInd) {
 
 void wrapper_initPureState(int quregID, int pureID) {
     try {
-        local_errorIfQuregNotCreated(quregID); // throws
-        local_errorIfQuregNotCreated(pureID); // throws
+        local_throwExcepIfQuregNotCreated(quregID); // throws
+        local_throwExcepIfQuregNotCreated(pureID); // throws
         initPureState(quregs[quregID], quregs[pureID]); // throws
         WSPutInteger(stdlink, quregID);
         
@@ -430,7 +426,7 @@ void wrapper_initPureState(int quregID, int pureID) {
 
 void wrapper_initStateFromAmps(int quregID, qreal* reals, long l1, qreal* imags, long l2) {
     try {
-        local_errorIfQuregNotCreated(quregID); // throws
+        local_throwExcepIfQuregNotCreated(quregID); // throws
         
         Qureg qureg = quregs[quregID];
         if (l1 != l2 || l1 != qureg.numAmpsTotal)
@@ -446,8 +442,8 @@ void wrapper_initStateFromAmps(int quregID, qreal* reals, long l1, qreal* imags,
 
 void wrapper_cloneQureg(int outID, int inID) {
     try {
-        local_errorIfQuregNotCreated(outID); // throws
-        local_errorIfQuregNotCreated(inID); // throws
+        local_throwExcepIfQuregNotCreated(outID); // throws
+        local_throwExcepIfQuregNotCreated(inID); // throws
         cloneQureg(quregs[outID], quregs[inID]); // throws
         WSPutInteger(stdlink, outID);
         
@@ -465,7 +461,7 @@ void wrapper_cloneQureg(int outID, int inID) {
 
 void wrapper_collapseToOutcome(int id, int qb, int outcome) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         collapseToOutcome(quregs[id], qb, outcome); // throws 
         WSPutInteger(stdlink, id);
     
@@ -480,9 +476,9 @@ void internal_setWeightedQureg(
     double facReOut, double facImOut, int outID
 ) {
     try {
-        local_errorIfQuregNotCreated(qureg1); // throws
-        local_errorIfQuregNotCreated(qureg2); // throws
-        local_errorIfQuregNotCreated(outID); // throws
+        local_throwExcepIfQuregNotCreated(qureg1); // throws
+        local_throwExcepIfQuregNotCreated(qureg2); // throws
+        local_throwExcepIfQuregNotCreated(outID); // throws
         
         setWeightedQureg(
             (Complex) {.real=facRe1, .imag=facIm1}, quregs[qureg1],
@@ -505,7 +501,7 @@ void internal_setWeightedQureg(
 
 void wrapper_mixDephasing(int id, int qb1, qreal prob) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         mixDephasing(quregs[id], qb1, prob); // throws
         WSPutInteger(stdlink, id);
         
@@ -516,7 +512,7 @@ void wrapper_mixDephasing(int id, int qb1, qreal prob) {
 
 void wrapper_mixTwoQubitDephasing(int id, int qb1, int qb2, qreal prob) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         mixTwoQubitDephasing(quregs[id], qb1, qb2, prob); // throws
         WSPutInteger(stdlink, id);
         
@@ -527,7 +523,7 @@ void wrapper_mixTwoQubitDephasing(int id, int qb1, int qb2, qreal prob) {
 
 void wrapper_mixDepolarising(int id, int qb1, qreal prob) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         mixDepolarising(quregs[id], qb1, prob); // throws
         WSPutInteger(stdlink, id);
         
@@ -538,7 +534,7 @@ void wrapper_mixDepolarising(int id, int qb1, qreal prob) {
 
 void wrapper_mixTwoQubitDepolarising(int id, int qb1, int qb2, qreal prob) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         mixTwoQubitDepolarising(quregs[id], qb1, qb2, prob); // throws
         WSPutInteger(stdlink, id);
         
@@ -549,7 +545,7 @@ void wrapper_mixTwoQubitDepolarising(int id, int qb1, int qb2, qreal prob) {
 
 void wrapper_mixDamping(int id, int qb, qreal prob) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         mixDamping(quregs[id], qb, prob); // throws
         WSPutInteger(stdlink, id);
         
@@ -567,7 +563,7 @@ void wrapper_mixDamping(int id, int qb, qreal prob) {
 
 void wrapper_calcProbOfOutcome(int id, int qb, int outcome) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         qreal prob = calcProbOfOutcome(quregs[id], qb, outcome); // throws
         WSPutReal64(stdlink, prob); 
         
@@ -578,8 +574,8 @@ void wrapper_calcProbOfOutcome(int id, int qb, int outcome) {
 
 void wrapper_calcFidelity(int id1, int id2) {
     try {
-        local_errorIfQuregNotCreated(id1); // throws
-        local_errorIfQuregNotCreated(id2); // throws
+        local_throwExcepIfQuregNotCreated(id1); // throws
+        local_throwExcepIfQuregNotCreated(id2); // throws
         qreal fid = calcFidelity(quregs[id1], quregs[id2]); // throws
         WSPutReal64(stdlink, fid);
         
@@ -590,8 +586,8 @@ void wrapper_calcFidelity(int id1, int id2) {
 
 void wrapper_calcInnerProduct(int id1, int id2) {
     try {
-        local_errorIfQuregNotCreated(id1); // throws
-        local_errorIfQuregNotCreated(id2); // throws
+        local_throwExcepIfQuregNotCreated(id1); // throws
+        local_throwExcepIfQuregNotCreated(id2); // throws
         Complex res = calcInnerProduct(quregs[id1], quregs[id2]); // throws
         WSPutFunction(stdlink, "Complex", 2);
         WSPutReal64(stdlink, res.real);
@@ -604,8 +600,8 @@ void wrapper_calcInnerProduct(int id1, int id2) {
 
 void wrapper_calcDensityInnerProduct(int id1, int id2) {
     try {
-        local_errorIfQuregNotCreated(id1); // throws
-        local_errorIfQuregNotCreated(id2); // throws
+        local_throwExcepIfQuregNotCreated(id1); // throws
+        local_throwExcepIfQuregNotCreated(id2); // throws
         qreal res = calcDensityInnerProduct(quregs[id1], quregs[id2]); // throws
         WSPutReal64(stdlink, res);
         
@@ -616,7 +612,7 @@ void wrapper_calcDensityInnerProduct(int id1, int id2) {
 
 void wrapper_calcPurity(int id) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         qreal pur = calcPurity(quregs[id]); // throws
         WSPutReal64(stdlink, pur);
     
@@ -627,7 +623,7 @@ void wrapper_calcPurity(int id) {
 
 void wrapper_calcTotalProb(int id) {
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         qreal prob = calcTotalProb(quregs[id]); // throws
         WSPutReal64(stdlink, prob);
     
@@ -638,8 +634,8 @@ void wrapper_calcTotalProb(int id) {
 
 void wrapper_calcHilbertSchmidtDistance(int id1, int id2) {
     try {
-        local_errorIfQuregNotCreated(id1); // throws
-        local_errorIfQuregNotCreated(id2); // throws
+        local_throwExcepIfQuregNotCreated(id1); // throws
+        local_throwExcepIfQuregNotCreated(id2); // throws
         qreal dist = calcHilbertSchmidtDistance(quregs[id1], quregs[id2]); // throws
         WSPutReal64(stdlink, dist);
     
@@ -657,9 +653,9 @@ void internal_calcDensityInnerProductsVector(int rhoId, int omegaIds[], long num
     qreal* prods = NULL;
     
     try {
-        local_errorIfQuregNotCreated(rhoId); // throws
+        local_throwExcepIfQuregNotCreated(rhoId); // throws
         for (int i=0; i<numOmegas; i++)
-            local_errorIfQuregNotCreated(omegaIds[i]); // throws
+            local_throwExcepIfQuregNotCreated(omegaIds[i]); // throws
         
         // calculate inner products (must free this)
         prods = (qreal*) malloc(numOmegas * sizeof *prods);
@@ -691,9 +687,9 @@ void internal_calcInnerProductsVector(int braId, int ketIds[], long numKets) {
     qreal* vecIm = NULL;
     
     try {
-        local_errorIfQuregNotCreated(braId); // throws
+        local_throwExcepIfQuregNotCreated(braId); // throws
         for (int i=0; i<numKets; i++)
-            local_errorIfQuregNotCreated(ketIds[i]); // throws
+            local_throwExcepIfQuregNotCreated(ketIds[i]); // throws
             
         // calculate inner products (must free these)
         vecRe = (qreal*) malloc(numKets * sizeof *vecRe);
@@ -735,7 +731,7 @@ void internal_calcDensityInnerProductsMatrix(int quregIds[], long numQuregs) {
     try {
         // check all quregs are created
         for (int i=0; i<numQuregs; i++)
-            local_errorIfQuregNotCreated(quregIds[i]); // throws
+            local_throwExcepIfQuregNotCreated(quregIds[i]); // throws
             
         // store real matrix as `nested pointers`
         long len = numQuregs * numQuregs;
@@ -780,7 +776,7 @@ void internal_calcInnerProductsMatrix(int quregIds[], long numQuregs) {
     try {
         // check all quregs are created
         for (int i=0; i<numQuregs; i++)
-            local_errorIfQuregNotCreated(quregIds[i]); // throws
+            local_throwExcepIfQuregNotCreated(quregIds[i]); // throws
     
         // store complex matrix as 2 flat real arrays
         long len = numQuregs * numQuregs;
@@ -909,19 +905,19 @@ void local_applyGates(
             
             case OPCODE_H :
                 if (numParams != 0)
-                    local_errorWrongNumGateParams("Hadamard", numParams, 0); // throws
+                    throw local_wrongNumGateParamsExcep("Hadamard", numParams, 0); // throws
                 if (numCtrls != 0)
-                    local_errorGateUnsupported("controlled Hadamard"); // throws
+                    throw local_gateUnsupportedExcep("controlled Hadamard"); // throws
                 if (numTargs != 1)
-                    local_errorWrongNumGateTargs("Hadamard", numTargs, "1 target"); // throws
+                    throw local_wrongNumGateTargsExcep("Hadamard", numTargs, "1 target"); // throws
                 hadamard(qureg, targs[targInd]); // throws
                 break;
                 
             case OPCODE_S :
                 if (numParams != 0)
-                    local_errorWrongNumGateParams("S gate", numParams, 0); // throws
+                    throw local_wrongNumGateParamsExcep("S gate", numParams, 0); // throws
                 if (numTargs != 1)
-                    local_errorWrongNumGateTargs("S gate", numTargs, "1 target"); // throws
+                    throw local_wrongNumGateTargsExcep("S gate", numTargs, "1 target"); // throws
                 if (numCtrls == 0)
                     sGate(qureg, targs[targInd]); // throws
                 else {
@@ -932,9 +928,9 @@ void local_applyGates(
                 
             case OPCODE_T : {
                 if (numParams != 0)
-                    local_errorWrongNumGateParams("T gate", numParams, 0); // throws
+                    throw local_wrongNumGateParamsExcep("T gate", numParams, 0); // throws
                 if (numTargs != 1)
-                    local_errorWrongNumGateTargs("T gate", numTargs, "1 target"); // throws
+                    throw local_wrongNumGateTargsExcep("T gate", numTargs, "1 target"); // throws
                 if (numCtrls == 0)
                     tGate(qureg, targs[targInd]); // throws
                 else {
@@ -946,9 +942,9 @@ void local_applyGates(
         
             case OPCODE_X : {
                 if (numParams != 0)
-                    local_errorWrongNumGateParams("X", numParams, 0); // throws
+                    throw local_wrongNumGateParamsExcep("X", numParams, 0); // throws
                 if (numTargs != 1)
-                    local_errorWrongNumGateTargs("X", numTargs, "1 target"); // throws
+                    throw local_wrongNumGateTargsExcep("X", numTargs, "1 target"); // throws
                 if (numCtrls == 0)
                     pauliX(qureg, targs[targInd]); // throws
                 else if (numCtrls == 1)
@@ -964,22 +960,22 @@ void local_applyGates(
                 
             case OPCODE_Y :
                 if (numParams != 0)
-                    local_errorWrongNumGateParams("Y", numParams, 0); // throws
+                    throw local_wrongNumGateParamsExcep("Y", numParams, 0); // throws
                 if (numTargs != 1)
-                    local_errorWrongNumGateTargs("Y", numTargs, "1 target"); // throws
+                    throw local_wrongNumGateTargsExcep("Y", numTargs, "1 target"); // throws
                 if (numCtrls == 0)
                     pauliY(qureg, targs[targInd]); // throws
                 else if (numCtrls == 1)
                     controlledPauliY(qureg, ctrls[ctrlInd], targs[targInd]); // throws
                 else
-                    local_errorGateUnsupported("controlled Y"); // throws
+                    throw local_gateUnsupportedExcep("controlled Y"); // throws
                 break;
                 
             case OPCODE_Z : {
                 if (numParams != 0)
-                    local_errorWrongNumGateParams("Z", numParams, 0); // throws
+                    throw local_wrongNumGateParamsExcep("Z", numParams, 0); // throws
                 if (numTargs != 1)
-                    local_errorWrongNumGateTargs("Z", numTargs, "1 target"); // throws
+                    throw local_wrongNumGateTargsExcep("Z", numTargs, "1 target"); // throws
                 if (numCtrls == 0)
                     pauliZ(qureg, targs[targInd]); // throws
                 else {
@@ -991,37 +987,37 @@ void local_applyGates(
         
             case OPCODE_Rx :
                 if (numParams != 1)
-                    local_errorWrongNumGateParams("Rx", numParams, 1); // throws
+                    throw local_wrongNumGateParamsExcep("Rx", numParams, 1); // throws
                 if (numTargs != 1)
-                    local_errorWrongNumGateTargs("Rx", numTargs, "1 target"); // throws
+                    throw local_wrongNumGateTargsExcep("Rx", numTargs, "1 target"); // throws
                 if (numCtrls == 0)
                     rotateX(qureg, targs[targInd], params[paramInd]); // throws
                 else if (numCtrls == 1)
                     controlledRotateX(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]); // throws
                 else
-                    local_errorGateUnsupported("multi-controlled Rotate X"); // throws
+                    throw local_gateUnsupportedExcep("multi-controlled Rotate X"); // throws
                 break;
                 
             case OPCODE_Ry :
                 if (numParams != 1)
-                    local_errorWrongNumGateParams("Ry", numParams, 1); // throws
+                    throw local_wrongNumGateParamsExcep("Ry", numParams, 1); // throws
                 if (numTargs != 1)
-                    local_errorWrongNumGateTargs("Ry", numTargs, "1 target"); // throws
+                    throw local_wrongNumGateTargsExcep("Ry", numTargs, "1 target"); // throws
                 if (numCtrls == 0)
                     rotateY(qureg, targs[targInd], params[paramInd]); // throws
                 else if (numCtrls == 1)
                     controlledRotateY(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]); // throws
                 else
-                    local_errorGateUnsupported("multi-controlled Rotate Y"); // throws
+                    throw local_gateUnsupportedExcep("multi-controlled Rotate Y"); // throws
                 break;
                 
             case OPCODE_Rz :
                 if (numParams != 1)
-                    local_errorWrongNumGateParams("Rz", numParams, 1); // throws
+                    throw local_wrongNumGateParamsExcep("Rz", numParams, 1); // throws
                 if (numCtrls > 1)
-                    local_errorGateUnsupported("multi-controlled Rotate Z"); // throws
+                    throw local_gateUnsupportedExcep("multi-controlled Rotate Z"); // throws
                 if (numCtrls == 1 && numTargs > 1)
-                    local_errorGateUnsupported("multi-controlled multi-rotateZ"); // throws
+                    throw local_gateUnsupportedExcep("multi-controlled multi-rotateZ"); // throws
                 if (numTargs == 1) {
                     if (numCtrls == 0)
                         rotateZ(qureg, targs[targInd], params[paramInd]); // throws
@@ -1033,7 +1029,7 @@ void local_applyGates(
                 
             case OPCODE_R: {
                 if (numCtrls != 0)
-                    local_errorGateUnsupported("controlled multi-rotate-Pauli"); // throws
+                    throw local_gateUnsupportedExcep("controlled multi-rotate-Pauli"); // throws
                 if (numTargs != numParams-1) {
                     throw QuESTException("", 
                         std::string("An internel error in R occured! ") +
@@ -1054,7 +1050,7 @@ void local_applyGates(
                 if (numTargs == 2 && numParams != 4*4*2)
                     throw QuESTException("", "two qubit U accepts only 4x4 matrices"); // throws
                 if (numTargs != 1 && numTargs != 2)
-                    local_errorWrongNumGateTargs("U", numTargs, "1 or 2 targets"); // throws
+                    throw local_wrongNumGateTargsExcep("U", numTargs, "1 or 2 targets"); // throws
                 
                 if (numTargs == 1) {
                     ComplexMatrix2 u = local_getMatrix2FromFlatList(&params[paramInd]);
@@ -1075,11 +1071,11 @@ void local_applyGates(
                 
             case OPCODE_Deph :
                 if (numParams != 1)
-                    local_errorWrongNumGateParams("Dephasing", numParams, 1); // throws
+                    throw local_wrongNumGateParamsExcep("Dephasing", numParams, 1); // throws
                 if (numCtrls != 0)
-                    local_errorGateUnsupported("controlled dephasing"); // throws
+                    throw local_gateUnsupportedExcep("controlled dephasing"); // throws
                 if (numTargs != 1 && numTargs != 2)
-                    local_errorWrongNumGateTargs("Dephasing", numTargs, "1 or 2 targets"); // throws
+                    throw local_wrongNumGateTargsExcep("Dephasing", numTargs, "1 or 2 targets"); // throws
                 if (params[paramInd] == 0)
                     break; // allows zero-prob decoherence to act on state-vectors
                 if (numTargs == 1)
@@ -1090,11 +1086,11 @@ void local_applyGates(
                 
             case OPCODE_Depol :
                 if (numParams != 1)
-                    local_errorWrongNumGateParams("Depolarising", numParams, 1); // throws
+                    throw local_wrongNumGateParamsExcep("Depolarising", numParams, 1); // throws
                 if (numCtrls != 0)
-                    local_errorGateUnsupported("controlled depolarising"); // throws
+                    throw local_gateUnsupportedExcep("controlled depolarising"); // throws
                 if (numTargs != 1 && numTargs != 2)
-                    local_errorWrongNumGateTargs("Depolarising", numTargs, "1 or 2 targets"); // throws
+                    throw local_wrongNumGateTargsExcep("Depolarising", numTargs, "1 or 2 targets"); // throws
                 if (params[paramInd] == 0)
                     break; // allows zero-prob decoherence to act on state-vectors
                 if (numTargs == 1)
@@ -1105,11 +1101,11 @@ void local_applyGates(
                 
             case OPCODE_Damp :
                 if (numParams != 1)
-                    local_errorWrongNumGateParams("Damping", numParams, 1); // throws
+                    throw local_wrongNumGateParamsExcep("Damping", numParams, 1); // throws
                 if (numCtrls != 0)
-                    local_errorGateUnsupported("controlled damping"); // throws
+                    throw local_gateUnsupportedExcep("controlled damping"); // throws
                 if (numTargs != 1)
-                    local_errorWrongNumGateTargs("Damping", numTargs, "1 target"); // throws
+                    throw local_wrongNumGateTargsExcep("Damping", numTargs, "1 target"); // throws
                 if (params[paramInd] == 0)
                     break; // allows zero-prob decoherence to act on state-vectors
                 mixDamping(qureg, targs[targInd], params[paramInd]); // throws
@@ -1117,9 +1113,9 @@ void local_applyGates(
                 
             case OPCODE_SWAP: {
                 if (numParams != 0)
-                    local_errorWrongNumGateParams("SWAP", numParams, 0); // throws
+                    throw local_wrongNumGateParamsExcep("SWAP", numParams, 0); // throws
                 if (numTargs != 2)
-                    local_errorWrongNumGateTargs("Depolarising", numTargs, "2 targets"); // throws
+                    throw local_wrongNumGateTargsExcep("Depolarising", numTargs, "2 targets"); // throws
                 if (numCtrls == 0) {
                     swapGate(qureg, targs[targInd],   targs[targInd+1]); // throws
                 } else {    
@@ -1140,9 +1136,9 @@ void local_applyGates(
                 
             case OPCODE_M: {
                 if (numParams != 0)
-                    local_errorWrongNumGateParams("M", numParams, 0); // throws
+                    throw local_wrongNumGateParamsExcep("M", numParams, 0); // throws
                 if (numCtrls != 0)
-                    local_errorGateUnsupported("controlled measurement"); // throws
+                    throw local_gateUnsupportedExcep("controlled measurement"); // throws
                 for (int q=0; q < numTargs; q++) {
                     int outcomeVal = measure(qureg, targs[targInd+q]); // throws // throws
                     if (mesOutcomeCache != NULL)
@@ -1158,7 +1154,7 @@ void local_applyGates(
                         "(" + std::to_string(numParams) + ") than target qubits  " +
                         "(" + std::to_string(numTargs) + ")!"); // throws
                 if (numCtrls != 0)
-                    local_errorGateUnsupported("controlled projector"); // throws
+                    throw local_gateUnsupportedExcep("controlled projector"); // throws
                 if (numParams > 1)
                     for (int q=0; q < numParams; q++)
                         collapseToOutcome(qureg, targs[targInd+q], (int) params[paramInd+q]); // throws
@@ -1179,9 +1175,9 @@ void local_applyGates(
                 ; // empty post-label statement, courtesy of weird C99 standard
                 int numKrausOps = (int) params[paramInd];
                 if (numCtrls != 0)
-                    local_errorGateUnsupported("controlled Kraus map"); // throws
+                    throw local_gateUnsupportedExcep("controlled Kraus map"); // throws
                 if (numTargs != 1 && numTargs != 2)
-                    local_errorWrongNumGateTargs("Kraus map", numTargs, "1 or 2 targets"); // throws
+                    throw local_wrongNumGateTargsExcep("Kraus map", numTargs, "1 or 2 targets"); // throws
                 if ((numKrausOps < 1) ||
                     (numTargs == 1 && numKrausOps > 4 ) ||
                     (numTargs == 2 && numKrausOps > 16))
@@ -1212,11 +1208,11 @@ void local_applyGates(
                 
             case OPCODE_G : {
                 if (numParams != 1)
-                    local_errorWrongNumGateParams("Global phase", numParams, 1); // throws
+                    throw local_wrongNumGateParamsExcep("Global phase", numParams, 1); // throws
                 if (numCtrls != 0)
-                    local_errorGateUnsupported("controlled global phase"); // throws
+                    throw local_gateUnsupportedExcep("controlled global phase"); // throws
                 if (numTargs != 0)
-                    local_errorWrongNumGateTargs("Global phase", numTargs, "0 targets"); // throws
+                    throw local_wrongNumGateTargsExcep("Global phase", numTargs, "0 targets"); // throws
                 if (params[paramInd] == 0)
                     break;
                 // phase does not change density matrices
@@ -1308,7 +1304,7 @@ void internal_applyCircuit(int id) {
             
     // ensure qureg exists, else clean-up and exit
     try {
-        local_errorIfQuregNotCreated(id); // throws
+        local_throwExcepIfQuregNotCreated(id); // throws
         
     } catch (QuESTException& err) {
     
@@ -1432,7 +1428,7 @@ void local_getDerivativeQuregs(
             }
         }
         
-        local_errorIfQuregNotCreated(quregIds[v]); // throws
+        local_throwExcepIfQuregNotCreated(quregIds[v]); // throws
         Qureg qureg = quregs[quregIds[v]];
         int varOp = varOpInds[v];
         
@@ -1573,14 +1569,14 @@ void internal_calcQuregDerivs(int initStateId) {
             throw QuESTException("", "An equal number of quregs as variables must be passed.");
         
         // check initQureg is a created state-vector
-        local_errorIfQuregNotCreated(initStateId);
+        local_throwExcepIfQuregNotCreated(initStateId);
         int numQb = quregs[initStateId].numQubitsRepresented;
         if (quregs[initStateId].isDensityMatrix)
             throw QuESTException("", "Density matrices are not yet supported.");
         
         for (int i=0; i < numQuregs; i++) {
             // check all quregs are created
-            local_errorIfQuregNotCreated(quregIds[i]);
+            local_throwExcepIfQuregNotCreated(quregIds[i]);
             
             // check initStateId is not in derivatives
             if (quregIds[i] == initStateId)
@@ -1704,8 +1700,8 @@ void internal_calcExpecPauliProd(int quregId, int workspaceId) {
     WSGetInteger32List(stdlink, &targs, &numPaulis);
     
     try {
-        local_errorIfQuregNotCreated(quregId); // throws 
-        local_errorIfQuregNotCreated(workspaceId); // throws
+        local_throwExcepIfQuregNotCreated(quregId); // throws 
+        local_throwExcepIfQuregNotCreated(workspaceId); // throws
         
         Qureg qureg = quregs[quregId];
         Qureg workspace = quregs[workspaceId];
@@ -1746,8 +1742,8 @@ void internal_calcExpecPauliSum(int quregId, int workspaceId) {
         
     try {
         // ensure quregs exist
-        local_errorIfQuregNotCreated(quregId); // throws
-        local_errorIfQuregNotCreated(workspaceId); // throws
+        local_throwExcepIfQuregNotCreated(quregId); // throws
+        local_throwExcepIfQuregNotCreated(workspaceId); // throws
         
         Qureg qureg = quregs[quregId];
         Qureg workspace = quregs[workspaceId];
@@ -1850,8 +1846,8 @@ void internal_applyPauliSum(int inId, int outId) {
     pauliOpType* arrPaulis = NULL;
     
     try {
-        local_errorIfQuregNotCreated(inId); // throws
-        local_errorIfQuregNotCreated(outId); // throws
+        local_throwExcepIfQuregNotCreated(inId); // throws
+        local_throwExcepIfQuregNotCreated(outId); // throws
         
         Qureg inQureg = quregs[inId];
         Qureg outQureg = quregs[outId];
