@@ -1703,6 +1703,9 @@ void internal_calcExpecPauliProd(int quregId, int workspaceId) {
         local_throwExcepIfQuregNotCreated(quregId); // throws 
         local_throwExcepIfQuregNotCreated(workspaceId); // throws
         
+        if (quregId == workspaceId)
+            throw QuESTException("", "qureg and workspace must be different quregs.");
+        
         Qureg qureg = quregs[quregId];
         Qureg workspace = quregs[workspaceId];
         
@@ -1744,6 +1747,9 @@ void internal_calcExpecPauliSum(int quregId, int workspaceId) {
         // ensure quregs exist
         local_throwExcepIfQuregNotCreated(quregId); // throws
         local_throwExcepIfQuregNotCreated(workspaceId); // throws
+        
+        if (quregId == workspaceId)
+            throw QuESTException("", "qureg and workspace must be different quregs.");
         
         Qureg qureg = quregs[quregId];
         Qureg workspace = quregs[workspaceId];
@@ -1848,6 +1854,9 @@ void internal_applyPauliSum(int inId, int outId) {
     try {
         local_throwExcepIfQuregNotCreated(inId); // throws
         local_throwExcepIfQuregNotCreated(outId); // throws
+        
+        if (inId == outId)
+            throw QuESTException("", "inQureg and outQureg must be different quregs.");
         
         Qureg inQureg = quregs[inId];
         Qureg outQureg = quregs[outId];
