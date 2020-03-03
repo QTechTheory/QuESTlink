@@ -5,6 +5,11 @@ Our [whitepaper](https://arxiv.org/abs/1912.07904) gives a thorough overview of 
 
 Below are instructions for getting QuESTlink up and running, when it doesn't quite run out-of-the-box.
 
+  * [Running](#running)
+  * [Compiling](#compiling)
+  * [Launching offline](#launching-offline)
+  * [Launching as server](#launching-as-server)
+
 ______________
 
 ## Running
