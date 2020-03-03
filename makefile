@@ -1,9 +1,10 @@
 
-# This makefile builds the QuEST library and links/compiles user code
+# This makefile builds the QuEST library and links QuESTlink.
 # While attempting to accomodate as many platforms and compilers,
-# unforeseen problems are inevitable: please email anna.brown@oerc.ox.ac.uk
-# or tyson.jones@materials.ox.ac.uk about any errors or complications, or 
-# raise an issue on Github
+# unforeseen problems are inevitable: please email tyson.jones@materials.ox.ac.uk 
+# about any errors or complications, or raise an issue on Github.
+# This makefile is a small change to that created by Tyson Jones for QuEST, 
+# which in turn is based off the makefile by Ania Brown for QuEST.
 
 #======================================================================#
 #                                                                      #
@@ -11,7 +12,7 @@
 #                                                                      #
 #======================================================================#
 
-# operating system, one of {MACOSX, LINUX}
+# operating system, one of {MACOS, LINUX}
 OS = LINUX
 
 # name of the executable to create
@@ -25,6 +26,9 @@ QUEST_DIR = QuEST
 
 # path to WSTP libs from root directory 
 WSTP_DIR = WSTP
+
+# path to QuESTlink code from root directory
+LINK_DIR = Link
 
 # compiler to use, which should support both C and C++, to be wrapped by GPU/MPI compilers
 COMPILER = g++
@@ -62,8 +66,8 @@ ifneq ($(SILENT), 1)
 
     # check $OS is correct
     ifneq ($(OS), LINUX)
-    ifneq ($(OS), MACOSX)
-        $(error OS must be LINUX or MACOSX)
+    ifneq ($(OS), MACOS)
+        $(error OS must be LINUX or MACOS)
     endif
     endif
 
@@ -152,7 +156,7 @@ endif
 #
 
 LIBS = -lm
-ifeq ($(OS), MACOSX)
+ifeq ($(OS), MACOS)
     LIBS += -lc++ $(WSTP_DIR)/macosx_libWSTPi4.36.a -framework Foundation
 else ifeq ($(OS), LINUX)
     ifeq ($(GPUACCELERATED), 0)
@@ -175,7 +179,7 @@ ifeq ($(GPUACCELERATED), 1)
 else
     QUEST_INNER_DIR = $(QUEST_SRC_DIR)/CPU
 endif
-QUEST_INCLUDE = -I${QUEST_INCLUDE_DIR} -I$(QUEST_INNER_DIR) -I$(QUEST_COMMON_DIR) -I$(WSTP_DIR)
+QUESTLINK_INCLUDE = -I${QUEST_INCLUDE_DIR} -I$(QUEST_INNER_DIR) -I$(QUEST_COMMON_DIR) -I$(WSTP_DIR) -I$(LINK_DIR)
 
 
 #
@@ -237,12 +241,6 @@ else ifeq ($(COMPILER_TYPE), INTEL)
     CPP_FLAGS = $(CPP_INTEL_FLAGS)
 endif
 
-ifeq ($(TEST), 1)
-	QUEST_LIB := libQuEST
-	LIB_EXT = .so
-	LIB_NAME = $(addsuffix $(LIB_EXT), $(QUEST_LIB))
-	C_FLAGS += -fPIC
-endif
 
 
 #
@@ -282,51 +280,57 @@ OBJ += $(addsuffix .o, $(SOURCES))
 ifeq ($(GPUACCELERATED), 1)
 
   %.o: %.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 
   %.o: %.cu
-	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUEST_INCLUDE) $<
+	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
   %.o: $(QUEST_INNER_DIR)/%.cu
-	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUEST_INCLUDE) $<
+	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
 	
   %.o: %.cpp
-	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUEST_INCLUDE) $<
+	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
   %.o: $(QUEST_INNER_DIR)/%.cpp
-	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUEST_INCLUDE) $<
+	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
+  %.o: $(LINK_DIR)/%.c
+	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
 
 # distributed
 else ifeq ($(DISTRIBUTED), 1)
 
   %.o: %.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 	
   %.o: %.cpp
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.cpp
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+  %.o: $(LINK_DIR)/%.cpp
+  	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 
 # CPU
 else
 
   %.o: %.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 	
   %.o: %.cpp quest_templates.tm.cpp
-	$(COMPILER) $(CPP_FLAGS) $(QUEST_INCLUDE) -c $<
+	$(COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.cpp
-	$(COMPILER) $(CPP_FLAGS)  -c $<
+	$(COMPILER) $(CPP_FLAGS) -c $<
+  %.o: $(LINK_DIR)/%.cpp
+	$(COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 
 endif
 
@@ -338,26 +342,26 @@ endif
 ifeq ($(GPUACCELERATED), 1)
 
   all:	$(OBJ)
-		$(CUDA_COMPILER) $(CPP_CUDA_FLAGS) $(QUEST_INCLUDE) -o $(EXE) $(OBJ) $(LIBS)
+		$(CUDA_COMPILER) $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS)
 
 # MPI
 else ifeq ($(DISTRIBUTED), 1)
 
   default:	$(EXE)
   $(EXE):	$(OBJ)
-			$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_FLAGS) $(QUEST_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) 
+			$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) 
 
 # C
 else
 
   default:	$(EXE)
   $(EXE):	$(OBJ)
-			$(COMPILER) $(C_FLAGS) $(QUEST_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) 
+			$(COMPILER) $(C_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) 
 
 endif
 
 test: $(OBJ)
-	$(COMPILER) $(C_FLAGS)  -shared -Wl,-soname,$(QUEST_LIB) $(QUEST_INCLUDE) -o $(LIB_NAME) $(OBJ) $(LIBS)
+	$(COMPILER) $(C_FLAGS)  -shared -Wl,-soname,$(QUEST_LIB) $(QUESTLINK_INCLUDE) -o $(LIB_NAME) $(OBJ) $(LIBS)
 
 
 
@@ -365,14 +369,14 @@ test: $(OBJ)
 # --- generate C code from MMA templates 
 #
 
-ifeq ($(OS), MACOSX)
+ifeq ($(OS), MACOS)
     PREP = macosx_wsprep
 else ifeq ($(OS), LINUX)
     PREP = linux_wsprep
 endif
 
 quest_templates.tm.cpp:
-	$(WSTP_DIR)/$(PREP) quest_templates.tm -o quest_templates.tm.cpp
+	$(WSTP_DIR)/$(PREP) $(LINK_DIR)/quest_templates.tm -o quest_templates.tm.cpp
 
 
 
@@ -380,7 +384,10 @@ quest_templates.tm.cpp:
 # --- clean
 #
 
-.PHONY:		clean veryclean
+.PHONY:		tidy clean veryclean
+tidy:
+			/bin/rm -f *.o
+			/bin/rm -f quest_templates.tm.cpp
 clean:
 			/bin/rm -f *.o $(EXE)
 			/bin/rm -f quest_templates.tm.cpp
