@@ -1,5 +1,8 @@
+<img align="left" src="Doc/quest_logo.png" alt="The QuEST logo">
+<img align="left" src="Doc/mma_logo.png" alt="The Mathematica logo">
+
 # [QuESTlink](https://questlink.qtechtheory.org/)
-A Mathematica package for remote multithreaded and GPU emulation of quantum computers, using [QuEST](https://quest.qtechtheory.org/).
+A [Mathematica](https://www.wolfram.com/mathematica/) package for remote multithreaded and GPU emulation of quantum computers, using [QuEST](https://quest.qtechtheory.org/).
 
 > QuESTlink is currently considered as an early-release, and is under active development. 
 > The offered API may contain bugs and is liable to change.
