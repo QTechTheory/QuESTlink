@@ -1,5 +1,4 @@
-<img align="left" src="Doc/quest_logo.png" alt="The QuEST logo">
-<img align="left" src="Doc/mma_logo.png" alt="The Mathematica logo">
+<img align="left" src="Doc/logo.png" alt="The QuEST logo">
 
 # [QuESTlink](https://questlink.qtechtheory.org/)
 A [Mathematica](https://www.wolfram.com/mathematica/) package for remote multithreaded and GPU emulation of quantum computers, using [QuEST](https://quest.qtechtheory.org/).
