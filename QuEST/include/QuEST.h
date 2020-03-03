@@ -160,9 +160,6 @@ typedef struct Vector
  */
 typedef struct Qureg
 {
-    // for MMA
-    int isCreated;
-
     //! Whether this instance is a density-state representation
     int isDensityMatrix;
     //! The number of qubits represented in either the state-vector or density matrix
@@ -210,14 +207,11 @@ typedef struct QuESTEnv
 /*
  * Added for Mathematica front-end 
  */
- 
-/** exposed for MMA statevec access */
-void copyStateFromGPU(Qureg qureg);
 
 /** exposed for MMA get-deriv-of-circuits (deriv of controlled gates) */
 void projectToOne(Qureg qureg, const int measureQubit);
 
-/** exposed for MMA get-deriv-of-circuits (deriv of general unitary gates */
+/** exposed for MMA get-deriv-of-circuits (deriv of general unitary gates) */
 void applyOneQubitMatrix(Qureg qureg, int targetQubit,  ComplexMatrix2 u);
 void applyTwoQubitMatrix(Qureg qureg, int targetQubit1, int targetQubit2, ComplexMatrix4 u);
 

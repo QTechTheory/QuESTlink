@@ -14,57 +14,79 @@ BeginPackage["QuEST`"]
     
     ApplyCircuit::usage = "ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
 ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg."
+    ApplyCircuit::error = "`1`"
     
     CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] sets the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in Rx, Ry, Rz, R or U (and controlled) of the given circuit ONCE (multiple times within a U matrix is allowed). The initState is unchanged. Note Rx[theta] is allowed, but Rx[f(theta)] is not. Furthermore U matrices must contain at most one parameter."
+    CalcQuregDerivs::error = "`1`"
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
 CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element CalcInnerProduct[braId, ketIds[i]]."
+    CalcInnerProducts::error = "`1`"
 
     CalcDensityInnerProducts::usage = "CalcDensityInnerProducts[quregIds] returns a real, symmetric matrix with i-th j-th element CalcDensityInnerProduct[quregIds[i], quregIds[j]].
 CalcDensityInnerProducts[rhoId, omegaIds] returns a real vector with i-th element CalcDensityInnerProduct[rhoId, omegaIds[i]]."
+    CalcDensityInnerProducts::error = "`1`"
     
     Circuit::usage = "Circuit[gates] converts a product of gates into a left-to-right circuit, preserving order."
+    Circuit::error = "`1`"
     
     Operator::usage = "Operator[gates] converts a product of gates into a right-to-left circuit."
+    Operator::error = "`1`"
     
     CalcExpecPauliProd::usage = "CalcExpecPauliProd[qureg, paulis, workspace] evaluates the expected value of a product of Paulis. workspace must be a qureg of equal dimensions to qureg."
+    CalcExpecPauliProd::error = "`1`"
 
     CalcExpecPauliSum::usage = "CalcExpecPauliSum[qureg, pauliSum, workspace] evaluates the expected value of a weighted sum of Pauli products, of a normalised qureg. workspace must be a qureg of equal dimensions to qureg. qureg is unchanged, and workspace is modified."
+    CalcExpecPauliSum::error = "`1`"
 
     ApplyPauliSum::usage = "ApplyPauliSum[inQureg, pauliSum, outQureg] modifies outQureg to be the result of applying the weighted sum of Paulis to inQureg."
+    ApplyPauliSum::error = "`1`"
 
     CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the matrix form of the given weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target."
+    CalcPauliSumMatrix::error = "`1`"
 
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
+    DestroyQureg::error = "`1`"
     
     GetAmp::usage = "GetAmp[qureg, index] returns the complex amplitude of the state-vector qureg at the given index.
 GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qureg at index [row, col]."
+    GetAmp::error = "`1`"
     
     GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
-            
+    GetQuregMatrix::error = "`1`"
+    
     SetQuregMatrix::usage = "SetQuregMatrix[qureg, matr] modifies qureg, overwriting its statevector or density matrix with that passed."
-        
+    SetQuregMatrix::error = "`1`"
+    
     GetPauliSumFromCoeffs::usage = "GetPauliSumFromCoeffs[addr] opens or downloads the file at addr (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes, converting this to a symbolic weighted sum of Pauli products. Each line of the file is a separate term (a Pauli product), with format {coeff code1 code2 ... codeN} (exclude braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z term in the product respectively), for an N-qubit operator. Each line must have N+1 terms (including the real decimal coefficient at the beginning)."
-            
+    GetPauliSumFromCoeffs::error = "`1`"
+    
     CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[ip, port1, port2] connects to a remote QuESTlink server at ip, at the given ports, and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
-             
+    CreateRemoteQuESTEnv::error = "`1`"
+    
     CreateLocalQuESTEnv::usage = "CreateLocalQuESTEnv[fn] connects to a local 'quest_link' executable, located at fn, running single-CPU QuEST. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link].
 CreateLocalQuESTEnv[] connects to a 'quest_link' executable in the working directory."
+    CreateLocalQuESTEnv::error = "`1`"
     
     CreateDownloadedQuESTEnv::usage = "CreateDownloadedQuESTEnv[os] downloads a single-CPU QuESTlink backend from qtechtheory.org, gives it permission to run then locally connects to it. os is a string indicating the user's operating system (currently only 'MacOS' is supported, which is default). This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
+    CreateDownloadedQuESTEnv::error = "`1`"
     
     DestroyQuESTEnv::usage = "DestroyQuESTEnv[link] disconnects from the QuEST link, which may be the remote Igor server or a loca instance, clearing some QuEST function definitions (but not those provided by the QuEST package)."
+    DestroyQuESTEnv::error = "`1`"
 
     SetWeightedQureg::usage = "SetWeightedQureg[fac1, q1, fac2, q2, facOut, qOut] modifies qureg qOut to be (facOut qOut + fac1 q1 + fac2 q2). qOut can be one of q1 an q2.
 SetWeightedQureg[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + fac2 q2). qOut can be one of q1 an q2."
+    SetWeightedQureg::error = "`1`"
 
     DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram.
 DrawCircuit[circuit, numQubits] generates a circuit diagram with numQubits, useful for overriding the automated inferrence of the number of qubits if incorrect.
 DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagram."
+    DrawCircuit::error = "`1`"
 
     CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic expression for the given unitary circuit, which may contain undefined symbols. The number of qubits is inferred from the circuit indices (0 to maximum specified).
 CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the number of present qubits."
-            
+    CalcCircuitMatrix::error = "`1`"
+    
     (* 
      * gate symbols, needed exporting so that their use below does not refer to a private var      
      *)
@@ -179,7 +201,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		If[
         			AllTrue[codes[[4]], NumericQ, 2],
         			ApplyCircuitInternal[qureg, unpackEncodedCircuit[codes]], 
-        			Echo["Circuit contains non-numerical parameters!", "Error: "]; $Failed
+        			Message[ApplyCircuit::error, "Circuit contains non-numerical parameters!"]; $Failed
         		]
         	]
         (* apply a circuit to get an output state without changing input state. CloneQureg provided by WSTP *)
@@ -200,11 +222,11 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 codes = codifyCircuit[(circuit /. varVals)]}, 
                 Which[
                     AnyTrue[varOpInds, Length[#]<1&],
-                    Echo["One or more variables were not present in the circuit!", "Error: "]; $Failed,
+                    Message[CalcQuregDerivs::error, "One or more variables were not present in the circuit!"]; $Failed,
                     AnyTrue[varOpInds, Length[#]>1&],
-                    Echo["One or more variables appeared multiple times in the circuit!", "Error: "]; $Failed,
+                    Message[CalcQuregDerivs::error, "One or more variables appeared multiple times in the circuit!"]; $Failed,
                     Not @ AllTrue[codes[[4]], NumericQ, 2],
-                    Echo["The circuit contained variables not assigned values in varVals!", "Error: "]; $Failed,
+                    Message[CalcQuregDerivs::error, "The circuit contained variables not assigned values in varVals!"]; $Failed,
                     True,
                     With[{unitaryGates = Select[
                         Flatten[{varVals[[All,1]], circuit[[varOpInds[[All,1]]]]}, {{2},{1}}], Not[FreeQ[#, U]] &]},
@@ -268,12 +290,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         DestroyQureg[qureg_Symbol] :=
         	Block[{}, DestroyQuregInternal[ReleaseHold@qureg]; Clear[qureg]]
 
-        (* get a local matrix representation of the qureg. GetStateVecInternal provided by WSTP *)
+        (* get a local matrix representation of the qureg. GetQuregMatrixInternal provided by WSTP *)
         GetQuregMatrix[qureg_Integer] :=
-        	With[{data = GetStateVecInternal[qureg]},
+        	With[{data = GetQuregMatrixInternal[qureg]},
         		Which[
-        			data === -1,
-        			$Failed,
+        			Or[data === $Failed, data === $Aborted],
+        			data,
         			data[[2]] === 0,
         			MapThread[#1 + I #2 &, {data[[3]], data[[4]]}],
         			data[[2]] === 1,
@@ -303,9 +325,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             
         (* compute the expected value of a Pauli product *)
         CalcExpecPauliProd[qureg_Integer, Verbatim[Times][paulis:pattPauli..], workspace_Integer] :=
-            CalcExpecPauliProdInternal[qureg, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], workspace]
+            CalcExpecPauliProdInternal[qureg, workspace, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]]]
         CalcExpecPauliProd[qureg_Integer, Subscript[pauli:(X|Y|Z),targ:_Integer], workspace_Integer] :=
-            CalcExpecPauliProdInternal[qureg, getOpcode /@ {pauli}, {targ}, workspace]
+            CalcExpecPauliProdInternal[qureg, workspace, getOpCode /@ {pauli}, {targ}]
             
         (* compute the expected value of a weighted sum of Pauli products *)
         getPauliSumTermCoeff[pauli:pattPauli] = 1;
@@ -402,7 +424,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         CreateLocalQuESTEnv[fn_:"quest_link"] := If[
             FileExistsQ[fn], 
             Install[fn],  
-            Echo["Local quest_link executable not found!", "Error: "]; $Failed]
+            Message[CreateLocalQuESTEnv::error, "Local quest_link executable not found!"]; $Failed]
         
         CreateDownloadedQuESTEnv[os_String:"MacOS"] := Module[{linkfile},
             If[os == "MacOS",
@@ -410,7 +432,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 Run["chmod +x quest_link"];
                 Install[linkfile],
                 
-                Echo["Only MacOS is currently supported", "Error:"]; $Failed
+                Message[CreateDownloadedQuESTEnv::error, "Only MacOS is currently supported"]; $Failed
             ]
         ]
                     
