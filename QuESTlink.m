@@ -325,9 +325,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             
         (* compute the expected value of a Pauli product *)
         CalcExpecPauliProd[qureg_Integer, Verbatim[Times][paulis:pattPauli..], workspace_Integer] :=
-            CalcExpecPauliProdInternal[qureg, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], workspace]
+            CalcExpecPauliProdInternal[qureg, workspace, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]]]
         CalcExpecPauliProd[qureg_Integer, Subscript[pauli:(X|Y|Z),targ:_Integer], workspace_Integer] :=
-            CalcExpecPauliProdInternal[qureg, getOpcode /@ {pauli}, {targ}, workspace]
+            CalcExpecPauliProdInternal[qureg, workspace, getOpCode /@ {pauli}, {targ}]
             
         (* compute the expected value of a weighted sum of Pauli products *)
         getPauliSumTermCoeff[pauli:pattPauli] = 1;
