@@ -17,6 +17,8 @@ CreateDownloadedQuESTEnv["MacOs"]
 > Pre-prepared Windows and Linux builds are coming soon.
 > In the meantime, users on those platforms can use `CreateLocalQuESTEnv[]` after compiling from source, as described below
 
+These commands download the QuESTlink Mathematica package file, and the `quest_link` executable, to your machine.
+
 To see available all available functions and circuit symbols, run
 ```Mathematica
 ?QuEST`*
@@ -69,10 +71,25 @@ make clean
 
 From within Mathematica, the compiled `quest_link` environment is connected to via 
 ```Mathematica 
+Import[...]
 CreateLocalQuESTEnv["path/to/quest_link"];
 ```
 
 _______________________________
+
+## Launching offline 
+
+QuESTlink can be launched without an internet connection, using a copy of this repository. In Mathematica, simply run 
+
+```Mathematica 
+Import["path/to/QuESTlink/Link/QuESlink.m"];
+Install["path/to/quest_link"];
+```
+
+where `quest_link` has been compiled as above, or previously obtained using 
+```Mathematica 
+CreateDownloadedQuESTEnv[];
+```
 
 ## Launching as server
 
