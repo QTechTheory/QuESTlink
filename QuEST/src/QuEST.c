@@ -1070,6 +1070,7 @@ void destroyComplexMatrixN(ComplexMatrixN m) {
     free(m.imag);
 }
 
+#ifndef _WIN32
 void initComplexMatrixN(ComplexMatrixN m, qreal re[][1<<m.numQubits], qreal im[][1<<m.numQubits]) {
     validateMatrixInit(m, __func__);
     
@@ -1080,6 +1081,7 @@ void initComplexMatrixN(ComplexMatrixN m, qreal re[][1<<m.numQubits], qreal im[]
             m.imag[i][j] = im[i][j];
         }
 }
+#endif
 
 /*
  * debug
