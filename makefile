@@ -76,18 +76,18 @@ ifneq ($(SILENT), 1)
     # check $OS is correct
     ifneq ($(OS), LINUX)
     ifneq ($(OS), MACOS)
-	ifneq ($(OS), WINDOWS)
+    ifneq ($(OS), WINDOWS)
         $(error OS must be LINUX, MACOS or LINUX)
     endif
     endif
-	endif
+    endif
 
     # check $COMPILER_TYPE is correct
     ifneq ($(COMPILER_TYPE), CLANG)
     ifneq ($(COMPILER_TYPE), GNU)
     ifneq ($(COMPILER_TYPE), INTEL)
-	ifneq ($(COMPILER_TYPE), WINDOWS)
-        $(error COMPILER_TYPE must be one of CLANG, GNU, INTEL or MSCV)
+    ifneq ($(COMPILER_TYPE), MSVC)
+        $(error COMPILER_TYPE must be one of CLANG, GNU, INTEL or MSVC)
     endif
     endif
     endif
@@ -237,7 +237,7 @@ ifeq ($(MULTITHREADED), 1)
         THREAD_FLAGS = -fopenmp
     else ifeq ($(COMPILER_TYPE), INTEL)
         THREAD_FLAGS = -qopenmp
-    else ifeq ($(COMPILER_TYPE), MSCV)
+    else ifeq ($(COMPILER_TYPE), MSVC)
         THREAD_FLAGS = -openmp
     endif
 else
@@ -303,7 +303,7 @@ OBJ += $(addsuffix .o, $(SOURCES))
 # --- C-mode flag
 #
 
-ifeq ($(OS), WINDOWS)
+ifeq ($(COMPILER_TYPE), MSVC)
     C_MODE = 
 else
     C_MODE = -x c
@@ -442,10 +442,10 @@ endif
 # define tidy cmds
 .PHONY:		tidy clean veryclean
 tidy:
-			$(REM) *.o
+			$(REM) *.o *.obj
 			$(REM) quest_templates.tm.cpp
 clean:
-			$(REM) *.o $(EXE)
+			$(REM) *.o *.obj $(EXE)
 			$(REM) quest_templates.tm.cpp
 veryclean:	clean
 			$(REM) *.h~ *.c~ makefile~
