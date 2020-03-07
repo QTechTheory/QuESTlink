@@ -299,6 +299,16 @@ endif
 OBJ += $(addsuffix .o, $(SOURCES))
 
 
+#
+# --- C-mode flag
+#
+
+ifeq ($(OS), WINDOWS)
+    C_MODE = 
+else
+    C_MODE = -x c
+endif
+
 
 #
 # --- rules
@@ -313,11 +323,11 @@ OBJ += $(addsuffix .o, $(SOURCES))
 ifeq ($(GPUACCELERATED), 1)
 
   %.o: %.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 
   %.o: %.cu
 	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
@@ -335,11 +345,11 @@ ifeq ($(GPUACCELERATED), 1)
 else ifeq ($(DISTRIBUTED), 1)
 
   %.o: %.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 	
   %.o: %.cpp
 	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
@@ -352,11 +362,11 @@ else ifeq ($(DISTRIBUTED), 1)
 else
 
   %.o: %.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 	
   %.o: %.cpp quest_templates.tm.cpp
 	$(COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
