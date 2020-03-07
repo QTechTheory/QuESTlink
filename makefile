@@ -12,8 +12,33 @@
 #                                                                      #
 #======================================================================#
 
-# operating system, one of {MACOS, LINUX}
-OS = LINUX
+# operating system, one of {MACOS, LINUX, WINDOWS}
+OS = MACOS
+
+# compiler to use, which should support both C and C++, to be wrapped by GPU/MPI compilers
+# this is likely to be one of {g++, clang, ic, cl}
+COMPILER = clang
+
+# type of above compiler, one of {GNU, INTEL, CLANG, MSVC}, used for setting compiler flags
+COMPILER_TYPE = CLANG
+
+# hardwares to target: 1 means use, 0 means don't use
+MULTITHREADED = 0
+DISTRIBUTED = 0
+GPUACCELERATED = 0
+
+# GPU hardware dependent, lookup at https://developer.nvidia.com/cuda-gpus, write without fullstop
+GPU_COMPUTE_CAPABILITY = 61
+
+# whether to suppress the below warnings about compiler compatibility
+SUPPRESS_WARNING = 0
+
+
+#======================================================================#
+#                                                                      #
+#      Constants                                                       #
+#                                                                      #
+#======================================================================#
 
 # name of the executable to create
 EXE = quest_link
@@ -29,23 +54,6 @@ WSTP_DIR = WSTP
 
 # path to QuESTlink code from root directory
 LINK_DIR = Link
-
-# compiler to use, which should support both C and C++, to be wrapped by GPU/MPI compilers
-COMPILER = g++
-
-# type of above compiler, one of {GNU, INTEL, CLANG}, used for setting compiler flags
-COMPILER_TYPE = GNU
-
-# hardwares to target: 1 means use, 0 means don't use
-MULTITHREADED = 0
-DISTRIBUTED = 0
-GPUACCELERATED = 0
-
-# GPU hardware dependent, lookup at https://developer.nvidia.com/cuda-gpus, write without fullstop
-GPU_COMPUTE_CAPABILITY = 61
-
-# whether to suppress the below warnings about compiler compatibility
-SUPPRESS_WARNING = 0
 
 # whether to use single, double or quad floating point precision in the state-vector {1,2,4}
 PRECISION = 2
