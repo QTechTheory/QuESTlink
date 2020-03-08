@@ -667,7 +667,7 @@ void wrapper_calcHilbertSchmidtDistance(int id1, int id2) {
 /* returns a real vector with ith element 
  * calcDensityInnerProduct(qureg[rhoId], qureg[omegaIds[i]]) 
  */
-void internal_calcDensityInnerProductsVector(int rhoId, int omegaIds[], long numOmegas) {
+void internal_calcDensityInnerProductsVector(int rhoId, int* omegaIds, long numOmegas) {
     
     // init to null so we can check whether it needs cleanup
     qreal* prods = NULL;
@@ -700,7 +700,7 @@ void internal_calcDensityInnerProductsVector(int rhoId, int omegaIds[], long num
 
 /* returns vector with ith element <qureg[braId]|qureg[ketIds[i]]> 
  */
-void internal_calcInnerProductsVector(int braId, int ketIds[], long numKets) {
+void internal_calcInnerProductsVector(int braId, int* ketIds, long numKets) {
     
     // init to NULL so we can check if they need clean-up later
     qreal* vecRe = NULL;
@@ -743,7 +743,7 @@ void internal_calcInnerProductsVector(int braId, int ketIds[], long numKets) {
 }
 
 /* returns real, symmetric matrix with ith jth element calcDensityInnerProduct(quregs[quregIds[i]], qureg[qurgIds[j]]) */
-void internal_calcDensityInnerProductsMatrix(int quregIds[], long numQuregs) {
+void internal_calcDensityInnerProductsMatrix(int* quregIds, long numQuregs) {
     
     // init to NULL so we can later check if it needs cleanup
     qreal* matr = NULL;
@@ -787,7 +787,7 @@ void internal_calcDensityInnerProductsMatrix(int quregIds[], long numQuregs) {
 }
 
 /* returns Hermitian matrix with ith jth element <qureg[i]|qureg[j]> */
-void internal_calcInnerProductsMatrix(int quregIds[], long numQuregs) {
+void internal_calcInnerProductsMatrix(int* quregIds, long numQuregs) {
     
     // init to NULL so we can later check if it needs cleanup
     qreal* matrRe = NULL;

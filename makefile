@@ -254,7 +254,7 @@ C_MSVC_FLAGS = -O2 -EHsc -W0 -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -
 CPP_CLANG_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION)
 CPP_GNU_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 CPP_INTEL_FLAGS = -O2 -std=c++11 -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
-CPP_MSVC_FLAGS = -O2 -std:c++latest -EHsc -W0 -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN32 -D_DEBUG -D_WINDOWS -Fo$@
+CPP_MSVC_FLAGS = -O2 -std:c++latest -EHsc -W0 -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN32 -D_WINDOWS -Fo$@
 
 # wrappers
 CPP_CUDA_FLAGS = -O2 -arch=compute_$(GPU_COMPUTE_CAPABILITY) -code=sm_$(GPU_COMPUTE_CAPABILITY) -DQuEST_PREC=$(PRECISION) -ccbin $(COMPILER)
@@ -432,10 +432,13 @@ quest_templates.tm.cpp:
 # resolve os remove command
 ifeq ($(OS), MACOS)
     REM = /bin/rm -f
+    EXE_FN = $(EXE)
 else ifeq ($(OS), LINUX)
     REM = /bin/rm -f
+    EXE_FN = $(EXE)
 else ifeq ($(OS), WINDOWS)
     REM = del
+    EXE_FN = $(EXE).exe
 endif
 
 
@@ -445,7 +448,7 @@ tidy:
 			$(REM) *.o
 			$(REM) quest_templates.tm.cpp
 clean:
-			$(REM) *.o $(EXE)
+			$(REM) *.o $(EXE_FN)
 			$(REM) quest_templates.tm.cpp
 veryclean:	clean
 			$(REM) *.h~ *.c~ makefile~
