@@ -269,7 +269,7 @@ else ifeq ($(COMPILER_TYPE), GNU)
 else ifeq ($(COMPILER_TYPE), INTEL)
     C_FLAGS = $(C_INTEL_FLAGS)
     CPP_FLAGS = $(CPP_INTEL_FLAGS)
-else ifeq ($(COMPILER_TYPE), INTEL)
+else ifeq ($(COMPILER_TYPE), MSVC)
     C_FLAGS = $(C_MSVC_FLAGS)
     CPP_FLAGS = $(CPP_MSVC_FLAGS)
 endif
@@ -442,10 +442,10 @@ endif
 # define tidy cmds
 .PHONY:		tidy clean veryclean
 tidy:
-			$(REM) *.o *.obj
+			$(REM) *.o
 			$(REM) quest_templates.tm.cpp
 clean:
-			$(REM) *.o *.obj $(EXE)
+			$(REM) *.o $(EXE)
 			$(REM) quest_templates.tm.cpp
 veryclean:	clean
 			$(REM) *.h~ *.c~ makefile~

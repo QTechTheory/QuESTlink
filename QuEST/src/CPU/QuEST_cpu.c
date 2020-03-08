@@ -1855,10 +1855,10 @@ void statevec_multiControlledMultiQubitUnitaryLocal(Qureg qureg, long long int c
         int sortedTargs[numTargs];
     // on Windows, with no VLA, we can use _malloca to allocate on stack (must free)
     #else
-        long long int* ampInds = _malloca(numTargAmps);
-        qreal* reAmps = _malloca(numTargAmps);
-        qreal* imAmps = _malloca(numTargAmps);
-        int* sortedTargs = _malloca(numTargs);
+        long long int* ampInds = _malloca(numTargAmps * sizeof *ampInds);
+        qreal* reAmps = _malloca(numTargAmps * sizeof *reAmps);
+        qreal* imAmps = _malloca(numTargAmps * sizeof *imAmps);
+        int* sortedTargs = _malloca(numTargs * sizeof *sortedTargs);
     #endif
 
     // we need a sorted targets list to find thisInd00 for each task.
