@@ -303,10 +303,14 @@ void callable_createDensityQuregs(int numQubits, int numQuregs) {
 void internal_getAmp(int quregID) {
     
     // get args from MMA (must do this before possible early-exit)
-    long long int row;
-    long long int col;
-    WSGetInteger64(stdlink, &row);
-    WSGetInteger64(stdlink, &col);
+    wsint64 rawRow, rawCol;
+    WSGetInteger64(stdlink, &rawRow);
+    WSGetInteger64(stdlink, &rawCol);
+    
+    // explicitly cast from wsint64 type, which resolves to a different C++ primitive 
+    // depending compiler (MSVC: long long int, GNU: long int)
+    long long int row = (long long int) rawRow;
+    long long int col = (long long int) rawCol;
     
     try { 
         local_throwExcepIfQuregNotCreated(quregID); // throws
