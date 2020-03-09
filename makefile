@@ -254,7 +254,7 @@ C_MSVC_FLAGS = -O2 -EHs -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN
 CPP_CLANG_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION)
 CPP_GNU_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 CPP_INTEL_FLAGS = -O2 -std=c++11 -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
-CPP_MSVC_FLAGS = -O2 -std:c++latest -EHs -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN32 -D_WINDOWS -Fo$@
+CPP_MSVC_FLAGS = -O2 -EHs -std:c++latest -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN32 -D_WINDOWS -Fo$@
 
 # wrappers
 CPP_CUDA_FLAGS = -O2 -arch=compute_$(GPU_COMPUTE_CAPABILITY) -code=sm_$(GPU_COMPUTE_CAPABILITY) -DQuEST_PREC=$(PRECISION) -ccbin $(COMPILER)
@@ -272,6 +272,22 @@ else ifeq ($(COMPILER_TYPE), INTEL)
 else ifeq ($(COMPILER_TYPE), MSVC)
     C_FLAGS = $(C_MSVC_FLAGS)
     CPP_FLAGS = $(CPP_MSVC_FLAGS)
+endif
+
+
+
+#
+# --- compiler mode and linker flags 
+#
+
+ifeq ($(COMPILER_TYPE), MSVC)
+    C_MODE = 
+    LINKER = link
+    LINK_FLAGS = -out:$(EXE).exe -SUBSYSTEM:WINDOWS -nologo
+else
+    C_MODE = -x c
+    LINKER = $(COMPILER)
+    LINK_FLAGS = -o $(EXE)
 endif
 
 
@@ -297,17 +313,6 @@ else
     OBJ += QuEST_cpu.o QuEST_cpu_local.o
 endif
 OBJ += $(addsuffix .o, $(SOURCES))
-
-
-#
-# --- C-mode flag
-#
-
-ifeq ($(COMPILER_TYPE), MSVC)
-    C_MODE = 
-else
-    C_MODE = -x c
-endif
 
 
 #
@@ -385,26 +390,23 @@ endif
 ifeq ($(GPUACCELERATED), 1)
 
   all:	$(OBJ)
-		$(CUDA_COMPILER) $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS)
+		$(CUDA_COMPILER) $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) $(LINK_FLAGS)
 
 # MPI
 else ifeq ($(DISTRIBUTED), 1)
 
   default:	$(EXE)
   $(EXE):	$(OBJ)
-			$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) 
+			$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) $(LINK_FLAGS)
 
 # C
 else
 
   default:	$(EXE)
   $(EXE):	$(OBJ)
-			$(COMPILER) $(C_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) 
+			$(LINKER) $(OBJ) $(LIBS) $(LINK_FLAGS)
 
 endif
-
-test: $(OBJ)
-	$(COMPILER) $(C_FLAGS)  -shared -Wl,-soname,$(QUEST_LIB) $(QUESTLINK_INCLUDE) -o $(LIB_NAME) $(OBJ) $(LIBS)
 
 
 
