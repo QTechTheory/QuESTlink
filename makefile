@@ -187,8 +187,8 @@ else ifeq ($(OS), WINDOWS)
 else ifeq ($(OS), LINUX)
     LIBS = -lm -ldl -lutil -lpthread -luuid -lrt -lstdc++ $(WSTP_SRC_DIR)/linux_libWSTP64i4.a
     ifeq ($(GPUACCELERATED), 0)
-        LIBS += -Wl,--no-as-needed
-	endif
+        LIBS := -Wl,--no-as-needed $(LIBS)
+    endif
 endif
 
 
