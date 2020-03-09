@@ -1922,11 +1922,35 @@ void internal_applyPauliSum(int inId, int outId) {
  * WSTP Launch
  */
 
-int main(int argc, char* argv[]) {
+#ifndef _WIN32
+
+    int main(int argc, char* argv[]) {
+      
+        // create the single, global QuEST execution env
+        env = createQuESTEnv();
+        
+        // establish link with MMA
+        return WSMain(argc, argv);
+    }
     
-    // create the single, global QuEST execution env
-    env = createQuESTEnv();
+#else
+
+    int PASCAL WinMain( HINSTANCE hinstCurrent, HINSTANCE hinstPrevious, LPSTR lpszCmdLine, int nCmdShow) {
+      
+        // create the single, global QuEST execution env
+        env = createQuESTEnv();
+
+        // parse Windows args
+        char  buff[512];
+        char FAR * buff_start = buff;
+        char FAR * argv[32];
+        char FAR * FAR * argv_end = argv + 32;
+        hinstPrevious = hinstPrevious; // suppresses a silly warning
+        WSScanString( argv, &argv_end, &lpszCmdLine, &buff_start);
+        
+        // establish link with MMA
+        return WSMain( (int)(argv_end - argv), argv);
+    }
     
-    // establish link with MMA
-	return WSMain(argc, argv);
-}
+#endif
+
