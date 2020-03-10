@@ -7,14 +7,23 @@ on:
     branches: [ develop ]
 
 jobs:
-  build:
-
-    name: ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
-    
+  cpu_windows_build:
+    name: Windows
+    runs-on: windows-latest
     steps:
     - name: build
-      run: make
+      run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC
+    
+  cpu_linux_build:
+    name: Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: build
+        run: make OS=LINUX compiler=g++ COMPILER_TYPE=GNU
+
+  cpu_macos_build:
+    name: MacOS
+    runs-on: macOS-latest
+    steps:
+      - name: build
+        run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG
