@@ -14,7 +14,10 @@ jobs:
       - uses: actions/checkout@master
         with:
           fetch-depth: 1
+      - name: enable dev cmd prompt
+        uses: ./
       - name: build
+        shell: cmd
         run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC
     
   cpu_linux_build:
