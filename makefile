@@ -12,8 +12,33 @@
 #                                                                      #
 #======================================================================#
 
-# operating system, one of {MACOS, LINUX}
+# operating system, one of {MACOS, LINUX, WINDOWS}
 OS = LINUX
+
+# compiler to use, which should support both C and C++, to be wrapped by GPU/MPI compilers
+# this is likely to be one of {g++, clang, ic, cl}
+COMPILER = g++
+
+# type of above compiler, one of {GNU, INTEL, CLANG, MSVC}, used for setting compiler flags
+COMPILER_TYPE = GNU
+
+# hardwares to target: 1 means use, 0 means don't use
+MULTITHREADED = 0
+DISTRIBUTED = 0
+GPUACCELERATED = 0
+
+# GPU hardware dependent, lookup at https://developer.nvidia.com/cuda-gpus, write without fullstop
+GPU_COMPUTE_CAPABILITY = 61
+
+# whether to suppress the below warnings about compiler compatibility
+SUPPRESS_WARNING = 0
+
+
+#======================================================================#
+#                                                                      #
+#      Constants                                                       #
+#                                                                      #
+#======================================================================#
 
 # name of the executable to create
 EXE = quest_link
@@ -30,25 +55,9 @@ WSTP_DIR = WSTP
 # path to QuESTlink code from root directory
 LINK_DIR = Link
 
-# compiler to use, which should support both C and C++, to be wrapped by GPU/MPI compilers
-COMPILER = g++
-
-# type of above compiler, one of {GNU, INTEL, CLANG}, used for setting compiler flags
-COMPILER_TYPE = GNU
-
-# hardwares to target: 1 means use, 0 means don't use
-MULTITHREADED = 0
-DISTRIBUTED = 0
-GPUACCELERATED = 0
-
-# GPU hardware dependent, lookup at https://developer.nvidia.com/cuda-gpus, write without fullstop
-GPU_COMPUTE_CAPABILITY = 61
-
-# whether to suppress the below warnings about compiler compatibility
-SUPPRESS_WARNING = 0
-
 # whether to use single, double or quad floating point precision in the state-vector {1,2,4}
 PRECISION = 2
+
 
 #======================================================================#
 #                                                                      #
@@ -67,7 +76,9 @@ ifneq ($(SILENT), 1)
     # check $OS is correct
     ifneq ($(OS), LINUX)
     ifneq ($(OS), MACOS)
-        $(error OS must be LINUX or MACOS)
+    ifneq ($(OS), WINDOWS)
+        $(error OS must be LINUX, MACOS or LINUX)
+    endif
     endif
     endif
 
@@ -75,10 +86,12 @@ ifneq ($(SILENT), 1)
     ifneq ($(COMPILER_TYPE), CLANG)
     ifneq ($(COMPILER_TYPE), GNU)
     ifneq ($(COMPILER_TYPE), INTEL)
-        $(error COMPILER_TYPE must be one of CLANG, GNU or INTEL)
+    ifneq ($(COMPILER_TYPE), MSVC)
+        $(error COMPILER_TYPE must be one of CLANG, GNU, INTEL or MSVC)
     endif
     endif
     endif
+	endif
 
     # distributed GPU not supported
     ifeq ($(DISTRIBUTED), 1)
@@ -151,23 +164,36 @@ endif
 #======================================================================#
 
 
+# 
+# --- WSTP path
+# 
+
+ifeq ($(OS), WINDOWS)
+    WSTP_SRC_DIR = $(WSTP_DIR)/Windows
+else ifeq ($(OS), MACOS)
+    WSTP_SRC_DIR = $(WSTP_DIR)/MacOS
+else ifeq ($(OS), LINUX)
+    WSTP_SRC_DIR = $(WSTP_DIR)/Linux
+endif
+
 #
 # --- libraries
 #
 
-LIBS = -lm
 ifeq ($(OS), MACOS)
-    LIBS += -lc++ $(WSTP_DIR)/macosx_libWSTPi4.36.a -framework Foundation
+    LIBS = -lm -lc++ $(WSTP_SRC_DIR)/MACOS_libWSTPi4.36.a -framework Foundation
+else ifeq ($(OS), WINDOWS)
+    LIBS = kernel32.lib user32.lib gdi32.lib $(WSTP_SRC_DIR)/windows_wstp32i4.lib $(WSTP_SRC_DIR)/windows_wstp32i4m.lib $(WSTP_SRC_DIR)/windows_wstp32i4s.lib
 else ifeq ($(OS), LINUX)
+    LIBS = -lm -ldl -lutil -lpthread -luuid -lrt -lstdc++ $(WSTP_SRC_DIR)/linux_libWSTP64i4.a
     ifeq ($(GPUACCELERATED), 0)
-        LIBS += -Wl,--no-as-needed
-	endif
-    LIBS += -ldl -lutil -lpthread -luuid -lrt -lstdc++ $(WSTP_DIR)/linux_libWSTP64i4.a	
+        LIBS := -Wl,--no-as-needed $(LIBS)
+    endif
 endif
 
 
 #
-# --- source and include paths
+# --- QuEST source and include paths
 #
 
 QUEST_INCLUDE_DIR = ${QUEST_DIR}/include
@@ -179,7 +205,7 @@ ifeq ($(GPUACCELERATED), 1)
 else
     QUEST_INNER_DIR = $(QUEST_SRC_DIR)/CPU
 endif
-QUESTLINK_INCLUDE = -I${QUEST_INCLUDE_DIR} -I$(QUEST_INNER_DIR) -I$(QUEST_COMMON_DIR) -I$(WSTP_DIR) -I$(LINK_DIR)
+QUESTLINK_INCLUDE = -I${QUEST_INCLUDE_DIR} -I$(QUEST_INNER_DIR) -I$(QUEST_COMMON_DIR) -I$(WSTP_SRC_DIR) -I$(LINK_DIR)
 
 
 #
@@ -211,6 +237,8 @@ ifeq ($(MULTITHREADED), 1)
         THREAD_FLAGS = -fopenmp
     else ifeq ($(COMPILER_TYPE), INTEL)
         THREAD_FLAGS = -qopenmp
+    else ifeq ($(COMPILER_TYPE), MSVC)
+        THREAD_FLAGS = -openmp
     endif
 else
     THREAD_FLAGS =
@@ -220,11 +248,13 @@ endif
 C_CLANG_FLAGS = -O2 -std=c99 -mavx -Wall -DQuEST_PREC=$(PRECISION)
 C_GNU_FLAGS = -O2 -std=c99 -mavx -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 C_INTEL_FLAGS = -O2 -std=c99 -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
+C_MSVC_FLAGS = -O2 -EHs -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN32 -D_WINDOWS -Fo$@
 
 # c++
 CPP_CLANG_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION)
 CPP_GNU_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 CPP_INTEL_FLAGS = -O2 -std=c++11 -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
+CPP_MSVC_FLAGS = -O2 -EHs -std:c++latest -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN32 -D_WINDOWS -Fo$@
 
 # wrappers
 CPP_CUDA_FLAGS = -O2 -arch=compute_$(GPU_COMPUTE_CAPABILITY) -code=sm_$(GPU_COMPUTE_CAPABILITY) -DQuEST_PREC=$(PRECISION) -ccbin $(COMPILER)
@@ -239,6 +269,25 @@ else ifeq ($(COMPILER_TYPE), GNU)
 else ifeq ($(COMPILER_TYPE), INTEL)
     C_FLAGS = $(C_INTEL_FLAGS)
     CPP_FLAGS = $(CPP_INTEL_FLAGS)
+else ifeq ($(COMPILER_TYPE), MSVC)
+    C_FLAGS = $(C_MSVC_FLAGS)
+    CPP_FLAGS = $(CPP_MSVC_FLAGS)
+endif
+
+
+
+#
+# --- compiler mode and linker flags 
+#
+
+ifeq ($(COMPILER_TYPE), MSVC)
+    C_MODE = 
+    LINKER = link
+    LINK_FLAGS = -out:$(EXE).exe -SUBSYSTEM:WINDOWS -nologo
+else
+    C_MODE = -x c
+    LINKER = $(COMPILER)
+    LINK_FLAGS = -o $(EXE)
 endif
 
 
@@ -266,7 +315,6 @@ endif
 OBJ += $(addsuffix .o, $(SOURCES))
 
 
-
 #
 # --- rules
 #
@@ -280,11 +328,11 @@ OBJ += $(addsuffix .o, $(SOURCES))
 ifeq ($(GPUACCELERATED), 1)
 
   %.o: %.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 
   %.o: %.cu
 	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
@@ -302,11 +350,11 @@ ifeq ($(GPUACCELERATED), 1)
 else ifeq ($(DISTRIBUTED), 1)
 
   %.o: %.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 	
   %.o: %.cpp
 	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
@@ -319,11 +367,11 @@ else ifeq ($(DISTRIBUTED), 1)
 else
 
   %.o: %.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_INNER_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
-	$(COMPILER) -x c $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 	
   %.o: %.cpp quest_templates.tm.cpp
 	$(COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
@@ -342,26 +390,23 @@ endif
 ifeq ($(GPUACCELERATED), 1)
 
   all:	$(OBJ)
-		$(CUDA_COMPILER) $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS)
+		$(CUDA_COMPILER) $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) $(LINK_FLAGS)
 
 # MPI
 else ifeq ($(DISTRIBUTED), 1)
 
   default:	$(EXE)
   $(EXE):	$(OBJ)
-			$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) 
+			$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) $(LINK_FLAGS)
 
 # C
 else
 
   default:	$(EXE)
   $(EXE):	$(OBJ)
-			$(COMPILER) $(C_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) 
+			$(LINKER) $(OBJ) $(LIBS) $(LINK_FLAGS)
 
 endif
-
-test: $(OBJ)
-	$(COMPILER) $(C_FLAGS)  -shared -Wl,-soname,$(QUEST_LIB) $(QUESTLINK_INCLUDE) -o $(LIB_NAME) $(OBJ) $(LIBS)
 
 
 
@@ -370,13 +415,15 @@ test: $(OBJ)
 #
 
 ifeq ($(OS), MACOS)
-    PREP = macosx_wsprep
+    PREP = MACOS_wsprep
 else ifeq ($(OS), LINUX)
     PREP = linux_wsprep
+else ifeq ($(OS), WINDOWS)
+    PREP = windows_wsprep.exe
 endif
 
 quest_templates.tm.cpp:
-	$(WSTP_DIR)/$(PREP) $(LINK_DIR)/quest_templates.tm -o quest_templates.tm.cpp
+	$(WSTP_SRC_DIR)/$(PREP) $(LINK_DIR)/quest_templates.tm -o quest_templates.tm.cpp
 
 
 
@@ -384,15 +431,29 @@ quest_templates.tm.cpp:
 # --- clean
 #
 
+# resolve os remove command
+ifeq ($(OS), MACOS)
+    REM = /bin/rm -f
+    EXE_FN = $(EXE)
+else ifeq ($(OS), LINUX)
+    REM = /bin/rm -f
+    EXE_FN = $(EXE)
+else ifeq ($(OS), WINDOWS)
+    REM = del
+    EXE_FN = $(EXE).exe
+endif
+
+
+# define tidy cmds
 .PHONY:		tidy clean veryclean
 tidy:
-			/bin/rm -f *.o
-			/bin/rm -f quest_templates.tm.cpp
+			$(REM) *.o
+			$(REM) quest_templates.tm.cpp
 clean:
-			/bin/rm -f *.o $(EXE)
-			/bin/rm -f quest_templates.tm.cpp
+			$(REM) *.o $(EXE_FN)
+			$(REM) quest_templates.tm.cpp
 veryclean:	clean
-			/bin/rm -f *.h~ *.c~ makefile~
+			$(REM) *.h~ *.c~ makefile~
 
 
 
