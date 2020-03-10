@@ -11,19 +11,28 @@ jobs:
     name: Windows
     runs-on: windows-latest
     steps:
-    - name: build
-      run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC
+      - uses: actions/checkout@master
+        with:
+          fetch-depth: 1
+      - name: build
+        run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC
     
   cpu_linux_build:
     name: Linux
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@master
+        with:
+          fetch-depth: 1
       - name: build
         run: make OS=LINUX compiler=g++ COMPILER_TYPE=GNU
 
   cpu_macos_build:
     name: MacOS
-    runs-on: macOS-latest
+    runs-on: macos-latest
     steps:
+      - uses: actions/checkout@master
+        with:
+          fetch-depth: 1
       - name: build
         run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG
