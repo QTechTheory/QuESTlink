@@ -24,6 +24,10 @@ jobs:
       - uses: actions/checkout@master
         with:
           fetch-depth: 1
+      - name: dependencies
+        run: | 
+          sudo apt-get update 
+          sudo apt-get install -y uuid-dev libuuid-devel
       - name: build
         run: make OS=LINUX compiler=g++ COMPILER_TYPE=GNU
 
