@@ -1,0 +1,20 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build:
+
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    
+    steps:
+    - name: build
+      run: make
