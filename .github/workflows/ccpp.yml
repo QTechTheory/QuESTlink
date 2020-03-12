@@ -11,10 +11,8 @@ jobs:
     name: Windows
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@develop
+      - uses: actions/checkout@v2
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: enable dev cmd prompt
-        uses: ./
       - name: build
         shell: cmd
         run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC
@@ -23,9 +21,7 @@ jobs:
     name: Linux
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@develop
-        with:
-          fetch-depth: 1
+      - uses: actions/checkout@v2
       - name: dependencies
         run: | 
           sudo apt-get update 
@@ -39,8 +35,6 @@ jobs:
     name: MacOS
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@develop
-        with:
-          fetch-depth: 1
+      - uses: actions/checkout@v2
       - name: build
         run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG
