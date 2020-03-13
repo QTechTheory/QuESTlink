@@ -283,7 +283,7 @@ endif
 ifeq ($(COMPILER_TYPE), MSVC)
     C_MODE = 
     LINKER = link
-    LINK_FLAGS = -out:$(EXE).exe -SUBSYSTEM:WINDOWS -nologo
+    LINK_FLAGS = -out:$(EXE).exe -SUBSYSTEM:CONSOLE -nologo
 else
     C_MODE = -x c
     LINKER = $(COMPILER)
