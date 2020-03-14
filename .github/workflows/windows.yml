@@ -16,3 +16,13 @@ jobs:
       - name: build
         shell: cmd
         run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC WINDOWS_ARCH=64
+        
+      - name: Prepare to upload binary
+        run: |
+          mkdir -p Binaries
+          cp quest_link.exe Binaries/.
+      
+      - uses: actions/upload-artifact@v1
+        with:
+          name: windows_quest_link.exe
+          path: Binaries
