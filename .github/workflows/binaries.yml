@@ -70,8 +70,11 @@ jobs:
     needs: [cpu_linux_build, cpu_macos_build, cpu_windows_build]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - name: Prepare binaries directory 
-        run: mkdir Binaries
+        run: |
+          rm -r Binaries
+          mkdir Binaries
       - uses: actions/download-artifact@master
         with:
           name: linux_quest_link
@@ -84,5 +87,13 @@ jobs:
         with:
           name: windows_quest_link
           path: Binaries
-      - name: Testing that the binaries were downloaded!
-        run: ls Binaries
+      - name: Commit recompiled binaries
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Update precompiled binaries" -a
+      - name: Push recompiled binaries
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: master
