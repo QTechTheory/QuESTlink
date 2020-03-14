@@ -58,6 +58,7 @@ Next, open the [`makefile`](../makefile) in any editor, and set:
 - `OS = WINDOWS`
 - `COMPILER = cl`
 - `COMPILER_TYPE = MSVC`
+- `WINDOWS_ARCH = 64` if using 64-bit Windows, else `32` (for x86)
 
 Then, in the **Developer Command Prompt**, navigate to the root QuESTlink directory (where [`makefile`](../makefile) is located) and run 
 ```bash 
@@ -72,15 +73,16 @@ make tidy
 Next, run 
 ```bash 
 copy WSTP\Windws\wstp32i4.dll .
+copy WSTP\Windws\wstp64i4.dll .
 ```
-This copies a needed `wstp32i4.dll` file to the same location as `quest_link.exe`. Running `quest_link.exe` directly now will create a network prompt, which can be ignored/closed.
+This copies the needed `.dll` files to the same location as `quest_link.exe`. Running `quest_link.exe` directly now will create a network prompt, which can be ignored/closed.
 
 ### 5 - Run 
 
-With `wstp32i4.dll` in the same location as `quest_link.exe`, you can now open Mathematica and run 
+With `wstp32i4.dll` (or `wstp64i4.dll`) in the same location as `quest_link.exe`, you can now open Mathematica and run 
 
 ```Mathematica 
-SetDirectory["location/to/QuESTlink/"]
+SetDirectory["path/to/QuESTlink/"]
 
 Import["Link/QuESTlink.m"]
 CreateLocalQuESTEnv["quest_link.exe"]
