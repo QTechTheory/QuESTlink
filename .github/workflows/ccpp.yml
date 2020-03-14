@@ -15,7 +15,7 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
       - name: build
         shell: cmd
-        run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC
+        run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC WINDOWS_ARCH=64
     
   cpu_linux_build:
     name: Linux

@@ -22,6 +22,9 @@ COMPILER = g++
 # type of above compiler, one of {GNU, INTEL, CLANG, MSVC}, used for setting compiler flags
 COMPILER_TYPE = GNU
 
+# only for WINDOWS: whether OS is 32-bit (x86) or 64-bit (x64). Choose {32, 64}
+WINDOWS_ARCH = 64
+
 # hardwares to target: 1 means use, 0 means don't use
 MULTITHREADED = 0
 DISTRIBUTED = 0
@@ -128,8 +131,8 @@ ifneq ($(SILENT), 1)
 	# GPU does not support quad precision
     ifeq ($(PRECISION), 4)
     ifeq ($(GPUACCELERATED), 1)
-    $(warning GPUs do not support quad precision. Setting PRECISION=2...)
-    override PRECISION = 2	
+        $(warning GPUs do not support quad precision. Setting PRECISION=2...)
+        override PRECISION = 2	
     endif
     endif
 	
@@ -147,6 +150,15 @@ ifneq ($(SILENT), 1)
     ifeq ($(COMPILER_TYPE), GNU)
     ifeq ($(SUPPRESS_WARNING), 0)
         $(info On some platforms (e.g. OSX), NVIDIA-GPUs are not compatible with GNU compilers. If compilation fails, try an alternative compiler, like Clang 3.7)
+    endif
+    endif
+    endif
+		
+		# Windows users must set WINDOWS_ARCH as {32, 64}
+    ifeq ($(OS), WINDOWS)
+    ifneq ($(WINDOWS_ARCH), 32)
+    ifneq ($(WINDOWS_ARCH), 64)
+        $(error When compiling on WINDOWS, WINDOWS_ARCH must be 32 or 64)
     endif
     endif
     endif
@@ -183,7 +195,7 @@ endif
 ifeq ($(OS), MACOS)
     LIBS = -lm -lc++ $(WSTP_SRC_DIR)/MACOS_libWSTPi4.36.a -framework Foundation
 else ifeq ($(OS), WINDOWS)
-    LIBS = kernel32.lib user32.lib gdi32.lib $(WSTP_SRC_DIR)/windows_wstp32i4.lib $(WSTP_SRC_DIR)/windows_wstp32i4m.lib $(WSTP_SRC_DIR)/windows_wstp32i4s.lib
+    LIBS = kernel32.lib user32.lib gdi32.lib $(WSTP_SRC_DIR)/windows_wstp$(WINDOWS_ARCH)i4.lib $(WSTP_SRC_DIR)/windows_wstp$(WINDOWS_ARCH)i4m.lib $(WSTP_SRC_DIR)/windows_wstp$(WINDOWS_ARCH)i4s.lib
 else ifeq ($(OS), LINUX)
     LIBS = -lm -ldl -lutil -lpthread -luuid -lrt -lstdc++ $(WSTP_SRC_DIR)/linux_libWSTP64i4.a
     ifeq ($(GPUACCELERATED), 0)
@@ -248,13 +260,13 @@ endif
 C_CLANG_FLAGS = -O2 -std=c99 -mavx -Wall -DQuEST_PREC=$(PRECISION)
 C_GNU_FLAGS = -O2 -std=c99 -mavx -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 C_INTEL_FLAGS = -O2 -std=c99 -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
-C_MSVC_FLAGS = -O2 -EHs -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN32 -D_WINDOWS -Fo$@
+C_MSVC_FLAGS = -O2 -EHs -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN$(WINDOWS_ARCH) -D_WINDOWS -Fo$@
 
 # c++
 CPP_CLANG_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION)
 CPP_GNU_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 CPP_INTEL_FLAGS = -O2 -std=c++11 -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
-CPP_MSVC_FLAGS = -O2 -EHs -std:c++latest -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN32 -D_WINDOWS -Fo$@
+CPP_MSVC_FLAGS = -O2 -EHs -std:c++latest -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN$(WINDOWS_ARCH) -D_WINDOWS -Fo$@
 
 # wrappers
 CPP_CUDA_FLAGS = -O2 -arch=compute_$(GPU_COMPUTE_CAPABILITY) -code=sm_$(GPU_COMPUTE_CAPABILITY) -DQuEST_PREC=$(PRECISION) -ccbin $(COMPILER)
@@ -283,7 +295,12 @@ endif
 ifeq ($(COMPILER_TYPE), MSVC)
     C_MODE = 
     LINKER = link
-    LINK_FLAGS = -out:$(EXE).exe -SUBSYSTEM:WINDOWS -nologo
+    ifeq ($(WINDOWS_ARCH), 32)
+        ARCH_FLAG = X86
+		else
+        ARCH_FLAG = X64
+		endif
+    LINK_FLAGS = -out:$(EXE).exe -SUBSYSTEM:WINDOWS -nologo -MACHINE:$(ARCH_FLAG)
 else
     C_MODE = -x c
     LINKER = $(COMPILER)
