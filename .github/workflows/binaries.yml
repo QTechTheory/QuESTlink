@@ -56,6 +56,7 @@ jobs:
         shell: cmd
         run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC WINDOWS_ARCH=64 EXE=windows_quest_link
       - name: Prepare to upload binary
+        shell: cmd
         run: |
           if not exist Binaries mkdir Binaries
           move windows_quest_link.exe Binaries
