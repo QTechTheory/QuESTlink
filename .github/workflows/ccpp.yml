@@ -26,7 +26,7 @@ jobs:
           cl -O2 -EHs -std:c++latest -DQuEST_PREC=2  -nologo -DDWIN32 -D_WINDOWS -Foquest_link.o -IQuEST\include -IQuEST\src\CPU -IQuEST\src -IWSTP\Windows -ILink -c Link\quest_link.cpp
           WSTP\Windows\windows_wsprep.exe Link\quest_templates.tm -o quest_templates.tm.cpp
           cl -O2 -EHs -std:c++latest -DQuEST_PREC=2  -nologo -DDWIN32 -D_WINDOWS -Foquest_templates.tm.o -IQuEST\include -IQuEST\src\CPU -IQuEST\src -IWSTP\Windows -ILink -c quest_templates.tm.cpp
-          link QuEST.o QuEST_validation.o QuEST_common.o QuEST_qasm.o mt19937ar.o QuEST_cpu.o QuEST_cpu_local.o quest_link.o quest_templates.tm.o kernel32.lib user32.lib gdi32.lib WSTP\Windows\windows_wstp32i4.lib WSTP\Windows\windows_wstp32i4m.lib WSTP\Windows\windows_wstp32i4s.lib -out:quest_link.exe -SUBSYSTEM:WINDOWS -nologo
+          link QuEST.o QuEST_validation.o QuEST_common.o QuEST_qasm.o mt19937ar.o QuEST_cpu.o QuEST_cpu_local.o quest_link.o quest_templates.tm.o kernel32.lib user32.lib gdi32.lib WSTP\Windows\windows_wstp32i4.lib WSTP\Windows\windows_wstp32i4m.lib WSTP\Windows\windows_wstp32i4s.lib -out:quest_link.exe -SUBSYSTEM:WINDOWS -nologo -machine:X86
       - name: build
         shell: cmd
         run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC
