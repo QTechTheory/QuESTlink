@@ -24,6 +24,7 @@ jobs:
       - uses: actions/upload-artifact@v1
         with:
           name: linux_quest_link
+          path: .
           
   cpu_macos_build:
     name: MacOS
@@ -35,6 +36,7 @@ jobs:
       - uses: actions/upload-artifact@v1
         with:
           name: macos_quest_link
+          path: .
 
   cpu_windows_build:
     name: Windows
@@ -48,6 +50,7 @@ jobs:
       - uses: actions/upload-artifact@v1
         with:
           name: windows_quest_link.exe
+          path: .
 
   publish_binaries:
     name: Publish binaries
