@@ -74,8 +74,10 @@ CreateLocalQuESTEnv[] connects to a 'quest_link' executable in the working direc
     DestroyQuESTEnv::usage = "DestroyQuESTEnv[link] disconnects from the QuEST link, which may be the remote Igor server or a loca instance, clearing some QuEST function definitions (but not those provided by the QuEST package)."
     DestroyQuESTEnv::error = "`1`"
 
-    SetWeightedQureg::usage = "SetWeightedQureg[fac1, q1, fac2, q2, facOut, qOut] modifies qureg qOut to be (facOut qOut + fac1 q1 + fac2 q2). qOut can be one of q1 an q2.
-SetWeightedQureg[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + fac2 q2). qOut can be one of q1 an q2."
+    SetWeightedQureg::usage = "SetWeightedQureg[fac1, q1, fac2, q2, facOut, qOut] modifies qureg qOut to be (facOut qOut + fac1 q1 + fac2 q2). qOut can be one of q1 an q2, and all factors can be complex.
+SetWeightedQureg[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + fac2 q2). qOut can be one of q1 an q2.
+SetWeightedQureg[fac1, q1, qOut] modifies qureg qOut to be fac1 * q1. qOut can be q1.
+SetWeightedQureg[fac, qOut] modifies qureg qOut to be fac qOut; that is, qOut is scaled by factor fac."
     SetWeightedQureg::error = "`1`"
 
     DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram.
@@ -445,12 +447,23 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 Re @ N @ fac2, N @ Im @ N @ fac2, q2,
                 Re @ N @ facOut, N @ Im @ N @ facOut, qOut
             ]
-            
         SetWeightedQureg[fac1_?NumericQ, q1_Integer, fac2_?NumericQ, q2_Integer, qOut_Integer] :=
             SetWeightedQuregInternal[
                 Re @ N @ fac1, N @ Im @ N @ fac1, q1,
                 Re @ N @ fac2, N @ Im @ N @ fac2, q2,
-                N @ 0, N @ 0, qOut
+                0., 0., qOut
+            ]
+        SetWeightedQureg[fac1_?NumericQ, q1_Integer, qOut_Integer] :=
+            SetWeightedQuregInternal[
+                Re @ N @ fac1, N @ Im @ N @ fac1, q1,
+                0., 0., q1,
+                0., 0., qOut
+            ]
+        SetWeightedQureg[fac_?NumericQ, qOut_Integer] :=
+            SetWeightedQuregInternal[
+                0., 0., qOut,
+                0., 0., qOut,
+                Re @ N @ fac, N @ Im @ N @ fac, qOut
             ]
         
         GetAmp[qureg_Integer, index_Integer] := GetAmpInternal[qureg, index, -1]
@@ -535,7 +548,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[SWAP, {}, {targs___}, col_] := {
         	(drawCross[#,col]&) /@ {targs},
         	Line[{{col+.5,.5+Min@targs},{col+.5,.5+Max@targs}}]}
-        drawGate[Rz, {ctrls__}, {targ_}, col_] := {
+        drawGate[Z, {ctrls__}, {targ_}, col_] := {
             drawControls[{ctrls,targ},{targ},col],
             Line[{{col+.5,.5+Min@ctrls},{col+.5,.5+Max@ctrls}}]}
             

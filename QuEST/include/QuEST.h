@@ -303,6 +303,7 @@ ComplexMatrixN createComplexMatrixN(int numQubits);
 void destroyComplexMatrixN(ComplexMatrixN matr);
 
 #ifndef __cplusplus
+#ifndef _WIN32
 /** Initialises a ComplexMatrixN instance to have the passed
  * \p real and \p imag values. This allows succint population of any-sized
  * ComplexMatrixN, e.g. through 2D arrays:
@@ -326,6 +327,7 @@ void destroyComplexMatrixN(ComplexMatrixN matr);
  */
 void initComplexMatrixN(ComplexMatrixN m, qreal real[][1<<m.numQubits], qreal imag[][1<<m.numQubits]);
 #endif 
+#endif
 
 /** Print the current state vector of probability amplitudes for a set of qubits to file.
  * File format:
@@ -3202,6 +3204,7 @@ extern "C" void invalidQuESTInputError(const char* errMsg, const char* errFunc) 
 void invalidQuESTInputError(const char* errMsg, const char* errFunc);
  
 #ifndef __cplusplus
+#ifndef _WIN32
  // hide this function from doxygen
  /// \cond HIDDEN_SYMBOLS
 /** Creates a ComplexMatrixN struct with .real and .imag arrays kept entirely 
@@ -3245,6 +3248,7 @@ void invalidQuESTInputError(const char* errMsg, const char* errFunc);
 ComplexMatrixN bindArraysToStackComplexMatrixN(
     int numQubits, qreal re[][1<<numQubits], qreal im[][1<<numQubits], 
     qreal** reStorage, qreal** imStorage);
+#endif
 #endif
 /// \endcond
 

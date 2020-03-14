@@ -15,6 +15,17 @@
  * @author Balint Koczor (Kraus maps, mixPauli, Windows compatibility)
  */
 
+/* To support MSVC (Windows) compilers, we avoid VLAs but keep the semantics
+ * about the array in the code, by using this macro.
+ * For example,
+ *    int qubits[numTargs];
+ * becomes
+ *    int qubits[AT_LEAST(numTargs)];
+ * which resolves to
+ *    int qubits[100];
+ */
+#define AT_LEAST(ignoredNum) 100
+
 # include "QuEST.h"
 # include "QuEST_internal.h"
 # include "QuEST_precision.h"
@@ -479,7 +490,7 @@ qreal statevec_calcExpecPauliProd(Qureg qureg, int* targetQubits, enum pauliOpTy
 qreal statevec_calcExpecPauliSum(Qureg qureg, enum pauliOpType* allCodes, qreal* termCoeffs, int numSumTerms, Qureg workspace) {
     
     int numQb = qureg.numQubitsRepresented;
-    int targs[numQb];
+    int targs[AT_LEAST(numQb)];
     for (int q=0; q < numQb; q++)
         targs[q] = q;
         
@@ -493,7 +504,7 @@ qreal statevec_calcExpecPauliSum(Qureg qureg, enum pauliOpType* allCodes, qreal*
 void statevec_applyPauliSum(Qureg inQureg, enum pauliOpType* allCodes, qreal* termCoeffs, int numSumTerms, Qureg outQureg) {
     
     int numQb = inQureg.numQubitsRepresented;
-    int targs[numQb];
+    int targs[AT_LEAST(numQb)];
     for (int q=0; q < numQb; q++)
         targs[q] = q;
         
@@ -588,7 +599,7 @@ void densmatr_applyTwoQubitKrausSuperoperator(Qureg qureg, int target1, int targ
 
 void densmatr_applyMultiQubitKrausSuperoperator(Qureg qureg, int *targets, int numTargets, ComplexMatrixN superOp) {
     long long int ctrlMask = 0;
-    int allTargets[2*numTargets];
+    int allTargets[AT_LEAST(2*numTargets)];
     for (int t=0; t < numTargets; t++) {
         allTargets[t] = targets[t];
         allTargets[t+numTargets] = targets[t] + qureg.numQubitsRepresented;
@@ -603,6 +614,8 @@ void densmatr_mixKrausMap(Qureg qureg, int target, ComplexMatrix2 *ops, int numO
     densmatr_applyKrausSuperoperator(qureg, target, superOp);
 }
 
+// remove all VLA on Windows
+#ifndef _WIN32
 ComplexMatrixN bindArraysToStackComplexMatrixN(
     int numQubits, qreal re[][1<<numQubits], qreal im[][1<<numQubits], 
     qreal** reStorage, qreal** imStorage
@@ -630,13 +643,26 @@ ComplexMatrixN bindArraysToStackComplexMatrixN(
     qreal reArr_[1<<(numQubits)][1<<(numQubits)]; \
     qreal imArr_[1<<(numQubits)][1<<(numQubits)]; \
     macro_initialiseStackComplexMatrixN(matrix, (numQubits), reArr_, imArr_);
+// END of removing VLA on Windows
+#endif
 
 void densmatr_mixTwoQubitKrausMap(Qureg qureg, int target1, int target2, ComplexMatrix4 *ops, int numOps) {
-    
-    ComplexMatrixN superOp;
-    macro_allocStackComplexMatrixN(superOp, 4);
-    populateKrausSuperOperator4(&superOp, ops, numOps);
-    densmatr_applyTwoQubitKrausSuperoperator(qureg, target1, target2, superOp);
+
+    // if NOT on Windows, allocate ComplexN on stack
+    #ifndef _WIN32
+        ComplexMatrixN superOp;
+        macro_allocStackComplexMatrixN(superOp, 4);
+        populateKrausSuperOperator4(&superOp, ops, numOps);
+        densmatr_applyTwoQubitKrausSuperoperator(qureg, target1, target2, superOp);
+
+    // but on Windows, we MUST allocated dynamically
+    #else
+        ComplexMatrixN superOp = createComplexMatrixN(4);
+        populateKrausSuperOperator4(&superOp, ops, numOps);
+        densmatr_applyTwoQubitKrausSuperoperator(qureg, target1, target2, superOp);
+        destroyComplexMatrixN(superOp);
+
+    #endif
 }
 
 void densmatr_mixMultiQubitKrausMap(Qureg qureg, int* targets, int numTargets, ComplexMatrixN* ops, int numOps) {
@@ -657,26 +683,35 @@ void densmatr_mixMultiQubitKrausMap(Qureg qureg, int* targets, int numTargets, C
      * maximum stack-space allocation (numTargs >= 5 exceeding Linux' 8 MB). Therefore, 
      * for numTargets < 4, superOp will be kept in the stack, else in the heap
      */
-     
-    if (numTargets < 4) {
-        // everything must live in 'if' since this macro declares local vars
-        macro_allocStackComplexMatrixN(superOp, 2*numTargets);
-        populateKrausSuperOperatorN(&superOp, ops, numOps);
-        densmatr_applyMultiQubitKrausSuperoperator(qureg, targets, numTargets, superOp);
-    }
-    else {
+
+    // if NOT on Windows, allocate ComplexN on stack depending on size
+    #ifndef _WIN32
+        if (numTargets < 4) {
+            // everything must live in 'if' since this macro declares local vars
+            macro_allocStackComplexMatrixN(superOp, 2*numTargets);
+            populateKrausSuperOperatorN(&superOp, ops, numOps);
+            densmatr_applyMultiQubitKrausSuperoperator(qureg, targets, numTargets, superOp);
+        }
+        else {
+            superOp = createComplexMatrixN(2*numTargets);
+            populateKrausSuperOperatorN(&superOp, ops, numOps);
+            densmatr_applyMultiQubitKrausSuperoperator(qureg, targets, numTargets, superOp);
+            destroyComplexMatrixN(superOp);
+        }
+    // on Windows, we must always create in heap
+    #else
         superOp = createComplexMatrixN(2*numTargets);
         populateKrausSuperOperatorN(&superOp, ops, numOps);
         densmatr_applyMultiQubitKrausSuperoperator(qureg, targets, numTargets, superOp);
         destroyComplexMatrixN(superOp);
-    }
+    #endif
 }
 
 void densmatr_mixPauli(Qureg qureg, int qubit, qreal probX, qreal probY, qreal probZ) {
     
     // convert pauli probabilities into Kraus map
     const int numOps = 4;
-    ComplexMatrix2 ops[numOps];
+    ComplexMatrix2 ops[4];
     for (int n=0; n < numOps; n++)
         ops[n] = (ComplexMatrix2) {.real={{0}}, .imag={{0}}};
     
