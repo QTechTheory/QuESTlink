@@ -20,15 +20,10 @@ jobs:
             uuid-dev \
             build-essential  
       - name: Build
-        run: make OS=LINUX compiler=g++ COMPILER_TYPE=GNU
-      - name: Prepare to upload binary
-        run: |
-          mkdir -p Binaries
-          cp quest_link Binaries/.
+        run: make OS=LINUX compiler=g++ COMPILER_TYPE=GNU EXE=linux_quest_link
       - uses: actions/upload-artifact@v1
         with:
           name: linux_quest_link
-          path: Binaries
           
   cpu_macos_build:
     name: MacOS
@@ -36,15 +31,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: build
-        run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG
-      - name: Prepare to upload binary
-        run: |
-          mkdir -p Binaries
-          cp quest_link Binaries/.
+        run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG EXE=macos_quest_link
       - uses: actions/upload-artifact@v1
         with:
           name: macos_quest_link
-          path: Binaries
 
   cpu_windows_build:
     name: Windows
@@ -54,20 +44,18 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
       - name: build
         shell: cmd
-        run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC WINDOWS_ARCH=64
-      - name: Prepare to upload binary
-        run: |
-          mkdir -p Binaries
-          cp windows_quest_link.exe Binaries/.
+        run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC WINDOWS_ARCH=64 EXE=windows_quest_link
       - uses: actions/upload-artifact@v1
         with:
           name: windows_quest_link.exe
-          path: Binaries
 
   publish_binaries:
     name: Publish binaries
+    needs: [cpu_linux_build, cpu_macos_build, cpu_windows_build]
     runs-on: ubuntu-latest
     steps:
+      - name: Prepare binaries directory 
+        run: mkdir Binaries
       - uses: actions/download-artifact@master
         with:
           name: linux_quest_link
@@ -81,4 +69,4 @@ jobs:
           name: windows_quest_link.exe
           path: Binaries
       - name: Testing that the binaries were downloaded!
-        run: ls
+        run: ls Binaries
