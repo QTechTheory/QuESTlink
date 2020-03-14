@@ -1,6 +1,6 @@
 /*************************************************************************
 
-        Copyright 1986 through 2018 by Wolfram Research Inc.
+        Copyright 1986 through 2019 by Wolfram Research Inc.
         All rights reserved
 
 *************************************************************************/
@@ -14,22 +14,8 @@
 #ifndef _MLPLATFM_H
 #define _MLPLATFM_H
 
-/******************
-This section of code gets designed differently by platform and by 
-whether BUILD_WSTP is set to ON. If BUILD_WSTP is set to ON, the 
-two errors here get replaced by '# define <PLATFORM>_MATHLINK 1'
-and '# define <PLATFORM>_WSTP 1',  where <PLATFORM> is either UNIX
-or WINDOWS. If BUILD_WSTP is not set to ON, the second error is simply 
-removed. 
 
-Currently, <PLATFORM>_MATHLINK is used throughout the internal code.
-<PLATFORM>_WSTP is used only superficially. Eventually, this should be
-simplified to only produce <PLATFORM>_WSTP. To see how this code is handled,
-search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt. 
-******************/
-
-
-#if (! WINDOWS_MATHLINK || ! WINDOWS_WSTP) && ! UNIX_MATHLINK
+#if !WINDOWS_MATHLINK && !WINDOWS_WSTP && !UNIX_MATHLINK && !UNIX_WSTP
 #	define	WINDOWS_MATHLINK	1
 #	define	WINDOWS_WSTP	1
 #endif
@@ -46,56 +32,29 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 #endif
 
 #if WINDOWS_MATHLINK
-#if defined(WIN64) || defined(__WIN64__) || defined(_WIN64)
+#define LITTLEENDIAN_NUMERIC_TYPES 1
+#if defined(WIN64) || defined(_WIN64)
 #define WIN64_MATHLINK 1
-#if( _M_IX86 || __i386 || __i386__ || i386)
-#define I86_WIN32_MATHLINK 1
+#if( _M_X64 || __x86_64 || __x86_64__ || x86_64)
+#define X64_WINDOWS_MATHLINK 1
+#else
+/* syntax error */ )
 #endif
-#elif defined(WIN32) || defined(__WIN32__) || defined(__NT__) || defined(_WIN32)
+#elif defined(WIN32) || defined(_WIN32)
 #define WIN32_MATHLINK 1
 #if( _M_IX86 || __i386 || __i386__ || i386)
-#define I86_WIN32_MATHLINK 1
-#elif _M_ALPHA || __alpha || __alpha__ || alpha
-#define ALPHA_WIN32_MATHLINK 1
+#define I86_WINDOWS_MATHLINK 1
 #else
+/* syntax error */ )
 #endif
 #elif defined(__CYGWIN__)
 #define CYGWIN_MATHLINK 1
-#else
-#define WIN16_MATHLINK 1
 #endif
 #elif UNIX_MATHLINK
-#if (__sun || __sun__ || sun) && !defined(SUN_MATHLINK)
-#define SUN_MATHLINK 1
-#if __sparcv9 || __sparcv9__
-#if __SUNPRO_C >= 0x590
-#define STUDIO12_U64_SOLARIS_MATHLINK 1
-#else
-#define U64_SOLARIS_MATHLINK 1
-#endif
-#elif __SVR4 || __svr4__
-#define U32_SOLARIS_MATHLINK 1
-#else
-#define SUNOS_MATHLINK 1
-#endif
-#if __sparc || __sparc__ || sparc
-#define SPARC_SUN_MATHLINK 1
-#elif __i386 || __i386__ || i386
-#define I386_SOLARIS_MATHLINK 1
-#elif __x86_64 || __x86_64__ || x86_64
-#define X86_64_SOLARIS_MATHLINK 1
-#else
-			unknown platform
-#endif
-#elif (__MACH || __MACH__ || MACH) && !defined(DARWIN_MATHLINK)
+#if (__MACH || __MACH__ || MACH) && !defined(DARWIN_MATHLINK)
+#define LITTLEENDIAN_NUMERIC_TYPES 1
 #define DARWIN_MATHLINK 1
-#if __ppc || __ppc__ || ppc
-#define POWERPC_DARWIN_MATHLINK 1
-#define PPC_DARWIN_MATHLINK 1
-#elif __ppc64 || __ppc64__ || ppc64
-#define POWERPC_DARWIN_MATHLINK 1
-#define PPC64_DARWIN_MATHLINK 1
-#elif __i386 || __i386__ || i386
+#if __i386 || __i386__ || i386
 #define INTEL_DARWIN_MATHLINK 1
 #define X86_DARWIN_MATHLINK 1
 #elif __x86_64 || __x86_64__ || x86_64
@@ -106,7 +65,7 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 #elif __arm64__
 #define ARM64_DARWIN_MATHLINK 1
 #else
-			not yet implemented
+			#error not yet implemented
 #endif
 
 #if __DARWIN_UNIX03
@@ -117,17 +76,12 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 #define CLANG_MATHLINK 1
 #endif
 #elif (__linux || __linux__ || linux) && !defined(LINUX_MATHLINK)
+#define LITTLEENDIAN_NUMERIC_TYPES 1
 #define LINUX_MATHLINK 1
 #if __x86_64 || __x86_64__ || x86_64
 #define X86_64_LINUX_MATHLINK 1
-#elif __ia64 || __ia64__ || ia64
-#define IA64_LINUX_MATHLINK 1
 #elif __i386 || __i386__ || i386
 #define I86_LINUX_MATHLINK 1
-#elif __PPC || __PPC__ || PPC
-#define PPC_LINUX_MATHLINK 1
-#elif __alpha || __alpha__ || alpha
-#define AXP_LINUX_MATHLINK 1
 #elif __ANDROID || __ANDROID__ || ANDROID
 #define ANDROID_LINUX_MATHLINK 1
 #if __arm || __arm__ || arm
@@ -138,41 +92,8 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 #else
 			not yet implemented
 #endif
-#elif (__osf || __osf__ || osf || OSF1) && !defined(DIGITAL_MATHLINK)
-#define DIGITAL_MATHLINK 1
-#if __alpha || __alpha__ || alpha
-#define ALPHA_DIGITAL_MATHLINK 1
 #else
-			unknown platform
-#endif
-#elif (_AIX || _IBMR2 || __xlC__) && !defined(AIX_MATHLINK)
-#define AIX_MATHLINK 1
-#if __64BIT__
-#define A64_AIX_MATHLINK 1
-#endif
-#elif (__sgi || __sgi__ || sgi || mips) && !defined(IRIX_MATHLINK)
-#define IRIX_MATHLINK 1
-#if _MIPS_SZLONG == 32
-#define N32_IRIX_MATHLINK 1
-#elif _MIPS_SZLONG == 64
-#define M64_IRIX_MATHLINK 1
-#else
-			not yet implemented
-#endif
-#elif (hpux || __hpux) && !defined(HPUX_MATHLINK)
-#define HPUX_MATHLINK 1
-#if __LP64__
-#define LP64_HPUX_MATHLINK 1
-#endif
-#elif (M_I386 || _SCO_DS || SCO) && !defined(SCO_MATHLINK)
-#define SCO_MATHLINK 1
-#elif (__NetBSD__) && !defined(NETBSD_MATHLINK)
-#define NETBSD_MATHLINK 1
-#elif (__FreeBSD__) && !defined(FREEBSD_MATHLINK)
-#define FREEBSD_MATHLINK 1
-#elif (bsdi || __bsdi__) && !defined(BSDI_MATHLINK)
-#define BSDI_MATHLINK 1
-#else
+/* syntax error */ )
 #endif
 #endif
 
@@ -182,15 +103,12 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 #define NO_GLOBAL_DATA 0
 #endif
 
-#if WINDOWS_MATHLINK || __i386 || __i386__ || i386 || _M_IX86 || __x86_64 || __x86_64__ || x86_64 || __ia64 || __ia64__ || ia64 ||  __alpha || __alpha__ || alpha || __arm__
-#define LITTLEENDIAN_NUMERIC_TYPES 1
-#else
-#define BIGENDIAN_NUMERIC_TYPES 1
+#if !defined(LITTLEENDIAN_NUMERIC_TYPES) && !defined(BIGENDIAN_NUMERIC_TYPES)
+/* syntax error */ )
 #endif
 
 
 #endif /* _MLPLATFM_H */
-
 
 
 #if WSINTERFACE <= 3
@@ -328,7 +246,6 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 
 
 #endif /* _WSVERS_H */
-
 
 
 
@@ -506,15 +423,19 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 #define MLGetSymbol	WSGetSymbol
 #define MLGetType	WSGetType
 #define MLGetUCS2Characters	WSGetUCS2Characters
+#define MLGetUCS2Function	WSGetUCS2Function
 #define MLGetUCS2String	WSGetUCS2String
 #define MLGetUCS2Symbol	WSGetUCS2Symbol
 #define MLGetUTF16Characters	WSGetUTF16Characters
+#define MLGetUTF16Function	WSGetUTF16Function
 #define MLGetUTF16String	WSGetUTF16String
 #define MLGetUTF16Symbol	WSGetUTF16Symbol
 #define MLGetUTF32Characters	WSGetUTF32Characters
+#define MLGetUTF32Function	WSGetUTF32Function
 #define MLGetUTF32String	WSGetUTF32String
 #define MLGetUTF32Symbol	WSGetUTF32Symbol
 #define MLGetUTF8Characters	WSGetUTF8Characters
+#define MLGetUTF8Function	WSGetUTF8Function
 #define MLGetUTF8String	WSGetUTF8String
 #define MLGetUTF8Symbol	WSGetUTF8Symbol
 #define MLGetYieldFunction	WSGetYieldFunction
@@ -937,7 +858,6 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
  */
 /* public */
 #define mlapi_packet wsapi_packet
-#define MLMain  WSMain
 
 #if !defined(MLINTERFACE) && defined(WSINTERFACE)
 #define MLINTERFACE WSINTERFACE
@@ -947,7 +867,6 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 /*****************************************************************************
  * END - ReBrand
  *****************************************************************************/
-
 
 
 
@@ -976,7 +895,6 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 
 
 
-
 #if WINDOWS_MATHLINK && (MPREP_REVISION || !defined(APIENTRY) || !defined(FAR))
 
 #if defined(WIN32_LEAN_AND_MEAN) && defined(WIN32_EXTRA_LEAN)
@@ -996,7 +914,6 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 #undef WIN32_EXTRA_LEAN
 #undef WIN32_LEAN_AND_MEAN
 #endif
-
 
 
 #endif
@@ -1024,7 +941,6 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 #define MLPROTOTYPES 0
 #endif
 #endif
-
 
 
 #ifndef _MLFAR_H
@@ -1058,7 +974,6 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 #endif /* _MLFAR_H */
 
 
-
 #ifndef _MLTYPES_H
 #define _MLTYPES_H
 
@@ -1077,12 +992,11 @@ search for WSTP_ERRSTRIP_COMMAND in libsrc/CMakeLists.txt.
 #define _MLINT64_H
 
 
-#if WIN64_MATHLINK || X86_64_SOLARIS_MATHLINK || IA64_LINUX_MATHLINK || X86_64_LINUX_MATHLINK || A64_AIX_MATHLINK || M64_IRIX_MATHLINK || LP64_HPUX_MATHLINK || PPC64_DARWIN_MATHLINK || ARM64_DARWIN_MATHLINK || X86_64_DARWIN_MATHLINK || DIGITAL_MATHLINK || U64_SOLARIS_MATHLINK || STUDIO12_U64_SOLARIS_MATHLINK
+#if WIN64_MATHLINK || X86_64_LINUX_MATHLINK || ARM64_DARWIN_MATHLINK || X86_64_DARWIN_MATHLINK
 #define ML64BIT_MATHLINK 1
 #endif
 
 #endif /* MLINT64_H */
-
 
 
 
@@ -1146,7 +1060,7 @@ typedef wsulong32 wsbiguint;
 #endif
 
 
-#elif X86_64_SOLARIS_MATHLINK || IA64_LINUX_MATHLINK || X86_64_LINUX_MATHLINK || A64_AIX_MATHLINK || M64_IRIX_MATHLINK || LP64_HPUX_MATHLINK || PPC64_DARWIN_MATHLINK || ARM64_DARWIN_MATHLINK || X86_64_DARWIN_MATHLINK || DIGITAL_MATHLINK || U64_SOLARIS_MATHLINK || STUDIO12_U64_SOLARIS_MATHLINK
+#elif X86_64_LINUX_MATHLINK || ARM64_DARWIN_MATHLINK || X86_64_DARWIN_MATHLINK
 
 typedef int mllong32;
 typedef int wslong32;
@@ -1195,7 +1109,7 @@ typedef mlulong32 mlbiguint;
 typedef __int64 mlint64;
 typedef unsigned __int64 mluint64;
 
-#elif X86_64_SOLARIS_MATHLINK || IA64_LINUX_MATHLINK || X86_64_LINUX_MATHLINK || A64_AIX_MATHLINK || M64_IRIX_MATHLINK || LP64_HPUX_MATHLINK || PPC64_DARWIN_MATHLINK || ARM64_DARWIN_MATHLINK || X86_64_DARWIN_MATHLINK || DIGITAL_MATHLINK || U64_SOLARIS_MATHLINK || STUDIO12_U64_SOLARIS_MATHLINK
+#elif X86_64_LINUX_MATHLINK || ARM64_DARWIN_MATHLINK || X86_64_DARWIN_MATHLINK
 
 
 typedef long mlint64;
@@ -1223,7 +1137,6 @@ typedef wint64 wsuint64;
 
 
 #endif /* _MLBASICTYPES_H */
-
 
 
 
@@ -1301,6 +1214,16 @@ typedef wint64 wsuint64;
 #define MLCBDEFN( rtype, name, params) extern rtype MLCB name params
 #endif
 
+#ifndef WSCBPROC
+#define WSCBPROC( rtype, name, params) typedef rtype (WSCB * name) P(params)
+#endif
+#ifndef WSCBDECL
+#define WSCBDECL( rtype, name, params) extern rtype WSCB name P(params)
+#endif
+#ifndef WSCBDEFN
+#define WSCBDEFN( rtype, name, params) extern rtype WSCB name params
+#endif
+
 
 
 
@@ -1308,11 +1231,20 @@ typedef wint64 wsuint64;
 #ifndef MLDPROC
 #define MLDPROC MLCBPROC
 #endif
+#ifndef WSDPROC
+#define WSDPROC WSCBPROC
+#endif
 #ifndef MLDDECL
 #define MLDDECL MLCBDECL
 #endif
+#ifndef WSDDECL
+#define WSDDECL WSCBDECL
+#endif
 #ifndef MLDDEFN
 #define MLDDEFN MLCBDEFN
+#endif
+#ifndef WSDDEFN
+#define WSDDEFN WSCBDEFN
 #endif
 
 
@@ -1322,11 +1254,20 @@ typedef wint64 wsuint64;
 #ifndef MLTPROC
 #define MLTPROC MLCBPROC
 #endif
+#ifndef WSTPROC
+#define WSTPROC WSCBPROC
+#endif
 #ifndef MLTDECL
 #define MLTDECL MLCBDECL
 #endif
+#ifndef WSTDECL
+#define WSTDECL WSCBDECL
+#endif
 #ifndef MLTDEFN
 #define MLTDEFN MLCBDEFN
+#endif
+#ifndef WSTDEFN
+#define WSTDEFN WSCBDEFN
 #endif
 
 
@@ -1334,11 +1275,20 @@ typedef wint64 wsuint64;
 #ifndef MLNPROC
 #define MLNPROC MLCBPROC
 #endif
+#ifndef WSNPROC
+#define WSNPROC WSCBPROC
+#endif
 #ifndef MLNDECL
 #define MLNDECL MLCBDECL
 #endif
+#ifndef WSNDECL
+#define WSNDECL WSCBDECL
+#endif
 #ifndef MLNDEFN
 #define MLNDEFN MLCBDEFN
+#endif
+#ifndef WSNDEFN
+#define WSNDEFN WSCBDEFN
 #endif
 
 
@@ -1376,20 +1326,38 @@ typedef wint64 wsuint64;
 #ifndef MLYPROC
 #define MLYPROC MLCBPROC
 #endif
+#ifndef WSYPROC
+#define WSYPROC WSCBPROC
+#endif
 #ifndef MLYDECL
 #define MLYDECL MLCBDECL
+#endif
+#ifndef WSYDECL
+#define WSYDECL WSCBDECL
 #endif
 #ifndef MLYDEFN
 #define MLYDEFN MLCBDEFN
 #endif
+#ifndef WSYDEFN
+#define WSYDEFN WSCBDEFN
+#endif
 #ifndef MLMPROC
 #define MLMPROC MLCBPROC
+#endif
+#ifndef WSMPROC
+#define WSMPROC WSCBPROC
 #endif
 #ifndef MLMDECL
 #define MLMDECL MLCBDECL
 #endif
+#ifndef WSMDECL
+#define WSMDECL WSCBDECL
+#endif
 #ifndef MLMDEFN
 #define MLMDEFN MLCBDEFN
+#endif
+#ifndef WSMDEFN
+#define WSMDEFN WSCBDEFN
 #endif
 
 
@@ -1558,7 +1526,6 @@ ML_END_EXTERN_C
 
 
 
-
 #if WINDOWS_MATHLINK
 
 #ifndef	APIENTRY
@@ -1631,10 +1598,8 @@ ML_END_EXTERN_C
 
 
 
-
 #ifndef _MLAPI_H
 #define _MLAPI_H
-
 
 
 
@@ -1655,7 +1620,6 @@ ML_EXTERN_C
 /* #include "mlcfm.h" */
 
 
-#if MLINTERFACE >= 3
 #if WIN64_MATHLINK
 MLAPROC( void*, MLAllocatorProcPtr, (unsigned __int64));
 #else
@@ -1663,15 +1627,6 @@ MLAPROC( void*, MLAllocatorProcPtr, (unsigned long));
 #endif
 
 
-#else
-
-#if WIN64_MATHLINK
-MLAPROC( MLPointer, MLAllocatorProcPtr, (unsigned __int64));
-#else
-MLAPROC( MLPointer, MLAllocatorProcPtr, (unsigned long));
-#endif
-
-#endif /* MLINTERFACE >= 3 */
 
 typedef MLAllocatorProcPtr MLAllocatorUPP;
 #define CallMLAllocatorProc(userRoutine, size) (*(userRoutine))((size))
@@ -1680,11 +1635,7 @@ typedef MLAllocatorProcPtr MLAllocatorUPP;
 
 
 
-#if MLINTERFACE >= 3
 MLFPROC( void, MLDeallocatorProcPtr, (void*));
-#else
-MLFPROC( void, MLDeallocatorProcPtr, (MLPointer));
-#endif /* MLINTERFACE >= 3 */
 
 typedef MLDeallocatorProcPtr MLDeallocatorUPP;
 #define CallMLDeallocatorProc(userRoutine, p) (*(userRoutine))((p))
@@ -1705,7 +1656,6 @@ MLDECL( __MLProcPtr__, MLDeallocatorCast, ( MLDeallocatorProcPtr f));
 ML_END_EXTERN_C
 
 
-
 typedef MLAllocatorUPP MLAllocator;
 typedef MLAllocator FAR * MLAllocatorp;
 #define MLCallAllocator CallMLAllocatorProc
@@ -1720,7 +1670,6 @@ typedef MLDeallocator FAR * MLDeallocatorp;
 #define MLdeallocator MLDeallocator
 
 #endif /* _MLAPI_H */
-
 
 
 
@@ -1870,7 +1819,6 @@ ML_END_EXTERN_C
 
 
 #endif /* _WSNUMENV_H */
-
 
 
 
@@ -2860,27 +2808,6 @@ WSBRIARD_WSLONGDOUBLE */
 #define WSTK_WSDOUBLE      WSBERGAMASCO_WSDOUBLE
 #define WSTK_WSLONGDOUBLE  WSBERGAMASCO_WSLONGDOUBLE
 
-#elif IA64_LINUX_MATHLINK
-#define WSTP_NUMERICS_ENVIRONMENT_ID  WSAUSTRALIANCATTLEDOG_NUMERICS_ID
-
-#define WSTK_CSHORT        WSAUSTRALIANCATTLEDOG_CSHORT
-#define WSTK_CINT          WSAUSTRALIANCATTLEDOG_CINT
-#define WSTK_CLONG         WSAUSTRALIANCATTLEDOG_CLONG
-#define WSTK_CINT64        WSAUSTRALIANCATTLEDOG_CINT64
-#define WSTK_CSIZE_T       WSAUSTRALIANCATTLEDOG_CSIZE_T
-#define WSTK_CFLOAT        WSAUSTRALIANCATTLEDOG_CFLOAT
-#define WSTK_CDOUBLE       WSAUSTRALIANCATTLEDOG_CDOUBLE
-#define WSTK_CLONGDOUBLE   WSAUSTRALIANCATTLEDOG_CLONGDOUBLE
-
-#define WSTK_WSSHORT       WSAUSTRALIANCATTLEDOG_WSSHORT
-#define WSTK_WSINT         WSAUSTRALIANCATTLEDOG_WSINT
-#define WSTK_WSLONG        WSAUSTRALIANCATTLEDOG_WSLONG
-#define WSTK_WSINT64       WSAUSTRALIANCATTLEDOG_WSINT64
-#define WSTK_WSSIZE_T      WSAUSTRALIANCATTLEDOG_WSSIZE_T
-#define WSTK_WSFLOAT       WSAUSTRALIANCATTLEDOG_WSFLOAT
-#define WSTK_WSDOUBLE      WSAUSTRALIANCATTLEDOG_WSDOUBLE
-#define WSTK_WSLONGDOUBLE  WSAUSTRALIANCATTLEDOG_WSLONGDOUBLE
-
 #elif X86_64_LINUX_MATHLINK
 #define WSTP_NUMERICS_ENVIRONMENT_ID  WSBOXER_NUMERICS_ID
 
@@ -3026,7 +2953,6 @@ struct _i87extended_nt { unsigned short w[5];};
 
 
 
-
 ML_EXTERN_C
 
 #ifndef _MLSTDDEV_H
@@ -3139,8 +3065,8 @@ ML_EXTERN_C
  * MathLink Developer's Guide for each platform.
  */
 
-#define MLREVISION 41
-#define MLMATHVERSION 11.3.0
+#define MLREVISION 42
+#define MLMATHVERSION 12.0.0
 
 #ifndef MLCREATIONID
 #define MLCREATIONID 114411
@@ -3388,9 +3314,9 @@ ML_EXTERN_C
                  */
 #else
 #if MLINTERFACE == 1
-#define MLAPIREVISION MLAPI1REVISION
+/* syntax error */ )
 #elif MLINTERFACE == 2
-#define MLAPIREVISION MLAPI2REVISION
+/* syntax error */ )
 #elif MLINTERFACE == 3
 #define MLAPIREVISION MLAPI3REVISION
 #elif MLINTERFACE == 4
@@ -3411,11 +3337,7 @@ ML_EXTERN_C
 
 #ifndef MLOLDDEFINITION
 #if WINDOWS_MATHLINK
-#if MLINTERFACE == 1
-#define MLOLDDEFINITION MLAPI1REVISION
-#elif MLINTERFACE == 2
-#define MLOLDDEFINITION MLAPI2REVISION
-#elif MLINTERFACE == 3
+#if MLINTERFACE == 3
 #define MLOLDDEFINITION MLAPI2REVISION
 #elif MLINTERFACE == 4
 #define MLOLDDEFINITION MLAPI3REVISION
@@ -3435,7 +3357,6 @@ ML_EXTERN_C
 #endif
 
 #endif /* _MLVERS_H */
-
 
 
 
@@ -3571,14 +3492,12 @@ typedef unsigned long dev_options;
 #define _UseAnyNetworkAddress        ((dev_options)0x00000008)
 
 
-#if MLINTERFACE >= 3
 /* DEVICE selector and WORLD selector masks */
 #define INFO_MASK (1UL << 31)
 #define INFO_TYPE_MASK ((1UL << 31) - 1UL)
 #define INFO_SWITCH_MASK (1UL << 30)
 #define MLDEVICE_MASK INFO_MASK
 #define WORLD_MASK (INFO_MASK | (1UL << 30))
-#endif
 
 /* values returned by selector MLDEVICE_TYPE */
 #define UNREGISTERED_TYPE  0
@@ -3592,35 +3511,6 @@ typedef unsigned long dev_options;
 #define GENERIC_TYPE	   13  /* Internal use only, not valid for MLDeviceInformation */
 #define UNIXSHM_TYPE       14
 #define INTRAPROCESS_TYPE  15
-
-#if MLINTERFACE < 3
-/* selectors */
-#define MLDEVICE_TYPE 0                                       /* long */
-#define MLDEVICE_NAME 1                                       /* char */
-#define MLDEVICE_NAME_SIZE 2                                  /* long */
-#define MLDEVICE_WORLD_ID 5                                   /* char */
-#define SHM_FD                 (UNIXSHM_TYPE * 256 + 0)       /* int */
-#define PIPE_FD                (UNIXPIPE_TYPE * 256 + 0)      /* int */
-#define PIPE_CHILD_PID         (UNIXPIPE_TYPE * 256 + 1)      /* int */
-#define SOCKET_FD              (UNIXSOCKET_TYPE * 256 + 0)    /* int */
-#define INTRA_FD               (INTRAPROCESS_TYPE * 256 + 0)  /* int */
-#define SOCKET_PARTNER_ADDR    (UNIXSOCKET_TYPE * 256 + 1)    /* unsigned long */
-#define SOCKET_PARTNER_PORT    (UNIXSOCKET_TYPE * 256 + 2)    /* unsigned short */
-#define LOOPBACK_FD            (LOOPBACK_TYPE * 256 + 2)      /* int */
-#define INTRAPROCESS_FD        (INTRAPROCESS_TYPE * 256 + 0)  /* int */
-
-#define	WINDOWS_SET_NOTIFY_WINDOW     2330 /* HWND */
-#define	WINDOWS_REMOVE_NOTIFY_WINDOW  2331 /* HWND */
-#define WINDOWS_READY_CONDITION       2332
-
-/* info selectors */
-#define WORLD_THISLOCATION 1        /* char */
-#define WORLD_MODES 2               /* dev_mode */
-#define WORLD_PROTONAME 3           /* char */
-#define WORLD_STREAMCAPACITY 4      /* long */ /*this belongs in mlolddev.h*/
-#define WORLD_ID MLDEVICE_WORLD_ID    /* char */
-
-#else /* MLINTERFACE < 3 */
 
 /* selectors */
 #define MLDEVICE_TYPE          MLDEVICE_MASK + 0UL                                        /* long */
@@ -3647,7 +3537,6 @@ typedef unsigned long dev_options;
 #define WORLD_PROTONAME (3UL + WORLD_MASK)           /* char */
 #define WORLD_STREAMCAPACITY (4UL + WORLD_MASK)      /* long */ /*this belongs in mlolddev.h*/
 #define WORLD_ID (5UL + WORLD_MASK)    /* char */
-#endif /* MLINTERFACE < 3 */
 
 
 #ifndef MATHLINK_DEVICE_WORLD_ID
@@ -3689,13 +3578,8 @@ typedef struct MLYieldData{
 void MLNewYieldData P(( MLYieldDataPointer ydp   /* , dev_allocator, dev_deallocator */));
 void MLFreeYieldData P(( MLYieldDataPointer ydp));
 MLYieldParameters MLResetYieldData P(( MLYieldDataPointer ydp, devyield_place func_id));
-#if MLINTERFACE >= 3
 int   MLSetYieldParameter P(( MLYieldParameters yp, unsigned long selector, void* data, unsigned long* len));
 int   MLYieldParameter P(( MLYieldParameters yp, unsigned long selector, void* data, unsigned long* len));
-#else
-mlapi_result   MLSetYieldParameter P(( MLYieldParameters yp, unsigned long selector, void* data, unsigned long* len));
-mlapi_result   MLYieldParameter P(( MLYieldParameters yp, unsigned long selector, void* data, unsigned long* len));
-#endif /* MLINTERFACE >= 3 */
 devyield_sleep MLSetSleepYP P(( MLYieldParameters yp, devyield_sleep sleep));
 devyield_count MLSetCountYP P(( MLYieldParameters yp, devyield_count count));
 
@@ -3706,11 +3590,7 @@ enum { MLSleepParameter = 1, MLCountParameter, MLPlaceParameter};
 
 
 
-#if MLINTERFACE >= 3
 MLYPROC( int, MLYielderProcPtr, (MLINK mlp, MLYieldParameters yp));
-#else
-MLYPROC( devyield_result, MLYielderProcPtr, (MLINK mlp, MLYieldParameters yp));
-#endif /* MLINTERFACE >= 3 */
 typedef	MLYielderProcPtr MLDeviceYielderProcPtr;
 
 typedef MLYielderProcPtr MLYielderUPP, MLDeviceYielderUPP;
@@ -3720,11 +3600,7 @@ typedef MLYielderProcPtr MLYielderUPP, MLDeviceYielderUPP;
 
 typedef  MLYielderUPP MLYieldFunctionType;
 
-#if MLINTERFACE >= 3
 typedef MLYielderUPP MLYieldFunctionObject;
-#else
-typedef void* MLYieldFunctionObject; /* Made change to void* for 64 bit machines */
-#endif
 
 typedef  MLYieldFunctionObject dev_yielder;
 typedef dev_yielder FAR* dev_yielderp;
@@ -3734,11 +3610,7 @@ typedef unsigned long dev_message;
 typedef dev_message FAR * dev_messagep;
 
 
-#if MLINTERFACE >= 3
 MLMPROC( void, MLHandlerProcPtr, (MLINK mlp, int m, int n));
-#else
-MLMPROC( void, MLHandlerProcPtr, (MLINK mlp, dev_message m, dev_message n));
-#endif /* MLINTERFACE >= 3 */
 typedef MLHandlerProcPtr MLDeviceHandlerProcPtr;
 
 
@@ -3749,15 +3621,7 @@ typedef MLHandlerProcPtr MLHandlerUPP, MLDeviceHandlerUPP;
 
 typedef  MLHandlerUPP MLMessageHandlerType;
 
-#if MLINTERFACE >= 3
 typedef MLHandlerUPP MLMessageHandlerObject;
-#else
-#if WIN64_MATHLINK
-typedef unsigned __int64 MLMessageHandlerObject;
-#else
-typedef unsigned long MLMessageHandlerObject;
-#endif
-#endif /* MLINTERFACE >= 3 */
 
 
 typedef  MLMessageHandlerObject dev_msghandler;
@@ -3778,53 +3642,25 @@ typedef dev_msghandler FAR* dev_msghandlerp;
 MLDECL( devyield_sleep,         MLSleepYP,               ( MLYieldParameters yp));
 MLDECL( devyield_count,         MLCountYP,               ( MLYieldParameters yp));
 
-#if MLINTERFACE >= 3
 MLDECL( MLYieldFunctionObject,  MLCreateYieldFunction,   ( MLEnvironment ep, MLYieldFunctionType yf, void* reserved)); /* reserved must be 0 */
-#else
-MLDECL( MLYieldFunctionObject,  MLCreateYieldFunction,   ( MLEnvironment ep, MLYieldFunctionType yf, MLPointer reserved)); /* reserved must be 0 */
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE > 1
-#if MLINTERFACE <= 3
 #if MLINTERFACE == 3
 MLDECL( MLYieldFunctionObject,  MLCreateYieldFunction0,   ( MLEnvironment ep, MLYieldFunctionType yf, void* reserved)); /* reserved must be 0 */
-#else
-MLDECL( MLYieldFunctionObject,  MLCreateYieldFunction0,   ( MLEnvironment ep, MLYieldFunctionType yf, MLPointer reserved)); /* reserved must be 0 */
 #endif
-#endif
-#endif /* MLINTERFACE > 1 */
 
 MLDECL( MLYieldFunctionType,    MLDestroyYieldFunction,  ( MLYieldFunctionObject yfo));
 
-#if MLINTERFACE >= 3
 MLDECL( int,        MLCallYieldFunction,     ( MLYieldFunctionObject yfo, MLINK mlp, MLYieldParameters p));
-#else
-MLDECL( devyield_result,        MLCallYieldFunction,     ( MLYieldFunctionObject yfo, MLINK mlp, MLYieldParameters p));
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( MLMessageHandlerObject, MLCreateMessageHandler,  ( MLEnvironment ep, MLMessageHandlerType mh, void* reserved)); /* reserved must be 0 */
-#else
-MLDECL( MLMessageHandlerObject, MLCreateMessageHandler,  ( MLEnvironment ep, MLMessageHandlerType mh, MLPointer reserved)); /* reserved must be 0 */
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE > 1
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( MLMessageHandlerObject, MLCreateMessageHandler0,  ( MLEnvironment ep, MLMessageHandlerType mh, void* reserved)); /* reserved must be 0 */
-#else
-MLDECL( MLMessageHandlerObject, MLCreateMessageHandler0,  ( MLEnvironment ep, MLMessageHandlerType mh, MLPointer reserved)); /* reserved must be 0 */
 #endif
-#endif
-#endif /* MLINTERFACE > 1 */
 
 MLDECL( MLMessageHandlerType,   MLDestroyMessageHandler, ( MLMessageHandlerObject mho));
 
-#if MLINTERFACE >= 3
 MLDECL( void,                   MLCallMessageHandler,    ( MLMessageHandlerObject mho, MLINK mlp, int m, int n));
-#else
-MLDECL( void,                   MLCallMessageHandler,    ( MLMessageHandlerObject mho, MLINK mlp, dev_message m, dev_message n));
-#endif /* MLINTERFACE >= 3 */
 
 
 /* just some type-safe casts */
@@ -3838,21 +3674,15 @@ ML_END_EXTERN_C
 
 
 
-
 #ifndef MLSIGNAL_H
 #define MLSIGNAL_H
 
-#if MLINTERFACE >= 3
 MLYPROC( void, MLSigHandlerProcPtr, (int signal));
-#else
-MLYPROC( void, MLSigHandlerProcPtr, (int_ct signal));
-#endif /* MLINTERFACE >= 3 */
 
 typedef MLSigHandlerProcPtr MLSignalHandlerType;
 typedef void * MLSignalHandlerObject;
 
 #endif /* MLSIGNAL_H */
-
 
 
 
@@ -3876,11 +3706,7 @@ typedef void * MLSignalHandlerObject;
 /*************** Starting MathLink ***************/
 
 #define MLPARAMETERSIZE_R1 256
-#if MLINTERFACE >= 3
 #define MLPARAMETERSIZE 356
-#else
-#define MLPARAMETERSIZE 256
-#endif
 
 typedef char FAR * MLParametersPointer;
 typedef char MLParameters[MLPARAMETERSIZE];
@@ -3899,9 +3725,7 @@ typedef MLUserProcPtr MLUserUPP;
 typedef MLUserUPP MLUserFunctionType;
 typedef MLUserFunctionType FAR * MLUserFunctionTypePointer;
 
-#if MLINTERFACE >= 3
 typedef MLUserUPP MLUserFunction;
-#endif /* MLINTERFACE >= 3 */
 
 
 /* The following defines are
@@ -3950,7 +3774,6 @@ typedef MLUserUPP MLUserFunction;
 #define MLUseAnyNetworkAddress       ((unsigned long)0x00000008)
 
 /* Encoding types for use with MLSetEncodingParameter */
-#if MLINTERFACE >= 3
 #define MLASCII_ENC		1
 #define MLBYTES_ENC		2
 #define MLUCS2_ENC		3
@@ -3960,7 +3783,6 @@ typedef MLUserUPP MLUserFunction;
 #define MLUTF32_ENC		8
 
 #define MLTOTAL_TEXT_ENCODINGS 8
-#endif
 
 #if MLINTERFACE >= 4
 #define MLLOGERROR              0
@@ -3996,21 +3818,11 @@ MLDECL( long, MLDoNotHandleSignalParameter,    (MLEnvironmentParameter ep, int s
 #endif /* MLINTERFACE >= 4 */
 
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( unsigned long, MLNewParameters,     ( char* p, unsigned long rev, unsigned long apirev));
 MLDECL( void,          MLSetAllocParameter, ( char* p, MLAllocator allocator, MLDeallocator deallocator));
-#else
-MLDECL( ulong_ct, MLNewParameters,     ( MLParametersPointer p, ulong_ct rev, ulong_ct apirev));
-MLDECL( void,     MLSetAllocParameter, ( MLParametersPointer p, MLAllocator allocator, MLDeallocator deallocator));
-#endif /* MLINTERFACE == 3 */
 #endif /* MLINTERFACE <= 3 */
 
 
-#ifndef MLINTERFACE
-/* syntax error */ )
-#endif
-
-#if MLINTERFACE > 1 && MLINTERFACE <= 3
 #if MLINTERFACE == 3
 MLDECL( int,      MLAllocParameter,       (char* p, MLAllocator* allocator, MLDeallocator* deallocator));
 MLDECL( long,     MLSetResourceParameter, (char* p, const char *path));
@@ -4018,13 +3830,7 @@ MLDECL( long,     MLSetDeviceParameter,   (char* p, const char *devspec));
 MLDECL( long,     MLErrorParameter,       (char* p));
 MLDECL( long,     MLSetEncodingParameter, (char *p, unsigned int etype));
 MLDECL( long,     MLDoNotHandleSignalParameter0,    (char *p, int signum));
-#else
-MLDECL( long,     MLAllocParameter,       (MLParametersPointer p, MLAllocatorp allocatorp, MLDeallocatorp deallocatorp));
-MLDECL( long,     MLSetResourceParameter, (MLParametersPointer p, kcharp_ct path));
-MLDECL( long,     MLSetDeviceParameter,   (MLParametersPointer p, kcharp_ct devspec));
-MLDECL( long,     MLErrorParameter,       (MLParametersPointer p));
 #endif /* MLINTERFACE == 3 */
-#endif /* MLINTERFACE > 1 && MLINTERFACE <= 3 */
 
 #if MLINTERFACE >= 4
 MLDECL( void,          MLStopHandlingSignal, (MLEnvironment env, int signum));
@@ -4036,7 +3842,6 @@ MLDECL( void,          MLStopHandlingSignal0,          ( MLEnvironment env, int 
 MLDECL( void,          MLHandleSignal0,                ( MLEnvironment env, int signum));
 #endif /* MLINTERFACE == 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( long,          MLSetEnvironmentData,           ( MLEnvironment env, void *cookie));
 MLDECL( void *,        MLEnvironmentData,              ( MLEnvironment env));
 MLDECL( int,           MLSetSignalHandler,             ( MLEnvironment env, int signum, void *so));
@@ -4046,16 +3851,10 @@ MLDECL( int,           MLUnsetSignalHandler,           ( MLEnvironment env, int 
 MLDECL( long,          MLSetSymbolReplacement,         ( MLINK mlp, const char *priv, int prlen, const char *pub, int pblen));
 MLDECL( int,           MLClearSymbolReplacement,       ( MLINK mlp, long index));
 MLDECL( void,          MLClearAllSymbolReplacements,   ( MLINK mlp));
-#endif
 
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( long,          MLSetSignalHandler0, ( MLEnvironment env, int signum, MLSignalHandlerObject so));
 MLDECL( long,          MLUnsetSignalHandler0, ( MLEnvironment env, int signum, MLSignalHandlerObject so));
-#else
-MLDECL( long,          MLSetSignalHandler0, ( MLEnvironment env, int_ct signum, MLSignalHandlerObject so));
-MLDECL( long,          MLUnsetSignalHandler0, ( MLEnvironment env, int_ct signum, MLSignalHandlerObject so));
-#endif /* MLINTERFACE == 3 */
 #endif /* MLINTERFACE <= 3 */
 
 #if MLINTERFACE >= 4
@@ -4063,27 +3862,17 @@ MLDECL(MLEnvironment,  MLInitialize,   ( MLEnvironmentParameter ep));
 #endif
 
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( MLEnvironment, MLInitialize,   ( char* p)); /* pass in NULL */
-#else
-MLDECL( MLEnvironment, MLInitialize,   ( MLParametersPointer p)); /* pass in NULL */
-#endif /* MLINTERFACE == 3 */
 #endif /* MLINTERFACE <= 3 */
 
 MLDECL( void,          MLDeinitialize, ( MLEnvironment env));
 
 /*************** MathLink Revsion Number/Interface Number ************/
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( void,          MLVersionNumber0, ( MLEnvironment env, long *inumb, long *rnumb));
-#else
-MLDECL( void,          MLVersionNumber0, ( MLEnvironment env, longp_ct inumb, longp_ct rnumb));
-#endif /* MLINTERFACE == 3 */
 #endif /* MLINTERFACE <= 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( void,          MLVersionNumbers, ( MLEnvironment env, int *inumb, int *rnumb, int *bnumb));
-#endif
 
 #if MLINTERFACE >= 4
 MLDECL( int,               MLCompilerID, (MLEnvironment env, const char **id));
@@ -4111,38 +3900,26 @@ MLDECL( MLEnvironment, MLBegin, (MLEnvironmentParameter ep));
 #endif
 
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( MLEnvironment, MLBegin, ( char* p)); /* pass in NULL */
-#else
-MLDECL( MLEnvironment, MLBegin, ( MLParametersPointer p)); /* pass in NULL */
-#endif /* MLINTERFACE == 3 */
 #endif // MLINTERFACE <= 3
 
 MLDECL( void,          MLEnd,   ( MLEnvironment env));
 
 /*************** Environment Identification Interface ***************/
 
-#if MLINTERFACE >= 3
 MLDECL( int, MLSetEnvIDString, ( MLEnvironment ep, const char *environment_id)); /* APPIDSERV */
 MLDECL( int, MLGetLinkedEnvIDString, (MLINK mlp, const char **environment_id)); /* APPIDSERV */
 MLDECL( void, MLReleaseEnvIDString, (MLINK mlp, const char *environment_id));
-#endif
 
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( long, MLSetEnvIDString0, ( MLEnvironment ep, const char *environment_id)); /* APPIDSERV */
 MLDECL( long, MLGetLinkedEnvIDString0, ( MLINK mlp, const char *environment_id)); /* APPIDSERV */
-#else
-MLDECL( long, MLSetEnvIDString0, ( MLEnvironment ep, kcharp_ct environment_id)); /* APPIDSERV */
-MLDECL( long, MLGetLinkedEnvIDString0, ( MLINK mlp, kcharp_ct environment_id)); /* APPIDSERV */
-#endif /* MLINTERFACE == 3 */
 #endif /* MLINTERFACE <= 3 */
 
 /*********************************************************************/
 
 
 /**************** Network Interface List API *************************/
-#if MLINTERFACE >= 3
 MLDECL( char **,    MLGetNetworkAddressList, ( MLEnvironment ep, unsigned long *size ));
 MLDECL( void,   MLReleaseNetworkAddressList, ( MLEnvironment ep, char **addresses, unsigned long size));
 
@@ -4159,7 +3936,6 @@ MLDECL( void,       MLReleaseDomainNameList, ( MLEnvironment ep, char **dnsnames
 MLDECL( void,        MLDisownDomainNameList, ( MLEnvironment ep, char **dnsnames, unsigned long size));
 #endif
 
-#endif /* MLINTERFACE >= 3 */
 /*********************************************************************/
 
 
@@ -4186,17 +3962,8 @@ MLDECL(void,  MLReleaseLinksFromEnvironment, (MLEnvironment ep, MLINK *links, in
 #endif
 
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( long, MLTestPoint1, ( MLEnvironment ep, unsigned long selector, void *p1, void *p2, long *np));
-#else
-MLDECL( long_et, MLTestPoint1, ( MLEnvironment ep, ulong_ct selector, voidp_ct p1, voidp_ct p2, longp_ct np));
-#endif /* MLINTERFACE == 3 */
 #endif /* MLINTERFACE <= 3 */
-
-#ifndef MLINTERFACE
-/* syntax error */ )
-#endif
-#if MLINTERFACE > 1
 
 #if MLNTESTPOINTS < 2
 #undef MLNTESTPOINTS
@@ -4213,11 +3980,7 @@ MLDECL( void,    MLTestPoint2,     ( MLINK mlp));
 #endif
 
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( unsigned long,    MLTestPoint3,     ( MLINK mlp));
-#else
-MLDECL( ulong_ct,    MLTestPoint3,     ( MLINK mlp));
-#endif /* MLINTERFACE == 3 */
 #endif /* MLINTERFACE <= 3 */
 
 #if MLNTESTPOINTS < 4
@@ -4226,30 +3989,14 @@ MLDECL( ulong_ct,    MLTestPoint3,     ( MLINK mlp));
 #endif
 
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( unsigned long,    MLTestPoint4,     ( MLINK mlp));
-#else
-MLDECL( ulong_ct,    MLTestPoint4,     ( MLINK mlp));
-#endif /* MLINTERFACE == 3 */
 #endif /* MLINTERFACE <= 3 */
 
 #if MLINTERFACE >= 4
 MLDECL( long, MLNumericsQuery, ( MLEnvironment ep, unsigned long selector, void *p1, void *p2, long *np));
 #else
-#if MLINTERFACE == 3
 MLDECL( long, MLNumberControl0, ( MLEnvironment ep, unsigned long selector, void *p1, void *p2, long *np));
-#else
-MLDECL( long_et, MLNumberControl0, ( MLEnvironment ep, ulong_ct selector, voidp_ct p1, voidp_ct p2, longp_ct np));
 #endif
-#endif
-
-#else
-#if MLINTERFACE >= 3
-extern long MLNumberControl0( MLEnvironment ep, unsigned long selector, void *p1, void *p2, long *np);
-#else
-extern long_et MLNumberControl0( MLEnvironment ep, ulong_ct selector, voidp_ct p1, voidp_ct p2, longp_ct np);
-#endif /* MLINTERFACE >= 3 */
-#endif /* MLINTERFACE > 1 */
 
 
 /*************** Connection interface ***************/
@@ -4263,45 +4010,28 @@ MLDECL( MLINK, MLCreateLinkWithExternalProtocol, ( MLEnvironment ep, dev_type de
 #endif
 
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( MLINK,         MLCreate0,       ( MLEnvironment ep, dev_type dev, dev_main_type dev_main, int *errp));
-#else
-MLDECL( MLINK,         MLCreate0,       ( MLEnvironment ep, dev_type dev, dev_main_type dev_main, longp_ct errp));
-#endif
 #endif /* MLINTERFACE <= 3 */
 
 
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( MLINK,         MLMake,          ( void* ep, dev_type dev, dev_main_type dev_main, int *errp));
-#else
-MLDECL( MLINK,         MLMake,          ( MLPointer ep, dev_type dev, dev_main_type dev_main, longp_ct errp));
-#endif /* MLINTERFACE == 3 */
 
 MLDECL( void,          MLDestroy,       ( MLINK mlp, dev_typep devp, dev_main_typep dev_mainp));
 MLDECL( int,           MLValid0,        ( MLINK mlp));
 #endif /* MLINTERFACE <= 3 */
 
 #if MLINTERFACE <= 3
-#if MLINTERFACE == 3
 MLDECL( MLINK,         MLLoopbackOpen0, ( MLEnvironment ep, const char *features, int *errp));
-#else
-MLDECL( MLINK,         MLLoopbackOpen0, ( MLEnvironment ep, kcharp_ct features, longp_ct errp));
-#endif
 #endif /* MLINTERFACE <= 3 */
 
 #if MLINTERFACE >= 4
 MLDECL( char **,       MLFilterArgv,   ( MLEnvironment ep, char **argv, char **argv_end));
 #else
-#if MLINTERFACE == 3
 MLDECL( char **,       MLFilterArgv0,   ( MLEnvironment ep, char **argv, char **argv_end));
-#else
-MLDECL( charpp_ct,     MLFilterArgv0,   ( MLEnvironment ep, charpp_ct argv, charpp_ct argv_end));
-#endif
 #endif // MLINTERFACE >= 4
 
 
-#if MLINTERFACE >= 3
 MLDECL( long,          MLFeatureString, ( MLINK mlp, char *buf, long buffsize));
 MLDECL( MLINK,         MLOpenArgv,      ( MLEnvironment ep, char **argv, char **argv_end, int *errp));
 MLDECL( MLINK,         MLOpenArgcArgv,  ( MLEnvironment ep, int argc, char **argv, int *errp));
@@ -4310,23 +4040,9 @@ MLDECL( MLINK,         MLLoopbackOpen,  ( MLEnvironment ep, int *errp));
 MLDECL( int,           MLStringToArgv,  ( const char *commandline, char *buf, char **argv, int len));
 MLDECL( long,          MLScanString,    ( char **argv, char ***argv_end, char **commandline, char **buf));
 MLDECL( long,          MLPrintArgv,     ( char *buf, char **buf_endp, char ***argvp, char **argv_end));
-#else
-MLDECL( long,          MLFeatureString, ( MLINK mlp, charp_ct buf, long buffsize));
-MLDECL( MLINK,         MLOpenArgv,      ( MLEnvironment ep, charpp_ct argv, charpp_ct argv_end, longp_ct errp));
-MLDECL( MLINK,         MLOpenString,    ( MLEnvironment ep, kcharp_ct command_line, longp_ct errp));
-MLDECL( MLINK,         MLLoopbackOpen,  ( MLEnvironment ep, longp_ct errp));
-MLDECL( int_ct,        MLStringToArgv,  ( kcharp_ct commandline, charp_ct buf, charpp_ct argv, int_ct len));
-MLDECL( long,          MLScanString,    ( charpp_ct argv, charppp_ct argv_end, charpp_ct commandline, charpp_ct buf));
-MLDECL( long,          MLPrintArgv,     ( charp_ct buf, charpp_ct buf_endp, charppp_ct argvp, charpp_ct argv_end));
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( const char *,     MLErrorMessage,  ( MLINK mlp));
 MLDECL( const char *,     MLErrorString,   ( MLEnvironment env, long err));
-#else
-MLDECL( kcharp_ct,     MLErrorMessage,  ( MLINK mlp));
-MLDECL( kcharp_ct,     MLErrorString,   ( MLEnvironment env, long err));
-#endif /* MLINTERFACE >= 3 */
 
 #if MLINTERFACE >= 4
 MLDECL( const unsigned short *,  MLUCS2ErrorMessage,  (MLINK mlp, int *length));
@@ -4341,7 +4057,6 @@ MLDECL(void,  MLReleaseUTF16ErrorMessage, (MLINK mlp, const unsigned short *mess
 MLDECL(void,  MLReleaseUTF32ErrorMessage, (MLINK mlp, const unsigned int *message, int length));
 #endif
 
-#if MLINTERFACE >= 3
 MLDECL( MLINK,         MLOpen,          ( int argc, char **argv));
 MLDECL( MLINK,         MLOpenInEnv,     ( MLEnvironment env, int argc, char **argv, int *errp));
 
@@ -4349,58 +4064,25 @@ MLDECL( MLINK,         MLOpenInEnv,     ( MLEnvironment env, int argc, char **ar
 MLDECL( MLINK,         MLOpenS,         ( const char *command_line));
 #endif
 
-#else
-MLDECL( MLINK,         MLOpen,          ( int_ct argc, charpp_ct argv));
-MLDECL( MLINK,         MLOpenInEnv,     ( MLEnvironment env, int_ct argc, charpp_ct argv, longp_ct errp));
-MLDECL( MLINK,         MLOpenS,         ( kcharp_ct command_line));
-#endif /* MLINTERFACE >= 3 */
-
-#if MLINTERFACE >= 3
 MLDECL( MLINK,         MLDuplicateLink,   ( MLINK parentmlp, const char *name, int *errp ));
-#else
-MLDECL( MLINK,         MLDuplicateLink,   ( MLINK parentmlp, kcharp_ct name, longp_ct errp ));
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( int,  MLConnect,         ( MLINK mlp));
 MLDECL( int,  MLActivate,        ( MLINK mlp));
-#else
-MLDECL( mlapi_result,  MLConnect,         ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
-
-#if MLINTERFACE < 3
-#define MLActivate MLConnect
-#endif
 
 #ifndef __feature_setp__
 #define __feature_setp__
 typedef struct feature_set* feature_setp;
 #endif
-#if MLINTERFACE >= 3
 MLDECL( int,  MLEstablish,       ( MLINK mlp, feature_setp features));
-#else
-MLDECL( mlapi_result,  MLEstablish,       ( MLINK mlp, feature_setp features));
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( int,  MLEstablishString, ( MLINK mlp, const char *features));
-#else
-MLDECL( mlapi_result,  MLEstablishString, ( MLINK mlp, kcharp_ct features));
-#endif /* MLINTERFACE >= 3 */
 
 MLDECL( void,          MLClose,           ( MLINK mlp));
 
-#if MLINTERFACE >= 3
 MLDECL( void,          MLSetUserData,   ( MLINK mlp, void* data, MLUserFunction f));
 MLDECL( void*,         MLUserData,      ( MLINK mlp, MLUserFunctionType *fp));
 MLDECL( void,          MLSetUserBlock,  ( MLINK mlp, void* userblock));
 MLDECL( void*,         MLUserBlock,     ( MLINK mlp));
-#else
-MLDECL( void,          MLSetUserData,   ( MLINK mlp, MLPointer data, MLUserFunctionType f));
-MLDECL( MLPointer,     MLUserData,      ( MLINK mlp, MLUserFunctionTypePointer fp));
-MLDECL( void,          MLSetUserBlock,  ( MLINK mlp, MLPointer userblock));
-MLDECL( MLPointer,     MLUserBlock,     ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
 
 /* just a type-safe cast */
 MLDECL( __MLProcPtr__, MLUserCast, ( MLUserProcPtr f));
@@ -4425,14 +4107,9 @@ MLDECL(void, MLReleaseLogFileNameForLink, (MLINK mlp, const char *name));
  * through this pointer.  The storage should be
  * considered in read-only memory.
  */
-#if MLINTERFACE >= 3
 
 MLDECL( const char *, MLName,    ( MLINK mlp));
 MLDECL( const char *, MLLinkName,    ( MLINK mlp));
-#else
-MLDECL( kcharp_ct, MLName,    ( MLINK mlp));
-MLDECL( kcharp_ct, MLLinkName,    ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
 
 #if MLINTERFACE >= 4
 MLDECL( const unsigned short *, MLUCS2LinkName,  (MLINK mlp, int *length));
@@ -4448,34 +4125,19 @@ MLDECL(void, MLReleaseUTF32LinkName, (MLINK mlp, const unsigned int *name, int l
 #endif
 
 MLDECL( long,      MLNumber,  ( MLINK mlp));
-#if MLINTERFACE > 1
 MLDECL( long,  MLToLinkID,  ( MLINK mlp));
 MLDECL( MLINK, MLFromLinkID, ( MLEnvironment ep, long n));
-#else
-extern MLINK MLFromLinkID( MLEnvironment ep, long n);
-#endif
 
-#if MLINTERFACE >= 3
 MLDECL( char *,  MLSetName, ( MLINK mlp, const char *name));
-#else
-MLDECL( charp_ct,  MLSetName, ( MLINK mlp, kcharp_ct name));
-#endif /* MLINTERFACE >= 3 */
 
 /* The following functions are
  * currently for internal use only.
  */
 
-#if MLINTERFACE >= 3
 MLDECL( void*, MLInit,   ( MLallocator alloc, MLdeallocator dealloc, void* enclosing_environment));
 MLDECL( void,  MLDeinit, ( void* env));
 MLDECL( void*, MLEnclosingEnvironment, ( void* ep));
 MLDECL( void*, MLinkEnvironment, ( MLINK mlp));
-#else
-MLDECL( MLPointer, MLInit,   ( MLallocator alloc, MLdeallocator dealloc, MLPointer enclosing_environment));
-MLDECL( void,      MLDeinit, ( MLPointer env));
-MLDECL( MLPointer, MLEnclosingEnvironment, ( MLPointer ep));
-MLDECL( MLPointer, MLinkEnvironment, ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
 
 
 #if MLINTERFACE >= 4
@@ -4496,15 +4158,10 @@ MLDECL( int,  MLIsLinkLoopback, (MLINK mlp));
 /* the following two functions are for internal use only */
 MLDECL( MLYieldFunctionObject, MLDefaultYieldFunction,    ( MLEnvironment env));
 
-#if MLINTERFACE >= 3
 MLDECL( int,          MLSetDefaultYieldFunction, ( MLEnvironment env, MLYieldFunctionObject yf));
-#else
-MLDECL( mlapi_result,          MLSetDefaultYieldFunction, ( MLEnvironment env, MLYieldFunctionObject yf));
-#endif /* MLINTERFACE >= 3 */
 
 
 ML_END_EXTERN_C
-
 
 
 
@@ -4553,7 +4210,6 @@ ML_END_EXTERN_C
 #endif /* MLINTERFACE >= 4 */
 
 #endif /* MLLINKSERVER_H */
-
 
 
 
@@ -4636,7 +4292,6 @@ ML_END_EXTERN_C
 
 
 
-
 #ifndef _WSERRNO_H
 #define _WSERRNO_H
 
@@ -4696,17 +4351,6 @@ ML_END_EXTERN_C
 #define WSERESOURCE         44  /* a required resource was missing */
 #define WSELAUNCHFAILED     45
 #define WSELAUNCHNAME       46
-#if WSINTERFACE < 3
-#define WSELAST WSELAUNCHNAME /* for internal use only */
-#elif WSINTERFACE == 3
-#define WSEPDATABAD         47
-#define WSEPSCONVERT        48
-#define WSEGSCONVERT        49
-#define WSENOTEXE           50
-#define WSESYNCOBJECTMAKE   51
-#define WSEBACKOUT          52
-#define WSELAST WSEBACKOUT
-#else /* WSINTERFACE >= 4 */
 #define WSEPDATABAD         47
 #define WSEPSCONVERT        48
 #define WSEGSCONVERT        49
@@ -4727,7 +4371,6 @@ ML_END_EXTERN_C
 #define WSEDISCOVERYNAMECOLLISION       64
 #define WSEBADSERVICEDISCOVERY          65
 #define WSELAST WSESERVICENOTAVAILABLE
-#endif
 
 #define WSETRACEON         996  /* */
 #define WSETRACEOFF        997  /* */
@@ -4737,7 +4380,6 @@ ML_END_EXTERN_C
 
 
 #endif /* _WSERRNO_H */
-
 
 
 #ifndef _MLERRORS_H
@@ -4820,23 +4462,15 @@ ML_END_EXTERN_C
 #define MLERESOURCE         44  /* a required resource was missing */
 #define MLELAUNCHFAILED     45
 #define MLELAUNCHNAME       46
-#if MLINTERFACE < 3
-#define MLELAST MLELAUNCHNAME /* for internal use only */
-#elif MLINTERFACE == 3
 #define MLEPDATABAD         47
 #define MLEPSCONVERT        48
 #define MLEGSCONVERT        49
 #define MLENOTEXE           50
 #define MLESYNCOBJECTMAKE   51
 #define MLEBACKOUT          52
+#if MLINTERFACE == 3
 #define MLELAST MLEBACKOUT
 #else /* MLINTERFACE >= 4 */
-#define MLEPDATABAD         47
-#define MLEPSCONVERT        48
-#define MLEGSCONVERT        49
-#define MLENOTEXE           50
-#define MLESYNCOBJECTMAKE   51
-#define MLEBACKOUT          52
 #define MLEBADOPTSYM        53
 #define MLEBADOPTSTR        54
 #define MLENEEDBIGGERBUFFER 55
@@ -4864,23 +4498,15 @@ ML_END_EXTERN_C
 
 
 
-
 #endif /* _MLERRORS_H */
 
 /* explicitly not protected by _MLERRORS_H in case MLDECL is redefined for multiple inclusion */
 
 ML_EXTERN_C
-#if MLINTERFACE >= 3
 MLDECL( int,  MLError,        ( MLINK mlp));
 MLDECL( int,  MLClearError,   ( MLINK mlp));
 MLDECL( int,  MLSetError,     ( MLINK mlp, int err));
-#else
-MLDECL( mlapi_error,   MLError,        ( MLINK mlp));
-MLDECL( mlapi_result,  MLClearError,   ( MLINK mlp));
-MLDECL( mlapi_result,  MLSetError,     ( MLINK mlp, mlapi_error err));
-#endif /* MLINTERFACE >= 3 */
 ML_END_EXTERN_C
-
 
 
 
@@ -4914,54 +4540,28 @@ ML_EXTERN_C
 /* syntax error */ )
 #endif
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLPutMessage,   ( MLINK mlp, int  msg));
 MLDECL( int,   MLGetMessage,   ( MLINK mlp, int *mp, int *np));
 MLDECL( int,   MLMessageReady, ( MLINK mlp));
-#else
-MLDECL( mlapi_result,   MLGetMessage,   ( MLINK mlp, dev_messagep mp, dev_messagep np));
-MLDECL( mlapi_result,   MLPutMessage,   ( MLINK mlp, dev_message  msg));
-MLDECL( mlapi_result,   MLMessageReady, ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLPutMessageWithArg, ( MLINK mlp, int msg, int arg));
-#endif
 
 
-#if MLINTERFACE >= 3
 MLDECL( MLMessageHandlerObject, MLGetMessageHandler,    ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
 MLDECL( MLMessageHandlerObject, MLMessageHandler,    ( MLINK mlp));
 
-#if MLINTERFACE >= 3
 MLDECL( MLYieldFunctionObject,  MLGetYieldFunction,     ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
 MLDECL( MLYieldFunctionObject,  MLYieldFunction,     ( MLINK mlp));
 
-#if MLINTERFACE >= 3
 MLDECL( int,  MLSetMessageHandler, ( MLINK mlp, MLMessageHandlerObject h));
 MLDECL( int,  MLSetYieldFunction,  ( MLINK mlp, MLYieldFunctionObject yf));
-#else
-MLDECL( mlapi_result,  MLSetMessageHandler, ( MLINK mlp, MLMessageHandlerObject h));
-MLDECL( mlapi_result,  MLSetYieldFunction,  ( MLINK mlp, MLYieldFunctionObject yf));
-#endif /* MLINTERFACE >= 3 */
 
 #if MLINTERFACE > 1 && MLINTERFACE < 4
-#if MLINTERFACE == 3
 MLDECL( int,  MLSetYieldFunction0,  ( MLINK mlp, MLYieldFunctionObject yf, MLINK cookie));
 MLDECL( int,  MLSetMessageHandler0, ( MLINK mlp, MLMessageHandlerObject func, MLINK cookie));
-#else
-MLDECL( mlapi_result,  MLSetYieldFunction0,  ( MLINK mlp, MLYieldFunctionObject yf, MLINK cookie));
-MLDECL( mlapi_result,  MLSetMessageHandler0, ( MLINK mlp, MLMessageHandlerObject func, MLINK cookie));
-#endif /* MLINTERFACE == 3 */
 #endif /* MLINTERFACE > 1 && MLINTERFACE < 4 */
 
-#if MLINTERFACE >= 3
 MLDECL( int, MLDeviceInformation, ( MLINK mlp, devinfo_selector selector, void* buf, long *buflen));
-#else
-MLDECL( mlapi_result, MLDeviceInformation, ( MLINK mlp, devinfo_selector selector, MLPointer buf, longp_st buflen));
-#endif /* MLINTERFACE >= 3 */
 
 #if MLINTERFACE >= 4
 MLDECL( int,         MLLowLevelDeviceName, (MLINK mlp, const char **name));
@@ -4970,7 +4570,6 @@ MLDECL( void, MLReleaseLowLevelDeviceName, (MLINK mlp, const char *name));
 
 
 ML_END_EXTERN_C
-
 
 
 /*************** Textual interface ***************/
@@ -4988,7 +4587,6 @@ ML_END_EXTERN_C
 
 ML_EXTERN_C
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLGetNext,          ( MLINK mlp));
 MLDECL( int,   MLGetNextRaw,       ( MLINK mlp));
 MLDECL( int,   MLGetType,          ( MLINK mlp));
@@ -5000,39 +4598,13 @@ MLDECL( int,   MLGetRawArgCount,   ( MLINK mlp, int *countp));
 MLDECL( int,   MLBytesToGet,       ( MLINK mlp, int *leftp));
 MLDECL( int,   MLRawBytesToGet,    ( MLINK mlp, int *leftp));
 MLDECL( int,   MLExpressionsToGet, ( MLINK mlp, int *countp));
-#else
-MLDECL( mlapi_token,    MLGetNext,          ( MLINK mlp));
-MLDECL( mlapi_token,    MLGetNextRaw,       ( MLINK mlp));
-MLDECL( mlapi_token,    MLGetType,          ( MLINK mlp));
-MLDECL( mlapi_token,    MLGetRawType,       ( MLINK mlp));
-MLDECL( mlapi_result,   MLGetRawData,       ( MLINK mlp, ucharp_ct data, long_st size, longp_st gotp));
-MLDECL( mlapi_result,   MLGetData,          ( MLINK mlp, charp_ct data, long_st size, longp_st gotp));
-MLDECL( mlapi_result,   MLGetArgCount,      ( MLINK mlp, longp_st countp));
-MLDECL( mlapi_result,   MLGetRawArgCount,   ( MLINK mlp, longp_st countp));
-MLDECL( mlapi_result,   MLBytesToGet,       ( MLINK mlp, longp_st leftp));
-MLDECL( mlapi_result,   MLRawBytesToGet,    ( MLINK mlp, longp_st leftp));
-MLDECL( mlapi_result,   MLExpressionsToGet, ( MLINK mlp, longp_st countp));
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLNewPacket,        ( MLINK mlp));
-#else
-MLDECL( mlapi_result,   MLNewPacket,        ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLTakeLast,         ( MLINK mlp, int eleft));
-#else
-MLDECL( mlapi_result,   MLTakeLast,         ( MLINK mlp, long_st eleft));
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLFill,             ( MLINK mlp));
-#else
-MLDECL( mlapi_result,   MLFill,             ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
 ML_END_EXTERN_C
-
 
 
 
@@ -5052,7 +4624,6 @@ ML_END_EXTERN_C
 
 ML_EXTERN_C
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLPutNext,      ( MLINK mlp, int tok));
 MLDECL( int,   MLPutType,      ( MLINK mlp, int tok));
 MLDECL( int,   MLPutRawSize,   ( MLINK mlp, int size));
@@ -5062,20 +4633,8 @@ MLDECL( int,   MLPutComposite, ( MLINK mlp, int argc));
 MLDECL( int,   MLBytesToPut,   ( MLINK mlp, int *leftp));
 MLDECL( int,   MLEndPacket,    ( MLINK mlp));
 MLDECL( int,   MLFlush,        ( MLINK mlp));
-#else
-MLDECL( mlapi_result,   MLPutNext,      ( MLINK mlp, mlapi_token tok));
-MLDECL( mlapi_result,   MLPutType,      ( MLINK mlp, mlapi__token tok));
-MLDECL( mlapi_result,   MLPutRawSize,   ( MLINK mlp, long_st size));
-MLDECL( mlapi_result,   MLPutRawData,   ( MLINK mlp, kucharp_ct data, long_st len));
-MLDECL( mlapi_result,   MLPutArgCount,  ( MLINK mlp, long_st argc));
-MLDECL( mlapi_result,   MLPutComposite, ( MLINK mlp, long_st argc));
-MLDECL( mlapi_result,   MLBytesToPut,   ( MLINK mlp, longp_st leftp));
-MLDECL( mlapi_result,   MLEndPacket,    ( MLINK mlp));
-MLDECL( mlapi_result,   MLFlush,        ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
 
 ML_END_EXTERN_C
-
 
 
 
@@ -5096,7 +4655,7 @@ ML_END_EXTERN_C
 
 
 #define	WSTKSTR     '"'         /* 34 0x22 00100010 */
-#define	WSTKSYM     '\043'      /* 35 0x23 # 00100011 */ /* octal here as hash requires a trigraph */
+#define	WSTKSYM     '#'         /* 35 0x23 # 00100011 */
 
 #if WSINTERFACE >= 4
 #define WSTKOPTSYM  'O'       /* 79 00101010 */
@@ -5139,7 +4698,6 @@ typedef unsigned long decoder_mask;
 #define WSTK_LASTUSER  '\x3F'
 
 #endif /* _WSTK_H */
-
 
 
 /*************** mlint64 interface ***************/
@@ -5189,7 +4747,6 @@ ML_END_EXTERN_C
 #endif /* MLINTERFACE == 3 */
 
 #endif /* _MLINTEGER64_H */
-
 
 
 /*************** Native C types interface ***************/
@@ -5357,11 +4914,6 @@ ML_END_EXTERN_C
 #endif /* _MLNUMENV_H */
 
 
-
-
-#ifndef MLINTERFACE
-/* syntax error */ )
-#endif
 
 
 /****************  Special Token types: ****************/
@@ -6197,9 +5749,7 @@ MLBRIARD_MLLONGDOUBLE */
 
 
 #if WINDOWS_MATHLINK
-#if MLINTERFACE > 1
 #define NEW_WIN32_NUMENV 1
-#endif
 #endif
 
 
@@ -6210,267 +5760,9 @@ MLBRIARD_MLLONGDOUBLE */
 /* #	define MATHLINK_NUMERICS_ENVIRONMENT_ID_NUMB 24 */
 
 
-#if SUN_MATHLINK
 
-#if __sparc || __sparc__ || sparc
-#include <sys/types.h>
-
-#if __SUNPRO_C >= 0x301 || __SUNPRO_CC >= 0x301
-#if defined(_ILP32)
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID MLMASTIFF_NUMERICS_ID
-
-#define MLTK_CSHORT       MLMASTIFF_CSHORT
-#define MLTK_CINT         MLMASTIFF_CINT
-#define MLTK_CLONG        MLMASTIFF_CLONG
-#define MLTK_CINT64       MLMASTIFF_CINT64
-#define MLTK_CSIZE_T      MLMASTIFF_CSIZE_T
-#define MLTK_CFLOAT       MLMASTIFF_CFLOAT
-#define MLTK_CDOUBLE      MLMASTIFF_CDOUBLE
-#define MLTK_CLONGDOUBLE  MLMASTIFF_CLONGDOUBLE
-
-#define MLTK_MLSHORT      MLMASTIFF_MLSHORT
-#define MLTK_MLINT        MLMASTIFF_MLINT
-#define MLTK_MLLONG       MLMASTIFF_MLLONG
-#define MLTK_MLINT64      MLMASTIFF_MLINT64
-#define MLTK_MLSIZE_T     MLMASTIFF_MLSIZE_T
-#define MLTK_MLFLOAT      MLMASTIFF_MLFLOAT
-#define MLTK_MLDOUBLE     MLMASTIFF_MLDOUBLE
-#define MLTK_MLLONGDOUBLE MLMASTIFF_MLLONGDOUBLE
-
-#elif defined(_LP64)
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID MLJAPANESECHIN_NUMERICS_ID
-
-#define MLTK_CSHORT       MLJAPANESECHIN_CSHORT
-#define MLTK_CINT         MLJAPANESECHIN_CINT
-#define MLTK_CLONG        MLJAPANESECHIN_CLONG
-#define MLTK_CINT64       MLJAPANESECHIN_CINT64
-#define MLTK_CSIZE_T      MLJAPANESECHIN_CSIZE_T
-#define MLTK_CFLOAT       MLJAPANESECHIN_CFLOAT
-#define MLTK_CDOUBLE      MLJAPANESECHIN_CDOUBLE
-#define MLTK_CLONGDOUBLE  MLJAPANESECHIN_CLONGDOUBLE
-
-#define MLTK_MLSHORT      MLJAPANESECHIN_MLSHORT
-#define MLTK_MLINT        MLJAPANESECHIN_MLINT
-#define MLTK_MLLONG       MLJAPANESECHIN_MLLONG
-#define MLTK_MLINT64      MLJAPANESECHIN_MLINT64
-#define MLTK_MLSIZE_T     MLJAPANESECHIN_MLSIZE_T
-#define MLTK_MLFLOAT      MLJAPANESECHIN_MLFLOAT
-#define MLTK_MLDOUBLE     MLJAPANESECHIN_MLDOUBLE
-#define MLTK_MLLONGDOUBLE MLJAPANESECHIN_MLLONGDOUBLE
-
-#endif /* _ILP32 || _LP64 */
-#elif defined(__GNUC__) || defined(__GNUG__)
-#if defined(_ILP32)
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLKEESHOND_NUMERICS_ID
-
-#define MLTK_CSHORT        MLKEESHOND_CSHORT
-#define MLTK_CINT          MLKEESHOND_CINT
-#define MLTK_CLONG         MLKEESHOND_CLONG
-#define MLTK_CINT64        MLKEESHOND_CINT64
-#define MLTK_CSIZE_T       MLKEESHOND_CSIZE_T
-#define MLTK_CFLOAT        MLKEESHOND_CFLOAT
-#define MLTK_CDOUBLE       MLKEESHOND_CDOUBLE
-#define MLTK_CLONGDOULBE   MLKEESHOND_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLKEESHOND_MLSHORT
-#define MLTK_MLINT         MLKEESHOND_MLINT
-#define MLTK_MLLONG        MLKEESHOND_MLLONG
-#define MLTK_MLINT64       MLKEESHOND_MLINT64
-#define MLTK_MLSIZE_T      MLKEESHOND_MLSIZE_T
-#define MLTK_MLFLOAT       MLKEESHOND_MLFLOAT
-#define MLTK_MLDOUBLE      MLKEESHOND_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLKEESHOND_MLLONGDOUBLE
-#elif defined(_LP64)
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLKOMONDOR_NUMERICS_ID
-
-#define MLTK_CSHORT        MLKOMONDOR_CSHORT
-#define MLTK_CINT          MLKOMONDOR_CINT
-#define MLTK_CLONG         MLKOMONDOR_CLONG
-#define MLTK_CINT64        MLKOMONDOR_CINT64
-#define MLTK_CSIZE_T       MLKOMONDOR_CSIZE_T
-#define MLTK_CFLOAT        MLKOMONDOR_CFLOAT
-#define MLTK_CDOUBLE       MLKOMONDOR_CDOUBLE
-#define MLTK_CLONGDOULBE   MLKOMONDOR_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLKOMONDOR_MLSHORT
-#define MLTK_MLINT         MLKOMONDOR_MLINT
-#define MLTK_MLLONG        MLKOMONDOR_MLLONG
-#define MLTK_MLINT64       MLKOMONDOR_MLINT64
-#define MLTK_MLSIZE_T      MLKOMONDOR_MLSIZE_T
-#define MLTK_MLFLOAT       MLKOMONDOR_MLFLOAT
-#define MLTK_MLDOUBLE      MLKOMONDOR_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLKOMONDOR_MLLONGDOUBLE
-
-#endif /* _ILP32 || _LP64 */
-#else
-#if defined(_ILP32)
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLBORZOI_NUMERICS_ID
-
-#define MLKT_CSHORT        MLBORZOI_CSHORT
-#define MLTK_CINT          MLBORZOI_CINT
-#define MLTK_CLONG         MLBORZOI_CLONG
-#define MLTK_CINT64        MLBORZOI_CINT64
-#define MLTK_CSIZE_T       MLBORZOI_CSIZE_T
-#define MLTK_CFLOAT        MLBORZOI_CFLOAT
-#define MLTK_CDOUBLE       MLBORZOI_CDOUBLE
-
-#define MLTK_MLSHORT       MLBORZOI_MLSHORT
-#define MLTK_MLINT         MLBORZOI_MLINT
-#define MLTK_MLLONG        MLBORZOI_MLLONG
-#define MLTK_MLINT64       MLBORZOI_MLINT64
-#define MLTK_MLSIZE_T      MLBORZOI_MLSIZE_T
-#define MLTK_MLFLOAT       MLBORZOI_MLFLOAT
-#define MLTK_MLDOUBLE      MLBORZOI_MLDOUBLE
-
-#elif defined(_LP64)
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLBRIARD_NUMERICS_ID
-
-#define MLTK_CSHORT        MLBRIARD_CSHORT
-#define MLTK_CINT          MLBRIARD_CINT
-#define MLTK_CLONG         MLBRIARD_CLONG
-#define MLTK_CINT64        MLBRIARD_CINT64
-#define MLTK_CSIZE_T       MLBRIARD_CSIZE_T
-#define MLTK_CFLOAT        MLBRIARD_CFLOAT
-#define MLTK_CDOUBLE       MLBRIARD_CDOUBLE
-
-#define MLTK_MLSHORT       MLBRIARD_MLSHORT
-#define MLTK_MLINT         MLBRIARD_MLINT
-#define MLTK_MLLONG        MLBRIARD_MLLONG
-#define MLTK_MLINT64       MLBRIARD_MLINT64
-#define MLTK_MLSIZE_T      MLBRIARD_MLSIZE_T
-#define MLTK_MLFLOAT       MLBRIARD_MLFLOAT
-#define MLTK_MLDOUBLE      MLBRIARD_MLDOUBLE
-
-#endif /* _ILP32 || _LP64 */
-			/* no error directive here as the user may be
-			 * using a different compiler.  Some macros
-			 * simply won't be available.
-			 */
-#endif /* __SUNPRO_C > 0x301 || __GNUC__ */
-
-#elif __i386 || __i386__ || i386
-#if __SUNPRO_C >= 0x301 || __SUNPRO_CC >= 0x301
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLNORWEGIANELKHOUND_NUMERICS_ID
-
-#define MLTK_CSHORT        MLNORWEGIANELKHOUND_CSHORT
-#define MLTK_CINT          MLNORWEGIANELKHOUND_CINT
-#define MLTK_CLONG         MLNORWEGIANELKHOUND_CLONG
-#define MLTK_CINT64        MLNORWEGIANELKHOUND_CINT64
-#define MLTK_CSIZE_T       MLNORWEGIANELKHOUND_CSIZE_T
-#define MLTK_CFLOAT        MLNORWEGIANELKHOUND_CFLOAT
-#define MLTK_CDOUBLE       MLNORWEGIANELKHOUND_CDOUBLE
-#define MLTK_CLONGDOULBE   MLNORWEGIANELKHOUND_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLNORWEGIANELKHOUND_MLSHORT
-#define MLTK_MLINT         MLNORWEGIANELKHOUND_MLINT
-#define MLTK_MLLONG        MLNORWEGIANELKHOUND_MLLONG
-#define MLTK_MLINT64       MLNORWEGIANELKHOUND_MLINT64
-#define MLTK_MLSIZE_T      MLNORWEGIANELKHOUND_MLSIZE_T
-#define MLTK_MLFLOAT       MLNORWEGIANELKHOUND_MLFLOAT
-#define MLTK_MLDOUBLE      MLNORWEGIANELKHOUND_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLNORWEGIANELKHOUND_MLLONGDOUBLE
-#else
-			/* no error directive here as the user may be
-			 * using a different compiler.  Some macros
-			 * simply won't be available.
-			 */
-#endif /* __SUNPRO_C >= 0x301 || __SUNPRO_CC >= 0x301 */
-
-#elif __x86_64 || __x86_64__ || x86_64
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLNORWICHTERRIOR_NUMERICS_ID
-
-#define MLTK_CSHORT        MLNORWICHTERRIOR_CSHORT
-#define MLTK_CINT          MLNORWICHTERRIOR_CINT
-#define MLTK_CLONG         MLNORWICHTERRIOR_CLONG
-#define MLTK_CINT64        MLNORWICHTERRIOR_CINT64
-#define MLTK_CSIZE_T       MLNORWICHTERRIOR_CSIZE_T
-#define MLTK_CFLOAT        MLNORWICHTERRIOR_CFLOAT
-#define MLTK_CDOUBLE       MLNORWICHTERRIOR_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLNORWICHTERRIOR_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLNORWICHTERRIOR_MLSHORT
-#define MLTK_MLINT         MLNORWICHTERRIOR_MLINT
-#define MLTK_MLLONG        MLNORWICHTERRIOR_MLLONG
-#define MLTK_MLINT64       MLNORWICHTERRIOR_MLINT64
-#define MLTK_MLSIZE_T      MLNORWICHTERRIRO_MLSIZE_T
-#define MLTK_MLFLOAT       MLNORWICHTERRIOR_MLFLOAT
-#define MLTK_MLDOUBLE      MLNORWICHTERRIOR_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLNORWICHTERRIOR_MLLONGDOUBLE
-
-#elif __SVR4 || __svr4__
-#include <sys/types.h>
-
-#if defined(_ILP32)
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLSAINTBERNARD_NUMERICS_ID
-
-#define MLTK_CSHORT        MLSAINTBERNARD_CSHORT
-#define MLTK_CINT          MLSAINTBERNARD_CINT
-#define MLTK_CLONG         MLSAINTBERNARD_CLONG
-#define MLTK_CINT64        MLSAINTBERNARD_CINT64
-#define MLTK_CSIZE_T       MLSAINTBERNARD_CSIZE_T
-#define MLTK_CFLOAT        MLSAINTBERNARD_CFLOAT
-#define MLTK_CDOUBLE       MLSAINTBERNARD_CDOUBLE
-#define MLTK_CLONGDOULBE   MLSAINTBERNARD_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLSAINTBERNARD_MLSHORT
-#define MLTK_MLINT         MLSAINTBERNARD_MLINT
-#define MLTK_MLLONG        MLSAINTBERNARD_MLLONG
-#define MLTK_MLINT64       MLSAINTBERNARD_MLINT64
-#define MLTK_MLSIZE_T      MLSAINTBERNARD_MLSIZE_T
-#define MLTK_MLFLOAT       MLSAINTBERNARD_MLFLOAT
-#define MLTK_MLDOUBLE      MLSAINTBERNARD_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLSAINTBERNARD_MLLONGDOUBLE
-
-#elif defined(_LP64)
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLBERNESEMOUNTAINDOG_NUMERICS_ID
-
-#define MLTK_CSHORT        MLBERNESEMOUNTAINDOG_CSHORT
-#define MLTK_CINT          MLBERNESEMOUNTAINDOG_CINT
-#define MLTK_CLONG         MLBERNESEMOUNTAINDOG_CLONG
-#define MLTK_CINT64        MLBERNESEMOUNTAINDOG_CINT64
-#define MLTK_CSIZE_T       MLBERNESEMOUNTAINDOG_CSIZE_T
-#define MLTK_CFLOAT        MLBERNESEMOUNTAINDOG_CFLOAT
-#define MLTK_CDOUBLE       MLBERNESEMOUNTAINDOG_CDOUBLE
-#define MLTK_CLONGDOULBE   MLBERNESEMOUNTAINDOG_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLBERNESEMOUNTAINDOG_MLSHORT
-#define MLTK_MLINT         MLBERNESEMOUNTAINDOG_MLINT
-#define MLTK_MLLONG        MLBERNESEMOUNTAINDOG_MLLONG
-#define MLTK_MLINT64       MLBERNESEMOUNTAINDOG_MLINT64
-#define MLTK_MLSIZE_T      MLBERNESEMOUNTAINDOG_MLSIZE_T
-#define MLTK_MLFLOAT       MLBERNESEMOUNTAINDOG_MLFLOAT
-#define MLTK_MLDOUBLE      MLBERNESEMOUNTAINDOG_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLBERNESEMOUNTAINDOG_MLLONGDOUBLE
-
-#endif /* _ILP32 || _LP64 */
-
-#else
-/* syntax error */ )
-#endif
-
-#elif (WIN32_MATHLINK || WIN64_MATHLINK) && NEW_WIN32_NUMENV
+#if (WIN32_MATHLINK || WIN64_MATHLINK) && NEW_WIN32_NUMENV
 #if WIN32_MATHLINK
-#if MLINTERFACE < 3
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLSETTER_NUMERICS_ID
-
-#define MLTK_CSHORT        MLSETTER_CSHORT
-#define MLTK_CINT          MLSETTER_CINT
-#define MLTK_CLONG         MLSETTER_CLONG
-#define MLTK_CINT64        MLSETTER_CINT64
-#define MLTK_CSIZE_T       MLSETTER_CSIZE_T
-#define MLTK_CFLOAT        MLSETTER_CFLOAT
-#define MLTK_CDOUBLE       MLSETTER_CDOUBLE
-#define MLTK_CLONGDOULBE   MLSETTER_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLSETTER_MLSHORT
-#define MLTK_MLINT         MLSETTER_MLINT
-#define MLTK_MLLONG        MLSETTER_MLLONG
-#define MLTK_MLINT64       MLSETTER_MLINT64
-#define MLTK_MLSIZE_T      MLSETTER_MLSIZE_T
-#define MLTK_MLFLOAT       MLSETTER_MLFLOAT
-#define MLTK_MLDOUBLE      MLSETTER_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLSETTER_MLLONGDOUBLE
-#else /* MLINTERFACE >= 3 */
 #if MLINTERFACE < 4
 #define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLFRENCH_BULLDOG_NUMERICS_ID
 
@@ -6514,7 +5806,6 @@ MLBRIARD_MLLONGDOUBLE */
 #define MLTK_MLDOUBLE      MLBOERBOEL_MLDOUBLE
 #define MLTK_MLLONGDOUBLE  MLBOERBOEL_MLLONGDOUBLE
 #endif /* MLINTERFACE > 4 */
-#endif /* MLINTERFACE < 3 */
 #elif WIN64_MATHLINK
 #define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLBICHON_FRISE_NUMERICS_ID
 
@@ -6537,96 +5828,9 @@ MLBRIARD_MLLONGDOUBLE */
 #define MLTK_MLLONGDOUBLE  MLBICHON_FRISE_MLLONGDOUBLE
 #endif /* WIN32_MATHLINK || WIN64_MATHLINK */
 
-#elif ALPHA_WIN32_MATHLINK
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLHELEN_NUMERICS_ID
-
-#define MLTK_CSHORT        MLHELEN_CSHORT
-#define MLTK_CINT          MLHELEN_CINT
-#define MLTK_CLONG         MLHELEN_CLONG
-#define MLTK_CINT64        MLHELEN_CINT64
-#define MLTK_CSIZE_T       MLHELEN_CSIZE_T
-#define MLTK_CFLOAT        MLHELEN_CFLOAT
-#define MLTK_CDOUBLE       MLHELEN_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLHELEN_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLHELEN_MLSHORT
-#define MLTK_MLINT         MLHELEN_MLINT
-#define MLTK_MLLONG        MLHELEN_MLLONG
-#define MLTK_MLINT64       MLHELEN_MLINT64
-#define MLTK_MLSIZE_T      MLHELEN_MLSIZE_T
-#define MLTK_MLFLOAT       MLHELEN_MLFLOAT
-#define MLTK_MLDOUBLE      MLHELEN_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLHELEN_MLLONGDOUBLE
-
 #elif DARWIN_MATHLINK
-#if PPC_DARWIN_MATHLINK
-		/* We must use a different numerics env if we are built with gcc 3.3 or earlier. */
-#if GCC_MATHLINK_VERSION <= 30300
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLBEAGLE_NUMERICS_ID
 
-#define MLTK_CSHORT        MLBEAGLE_CSHORT
-#define MLTK_CINT          MLBEAGLE_CINT
-#define MLTK_CLONG         MLBEAGLE_CLONG
-#define MLTK_CINT64        MLBEAGLE_CINT64
-#define MLTK_CSIZE_T       MLBEAGLE_CSIZE_T
-#define MLTK_CFLOAT        MLBEAGLE_CFLOAT
-#define MLTK_CDOUBLE       MLBEAGLE_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLBEAGLE_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLBEAGLE_MLSHORT
-#define MLTK_MLINT         MLBEAGLE_MLINT
-#define MLTK_MLLONG        MLBEAGLE_MLLONG
-#define MLTK_MLINT64       MLBEAGLE_MLINT64
-#define MLTK_MLSIZE_T      MLBEAGLE_MLSIZE_T
-#define MLTK_MLFLOAT       MLBEAGLE_MLFLOAT
-#define MLTK_MLDOUBLE      MLBEAGLE_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLBEAGLE_MLLONGDOUBLE
-
-#else
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLBULLTERRIER_NUMERICS_ID
-
-#define MLTK_CSHORT        MLBULLTERRIER_CSHORT
-#define MLTK_CINT          MLBULLTERRIER_CINT
-#define MLTK_CLONG         MLBULLTERRIER_CLONG
-#define MLTK_CINT64        MLBULLTERRIER_CINT64
-#define MLTK_CSIZE_T       MLBULLTERRIER_CSIZE_T
-#define MLTK_CFLOAT        MLBULLTERRIER_CFLOAT
-#define MLTK_CDOUBLE       MLBULLTERRIER_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLBULLTERRIER_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLBULLTERRIER_MLSHORT
-#define MLTK_MLINT         MLBULLTERRIER_MLINT
-#define MLTK_MLLONG        MLBULLTERRIER_MLLONG
-#define MLTK_MLINT64       MLBULLTERRIER_MLINT64
-#define MLTK_MLSIZE_T      MLBULLTERRIER_MLSIZE_T
-#define MLTK_MLFLOAT       MLBULLTERRIER_MLFLOAT
-#define MLTK_MLDOUBLE      MLBULLTERRIER_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLBULLTERRIER_MLLONGDOUBLE
-
-#endif /* GCC_MATHLINK_VERSION > 30300 */
-
-#elif PPC64_DARWIN_MATHLINK
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLBORDERTERRIER_NUMERICS_ID
-
-#define MLTK_CSHORT        MLBORDERTERRIER_CSHORT
-#define MLTK_CINT          MLBORDERTERRIER_CINT
-#define MLTK_CLONG         MLBORDERTERRIER_CLONG
-#define MLTK_CINT64        MLBORDERTERRIER_CINT64
-#define MLTK_CSIZE_T       MLBORDERTERRIER_CSIZE_T
-#define MLTK_CFLOAT        MLBORDERTERRIER_CFLOAT
-#define MLTK_CDOUBLE       MLBORDERTERRIER_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLBORDERTERRIER_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLBORDERTERRIER_MLSHORT
-#define MLTK_MLINT         MLBORDERTERRIER_MLINT
-#define MLTK_MLLONG        MLBORDERTERRIER_MLLONG
-#define MLTK_MLINT64       MLBORDERTERRIER_MLINT64
-#define MLTK_MLSIZE_T      MLBORDERTERRIER_MLSIZE_T
-#define MLTK_MLFLOAT       MLBORDERTERRIER_MLFLOAT
-#define MLTK_MLDOUBLE      MLBORDERTERRIER_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLBORDERTERRIER_MLLONGDOUBLE
-
-#elif X86_DARWIN_MATHLINK
+#if X86_DARWIN_MATHLINK
 #if MLINTERFACE < 4
 #define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLBASENJI_NUMERICS_ID
 
@@ -6779,27 +5983,6 @@ MLBRIARD_MLLONGDOUBLE */
 #define MLTK_MLLONGDOUBLE  MLBERGAMASCO_MLLONGDOUBLE
 #endif /* MLINTERFACE >= 4 */
 
-#elif IA64_LINUX_MATHLINK
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLAUSTRALIANCATTLEDOG_NUMERICS_ID
-
-#define MLTK_CSHORT        MLAUSTRALIANCATTLEDOG_CSHORT
-#define MLTK_CINT          MLAUSTRALIANCATTLEDOG_CINT
-#define MLTK_CLONG         MLAUSTRALIANCATTLEDOG_CLONG
-#define MLTK_CINT64        MLAUSTRALIANCATTLEDOG_CINT64
-#define MLTK_CSIZE_T       MLAUSTRALIANCATTLEDOG_CSIZE_T
-#define MLTK_CFLOAT        MLAUSTRALIANCATTLEDOG_CFLOAT
-#define MLTK_CDOUBLE       MLAUSTRALIANCATTLEDOG_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLAUSTRALIANCATTLEDOG_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLAUSTRALIANCATTLEDOG_MLSHORT
-#define MLTK_MLINT         MLAUSTRALIANCATTLEDOG_MLINT
-#define MLTK_MLLONG        MLAUSTRALIANCATTLEDOG_MLLONG
-#define MLTK_MLINT64       MLAUSTRALIANCATTLEDOG_MLINT64
-#define MLTK_MLSIZE_T      MLAUSTRALIANCATTLEDOG_MLSIZE_T
-#define MLTK_MLFLOAT       MLAUSTRALIANCATTLEDOG_MLFLOAT
-#define MLTK_MLDOUBLE      MLAUSTRALIANCATTLEDOG_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLAUSTRALIANCATTLEDOG_MLLONGDOUBLE
-
 #elif X86_64_LINUX_MATHLINK
 #define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLBOXER_NUMERICS_ID
 
@@ -6820,27 +6003,6 @@ MLBRIARD_MLLONGDOUBLE */
 #define MLTK_MLFLOAT       MLBOXER_MLFLOAT
 #define MLTK_MLDOUBLE      MLBOXER_MLDOUBLE
 #define MLTK_MLLONGDOUBLE  MLBOXER_MLLONGDOUBLE
-
-#elif AXP_LINUX_MATHLINK
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLAKITAINU_NUMERICS_ID
-
-#define MLTK_CSHORT        MLAKITAINU_CSHORT
-#define MLTK_CINT          MLAKITAINU_CINT
-#define MLTK_CLONG         MLAKITAINU_CLONG
-#define MLTK_CINT64        MLAKITAINU_CINT64
-#define MLTK_CSIZE_T       MLAKITAINU_CSIZE_T
-#define MLTK_CFLOAT        MLAKITAINU_CFLOAT
-#define MLTK_CDOUBLE       MLAKITAINU_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLAKITAINU_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLAKITAINU_MLSHORT
-#define MLTK_MLINT         MLAKITAINU_MLINT
-#define MLTK_MLLONG        MLAKITAINU_MLLONG
-#define MLTK_MLINT64       MLAKITAINU_MLINT64
-#define MLTK_MLSIZE_T      MLAKITAINU_MLSIZE_T
-#define MLTK_MLFLOAT       MLAKITAINU_MLFLOAT
-#define MLTK_MLDOUBLE      MLAKITAINU_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLAKITAINU_MLLONGDOUBLE
 
 #elif ARM_LINUX_MATHLINK
 #if MLINTERFACE < 4
@@ -6885,229 +6047,6 @@ MLBRIARD_MLLONGDOUBLE */
 #define MLTK_MLDOUBLE      MLCHINOOK_MLDOUBLE
 #define MLTK_MLLONGDOUBLE  MLCHINOOK_MLLONGDOUBLE
 #endif /* MLINTERFACE < 4 */
-
-#elif PPC_LINUX_MATHLINK
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLROTTWEILER_NUMERICS_ID
-
-#define MLTK_CSHORT        MLROTTWEILER_CSHORT
-#define MLTK_CINT          MLROTTWEILER_CINT
-#define MLTK_CLONG         MLROTTWEILER_CLONG
-#define MLTK_CINT64        MLROTTWEILER_CINT64
-#define MLTK_CSIZE_T       MLROTTWEILER_CSIZE_T
-#define MLTK_CFLOAT        MLROTTWEILER_CFLOAT
-#define MLTK_CDOUBLE       MLROTTWEILER_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLROTTWEILER_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLROTTWEILER_MLSHORT
-#define MLTK_MLINT         MLROTTWEILER_MLINT
-#define MLTK_MLLONG        MLROTTWEILER_MLLONG
-#define MLTK_MLINT64       MLROTTWEILER_MLINT64
-#define MLTK_MLSIZE_T      MLROTTWEILER_MLSIZE_T
-#define MLTK_MLFLOAT       MLROTTWEILER_MLFLOAT
-#define MLTK_MLDOUBLE      MLROTTWEILER_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLROTTWEILER_MLLONGDOUBLE
-
-#elif AIX_MATHLINK
-#if defined(__64BIT__)
-#if defined(MATHLINK_NUMERICS_ENVIRONMENT_ID)
-#undef MATHLINK_NUMERICS_ENVIRONMENT_ID
-#endif
-
-#ifdef __LONGDOUBLE128
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLPHARAOHHOUND_NUMERICS_ID
-
-#define MLTK_CSHORT        MLPHARAOHHOUND_CSHORT
-#define MLTK_CINT          MLPHARAOHHOUND_CINT
-#define MLTK_CLONG         MLPHARAOHHOUND_CLONG
-#define MLTK_CINT64        MLPHARAOHHOUND_CINT64
-#define MLTK_CSIZE_T       MLPHARAOHHOUND_CSIZE_T
-#define MLTK_CFLOAT        MLPHARAOHHOUND_CFLOAT
-#define MLTK_CDOUBLE       MLPHARAOHHOUND_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLPHARAOHHOUND_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLPHARAOHHOUND_MLSHORT
-#define MLTK_MLINT         MLPHARAOHHOUND_MLINT
-#define MLTK_MLLONG        MLPHARAOHHOUND_MLLONG
-#define MLTK_MLINT64       MLPHARAOHHOUND_MLINT64
-#define MLTK_MLSIZE_T      MLPHARAOHHOUND_MLSIZE_T
-#define MLTK_MLFLOAT       MLPHARAOHHOUND_MLFLOAT
-#define MLTK_MLDOUBLE      MLPHARAOHHOUND_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLPHARAOHHOUND_MLLONGDOUBLE
-#else
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLTROUT_NUMERICS_ID
-
-#define MLTK_CSHORT        MLTROUT_CSHORT
-#define MLTK_CINT          MLTROUT_CINT
-#define MLTK_CLONG         MLTROUT_CLONG
-#define MLTK_CINT64        MLTROUT_CINT64
-#define MLTK_CSIZE_T       MLTROUT_CSIZE_T
-#define MLTK_CFLOAT        MLTROUT_CFLOAT
-#define MLTK_CDOUBLE       MLTROUT_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLTROUT_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLTROUT_MLSHORT
-#define MLTK_MLINT         MLTROUT_MLINT
-#define MLTK_MLLONG        MLTROUT_MLLONG
-#define MLTK_MLINT64       MLTROUT_MLINT64
-#define MLTK_MLSIZE_T      MLTROUT_MLSIZE_T
-#define MLTK_MLFLOAT       MLTROUT_MLFLOAT
-#define MLTK_MLDOUBLE      MLTROUT_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLTROUT_MLLONGDOUBLE
-#endif /* __LONGDOUBLE 128 */
-#else
-#if defined(MATHLINK_NUMERICS_ENVIRONMENT_ID)
-#undef MATHLINK_NUMERICS_ENVIRONMENT_ID
-#endif
-
-#ifdef __LONGDOUBLE128
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLPUG_NUMERICS_ID
-
-#define MLTK_CSHORT        MLPUG_CSHORT
-#define MLTK_CINT          MLPUG_CINT
-#define MLTK_CLONG         MLPUG_CLONG
-#define MLTK_CINT64        MLPUG_CINT64
-#define MLTK_CSIZE_T       MLPUG_CSIZE_T
-#define MLTK_CFLOAT        MLPUG_CFLOAT
-#define MLTK_CDOUBLE       MLPUG_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLPUG_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLPUG_MLSHORT
-#define MLTK_MLINT         MLPUG_MLINT
-#define MLTK_MLLONG        MLPUG_MLLONG
-#define MLTK_MLINT64       MLPUG_MLINT64
-#define MLTK_MLSIZE_T      MLPUG_MLSIZE_T
-#define MLTK_MLFLOAT       MLPUG_MLFLOAT
-#define MLTK_MLDOUBLE      MLPUG_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLPUG_MLLONGDOUBLE
-#else
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLPOINTER_NUMERICS_ID
-
-#define MLTK_CSHORT        MLPOINTER_CSHORT
-#define MLTK_CINT          MLPOINTER_CINT
-#define MLTK_CLONG         MLPOINTER_CLONG
-#define MLTK_CINT64        MLPOINTER_CINT64
-#define MLTK_CSIZE_T       MLPOINTER_CSIZE_T
-#define MLTK_CFLOAT        MLPOINTER_CFLOAT
-#define MLTK_CDOUBLE       MLPOINTER_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLPOINTER_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLPOINTER_MLSHORT
-#define MLTK_MLINT         MLPOINTER_MLINT
-#define MLTK_MLLONG        MLPOINTER_MLLONG
-#define MLTK_MLINT64       MLPOINTER_MLINT64
-#define MLTK_MLSIZE_T      MLPOINTER_MLSIZE_T
-#define MLTK_MLFLOAT       MLPOINTER_MLFLOAT
-#define MLTK_MLDOUBLE      MLPOINTER_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLPOINTER_MLLONGDOUBLE
-#endif /* __LONGDOUBLE128 */
-#endif /* __64BIT__ */
-
-#elif HPUX_MATHLINK
-#if defined(__LP64__)
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLSAMOYED_NUMERICS_ID
-
-#define MLTK_CSHORT        MLSAMOYED_CSHORT
-#define MLTK_CINT          MLSAMOYED_CINT
-#define MLTK_CLONG         MLSAMOYED_CLONG
-#define MLTK_CINT64        MLSAMOYED_CINT64
-#define MLTK_CSIZE_T       MLSAMOYED_CSIZE_T
-#define MLTK_CFLOAT        MLSAMOYED_CFLOAT
-#define MLTK_CDOUBLE       MLSAMOYED_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLSAMOYED_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLSAMOYED_MLSHORT
-#define MLTK_MLINT         MLSAMOYED_MLINT
-#define MLTK_MLLONG        MLSAMOYED_MLLONG
-#define MLTK_MLINT64       MLSAMOYED_MLINT64
-#define MLTK_MLSIZE_T      MLSAMOYED_MLSIZE_T
-#define MLTK_MLFLOAT       MLSAMOYED_MLFLOAT
-#define MLTK_MLDOUBLE      MLSAMOYED_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLSAMOYED_MLLONGDOUBLE
-#else
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLSIBERIANHUSKY_NUMERICS_ID
-
-#define MLTK_CSHORT        MLSIBERIANHUSKY_CSHORT
-#define MLTK_CINT          MLSIBERIANHUSKY_CINT
-#define MLTK_CLONG         MLSIBERIANHUSKY_CLONG
-#define MLTK_CINT64        MLSIBERIANHUSKY_CINT64
-#define MLTK_CSIZE_T       MLSIBERIANHUSKY_CSIZE_T
-#define MLTK_CFLOAT        MLSIBERIANHUSKY_CFLOAT
-#define MLTK_CDOUBLE       MLSIBERIANHUSKY_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLSIBERIANHUSKY_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLSIBERIANHUSKY_MLSHORT
-#define MLTK_MLINT         MLSIBERIANHUSKY_MLINT
-#define MLTK_MLLONG        MLSIBERIANHUSKY_MLLONG
-#define MLTK_MLINT64       MLSIBERIANHUSKY_MLINT64
-#define MLTK_MLSIZE_T      MLSIBERIANHUSKY_MLSIZE_T
-#define MLTK_MLFLOAT       MLSIBERIANHUSKY_MLFLOAT
-#define MLTK_MLDOUBLE      MLSIBERIANHUSKY_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLSIBERIANHUSKY_MLLONGDOUBLE
-#endif /* __LP64__ */
-
-#elif DIGITAL_MATHLINK
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLSHIBAINU_NUMERICS_ID
-
-#define MLTK_CSHORT        MLSHIBAINU_CSHORT
-#define MLTK_CINT          MLSHIBAINU_CINT
-#define MLTK_CLONG         MLSHIBAINU_CLONG
-#define MLTK_CINT64        MLSHIBAINU_CINT64
-#define MLTK_CSIZE_T       MLSHIBAINU_CSIZE_T
-#define MLTK_CFLOAT        MLSHIBAINU_CFLOAT
-#define MLTK_CDOUBLE       MLSHIBAINU_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLSHIBAINU_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLSHIBAINU_MLSHORT
-#define MLTK_MLINT         MLSHIBAINU_MLINT
-#define MLTK_MLLONG        MLSHIBAINU_MLLONG
-#define MLTK_MLINT64       MLSHIBAINU_MLINT64
-#define MLTK_MLSIZE_T      MLSHIBAINU_MLSIZE_T
-#define MLTK_MLFLOAT       MLSHIBAINU_MLFLOAT
-#define MLTK_MLDOUBLE      MLSHIBAINU_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLSHIBAINU_MLLONGDOUBLE
-
-#elif IRIX_MATHLINK
-#if N32_IRIX_MATHLINK
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLNEWFOUNDLAND_NUMERICS_ID
-
-#define MLTK_CSHORT        MLNEWFOUNDLAND_CSHORT
-#define MLTK_CINT          MLNEWFOUNDLAND_CINT
-#define MLTK_CLONG         MLNEWFOUNDLAND_CLONG
-#define MLTK_CINT64        MLNEWFOUNDLAND_CINT64
-#define MLTK_CSIZE_T       MLNEWFOUNDLAND_CSIZE_T
-#define MLTK_CFLOAT        MLNEWFOUNDLAND_CFLOAT
-#define MLTK_CDOUBLE       MLNEWFOUNDLAND_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLNEWFOUNDLAND_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLNEWFOUNDLAND_MLSHORT
-#define MLTK_MLINT         MLNEWFOUNDLAND_MLINT
-#define MLTK_MLLONG        MLNEWFOUNDLAND_MLLONG
-#define MLTK_MLINT64       MLNEWFOUNDLAND_MLINT64
-#define MLTK_MLSIZE_T      MLNEWFOUNDLAND_MLSIZE_T
-#define MLTK_MLFLOAT       MLNEWFOUNDLAND_MLFLOAT
-#define MLTK_MLDOUBLE      MLNEWFOUNDLAND_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLNEWFOUNDLAND_MLLONGDOUBLE
-#elif M64_IRIX_MATHLINK
-#define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLAFFENPINSCHER_NUMERICS_ID
-
-#define MLTK_CSHORT        MLAFFENPINSCHER_CSHORT
-#define MLTK_CINT          MLAFFENPINSCHER_CINT
-#define MLTK_CLONG         MLAFFENPINSCHER_CLONG
-#define MLTK_CINT64        MLAFFENPINSCHER_CINT64
-#define MLTK_CSIZE_T       MLAFFENPINSCHER_CSIZE_T
-#define MLTK_CFLOAT        MLAFFENPINSCHER_CFLOAT
-#define MLTK_CDOUBLE       MLAFFENPINSCHER_CDOUBLE
-#define MLTK_CLONGDOUBLE   MLAFFENPINSCHER_CLONGDOUBLE
-
-#define MLTK_MLSHORT       MLAFFENPINSCHER_MLSHORT
-#define MLTK_MLINT         MLAFFENPINSCHER_MLINT
-#define MLTK_MLLONG        MLAFFENPINSCHER_MLLONG
-#define MLTK_MLINT64       MLAFFENPINSCHER_MLINT64
-#define MLTK_MLSIZE_T      MLAFFENPINSCHER_MLSIZE_T
-#define MLTK_MLFLOAT       MLAFFENPINSCHER_MLFLOAT
-#define MLTK_MLDOUBLE      MLAFFENPINSCHER_MLDOUBLE
-#define MLTK_MLLONGDOUBLE  MLAFFENPINSCHER_MLLONGDOUBLE
-#endif
 
 #else
 #define MATHLINK_NUMERICS_ENVIRONMENT_ID  MLOLD_WIN_ENV_NUMERICS_ID
@@ -7213,11 +6152,6 @@ struct _i87extended_nt { unsigned short w[5];};
 
 
 
-
-#if MLINTERFACE < 3
-#define MLGetReal MLGetDouble
-#endif
-
 #endif /* MLGETNUMBERS_HPP */
 
 
@@ -7226,7 +6160,6 @@ struct _i87extended_nt { unsigned short w[5];};
 
 ML_EXTERN_C
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLGetBinaryNumber,  ( MLINK mlp, void *np, long type));
 
 /*
@@ -7245,12 +6178,6 @@ MLDECL( int,   MLGetLongInteger,   ( MLINK mlp, long *lp));
 MLDECL( int,   MLGetInteger16,  ( MLINK mlp, short *hp));
 MLDECL( int,   MLGetInteger32,  ( MLINK mlp, int *ip));
 MLDECL( int,   MLGetInteger64,  ( MLINK mlp, mlint64 *wp));
-#else
-MLDECL( mlapi_result,   MLGetBinaryNumber,  ( MLINK mlp, voidp_ct np, long type));
-MLDECL( mlapi_result,   MLGetShortInteger,  ( MLINK mlp, shortp_nt hp));
-MLDECL( mlapi_result,   MLGetInteger,       ( MLINK mlp, intp_nt ip));
-MLDECL( mlapi_result,   MLGetLongInteger,   ( MLINK mlp, longp_nt lp));
-#endif /* MLINTERFACE >= 3 */
 
 
 #if MLINTERFACE >= 4
@@ -7258,7 +6185,6 @@ MLDECL(int, MLGetInteger8, (MLINK mlp, unsigned char *cp));
 #endif
 
 
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 the following functions have been deprecated.  Use the suggested functions in their
 place:
@@ -7279,16 +6205,8 @@ MLDECL( int,   MLGetLongDouble,    ( MLINK mlp, mlextended_double *xp));
 MLDECL( int,   MLGetReal32,         ( MLINK mlp, float *fp));
 MLDECL( int,   MLGetReal64,        ( MLINK mlp, double *dp));
 MLDECL( int,   MLGetReal128,          ( MLINK mlp, mlextended_double *dp));
-#else
-MLDECL( mlapi_result,   MLGetFloat,         ( MLINK mlp, floatp_nt fp));
-MLDECL( mlapi_result,   MLGetDouble,        ( MLINK mlp, doublep_nt dp));
-#if CC_SUPPORTS_LONG_DOUBLE
-MLDECL( mlapi_result,   MLGetLongDouble,    ( MLINK mlp, extendedp_nt xp));
-#endif
-#endif /* MLINTERFACE >= 3 */
 
 ML_END_EXTERN_C
-
 
 
 
@@ -7308,7 +6226,6 @@ ML_END_EXTERN_C
 
 ML_EXTERN_C
 
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 MLGet16BitCharacters has been deprecated.  Use the suggested function in its
 place:
@@ -7346,21 +6263,11 @@ MLDECL( int,   MLGetUCS2String,       ( MLINK mlp, const unsigned short **sp, in
 MLDECL( int,   MLGetUTF8String,       ( MLINK mlp, const unsigned char **sp, int *bytes, int *chars));
 MLDECL( int,   MLGetUTF16String,      ( MLINK mlp, const unsigned short **sp, int *ncodes, int *chars));
 MLDECL( int,   MLGetUTF32String,      ( MLINK mlp, const unsigned int **sp, int *len));
-#else
-MLDECL( mlapi_result,   MLGet16BitCharacters,  ( MLINK mlp, longp_st chars_left, ushortp_ct buf, long_st cardof_buf, longp_st got));
-MLDECL( mlapi_result,   MLGet8BitCharacters,   ( MLINK mlp, longp_st chars_left, ucharp_ct  buf, long_st cardof_buf, longp_st got, long missing));
-MLDECL( mlapi_result,   MLGet7BitCharacters,   ( MLINK mlp, longp_st chars_left, charp_ct   buf, long_st cardof_buf, longp_st got));
-
-MLDECL( mlapi_result,   MLGetUnicodeString,    ( MLINK mlp, kushortpp_ct sp, longp_st lenp));
-MLDECL( mlapi_result,   MLGetByteString,       ( MLINK mlp, kucharpp_ct  sp, longp_st lenp, long missing));
-MLDECL( mlapi_result,   MLGetString,           ( MLINK mlp, kcharpp_ct   sp));
-#endif /* MLINTERFACE >= 3 */
 
 #ifndef MLINTERFACE
 /* syntax error */ )
 #endif
 
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 MLGetUnicodeString0 has been deprecated.  Use the suggested function in its
 place:
@@ -7387,15 +6294,7 @@ MLDECL( int,   MLGetUTF8String0,      ( MLINK mlp, const unsigned char **sp, int
 MLDECL( int,   MLGetUTF16String0,     ( MLINK mlp, const unsigned short **sp, int *ncodes, int *chars));
 MLDECL( int,   MLGetUTF32String0,     ( MLINK mlp, const unsigned int **sp, int *lenp));
 #endif /* MLINTERFACE >= 4 */
-#else
-#if MLINTERFACE > 1
-MLDECL( mlapi_result,   MLGetUnicodeString0,   ( MLINK mlp, kushortpp_ct sp, longp_st lenp));
-MLDECL( mlapi_result,   MLGetByteString0,      ( MLINK mlp, kucharpp_ct  sp, longp_st lenp, long missing));
-MLDECL( mlapi_result,   MLGetString0,          ( MLINK mlp, kcharpp_ct   sp));
-#endif
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE >= 3
 
 /*
 As of MLINTERFACE 3 the following functions have been deprecated.  Use the suggested functions in their
@@ -7431,19 +6330,7 @@ MLDECL( int,    MLTestUTF16String, ( MLINK mlp, const unsigned short *name, int 
 MLDECL( int,    MLTestUTF32String, ( MLINK mlp, const unsigned int *name, int length));
 #endif // MLINTERFACE >= 4
 
-#else
-
-
-MLDECL( void,           MLDisownUnicodeString, ( MLINK mlp, kushortp_ct s,   long_st len));
-MLDECL( void,           MLDisownByteString,    ( MLINK mlp, kucharp_ct  s,   long_st len));
-MLDECL( void,           MLDisownString,        ( MLINK mlp, kcharp_ct   s));
-
-MLDECL( mlapi_result,   MLCheckString,   ( MLINK mlp, kcharp_ct name));
-
-#endif /* MLINTERFACE >= 3 */
-
 ML_END_EXTERN_C
-
 
 
 
@@ -7462,8 +6349,6 @@ ML_END_EXTERN_C
 /* explicitly not protected by MLGETSYMBOLS_HPP in case MLDECL is redefined for multiple inclusion */
 
 ML_EXTERN_C
-
-#if MLINTERFACE >= 3
 
 /*
 As of MLINTERFACE 3 MLGetUnicodeSymbol has been deprecated.  Use the suggested function in its
@@ -7555,26 +6440,9 @@ MLDECL( int,   MLTestUCS2Head,  ( MLINK mlp, const unsigned short *s, int length
 MLDECL( int,   MLTestUTF8Head,  ( MLINK mlp, const unsigned char *s, int length, int *countp));
 MLDECL( int,   MLTestUTF16Head, ( MLINK mlp, const unsigned short *s, int length, int *countp));
 MLDECL( int,   MLTestUTF32Head, ( MLINK mlp, const unsigned int *s, int length, int *countp));
-#endif // MLINTERFACE >= 3
-
-#else
-MLDECL( mlapi_result,   MLGetUnicodeSymbol,    ( MLINK mlp, kushortpp_ct sp, longp_st lenp));
-MLDECL( mlapi_result,   MLGetByteSymbol,       ( MLINK mlp, kucharpp_ct  sp, longp_st lenp, long missing));
-MLDECL( mlapi_result,   MLGetSymbol,           ( MLINK mlp, kcharpp_ct   sp));
-
-MLDECL( void,           MLDisownUnicodeSymbol, ( MLINK mlp, kushortp_ct s,   long_st len));
-MLDECL( void,           MLDisownByteSymbol,    ( MLINK mlp, kucharp_ct  s,   long_st len));
-MLDECL( void,           MLDisownSymbol,        ( MLINK mlp, kcharp_ct   s));
-
-MLDECL( mlapi_result,   MLCheckSymbol,   ( MLINK mlp, kcharp_ct name));
-MLDECL( mlapi_result,   MLGetFunction,   ( MLINK mlp, kcharpp_ct sp, longp_st countp));
-MLDECL( mlapi_result,   MLCheckFunction, ( MLINK mlp, kcharp_ct s, longp_st countp));
-MLDECL( mlapi_result,   MLCheckFunctionWithArgCount, ( MLINK mlp, kcharp_ct s, longp_st countp));
-
-#endif /* MLINTERFACE >= 3 */
+#endif // MLINTERFACE >= 4
 
 ML_END_EXTERN_C
-
 
 
 
@@ -7590,10 +6458,6 @@ ML_END_EXTERN_C
 
 
 
-#if MLINTERFACE < 3
-#define MLPutReal MLPutDouble
-#endif
-
 #endif /* MLPUTNUMBERS_HPP */
 
 
@@ -7601,7 +6465,6 @@ ML_END_EXTERN_C
 
 ML_EXTERN_C
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLPutBinaryNumber,  ( MLINK mlp, void *np, long type));
 
 /*
@@ -7618,18 +6481,11 @@ MLDECL( int,   MLPutLongInteger,   ( MLINK mlp, long l));
 MLDECL( int,   MLPutInteger16,     ( MLINK mlp, int h));
 MLDECL( int,   MLPutInteger32,     ( MLINK mlp, int i));
 MLDECL( int,   MLPutInteger64,     ( MLINK mlp, mlint64 w));
-#else
-MLDECL( mlapi_result,   MLPutBinaryNumber,  ( MLINK mlp, voidp_ct np, long type));
-MLDECL( mlapi_result,   MLPutShortInteger,  ( MLINK mlp, int_nt h));
-MLDECL( mlapi_result,   MLPutInteger,       ( MLINK mlp, int_nt i));
-MLDECL( mlapi_result,   MLPutLongInteger,   ( MLINK mlp, long_nt l));
-#endif /* MLINTERFACE >= 3 */
 
 #if MLINTERFACE >= 4
 MLDECL( int, MLPutInteger8,   (MLINK mlp, unsigned char i));
 #endif
 
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 the following functions have been deprecated.  Use the following new functions as their replacement:
 
@@ -7648,16 +6504,8 @@ MLDECL( int,   MLPutLongDouble,    ( MLINK mlp, mlextended_double x));
 MLDECL( int,   MLPutReal32,         ( MLINK mlp, double f));
 MLDECL( int,   MLPutReal64,         ( MLINK mlp, double d));
 MLDECL( int,   MLPutReal128,        ( MLINK mlp, mlextended_double x));
-#else
-MLDECL( mlapi_result,   MLPutFloat,         ( MLINK mlp, double_nt f));
-MLDECL( mlapi_result,   MLPutDouble,        ( MLINK mlp, double_nt d));
-#if CC_SUPPORTS_LONG_DOUBLE
-MLDECL( mlapi_result,   MLPutLongDouble,   ( MLINK mlp, extended_nt x));
-#endif
-#endif /* MLINTERFACE >= 3 */
 
 ML_END_EXTERN_C
-
 
 
 
@@ -7678,7 +6526,6 @@ ML_END_EXTERN_C
 
 ML_EXTERN_C
 
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 MLPut16BitCharacters has been deprecated.  Use the suggested function in its
 place:
@@ -7717,22 +6564,11 @@ MLDECL( int,   MLPutUCS2String,    ( MLINK mlp, const unsigned short *s, int len
 MLDECL( int,   MLPutUTF8String,    ( MLINK mlp, const unsigned char *s, int len));
 MLDECL( int,   MLPutUTF16String,   ( MLINK mlp, const unsigned short *s, int len));
 MLDECL( int,   MLPutUTF32String,   ( MLINK mlp, const unsigned int *s, int len));
-#else
-MLDECL( mlapi_result,   MLPut16BitCharacters, ( MLINK mlp, long_st chars_left, kushortp_ct codes, long_st ncodes));
-MLDECL( mlapi_result,   MLPut8BitCharacters,  ( MLINK mlp, long_st chars_left, kucharp_ct bytes, long_st nbytes));
-MLDECL( mlapi_result,   MLPut7BitCount,       ( MLINK mlp, long_st count, long_st size));
-MLDECL( mlapi_result,   MLPut7BitCharacters,  ( MLINK mlp, long_st chars_left, kcharp_ct bytes, long_st nbytes, long_st nchars_now));
-
-MLDECL( mlapi_result,   MLPutUnicodeString, ( MLINK mlp, kushortp_ct s, long_st len));
-MLDECL( mlapi_result,   MLPutByteString,    ( MLINK mlp, kucharp_ct  s, long_st len));
-MLDECL( mlapi_result,   MLPutString,        ( MLINK mlp, kcharp_ct   s));
-#endif /* MLINTERFACE >= 3 */
 
 #ifndef MLINTERFACE
 /* syntax error */ )
 #endif
 
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 MLPutRealUnicodeString0 has been deprecated.  Use the suggested function in its
 place:
@@ -7758,23 +6594,11 @@ MLDECL( int,   MLPutRealUTF8String0,    ( MLINK mlp, unsigned char *s, int nbyte
 MLDECL( int,   MLPutRealUTF16String0,   ( MLINK mlp, unsigned short *s, int ncodes));
 MLDECL( int,   MLPutRealUTF32String0,   ( MLINK mlp, unsigned int *s, int nchars));
 #endif /* MLINTERFACE == 3 */
-#else
-#if MLINTERFACE > 1
-MLDECL( mlapi_result,   MLPutRealUnicodeString0, ( MLINK mlp, ushortp_ct s));
-MLDECL( mlapi_result,   MLPutRealByteString0,    ( MLINK mlp, ucharp_ct  s));
-#endif
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLPutSize,          ( MLINK mlp, int size));
 MLDECL( int,   MLPutData,          ( MLINK mlp, const char *buff, int len));
-#else
-MLDECL( mlapi_result,   MLPutSize, ( MLINK mlp, long_st size));
-MLDECL( mlapi_result,   MLPutData, ( MLINK mlp, kcharp_ct buff, long_st len));
-#endif /* MLINTERFACE >= 3 */
 
 ML_END_EXTERN_C
-
 
 
 
@@ -7795,7 +6619,6 @@ ML_END_EXTERN_C
 
 ML_EXTERN_C
 
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 MLPutUnicodeSymbol has been deprecated.  Use the suggested function in its
 place:
@@ -7826,15 +6649,8 @@ MLDECL( int,   MLPutUTF16Function, ( MLINK mlp, const unsigned short *s, int len
 MLDECL( int,   MLPutUTF32Function, ( MLINK mlp, const unsigned int *s, int length, int argn));
 #endif // MLINTERFACE >= 4
 
-#else
-MLDECL( mlapi_result,   MLPutUnicodeSymbol, ( MLINK mlp, kushortp_ct s, long_st len));
-MLDECL( mlapi_result,   MLPutByteSymbol,    ( MLINK mlp, kucharp_ct  s, long_st len));
-MLDECL( mlapi_result,   MLPutSymbol,        ( MLINK mlp, kcharp_ct   s));
-MLDECL( mlapi_result,   MLPutFunction,      ( MLINK mlp, kcharp_ct s, long_st argc));
-#endif /* MLINTERFACE >= 3 */
 
 ML_END_EXTERN_C
-
 
 
 
@@ -8031,7 +6847,6 @@ WS_END_EXTERN_C
 
 
 
-
 #ifndef _MLCAPUT_H
 #define _MLCAPUT_H
 
@@ -8051,10 +6866,6 @@ typedef array_meterp FAR * array_meterpp;
 #endif
 
 
-#if MLINTERFACE < 3
-#define MLPutRealArray MLPutDoubleArray
-#endif
-
 #endif /* _MLCAPUT_H */
 
 
@@ -8062,11 +6873,7 @@ typedef array_meterp FAR * array_meterpp;
 
 /*bugcheck: bugcheck need FAR here */
 ML_EXTERN_C
-#if MLINTERFACE >= 3
 MLDECL( int,   MLPutArray,                  ( MLINK mlp, array_meterp meterp));
-#else
-MLDECL( mlapi_result,   MLPutArray,                  ( MLINK mlp, array_meterp meterp));
-#endif /* MLINTERFACE >= 3 */
 
 #if MLINTERFACE >= 4
 MLDECL( int,   MLPutBinaryNumberArrayData,  ( MLINK mlp, array_meterp meterp, const void *         datap, long count, long type));
@@ -8079,7 +6886,7 @@ MLDECL( int,   MLPutInteger8ArrayData,      ( MLINK mlp, array_meterp meterp, co
 MLDECL( int,   MLPutInteger16ArrayData,     ( MLINK mlp, array_meterp meterp, const short *        datap, int count));
 MLDECL( int,   MLPutInteger32ArrayData,     ( MLINK mlp, array_meterp meterp, const int *          datap, int count));
 MLDECL( int,   MLPutInteger64ArrayData,     ( MLINK mlp, array_meterp meterp, const mlint64 *      datap, int count));
-#elif MLINTERFACE == 3
+#else
 MLDECL( int,   MLPutBinaryNumberArrayData,  ( MLINK mlp, array_meterp meterp, void *         datap, long count, long type));
 MLDECL( int,   MLPutByteArrayData,          ( MLINK mlp, array_meterp meterp, unsigned char *datap, long count));
 
@@ -8097,13 +6904,7 @@ MLDECL( int,   MLPutLongIntegerArrayData,   ( MLINK mlp, array_meterp meterp, lo
 MLDECL( int,   MLPutInteger16ArrayData,     ( MLINK mlp, array_meterp meterp, short *        datap, int count));
 MLDECL( int,   MLPutInteger32ArrayData,     ( MLINK mlp, array_meterp meterp, int *          datap, int count));
 MLDECL( int,   MLPutInteger64ArrayData,     ( MLINK mlp, array_meterp meterp, mlint64 *      datap, int count));
-#else
-MLDECL( mlapi_result,   MLPutBinaryNumberArrayData,  ( MLINK mlp, array_meterp meterp, voidp_ct     datap, long_st count, long type));
-MLDECL( mlapi_result,   MLPutByteArrayData,          ( MLINK mlp, array_meterp meterp, ucharp_nt    datap, long_st count));
-MLDECL( mlapi_result,   MLPutShortIntegerArrayData,  ( MLINK mlp, array_meterp meterp, shortp_nt    datap, long_st count));
-MLDECL( mlapi_result,   MLPutIntegerArrayData,       ( MLINK mlp, array_meterp meterp, intp_nt      datap, long_st count));
-MLDECL( mlapi_result,   MLPutLongIntegerArrayData,   ( MLINK mlp, array_meterp meterp, longp_nt     datap, long_st count));
-#endif /* MLINTERFACE >= 3 */
+#endif /* MLINTERFACE >= 4 */
 
 
 
@@ -8118,7 +6919,7 @@ MLDECL( int,   MLPutLongDoubleArrayData,    ( MLINK mlp, array_meterp meterp, co
 MLDECL( int,   MLPutReal32ArrayData,        ( MLINK mlp, array_meterp meterp, const float * datap, int count));
 MLDECL( int,   MLPutReal64ArrayData,        ( MLINK mlp, array_meterp meterp, const double *datap, int count));
 MLDECL( int,   MLPutReal128ArrayData,       ( MLINK mlp, array_meterp meterp, const mlextended_double *datap, int count));
-#elif MLINTERFACE == 3
+#else
 /*
 As of MLINTERFACE 3 the following functions have been deprecated.  Use the following new functions as their replacement:
 
@@ -8135,12 +6936,6 @@ MLDECL( int,   MLPutLongDoubleArrayData,    ( MLINK mlp, array_meterp meterp, ml
 MLDECL( int,   MLPutReal32ArrayData,        ( MLINK mlp, array_meterp meterp, float * datap, int count));
 MLDECL( int,   MLPutReal64ArrayData,        ( MLINK mlp, array_meterp meterp, double *datap, int count));
 MLDECL( int,   MLPutReal128ArrayData,       ( MLINK mlp, array_meterp meterp, mlextended_double *datap, int count));
-#else
-MLDECL( mlapi_result,   MLPutFloatArrayData,         ( MLINK mlp, array_meterp meterp, floatp_nt    datap, long_st count));
-MLDECL( mlapi_result,   MLPutDoubleArrayData,        ( MLINK mlp, array_meterp meterp, doublep_nt   datap, long_st count));
-#if CC_SUPPORTS_LONG_DOUBLE
-MLDECL( mlapi_result,   MLPutLongDoubleArrayData,   ( MLINK mlp, array_meterp meterp, extendedp_nt datap, long_st count));
-#endif
 #endif /* MLINTERFACE >= 4 */
 
 #ifndef ML_USES_NEW_PUTBYTEARRAY_API
@@ -8159,7 +6954,7 @@ MLDECL( int,   MLPutInteger8Array,      ( MLINK mlp, const unsigned char *data, 
 MLDECL( int,   MLPutInteger16Array,     ( MLINK mlp, const short *        data, const int *dims, const char **heads, int depth));
 MLDECL( int,   MLPutInteger32Array,     ( MLINK mlp, const int *          data, const int *dims, const char **heads, int depth));
 MLDECL( int,   MLPutInteger64Array,     ( MLINK mlp, const mlint64 *      data, const int *dims, const char **heads, int depth));
-#elif MLINTERFACE == 3
+#else
 MLDECL( int,   MLPutBinaryNumberArray,  ( MLINK mlp, void *         data, long *dimp, char **heads, long depth, long type));
 MLDECL( int,   MLPutByteArray,          ( MLINK mlp, unsigned char *data, int *dims, char **heads, int depth));
 
@@ -8177,12 +6972,6 @@ MLDECL( int,   MLPutLongIntegerArray,   ( MLINK mlp, long *         data, long *
 MLDECL( int,   MLPutInteger16Array,     ( MLINK mlp, short *        data, int *dims, char **heads, int depth));
 MLDECL( int,   MLPutInteger32Array,     ( MLINK mlp, int *          data, int *dims, char **heads, int depth));
 MLDECL( int,   MLPutInteger64Array,     ( MLINK mlp, mlint64 *      data, int *dims, char **heads, int depth));
-#else
-MLDECL( mlapi_result,   MLPutBinaryNumberArray,  ( MLINK mlp, voidp_ct     data, longp_st dimp, charpp_ct heads, long_st depth, long type));
-MLDECL( mlapi_result,   MLPutByteArray,          ( MLINK mlp, ucharp_nt    data, longp_st dims, charpp_ct heads, long_st depth));
-MLDECL( mlapi_result,   MLPutShortIntegerArray,  ( MLINK mlp, shortp_nt    data, longp_st dims, charpp_ct heads, long_st depth));
-MLDECL( mlapi_result,   MLPutIntegerArray,       ( MLINK mlp, intp_nt      data, longp_st dims, charpp_ct heads, long_st depth));
-MLDECL( mlapi_result,   MLPutLongIntegerArray,   ( MLINK mlp, longp_nt     data, longp_st dims, charpp_ct heads, long_st depth));
 #endif /* MLINTERFACE >= 4 */
 
 
@@ -8197,7 +6986,7 @@ MLDECL( int,   MLPutLongDoubleArray,    ( MLINK mlp, const mlextended_double *da
 MLDECL( int,   MLPutReal32Array,        ( MLINK mlp, const float * data, const int *dims, const char **heads, int depth));
 MLDECL( int,   MLPutReal64Array,        ( MLINK mlp, const double *data, const int *dims, const char **heads, int depth));
 MLDECL( int,   MLPutReal128Array,       ( MLINK mlp, const mlextended_double *data, const int *dims, const char **heads, int depth));
-#elif MLINTERFACE == 3
+#else
 /*
 As of MLINTERFACE 3 the following functions have been deprecated.  Use the following new functions as their replacement:
 
@@ -8216,12 +7005,6 @@ MLDECL( int,   MLPutLongDoubleArray,    ( MLINK mlp, mlextended_double *data, lo
 MLDECL( int,   MLPutReal32Array,        ( MLINK mlp, float * data, int *dims, char **heads, int depth));
 MLDECL( int,   MLPutReal64Array,        ( MLINK mlp, double *data, int *dims, char **heads, int depth));
 MLDECL( int,   MLPutReal128Array,       ( MLINK mlp, mlextended_double *data, int *dims, char **heads, int depth));
-#else
-MLDECL( mlapi_result,   MLPutFloatArray,         ( MLINK mlp, floatp_nt    data, longp_st dims, charpp_ct heads, long_st depth));
-MLDECL( mlapi_result,   MLPutDoubleArray,        ( MLINK mlp, doublep_nt   data, longp_st dims, charpp_ct heads, long_st depth));
-#if CC_SUPPORTS_LONG_DOUBLE
-MLDECL( mlapi_result,   MLPutLongDoubleArray,   ( MLINK mlp, extendedp_nt data, longp_st dims, charpp_ct heads, long_st depth));
-#endif
 #endif /* MLINTERFACE >= 4 */
 
 
@@ -8238,7 +7021,7 @@ MLDECL( int,   MLPutInteger64List,    ( MLINK mlp, const mlint64 * data, int cou
 MLDECL( int,   MLPutReal32List,       ( MLINK mlp, const float * data, int count));
 MLDECL( int,   MLPutReal64List,       ( MLINK mlp, const double *data, int count));
 MLDECL( int,   MLPutReal128List,      ( MLINK mlp, const mlextended_double *data, int count));
-#elif MLINTERFACE == 3
+#else
 MLDECL( int,   MLPutBinaryNumberList, ( MLINK mlp, void *  data, long count, long type));
 
 /*
@@ -8257,44 +7040,27 @@ MLDECL( int,   MLPutInteger64List,    ( MLINK mlp, mlint64 * data, int count));
 MLDECL( int,   MLPutReal32List,       ( MLINK mlp, float * data, int count));
 MLDECL( int,   MLPutReal64List,       ( MLINK mlp, double *data, int count));
 MLDECL( int,   MLPutReal128List,      ( MLINK mlp, mlextended_double *data, int count));
-#else
-MLDECL( mlapi_result,   MLPutBinaryNumberList, ( MLINK mlp, voidp_ct   data, long_st count, long type));
-MLDECL( mlapi_result,   MLPutIntegerList,      ( MLINK mlp, intp_nt    data, long_st count));
-MLDECL( mlapi_result,   MLPutRealList,         ( MLINK mlp, doublep_nt data, long_st count));
 #endif /* MLINTERFACE >= 4 */
 
 
-#if MLINTERFACE >= 3
 #if MLINTERFACE >= 4
 MLDECL( int, MLPutArrayType,             ( MLINK mlp, MLINK heads, long depth, array_meterpp meterpp));
 MLDECL( int, MLReleasePutArrayState,     ( MLINK mlp, MLINK heads, array_meterp meterp));
 #else
 MLDECL( int, MLPutArrayType0,             ( MLINK mlp, MLINK heads, long depth, array_meterpp meterpp));
 MLDECL( int, MLReleasePutArrayState0,     ( MLINK mlp, MLINK heads, array_meterp meterp));
-#endif
-#else
-MLDECL( mlapi_result, MLPutArrayType0,             ( MLINK mlp, MLINK heads, long depth, array_meterpp meterpp));
-MLDECL( mlapi_result, MLReleasePutArrayState0,     ( MLINK mlp, MLINK heads, array_meterp meterp));
-#endif /* MLINTERFACE >= 3 */
+#endif /* MLINTERFACE >= 4 */
 
-#if MLINTERFACE >= 3
 #if MLINTERFACE >= 4
 MLDECL( int, MLPutArrayLeaves,           ( MLINK mlp, MLINK heads, array_meterp meterp, MLINK leaves, long count));
 MLDECL( int, MLPutBinaryNumberArrayDataWithHeads, ( MLINK mlp, MLINK heads, array_meterp meterp, const void *datap, long count, long type));
 #else
 MLDECL( int, MLPutArrayLeaves0,           ( MLINK mlp, MLINK heads, array_meterp meterp, MLINK leaves, long count));
 MLDECL( int, MLPutBinaryNumberArrayData0, ( MLINK mlp, MLINK heads, array_meterp meterp, void *datap, long count, long type));
-#endif
-#else
-#if MLINTERFACE > 1
-MLDECL( mlapi_result, MLPutBinaryNumberArrayData0, ( MLINK mlp, MLINK heads, array_meterp meterp, voidp_ct datap, long_st count, long type));
-MLDECL( mlapi_result, MLPutArrayLeaves0,           ( MLINK mlp, MLINK heads, array_meterp meterp, MLINK leaves, long_st count));
-#endif /* mMLINTERFACE >= 1 */
-#endif /* MLINTERFACE >= 3 */
+#endif /* MLINTERFACE >= 4 */
 
 
 ML_END_EXTERN_C
-
 
 
 
@@ -8316,12 +7082,6 @@ typedef struct array_meter FAR * array_meterp;
 typedef array_meterp FAR * array_meterpp;
 #endif
 
-
-#if MLINTERFACE < 3
-#define MLGetRealArray    MLGetDoubleArray
-#define MLDisownRealArray MLDisownDoubleArray
-#endif
-
 #endif /* _MLCAGET_H */
 
 
@@ -8330,15 +7090,9 @@ typedef array_meterp FAR * array_meterpp;
 
 ML_EXTERN_C
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLGetArrayDimensions,       ( MLINK mlp, array_meterp meterp));
 MLDECL( int,   MLGetArrayType,             ( MLINK mlp, array_meterp meterp));
-#else
-MLDECL( mlapi_result,   MLGetArrayDimensions,       ( MLINK mlp, array_meterp meterp));
-MLDECL( mlapi_token,    MLGetArrayType,             ( MLINK mlp, array_meterp meterp));
-#endif /* MLINTERFACE >= 3 */
 
-#if MLINTERFACE >= 3
 MLDECL( int,  MLGetBinaryNumberList, ( MLINK mlp, void **datap, long *countp, long type));
 
 /*
@@ -8407,23 +7161,7 @@ MLDECL( int,   MLGetLongIntegerArrayData,   ( MLINK mlp, array_meterp meterp, lo
 MLDECL( int,   MLGetInteger16ArrayData,     ( MLINK mlp, array_meterp meterp, short *         datap, int count));
 MLDECL( int,   MLGetInteger32ArrayData,     ( MLINK mlp, array_meterp meterp, int *           datap, int count));
 MLDECL( int,   MLGetInteger64ArrayData,     ( MLINK mlp, array_meterp meterp, mlint64 *       datap, int count));
-#else
-MLDECL( mlapi_result,  MLGetBinaryNumberList, ( MLINK mlp, voidpp_ct   datap, longp_st countp, long type));
-MLDECL( mlapi_result,  MLGetIntegerList,      ( MLINK mlp, intpp_nt    datap, longp_st countp));
-MLDECL( mlapi_result,  MLGetRealList,         ( MLINK mlp, doublepp_nt datap, longp_st countp));
 
-MLDECL( void, MLDisownBinaryNumberList, ( MLINK mlp, voidp_ct   data, long_st count, long type));
-MLDECL( void, MLDisownIntegerList,      ( MLINK mlp, intp_nt    data, long_st count));
-MLDECL( void, MLDisownRealList,         ( MLINK mlp, doublep_nt data, long_st count));
-
-MLDECL( mlapi_result,   MLGetBinaryNumberArrayData,  ( MLINK mlp, array_meterp meterp, voidp_ct     datap, long_st count, long type));
-MLDECL( mlapi_result,   MLGetByteArrayData,          ( MLINK mlp, array_meterp meterp, ucharp_nt    datap, long_st count));
-MLDECL( mlapi_result,   MLGetShortIntegerArrayData,  ( MLINK mlp, array_meterp meterp, shortp_nt    datap, long_st count));
-MLDECL( mlapi_result,   MLGetIntegerArrayData,       ( MLINK mlp, array_meterp meterp, intp_nt      datap, long_st count));
-MLDECL( mlapi_result,   MLGetLongIntegerArrayData,   ( MLINK mlp, array_meterp meterp, longp_nt     datap, long_st count));
-#endif /* MLINTERFACE >= 3 */
-
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 the following functions have been deprecated.  Use the suggested functions in their
 place:
@@ -8442,23 +7180,13 @@ MLDECL( int,   MLGetLongDoubleArrayData,   ( MLINK mlp, array_meterp meterp, mle
 MLDECL( int,   MLGetReal32ArrayData,         ( MLINK mlp, array_meterp meterp, float *datap, int count));
 MLDECL( int,   MLGetReal64ArrayData,        ( MLINK mlp, array_meterp meterp, double *datap, int count));
 MLDECL( int,   MLGetReal128ArrayData,   ( MLINK mlp, array_meterp meterp, mlextended_double *datap, int count));
-#else
-MLDECL( mlapi_result,   MLGetFloatArrayData,         ( MLINK mlp, array_meterp meterp, floatp_nt    datap, long_st count));
-MLDECL( mlapi_result,   MLGetDoubleArrayData,        ( MLINK mlp, array_meterp meterp, doublep_nt   datap, long_st count));
 
-#if CC_SUPPORTS_LONG_DOUBLE
-MLDECL( mlapi_result,   MLGetLongDoubleArrayData,   ( MLINK mlp, array_meterp meterp, extendedp_nt datap, long_st count));
-#endif
-
-#endif /* MLINTERFACE >= 3 */
 
 #if MLINTERFACE >= 4
 MLDECL(int, MLGetInteger8List, (MLINK mlp, unsigned char **datap, int *countp));
 MLDECL(int, MLGetInteger8ArrayData, (MLINK mlp, array_meterp meterp, unsigned char *datap, int count));
 MLDECL(void, MLReleaseInteger8List, (MLINK mlp, unsigned char *data, int count));
 #endif
-
-#if MLINTERFACE >= 3
 
 #if MLINTERFACE == 3
 MLDECL( int,   MLGetArrayType0,             ( MLINK mlp, MLINK heads, array_meterpp meterpp, long *depthp, mlapi__token *leaf_tokp));
@@ -8485,18 +7213,8 @@ MLDECL( int,   MLGetBinaryNumberArray0,   ( MLINK mlp, void **datap, long **dimp
 MLDECL( int,   MLGetBinaryNumberArrayWithLeafType,   ( MLINK mlp, void **datap, long **dimpp, char ***headsp, long *depthp, long type, mlapi__token *leaf_tokp));
 #endif
 
-#else
-#if MLINTERFACE > 1
-MLDECL( mlapi_result,   MLGetArrayType0,             ( MLINK mlp, MLINK heads, array_meterpp meterpp, longp_st depthp, mlapi__tokenp leaf_tokp));
-MLDECL( mlapi_result,   MLGetBinaryNumberArrayData0, ( MLINK mlp, MLINK heads, array_meterp  meterp, voidp_ct datap, longp_st countp, long type));
-MLDECL( void,           MLReleaseGetArrayState0,     ( MLINK mlp, MLINK heads, array_meterp  meterp));
-
-MLDECL( mlapi_result,   MLGetBinaryNumberArray0,   ( MLINK mlp, voidpp_ct     datap, longpp_st dimpp, charppp_ct headsp, longp_st depthp, long type, mlapi__tokenp leaf_tokp));
-#endif /* MLINTERFACE > 1 */
-#endif /* MLINTERFACE >= 3 */
 
 
-#if MLINTERFACE >= 3
 MLDECL( int,   MLGetBinaryNumberArray,    ( MLINK mlp, void **          datap, long **dimpp, char ***headsp, long *depthp, long type));
 MLDECL( int,   MLGetByteArray,            ( MLINK mlp, unsigned char ** datap, int **dimsp, char ***headsp, int *depthp));
 
@@ -8516,20 +7234,12 @@ MLDECL( int,   MLGetLongIntegerArray,     ( MLINK mlp, long **          datap, l
 MLDECL( int,   MLGetInteger16Array,       ( MLINK mlp, short **         datap, int **dimsp, char ***headsp, int *depthp));
 MLDECL( int,   MLGetInteger32Array,       ( MLINK mlp, int **           datap, int **dimsp, char ***headsp, int *depthp));
 MLDECL( int,   MLGetInteger64Array,       ( MLINK mlp, mlint64 **       datap, int **dimsp, char ***headsp, int *depthp));
-#else
-MLDECL( mlapi_result,   MLGetBinaryNumberArray,    ( MLINK mlp, voidpp_ct     datap, longpp_st dimpp, charppp_ct headsp, longp_st depthp, long type));
-MLDECL( mlapi_result,   MLGetByteArray,            ( MLINK mlp, ucharpp_nt    datap, longpp_st dimsp, charppp_ct headsp, longp_st depthp));
-MLDECL( mlapi_result,   MLGetShortIntegerArray,    ( MLINK mlp, shortpp_nt    datap, longpp_st dimsp, charppp_ct headsp, longp_st depthp));
-MLDECL( mlapi_result,   MLGetIntegerArray,         ( MLINK mlp, intpp_nt      datap, longpp_st dimsp, charppp_ct headsp, longp_st depthp));
-MLDECL( mlapi_result,   MLGetLongIntegerArray,     ( MLINK mlp, longpp_nt     datap, longpp_st dimsp, charppp_ct headsp, longp_st depthp));
-#endif /* MLINTERFACE >= 3 */
 
 
 #if MLINTERFACE >= 4
 MLDECL(int,  MLGetInteger8Array,  (MLINK mlp, unsigned char **datap, int **dimsp, char ***headsp, int *depthp));
 #endif
 
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 the following functions have been deprecated.  Use the suggested functions in their
 place:
@@ -8550,16 +7260,8 @@ MLDECL( int,   MLGetLongDoubleArray,      ( MLINK mlp, mlextended_double **datap
 MLDECL( int,   MLGetReal32Array,          ( MLINK mlp, float ** datap, int **dimsp, char ***headsp, int *depthp));
 MLDECL( int,   MLGetReal64Array,          ( MLINK mlp, double **datap, int **dimsp, char ***headsp, int *depthp));
 MLDECL( int,   MLGetReal128Array,         ( MLINK mlp, mlextended_double **datap, int **dimsp, char ***headsp, int *depthp));
-#else
-MLDECL( mlapi_result,   MLGetDoubleArray,          ( MLINK mlp, doublepp_nt   datap, longpp_st dimsp, charppp_ct headsp, longp_st depthp));
-MLDECL( mlapi_result,   MLGetFloatArray,           ( MLINK mlp, floatpp_nt    datap, longpp_st dimsp, charppp_ct headsp, longp_st depthp));
-#if CC_SUPPORTS_LONG_DOUBLE
-MLDECL( mlapi_result,   MLGetLongDoubleArray,      ( MLINK mlp, extendedpp_nt datap, longpp_st dimsp, charppp_ct headsp, longp_st depthp));
-#endif
-#endif /* MLINTERFACE >= 3*/
 
 
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 the following functions have been deprecated.  Use the following new functions as their replacement:
 
@@ -8592,19 +7294,11 @@ MLDECL( void,           MLReleaseByteArray,          ( MLINK mlp, unsigned char 
 MLDECL( void,           MLReleaseInteger16Array,     ( MLINK mlp, short *        data, int *dims, char **heads, int depth));
 MLDECL( void,           MLReleaseInteger32Array,     ( MLINK mlp, int *          data, int *dims, char **heads, int depth));
 MLDECL( void,           MLReleaseInteger64Array,     ( MLINK mlp, mlint64 *      data, int *dims, char **heads, int depth));
-#else
-MLDECL( void,           MLDisownBinaryNumberArray,  ( MLINK mlp, voidp_ct     data, longp_st dimp, charpp_ct heads, long_st len, long type));
-MLDECL( void,           MLDisownByteArray,          ( MLINK mlp, ucharp_nt    data, longp_st dims, charpp_ct heads, long_st depth));
-MLDECL( void,           MLDisownShortIntegerArray,  ( MLINK mlp, shortp_nt    data, longp_st dims, charpp_ct heads, long_st depth));
-MLDECL( void,           MLDisownIntegerArray,       ( MLINK mlp, intp_nt      data, longp_st dims, charpp_ct heads, long_st depth));
-MLDECL( void,           MLDisownLongIntegerArray,   ( MLINK mlp, longp_nt     data, longp_st dims, charpp_ct heads, long_st depth));
-#endif /* MLINTERFACE >= 3 */
 
 #if MLINTERFACE >= 4
 MLDECL(void,   MLReleaseInteger8Array,   (MLINK mlp, unsigned char *data, int *dimp, char **heads, int depth));
 #endif
 
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 the following functions have been deprecated.  Use the following new functions as their replacement:
 
@@ -8627,14 +7321,9 @@ MLDECL( void,           MLReleaseRealArray,          ( MLINK mlp, double *data, 
 
 MLDECL( void,           MLReleaseReal32Array,         ( MLINK mlp, float * data, int *dims, char **heads, int depth));
 MLDECL( void,           MLReleaseReal64Array,          ( MLINK mlp, double *data, int *dims, char **heads, int depth));
-#else
-MLDECL( void,           MLDisownFloatArray,         ( MLINK mlp, floatp_nt    data, longp_st dims, charpp_ct heads, long_st depth));
-MLDECL( void,           MLDisownDoubleArray,        ( MLINK mlp, doublep_nt   data, longp_st dims, charpp_ct heads, long_st depth));
-#endif /* MLINTERFACE >= 3 */
 
 
 #if CC_SUPPORTS_LONG_DOUBLE
-#if MLINTERFACE >= 3
 /*
 As of MLINTERFACE 3 the following functions have been deprecated.  Use the following new functions as their replacement:
 
@@ -8651,14 +7340,10 @@ MLDECL( void,           MLReleaseReal128Array,     ( MLINK mlp, mlextended_doubl
 MLDECL( void,           MLReleaseLongDoubleArray,  ( MLINK mlp, mlextended_double *data, long *dims, char **heads, long depth));
 #endif
 
-#else
-MLDECL( void,           MLDisownLongDoubleArray,   ( MLINK mlp, extendedp_nt data, longp_st dims, charpp_ct heads, long_st depth));
-#endif /* MLINTERFACE >= 3 */
 #endif /* CC_SUPPORTS_LONG_DOUBLE */
 
 
 ML_END_EXTERN_C
-
 
 
 /*************** Unicode Container for mprep templates ***************/
@@ -8717,7 +7402,6 @@ ML_END_EXTERN_C
 
 
 
-
 /*************** seeking, transfering  and synchronization ***************/
 
 #ifndef _MLMARK_H
@@ -8732,16 +7416,10 @@ ML_END_EXTERN_C
 
 ML_EXTERN_C
 MLDECL( MLINKMark,  MLCreateMark,  ( MLINK mlp));
-#if MLINTERFACE >= 3
 MLDECL( MLINKMark,  MLSeekToMark,  ( MLINK mlp, MLINKMark mark, int index));
 MLDECL( MLINKMark,  MLSeekMark,    ( MLINK mlp, MLINKMark mark, int index));
-#else
-MLDECL( MLINKMark,  MLSeekToMark,  ( MLINK mlp, MLINKMark mark, long index));
-MLDECL( MLINKMark,  MLSeekMark,    ( MLINK mlp, MLINKMark mark, long index));
-#endif /* MLINTERFACE >= 3 */
 MLDECL( void,       MLDestroyMark, ( MLINK mlp, MLINKMark mark));
 ML_END_EXTERN_C
-
 
 
 
@@ -8762,28 +7440,14 @@ ML_EXTERN_C
 /* syntax error */ )
 #endif
 
-#if MLINTERFACE >= 3
 MLDECL( int, MLTransferExpression, ( MLINK dmlp, MLINK smlp));
 MLDECL( int, MLTransferToEndOfLoopbackLink, ( MLINK dmlp, MLINK smlp));
-#else
-MLDECL( mlapi_result, MLTransferExpression, ( MLINK dmlp, MLINK smlp));
-MLDECL( mlapi_result, MLTransferToEndOfLoopbackLink, ( MLINK dmlp, MLINK smlp));
-#endif /* MLINTERFACE >= 3 */
 
 
-#if MLINTERFACE > 1
-#if MLINTERFACE <= 3
 #if MLINTERFACE == 3
 MLDECL( int, MLTransfer0, ( MLINK dmlp, MLINK smlp, unsigned long sequence_no));
-#else
-MLDECL( mlapi_result, MLTransfer0, ( MLINK dmlp, MLINK smlp, ulong_ct sequence_no));
-#endif
-#endif /* MLINTERFACE <= 3 */
-#else
-static mlapi_result MLTransfer0 (MLINK dmlp, MLINK smlp, ulong_ct sequence_no);
-#endif /* MLINTERFACE > 1 */
+#endif /* MLINTERFACE == 3 */
 ML_END_EXTERN_C
-
 
 
 
@@ -8801,20 +7465,11 @@ ML_END_EXTERN_C
 
 ML_EXTERN_C
 /* in response to a reset message */
-#if MLINTERFACE >= 3
 MLDECL( int, MLForwardReset, ( MLINK mlp, unsigned long marker));
-#else
-MLDECL( mlapi_result, MLForwardReset, ( MLINK mlp, ulong_ct marker));
-#endif /* MLINTERFACE >= 3 */
 
 
-#if MLINTERFACE >= 3
 MLDECL( int, MLAlign,        ( MLINK lmlp, MLINK rmlp));
-#else
-MLDECL( mlapi_result, MLAlign,        ( MLINK lmlp, MLINK rmlp));
-#endif /* MLINTERFACE >= 3 */
 ML_END_EXTERN_C
-
 
 
 /*************************************************************/
@@ -8871,19 +7526,13 @@ ML_END_EXTERN_C
 
 
 
-
 #endif /* _MLPKT_H */
 
 /* explicitly not protected by _MLPKT_H in case MLDECL is redefined for multiple inclusion */
 
 ML_EXTERN_C
-#if MLINTERFACE >= 3
 MLDECL( int,  MLNextPacket, ( MLINK mlp));
-#else
-MLDECL( mlapi_packet,  MLNextPacket, ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
 ML_END_EXTERN_C
-
 
 
 
@@ -8905,17 +7554,10 @@ typedef __int64 mldlg_result;
 typedef long mldlg_result;
 #endif
 
-#if MLINTERFACE >= 3
 MLDPROC( mldlg_result, MLAlertProcPtr,             ( MLEnvironment env, const char *message));
 MLDPROC( mldlg_result, MLRequestProcPtr,           ( MLEnvironment env, const char *prompt, char *response, long sizeof_response));
 MLDPROC( mldlg_result, MLConfirmProcPtr,           ( MLEnvironment env, const char *question, mldlg_result default_answer));
 MLDPROC( mldlg_result, MLRequestArgvProcPtr,       ( MLEnvironment env, char **argv, long cardof_argv, char *buf, long sizeof_buf));
-#else
-MLDPROC( mldlg_result, MLAlertProcPtr,             ( MLEnvironment env, kcharp_ct message));
-MLDPROC( mldlg_result, MLRequestProcPtr,           ( MLEnvironment env, kcharp_ct prompt, charp_ct response, long sizeof_response));
-MLDPROC( mldlg_result, MLConfirmProcPtr,           ( MLEnvironment env, kcharp_ct question, mldlg_result default_answer));
-MLDPROC( mldlg_result, MLRequestArgvProcPtr,       ( MLEnvironment env, charpp_ct argv, long cardof_argv, charp_ct buf, long sizeof_buf));
-#endif /* MLINTERFACE >= 3 */
 MLDPROC( mldlg_result, MLRequestToInteractProcPtr, ( MLEnvironment env, mldlg_result wait_for_permission));
 MLDPROC( mldlg_result, MLDialogProcPtr,            ( MLEnvironment env));
 
@@ -8981,15 +7623,9 @@ enum {	MLAlertFunction = 1, MLRequestFunction, MLConfirmFunction,
 
 
 ML_EXTERN_C
-#if MLINTERFACE >= 3
 MLDDECL( mldlg_result, MLAlert_win,   ( MLEnvironment ep, const char *alertstr));
 MLDDECL( mldlg_result, MLRequest_win, ( MLEnvironment ep, const char *prompt, char *response, long n));
 MLDDECL( mldlg_result, MLConfirm_win, ( MLEnvironment ep, const char *okcancelquest, mldlg_result default_answer));
-#else
-MLDDECL( mldlg_result, MLAlert_win,   ( MLEnvironment ep, kcharp_ct alertstr));
-MLDDECL( mldlg_result, MLRequest_win, ( MLEnvironment ep, kcharp_ct prompt, charp_ct response, long n));
-MLDDECL( mldlg_result, MLConfirm_win, ( MLEnvironment ep, kcharp_ct okcancelquest, mldlg_result default_answer));
-#endif /* MLINTERFACE >= 3 */
 MLDDECL( mldlg_result, MLPermit_win,  ( MLEnvironment ep, mldlg_result wait));
 ML_END_EXTERN_C
 
@@ -9000,7 +7636,6 @@ ML_END_EXTERN_C
 #define RIDCANCEL                   104
 
 #endif /* _MLWIN_H */
-
 
 #define MLALERT         MLAlert_win
 #define MLREQUEST       MLRequest_win
@@ -9021,22 +7656,15 @@ ML_END_EXTERN_C
 
 ML_EXTERN_C
 
-#if MLINTERFACE >= 3
 MLDDECL( mldlg_result, MLAlert_darwin,   ( MLEnvironment env, const char *message));
 MLDDECL( mldlg_result, MLRequest_darwin, ( MLEnvironment env, const char *prompt, char *response, long sizeof_response));
 MLDDECL( mldlg_result, MLConfirm_darwin, ( MLEnvironment env, const char *question, mldlg_result default_answer));
-#else
-MLDDECL( mldlg_result, MLAlert_darwin,   ( MLEnvironment env, kcharp_ct message));
-MLDDECL( mldlg_result, MLRequest_darwin, ( MLEnvironment env, kcharp_ct prompt, charp_ct response, long sizeof_response));
-MLDDECL( mldlg_result, MLConfirm_darwin, ( MLEnvironment env, kcharp_ct question, mldlg_result default_answer));
-#endif /* MLINTERFACE >= 3 */
 MLDDECL( mldlg_result, MLPermit_darwin,  ( MLEnvironment env, mldlg_result wait_for_permission));
 MLDDECL( mldlg_result, MLDontPermit_darwin, ( MLEnvironment ep, mldlg_result wait_for_permission));
 
 ML_END_EXTERN_C
 
 #endif /* _MLDARWIN_H */
-
 
 #define MLALERT  	MLAlert_darwin
 #define MLREQUEST	MLRequest_darwin
@@ -9054,21 +7682,14 @@ ML_END_EXTERN_C
 
 ML_EXTERN_C
 
-#if MLINTERFACE >= 3
 MLDDECL( mldlg_result, MLAlert_unix,   ( MLEnvironment env, const char *message));
 MLDDECL( mldlg_result, MLRequest_unix, ( MLEnvironment env, const char *prompt, char *response, long sizeof_response));
 MLDDECL( mldlg_result, MLConfirm_unix, ( MLEnvironment env, const char *question, mldlg_result default_answer));
-#else
-MLDDECL( mldlg_result, MLAlert_unix,   ( MLEnvironment env, kcharp_ct message));
-MLDDECL( mldlg_result, MLRequest_unix, ( MLEnvironment env, kcharp_ct prompt, charp_ct response, long sizeof_response));
-MLDDECL( mldlg_result, MLConfirm_unix, ( MLEnvironment env, kcharp_ct question, mldlg_result default_answer));
-#endif /* MLINTERFACE >= 3 */
 MLDDECL( mldlg_result, MLPermit_unix,  ( MLEnvironment env, mldlg_result wait_for_permission));
 
 ML_END_EXTERN_C
 
 #endif /* _MLUNIX_H */
-
 
 #define MLALERT  	MLAlert_unix
 #define MLREQUEST	MLRequest_unix
@@ -9079,11 +7700,7 @@ ML_END_EXTERN_C
 #endif
 
 
-#if MLINTERFACE >= 3
 MLDDECL( mldlg_result, default_request_argv, ( MLEnvironment ep, char **argv, long len, char *buff, long size));
-#else
-MLDDECL( mldlg_result, default_request_argv, ( MLEnvironment ep, charpp_ct argv, long len, charp_ct buff, long size));
-#endif /* MLINTERFACE >= 3 */
 ML_END_EXTERN_C
 
 #endif /* _MLALERT_H */
@@ -9092,24 +7709,13 @@ ML_END_EXTERN_C
 /* explicitly not protected by _MLXDATA_H in case MLDECL is redefined for multiple inclusion */
 ML_EXTERN_C
 
-#if MLINTERFACE >= 3
 MLDECL( mldlg_result,  MLAlert,             ( MLEnvironment env, const char *message));
 MLDECL( mldlg_result,  MLRequest,           ( MLEnvironment env, const char *prompt, char *response, long sizeof_response)); /* initialize response with default*/
 MLDECL( mldlg_result,  MLConfirm,           ( MLEnvironment env, const char *question, mldlg_result default_answer));
 MLDECL( mldlg_result,  MLRequestArgv,       ( MLEnvironment env, char **argv, long cardof_argv, char *buff, long size));
-#else
-MLDECL( mldlg_result,  MLAlert,             ( MLEnvironment env, kcharp_ct message));
-MLDECL( mldlg_result,  MLRequest,           ( MLEnvironment env, kcharp_ct prompt, charp_ct response, long sizeof_response)); /* initialize response with default*/
-MLDECL( mldlg_result,  MLConfirm,           ( MLEnvironment env, kcharp_ct question, mldlg_result default_answer));
-MLDECL( mldlg_result,  MLRequestArgv,       ( MLEnvironment env, charpp_ct argv, long cardof_argv, charp_ct buff, long size));
-#endif /* MLINTERFACE >= 3 */
 
 MLDECL( mldlg_result,  MLRequestToInteract, ( MLEnvironment env, mldlg_result wait_for_permission));
-#if MLINTERFACE >= 3
 MLDECL( int,  MLSetDialogFunction, ( MLEnvironment env, long funcnum, MLDialogFunctionType func));
-#else
-MLDECL( mlapi_result,  MLSetDialogFunction, ( MLEnvironment env, long funcnum, MLDialogFunctionType func));
-#endif /* MLINTERFACE >= 3 */
 
 /* just some type-safe casts */
 MLDECL( MLDialogProcPtr, MLAlertCast, ( MLAlertProcPtr f));
@@ -9118,7 +7724,6 @@ MLDECL( MLDialogProcPtr, MLConfirmCast, ( MLConfirmProcPtr f));
 MLDECL( MLDialogProcPtr, MLRequestArgvCast, ( MLRequestArgvProcPtr f));
 MLDECL( MLDialogProcPtr, MLRequestToInteractCast, ( MLRequestToInteractProcPtr f));
 ML_END_EXTERN_C
-
 
 
 /*************************************************************/
@@ -9145,16 +7750,10 @@ typedef struct _mltimeval{
 
 
 
-
 ML_EXTERN_C
-#if MLINTERFACE >= 3
 MLDECL( int,   MLReady,            ( MLINK mlp));
-#else
-MLDECL( mlapi_result,   MLReady,            ( MLINK mlp));
-#endif /* MLINTERFACE >= 3 */
 ML_END_EXTERN_C
 
-#if MLINTERFACE >= 3
 
 
 #if defined(__cplusplus)
@@ -9173,7 +7772,6 @@ ML_EXTERN_C
 MLDECL(int,              MLReadyParallel, (MLENV, MLINK *, int, mltimeval));
 ML_END_EXTERN_C
 
-#endif /* MLINTERFACE >= 3 */
 
 #if MLINTERFACE >= 4
 ML_EXTERN_C
@@ -9193,12 +7791,11 @@ ML_END_EXTERN_C
 #endif /* _MLREADY_H */
 
 
-
 /********************************************************/
 
 
-#ifndef _MLTM_H
-#define _MLTM_H
+#ifndef _WSTM_H
+#define _WSTM_H
 
 
 
@@ -9210,58 +7807,37 @@ ML_END_EXTERN_C
  */
 
 ML_EXTERN_C
-extern MLINK stdlink;
-extern MLEnvironment stdenv;
+extern WSLINK stdlink;
+extern WSEnvironment stdenv;
 
-extern MLYieldFunctionObject stdyielder;
-extern MLMessageHandlerObject stdhandler;
+extern WSYieldFunctionObject stdyielder;
+extern WSMessageHandlerObject stdhandler;
 
-#if MLINTERFACE >= 3
-extern int MLMain P((int, char **)); /* pass in argc and argv */
-extern int MLMainString P(( char *commandline));
-#else
-extern int MLMain P((int, charpp_ct)); /* pass in argc and argv */
-extern int MLMainString P(( charp_ct commandline));
-#endif /* MLINTERFACE >= 3 */
+extern int WSMain P((int, char **)); /* pass in argc and argv */
+extern int WSMainString P(( char *commandline));
+extern int WSMainArgv P(( char** argv, char** argv_end)); /* note not FAR pointers */
 
-extern int MLMainArgv P(( char** argv, char** argv_end)); /* note not FAR pointers */
-
-extern int MLInstall P((MLINK));
-extern mlapi_packet MLAnswer P((MLINK));
-extern int MLDoCallPacket P((MLINK));
-#if MLINTERFACE >= 3
-extern int MLEvaluate P(( MLINK, char *));
-extern int MLEvaluateString P(( MLINK, char *));
-#else
-extern int MLEvaluate P(( MLINK, charp_ct));
-extern int MLEvaluateString P(( MLINK, charp_ct));
-#endif /* MLINTERFACE >= 3 */
+extern int WSInstall P((WSLINK));
+extern wsapi_packet WSAnswer P((WSLINK));
+extern int WSDoCallPacket P((WSLINK));
+extern int WSEvaluate P(( WSLINK, char *));
+extern int WSEvaluateString P(( WSLINK, char *));
 ML_END_EXTERN_C
 
-#if MLINTERFACE >= 3
-MLMDECL( void, MLDefaultHandler, ( MLINK, int, int));
-#else
-MLMDECL( void, MLDefaultHandler, ( MLINK, unsigned long, unsigned long));
-#endif /* MLINTERFACE >= 3 */
-
-#if MLINTERFACE >= 3
-MLYDECL( int, MLDefaultYielder, ( MLINK, MLYieldParameters));
-#else
-MLYDECL( devyield_result, MLDefaultYielder, ( MLINK, MLYieldParameters));
-#endif /* MLINTERFACE >= 3 */
+WSMDECL( void, WSDefaultHandler, ( WSLINK, int, int));
+WSYDECL( int, WSDefaultYielder, ( WSLINK, WSYieldParameters));
 
 ML_EXTERN_C
-#if WINDOWS_MATHLINK
-extern HWND MLInitializeIcon P(( HINSTANCE hinstCurrent, int nCmdShow));
-extern HANDLE MLInstance;
-extern HWND MLIconWindow;
+#if WINDOWS_WSTP
+extern HWND WSInitializeIcon P(( HINSTANCE hinstCurrent, int nCmdShow));
+extern HANDLE WSInstance;
+extern HWND WSIconWindow;
 #endif
-extern int MLAbort, MLDone;
-extern long MLSpecialCharacter;
+extern int WSAbort, WSDone;
+extern long WSSpecialCharacter;
 ML_END_EXTERN_C
 
-#endif /* _MLTM_H */
-
+#endif /* _WSTM_H */
 
 
 /********************************************************/
@@ -9891,9 +8467,7 @@ ML_END_EXTERN_C
 
 
 
-
 /********************************************************/
 
 
 #endif /* _WSTP_H */
-
