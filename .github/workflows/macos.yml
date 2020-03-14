@@ -6,6 +6,7 @@ on:
   pull_request:
     branches: [ develop ]
 
+jobs:
   cpu_macos_build:
     name: MacOS
     runs-on: macos-latest
