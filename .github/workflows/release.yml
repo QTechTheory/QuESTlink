@@ -6,7 +6,7 @@ on:
 
 jobs:
   generate:
-    name: Attach ubuntu binaries to release
+    name: Attach linux binaries to release
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the repository
@@ -14,7 +14,7 @@ jobs:
       - name: Generate the binaries
         uses: skx/github-action-build@master
         with:
-          builder: .github/ubuntu
+          builder: .github/linux
       - name: Upload the binaries
         uses: skx/github-action-publish-binaries@master
         env:
