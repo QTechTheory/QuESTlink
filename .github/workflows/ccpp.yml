@@ -19,6 +19,14 @@ jobs:
       - name: prepare build
         shell: cmd
         run: choco install make
+      - name: debug (gen files)
+        shell: cmd
+        run: | 
+          cl -O2 -EHs -DQuEST_PREC=2 -nologo -DDWIN32 -D_WINDOWS -FoQuEST.o \
+          -IQuEST/include -IQuEST/src/CPU -IQuEST/src -IWSTP/Windows -ILink -c QuEST/src/QuEST.c 
+      - name: debug (view files)
+        shell: cmd
+        run: dir
       - name: build
         shell: cmd
         run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC
