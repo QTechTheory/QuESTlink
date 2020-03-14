@@ -1,0 +1,15 @@
+name: MacOS CI
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+  cpu_macos_build:
+    name: MacOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: build
+        run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG
