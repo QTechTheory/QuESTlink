@@ -135,6 +135,11 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     G::usage = "G[phi] applies a global phase rotation of phi, by premultiplying Exp[i phi]."
  
     Begin["`Private`"]
+    
+        (* report a generic error that the function was passed with bad args (did not evaluate) *)
+        invalidArgError[func_Symbol] := (
+            Message[func::error, "Invalid arguments. See ?" <> ToString[func]];
+            $Failed)
                
         (* opcodes *)
         getOpCode[gate_] :=
@@ -213,6 +218,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		QuEST`CloneQureg[outQureg, inQureg];
         		ApplyCircuit[circuit, outQureg]
         	]
+        (* error for bad args *)
+        ApplyCircuit[___] := invalidArgError[ApplyCircuit]
         
         (* apply the derivatives of a circuit on an initial state, storing the ersults in the given quregs *)
         extractUnitaryMatrix[Subscript[U, __Integer][u_List]] := u
@@ -241,6 +248,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     ]
                 ]
             ]
+        (* error for bad args *)
+        CalcQuregDerivs[___] := invalidArgError[CalcQuregDerivs]
             
         (* compute a matrix of inner products; this is used in tandem with CalcQuregDerivs to populate the Li matrix *)
         CalcInnerProducts[quregIds:{__Integer}] := 
@@ -258,6 +267,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {data=CalcInnerProductsVectorInternal[braId, ketIds]},
                 MapThread[#1 + I #2 &, {data[[1]], data[[2]]}] 
             ]
+        (* error for bad args *)
+        CalcInnerProducts[___] := invalidArgError[CalcInnerProducts]
             
         (* compute a real symmetric matrix of density inner products *)
         CalcDensityInnerProducts[quregIds:{__Integer}] :=
@@ -268,6 +279,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* compute a real vector of density innere products *)
         CalcDensityInnerProducts[rhoId_Integer, omegaIds:{__Integer}] :=
             CalcDensityInnerProductsVectorInternal[rhoId, omegaIds]
+        (* error for bad args *)
+        CalcDensityInnerProducts[___] := invalidArgError[CalcDensityInnerProducts]
 
         (* checking a product is a valid operator *)
         SetAttributes[isOperatorFormat, HoldAll]
@@ -292,6 +305,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	DestroyQuregInternal[qureg]
         DestroyQureg[qureg_Symbol] :=
         	Block[{}, DestroyQuregInternal[ReleaseHold@qureg]; Clear[qureg]]
+        DestroyQureg[___] := invalidArgError[DestroyQureg]
 
         (* get a local matrix representation of the qureg. GetQuregMatrixInternal provided by WSTP *)
         GetQuregMatrix[qureg_Integer] :=
@@ -307,6 +321,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         				{2^data[[1]],2^data[[1]]}]
         		]
         	]
+        GetQuregMatrix[___] := invalidArgError[GetQuregMatrix]
 
         (* overwrite the state of a qureg. InitStateFromAmps provided by WSTP *)
         SetQuregMatrix[qureg_Integer, elems_List] :=
@@ -325,12 +340,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		]},
         		QuEST`InitStateFromAmps[qureg, Re[flatelems], Im[flatelems]]
         	]
+        SetQuregMatrix[___] := invalidArgError[SetQuregMatrix]
             
         (* compute the expected value of a Pauli product *)
         CalcExpecPauliProd[qureg_Integer, Verbatim[Times][paulis:pattPauli..], workspace_Integer] :=
             CalcExpecPauliProdInternal[qureg, workspace, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]]]
         CalcExpecPauliProd[qureg_Integer, Subscript[pauli:(X|Y|Z),targ:_Integer], workspace_Integer] :=
             CalcExpecPauliProdInternal[qureg, workspace, getOpCode /@ {pauli}, {targ}]
+        CalcExpecPauliProd[___] := invalidArgError[CalcExpecPauliProd]
             
         (* compute the expected value of a weighted sum of Pauli products *)
         getPauliSumTermCoeff[pauli:pattPauli] = 1;
@@ -359,6 +376,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         pattConstPlusPauliSum = Verbatim[Plus][const_?NumericQ, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
         CalcExpecPauliSum[qureg_Integer, blank:pattConstPlusPauliSum, workspace_Integer] := 
             const + CalcExpecPauliSum[qureg, Plus @@ {pauliTerms}, workspace]
+        CalcExpecPauliSum[___] := invalidArgError[CalcExpecPauliSum]
             
         (* apply a weighted sum of Pauli products to a qureg *)
         ApplyPauliSum[inQureg_Integer, paulis:pattPauliSum, outQureg_Integer] :=
@@ -376,13 +394,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             ApplyPauliSumInternal[inQureg, outQureg, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}]
         (* constant plus pauli sum *)
         ApplyPauliSum[inQureg_Integer, blank:pattConstPlusPauliSum, outQureg_Integer] := 
-                With[{
-                    coeffs = Append[getPauliSumTermCoeff /@ {pauliTerms}, const], (* add const as new term... *)
-                    codes = Append[getPauliSumTermCodes /@ {pauliTerms}, {0}],      (* with Identity=0 Pauli code... *)
-                    targs = Append[getPauliSumTermTargs /@ {pauliTerms}, {0}]       (* on the first (or any) quqbit *)
-                    },
-                    ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
-                ]
+            With[{
+                coeffs = Append[getPauliSumTermCoeff /@ {pauliTerms}, const], (* add const as new term... *)
+                codes = Append[getPauliSumTermCodes /@ {pauliTerms}, {0}],      (* with Identity=0 Pauli code... *)
+                targs = Append[getPauliSumTermTargs /@ {pauliTerms}, {0}]       (* on the first (or any) quqbit *)
+                },
+                ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
+            ]
+        ApplyPauliSum[___] := invalidArgError[ApplyPauliSum]
                 
         (* convert a weighted sum of Pauli products into a matrix *)
         CalcPauliSumMatrix[paulis:pattPauliSum] := 
@@ -401,14 +420,16 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {matr=CalcPauliSumMatrix[Plus @@ {pauliTerms}]},
                 matr + const IdentityMatrix @ Length @ matr 
             ]
-        (* convert a list of Pauli coefficients and codes into a weighted (symbolic) sum of products *)
+        CalcPauliSumMatrix[___] := invalidArgError[CalcPauliSumMatrix]
         
+        (* convert a list of Pauli coefficients and codes into a weighted (symbolic) sum of products *)
         GetPauliSumFromCoeffs[addr_String] :=
             Plus @@ (#[[1]] Times @@ MapThread[
                 (   Subscript[Switch[#2, 0, Null, 1, X, 2, Y, 3, Z], #1 - 1] /. 
                     Subscript[Null, _] -> Sequence[] & ), 
                 {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
             ] &) /@ ReadList[addr, Number, RecordLists -> True];
+        GetPauliSumFromCoeffs[___] := invalidArgError[GetPauliSumFromCoeffs]
         
         getIgorLink[id_] :=
         	LinkConnect[
@@ -423,11 +444,13 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		LinkProtocol->"TCPIP"]
                     
         CreateRemoteQuESTEnv[ip_String, port1_Integer, port2_Integer] := Install @ getRemoteLink[ip, port1, port2]
+        CreateRemoteQuESTEnv[___] := invalidArgError[CreateRemoteQuESTEnv]
                     
         CreateLocalQuESTEnv[fn_:"quest_link"] := If[
             FileExistsQ[fn], 
             Install[fn],  
             Message[CreateLocalQuESTEnv::error, "Local quest_link executable not found!"]; $Failed]
+        CreateLocalQuESTEnv[__] := invalidArgError[CreateLocalQuESTEnv] (* no args is valid *)
             
         getExecFn["MacOS"|"MacOSX"] = "macos_quest_link";
         getExecFn["Windows"] = "windows_quest_link.exe";
@@ -441,11 +464,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             ]
         CreateDownloadedQuESTEnv[] :=
             CreateDownloadedQuESTEnv[$OperatingSystem]
-        CreateDownloadedQuESTEnv[___] := (
+        CreateDownloadedQuESTEnv[__] := (
             Message[CreateDownloadedQuESTEnv::error, "Supported operating systems are Windows, Linux, Unix, MacOS, MacOSX."]; 
             $Failed)
                     
         DestroyQuESTEnv[link_] := Uninstall @ link
+        DestroyQuESTEnv[___] := invalidArgError[DestroyQuESTEnv]
         
         (* Im[0.] = 0, how annoying *)
         SetWeightedQureg[fac1_?NumericQ, q1_Integer, fac2_?NumericQ, q2_Integer, facOut_?NumericQ, qOut_Integer] :=
@@ -472,10 +496,11 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 0., 0., qOut,
                 Re @ N @ fac, N @ Im @ N @ fac, qOut
             ]
+        SetWeightedQureg[___] := invalidArgError[SetWeightedQureg]
         
         GetAmp[qureg_Integer, index_Integer] := GetAmpInternal[qureg, index, -1]
         GetAmp[qureg_Integer, row_Integer, col_Integer] := GetAmpInternal[qureg, row, col]
-        
+        GetAmp[___] := invalidArgError[GetAmp]
         
         
         
@@ -688,7 +713,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         ]
         DrawCircuit[circ_List, opts:OptionsPattern[]] :=
             DrawCircuit[circ, getNumQubitsInCircuit[circ], opts]
-            
+        DrawCircuit[___] := invalidArgError[DrawCircuit]
         
         
         
@@ -810,6 +835,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         ]
         CalcCircuitMatrix[gates_List] :=
         	CalcCircuitMatrix[gates, 1 + Max @ Cases[gates, (Subscript[_, q__]|Subscript[_, q__][__]):> Max @ q, \[Infinity]]]
+        CalcCircuitMatrix[___] := invalidArgError[CalcCircuitMatrix]
             
     End[ ]
                                        
