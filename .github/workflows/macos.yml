@@ -14,13 +14,3 @@ jobs:
       - uses: actions/checkout@v2
       - name: build
         run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG
-
-      - name: Prepare to upload binary
-        run: |
-          mkdir -p Binaries
-          cp quest_link Binaries/.
-      
-      - uses: actions/upload-artifact@v1
-        with:
-          name: macos_quest_link.exe
-          path: Binaries
