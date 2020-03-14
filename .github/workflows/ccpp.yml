@@ -13,6 +13,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ilammy/msvc-dev-cmd@v1
+      - uses: crazy-max/ghaction-chocolatey@v1
+      - name: prepare build
+        shell: cmd
+        run: choco install make
       - name: build
         shell: cmd
         run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC
