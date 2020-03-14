@@ -13,12 +13,20 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ilammy/msvc-dev-cmd@v1
-      - uses: crazy-max/ghaction-chocolatey@v1
-        with:
-          args: -h
-      - name: prepare build
+      - name: manual build
         shell: cmd
-        run: choco install make
+        run: |
+          cl  -O2 -EHs -DQuEST_PREC=2  -nologo -DDWIN32 -D_WINDOWS -FoQuEST.o -IQuEST\include -IQuEST\src\CPU -IQuEST\src -IWSTP\Windows -ILink -c QuEST\src\QuEST.c -machine:X86
+          cl  -O2 -EHs -DQuEST_PREC=2  -nologo -DDWIN32 -D_WINDOWS -FoQuEST_validation.o -IQuEST\include -IQuEST\src\CPU -IQuEST\src -IWSTP\Windows -ILink -c QuEST\src\QuEST_validation.c -machine:X86
+          cl  -O2 -EHs -DQuEST_PREC=2  -nologo -DDWIN32 -D_WINDOWS -FoQuEST_common.o -IQuEST\include -IQuEST\src\CPU -IQuEST\src -IWSTP\Windows -ILink -c QuEST\src\QuEST_common.c -machine:X86
+          cl  -O2 -EHs -DQuEST_PREC=2  -nologo -DDWIN32 -D_WINDOWS -FoQuEST_qasm.o -IQuEST\include -IQuEST\src\CPU -IQuEST\src -IWSTP\Windows -ILink -c QuEST\src\QuEST_qasm.c -machine:X86
+          cl  -O2 -EHs -DQuEST_PREC=2  -nologo -DDWIN32 -D_WINDOWS -Fomt19937ar.o -IQuEST\include -IQuEST\src\CPU -IQuEST\src -IWSTP\Windows -ILink -c QuEST\src\mt19937ar.c -machine:X86
+          cl  -O2 -EHs -DQuEST_PREC=2  -nologo -DDWIN32 -D_WINDOWS -FoQuEST_cpu.o -IQuEST\include -IQuEST\src\CPU -IQuEST\src -IWSTP\Windows -ILink -c QuEST\src\CPU\QuEST_cpu.c -machine:X86
+          cl  -O2 -EHs -DQuEST_PREC=2  -nologo -DDWIN32 -D_WINDOWS -FoQuEST_cpu_local.o -IQuEST\include -IQuEST\src\CPU -IQuEST\src -IWSTP\Windows -ILink -c QuEST\src\CPU\QuEST_cpu_local.c -machine:X86
+          cl -O2 -EHs -std:c++latest -DQuEST_PREC=2  -nologo -DDWIN32 -D_WINDOWS -Foquest_link.o -IQuEST\include -IQuEST\src\CPU -IQuEST\src -IWSTP\Windows -ILink -c Link\quest_link.cpp -machine:X86
+          WSTP\Windows\windows_wsprep.exe Link\quest_templates.tm -o quest_templates.tm.cpp
+          cl -O2 -EHs -std:c++latest -DQuEST_PREC=2  -nologo -DDWIN32 -D_WINDOWS -Foquest_templates.tm.o -IQuEST\include -IQuEST\src\CPU -IQuEST\src -IWSTP\Windows -ILink -c quest_templates.tm.cpp -machine:X86
+          link QuEST.o QuEST_validation.o QuEST_common.o QuEST_qasm.o mt19937ar.o QuEST_cpu.o QuEST_cpu_local.o quest_link.o quest_templates.tm.o kernel32.lib user32.lib gdi32.lib WSTP\Windows\windows_wstp32i4.lib WSTP\Windows\windows_wstp32i4m.lib WSTP\Windows\windows_wstp32i4s.lib -out:quest_link.exe -SUBSYSTEM:WINDOWS -nologo -machine:X86
       - name: build
         shell: cmd
         run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC
