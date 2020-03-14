@@ -21,10 +21,14 @@ jobs:
             build-essential  
       - name: Build
         run: make OS=LINUX compiler=g++ COMPILER_TYPE=GNU EXE=linux_quest_link
+      - name: Prepare to upload binary
+        run: |
+          mkdir -p Binaries
+          mv linux_quest_link Binaries/.
       - uses: actions/upload-artifact@v1
         with:
           name: linux_quest_link
-          path: .
+          path: Binaries
           
   cpu_macos_build:
     name: MacOS
@@ -33,10 +37,14 @@ jobs:
       - uses: actions/checkout@v2
       - name: build
         run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG EXE=macos_quest_link
+      - name: Prepare to upload binary
+        run: |
+          mkdir -p Binaries
+          mv macos_quest_link Binaries/.
       - uses: actions/upload-artifact@v1
         with:
           name: macos_quest_link
-          path: .
+          path: Binaries
 
   cpu_windows_build:
     name: Windows
@@ -47,10 +55,14 @@ jobs:
       - name: build
         shell: cmd
         run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC WINDOWS_ARCH=64 EXE=windows_quest_link
+      - name: Prepare to upload binary
+        run: |
+          if not exist Binaries mkdir Binaries
+          move windows_quest_link.exe Binaries
       - uses: actions/upload-artifact@v1
         with:
-          name: windows_quest_link.exe
-          path: .
+          name: windows_quest_link
+          path: Binaries
 
   publish_binaries:
     name: Publish binaries
@@ -69,7 +81,7 @@ jobs:
           path: Binaries
       - uses: actions/download-artifact@master
         with:
-          name: windows_quest_link.exe
+          name: windows_quest_link
           path: Binaries
       - name: Testing that the binaries were downloaded!
         run: ls Binaries
