@@ -93,7 +93,8 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git commit -m "Update precompiled binaries" -- Binaries
+          git add Binaries
+          git commit -m "Update precompiled binaries"
       - name: Push recompiled binaries
         uses: ad-m/github-push-action@master
         with:
