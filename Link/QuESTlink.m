@@ -68,7 +68,8 @@ GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qure
 CreateLocalQuESTEnv[] connects to a 'quest_link' executable in the working directory."
     CreateLocalQuESTEnv::error = "`1`"
     
-    CreateDownloadedQuESTEnv::usage = "CreateDownloadedQuESTEnv[os] downloads a single-CPU QuESTlink backend from qtechtheory.org, gives it permission to run then locally connects to it. os is a string indicating the user's operating system (currently only 'MacOS' is supported, which is default). This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
+    CreateDownloadedQuESTEnv::usage = "CreateDownloadedQuESTEnv[] downloads a precompiled single-CPU QuESTlink binary (specific to your operating system) directly from Github, then locally connects to it. This should be called once, before using the QuESTlink API.
+CreateDownloadedQuESTEnv[os] forces downloaded of the binary for operating system 'os', which must one of {Windows, Linux, Unix, MacOS, MacOSX}."
     CreateDownloadedQuESTEnv::error = "`1`"
     
     DestroyQuESTEnv::usage = "DestroyQuESTEnv[link] disconnects from the QuEST link, which may be the remote Igor server or a loca instance, clearing some QuEST function definitions (but not those provided by the QuEST package)."
@@ -427,16 +428,22 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             FileExistsQ[fn], 
             Install[fn],  
             Message[CreateLocalQuESTEnv::error, "Local quest_link executable not found!"]; $Failed]
-        
-        CreateDownloadedQuESTEnv[os_String:"MacOS"] := Module[{linkfile},
-            If[os == "MacOS",
-                linkfile = URLDownload["https://quest.qtechtheory.org/QuESTlink_MacOS_CPU", "quest_link"];
-                Run["chmod +x quest_link"];
-                Install[linkfile],
-                
-                Message[CreateDownloadedQuESTEnv::error, "Only MacOS is currently supported"]; $Failed
+            
+        getExecFn["MacOS"|"MacOSX"] = "macos_quest_link";
+        getExecFn["Windows"] = "windows_quest_link.exe";
+        getExecFn["Linux"|"Unix"] = "linux_quest_link";
+        CreateDownloadedQuESTEnv[os:("MacOS"|"MacOSX"|"Windows"|"Linux"|"Unix")] := 
+            Module[{url,exec},
+                url = "https://github.com/QTechTheory/QuESTlink/raw/master/Binaries/" <> getExecFn[os];
+                exec = URLDownload[url, "quest_link"];
+                If[os != "Windows", Run["chmod +x quest_link"]];
+                Install[exec]
             ]
-        ]
+        CreateDownloadedQuESTEnv[] :=
+            CreateDownloadedQuESTEnv[$OperatingSystem]
+        CreateDownloadedQuESTEnv[___] := (
+            Message[CreateDownloadedQuESTEnv::error, "Supported operating systems are Windows, Linux, Unix, MacOS, MacOSX."]; 
+            $Failed)
                     
         DestroyQuESTEnv[link_] := Uninstall @ link
         
