@@ -13,6 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: build
+      - name: Build QuESTlink
         shell: cmd
         run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC WINDOWS_ARCH=64

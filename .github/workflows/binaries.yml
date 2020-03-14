@@ -17,7 +17,7 @@ jobs:
           sudo apt-get install -y \
             uuid-dev \
             build-essential  
-      - name: Build
+      - name: Build QuESTlink
         run: make OS=LINUX compiler=g++ COMPILER_TYPE=GNU EXE=linux_quest_link
       - name: Prepare to upload binary
         run: |
@@ -33,7 +33,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
-      - name: build
+      - name: Build QuESTlink
         run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG EXE=macos_quest_link
       - name: Prepare to upload binary
         run: |
@@ -50,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ilammy/msvc-dev-cmd@v1
-      - name: build
+      - name: Build QuESTlink
         shell: cmd
         run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC WINDOWS_ARCH=64 EXE=windows_quest_link
       - name: Prepare to upload binary

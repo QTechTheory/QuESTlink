@@ -18,5 +18,5 @@ jobs:
           sudo apt-get install -y \
             uuid-dev \
             build-essential
-      - name: Build
+      - name: Build QuESTlink
         run: make OS=LINUX compiler=g++ COMPILER_TYPE=GNU
