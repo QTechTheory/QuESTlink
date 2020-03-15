@@ -1,0 +1,100 @@
+name: Binaries
+
+on:
+  push:
+    branches: [ master ]
+    
+jobs:
+  
+  cpu_linux_build:
+    name: Linux
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: | 
+          sudo apt-get update 
+          sudo apt-get install -y \
+            uuid-dev \
+            build-essential  
+      - name: Build QuESTlink
+        run: make OS=LINUX compiler=g++ COMPILER_TYPE=GNU EXE=linux_quest_link
+      - name: Prepare to upload binary
+        run: |
+          mkdir -p Binaries
+          mv linux_quest_link Binaries/.
+      - uses: actions/upload-artifact@v1
+        with:
+          name: linux_quest_link
+          path: Binaries
+          
+  cpu_macos_build:
+    name: MacOS
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build QuESTlink
+        run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG EXE=macos_quest_link
+      - name: Prepare to upload binary
+        run: |
+          mkdir -p Binaries
+          mv macos_quest_link Binaries/.
+      - uses: actions/upload-artifact@v1
+        with:
+          name: macos_quest_link
+          path: Binaries
+
+  cpu_windows_build:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ilammy/msvc-dev-cmd@v1
+      - name: Build QuESTlink
+        shell: cmd
+        run: make OS=WINDOWS COMPILER=cl COMPILER_TYPE=MSVC WINDOWS_ARCH=64 EXE=windows_quest_link
+      - name: Prepare to upload binary
+        shell: cmd
+        run: |
+          if not exist Binaries mkdir Binaries
+          move windows_quest_link.exe Binaries
+      - uses: actions/upload-artifact@v1
+        with:
+          name: windows_quest_link
+          path: Binaries
+
+  publish_binaries:
+    name: Publish binaries
+    needs: [cpu_linux_build, cpu_macos_build, cpu_windows_build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: master
+      - name: Prepare binaries directory 
+        run: |
+          rm -rf Binaries
+          mkdir Binaries
+      - uses: actions/download-artifact@master
+        with:
+          name: linux_quest_link
+          path: Binaries
+      - uses: actions/download-artifact@master
+        with:
+          name: macos_quest_link
+          path: Binaries
+      - uses: actions/download-artifact@master
+        with:
+          name: windows_quest_link
+          path: Binaries
+      - name: Commit recompiled binaries
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add Binaries
+          git commit -m "Update precompiled binaries"
+      - name: Push recompiled binaries
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: master

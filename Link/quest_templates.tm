@@ -9,6 +9,7 @@
 :Evaluate: 
     QuEST`CreateQureg::usage = "CreateQureg[numQubits] returns the id of a newly created statevector.";
     QuEST`CreateQureg::error = "`1`";
+    QuEST`CreateQureg[___] := QuEST`Private`invalidArgError[CreateQureg];
 
 :Begin:
 :Function:       wrapper_createDensityQureg
@@ -20,6 +21,7 @@
 :Evaluate: 
     QuEST`CreateDensityQureg::usage = "CreateDensityQureg[numQubits] returns the id of a newly created density matrix.";
     QuEST`CreateDensityQureg::error = "`1`";
+    QuEST`CreateDensityQureg[___] := QuEST`Private`invalidArgError[CreateDensityQureg];
 
 :Begin:
 :Function:       wrapper_destroyQureg
@@ -40,6 +42,7 @@
 :Evaluate: 
     QuEST`CreateQuregs::usage = "CreateQuregs[numQubits, numQuregs] returns a list of ids of a newly created statevectors.";
     QuEST`CreateQuregs::error = "`1`";
+    QuEST`CreateQuregs[___] := QuEST`Private`invalidArgError[CreateQuregs];
 
 :Begin:
 :Function:       callable_createDensityQuregs
@@ -51,6 +54,7 @@
 :Evaluate: 
     QuEST`CreateDensityQuregs::usage = "CreateDensityQuregs[numQubits, numQuregs] returns a list of ids of a newly created density matrices.";
     QuEST`CreateDensityQuregs::error = "`1`";
+    QuEST`CreateDensityQuregs[___] := QuEST`Private`invalidArgError[CreateDensityQuregs];
 
 
 
@@ -65,6 +69,7 @@
 :Evaluate: 
     QuEST`InitZeroState::usage = "InitZeroState[qureg] sets the qureg to state |0> (and returns the qureg id).";
     QuEST`InitZeroState::error = "`1`";
+    QuEST`InitZeroState[___] := QuEST`Private`invalidArgError[InitZeroState];
 
 :Begin:
 :Function:       wrapper_initPlusState
@@ -76,6 +81,7 @@
 :Evaluate: 
     QuEST`InitPlusState::usage = "InitPlusState[qureg] sets the qureg to state |+> (and returns the qureg id).";
     QuEST`InitPlusState::error = "`1`";
+    QuEST`InitPlusState[___] := QuEST`Private`invalidArgError[InitPlusState];
 
 :Begin:
 :Function:       wrapper_initClassicalState
@@ -87,6 +93,7 @@
 :Evaluate: 
     QuEST`InitClassicalState::usage = "InitClassicalState[qureg, ind] sets the qureg to basis state |ind> (and returns the qureg id).";
     QuEST`InitClassicalState::error = "`1`";
+    QuEST`InitClassicalState[___] := QuEST`Private`invalidArgError[InitClassicalState];
 
 :Begin:
 :Function:       wrapper_initPureState
@@ -98,6 +105,7 @@
 :Evaluate:
     QuEST`InitPureState::usage = "InitPureState[targetQureg, pureQureg] puts targetQureg (statevec or density matrix) into the pureQureg (statevec) state (and returns the targetQureg id).";
     QuEST`InitPureState::error = "`1`";
+    QuEST`InitPureState[___] := QuEST`Private`invalidArgError[InitPureState];
 
 :Begin:
 :Function:       wrapper_initStateFromAmps
@@ -109,6 +117,7 @@
 :Evaluate: 
     QuEST`InitStateFromAmps::usage = "InitStateFromAmps[qureg, reals, imags] initialises the given qureg to have the supplied amplitudes (and returns the qureg id).";
     QuEST`InitStateFromAmps::error = "`1`";
+    QuEST`InitStateFromAmps[___] := QuEST`Private`invalidArgError[InitStateFromAmps];
 
 :Begin:
 :Function:       wrapper_cloneQureg
@@ -120,6 +129,7 @@
 :Evaluate:
     QuEST`CloneQureg::usage = "CloneQureg[dest, source] sets dest to be a copy of source.";
     QuEST`CloneQureg::error = "`1`";
+    QuEST`CloneQureg[___] := QuEST`Private`invalidArgError[CloneQureg];
 
 :Begin:
 :Function:       internal_getAmp
@@ -140,6 +150,7 @@
 :Evaluate: 
     QuEST`IsDensityMatrix::usage = "IsDensityMatrix[qureg] returns 0 or 1 to indicate whether qureg is a statevector or density matrix (respectively).";
     QuEST`IsDensityMatrix::error = "`1`";
+    QuEST`IsDensityMatrix[___] := QuEST`Private`invalidArgError[IsDensityMatrix];
 
 
 
@@ -154,6 +165,7 @@
 :Evaluate: 
     QuEST`MixDepolarising::usage = "MixDepolarising[qureg, qubit, prob] adds depolarising noise to density matrix qureg.";
     QuEST`MixDepolarising::error = "`1`";
+    QuEST`MixDepolarising[___] := QuEST`Private`invalidArgError[MixDepolarising];
 
 :Begin:
 :Function:       wrapper_mixTwoQubitDepolarising
@@ -165,6 +177,7 @@
 :Evaluate: 
     QuEST`MixTwoQubitDepolarising::usage = "MixTwoQubitDepolarising[qureg, qb1, qb2 prob] adds depolarising noise to density matrix qureg.";
     QuEST`MixTwoQubitDepolarising::error = "`1`";
+    QuEST`MixTwoQubitDepolarising[___] := QuEST`Private`invalidArgError[MixTwoQubitDepolarising];
 
 :Begin:
 :Function:       wrapper_mixDephasing
@@ -176,6 +189,7 @@
 :Evaluate: 
     QuEST`MixDephasing::usage = "MixDephasing[qureg, qubit, prob] adds dephasing noise to density matrix qureg.";
     QuEST`MixDephasing::error = "`1`";
+    QuEST`MixDephasing[___] := QuEST`Private`invalidArgError[MixDephasing];
 
 :Begin:
 :Function:       wrapper_mixTwoQubitDephasing
@@ -187,6 +201,7 @@
 :Evaluate: 
     QuEST`MixTwoQubitDephasing::usage = "MixTwoQubitDephasing[qureg, qb1, qb2 prob] adds dephasing noise to density matrix qureg.";
     QuEST`MixTwoQubitDephasing::error = "`1`";
+    QuEST`MixTwoQubitDephasing[___] := QuEST`Private`invalidArgError[MixTwoQubitDephasing];
 
 :Begin:
 :Function:       wrapper_mixDamping
@@ -198,6 +213,7 @@
 :Evaluate: 
     QuEST`MixDamping::usage = "MixDamping[qureg, qubit, prob] applies amplitude damping with the given decay probability to density matrix qureg.";
     QuEST`MixDamping::error = "`1`";
+    QuEST`MixDamping[___] := QuEST`Private`invalidArgError[MixDamping];
 
 
 
@@ -212,6 +228,7 @@
 :Evaluate: 
     QuEST`CalcProbOfOutcome::usage = "CalcProbOfOutcome[qureg, qubit, outcome] returns the probability of measuring qubit in the given outcome.";
     QuEST`CalcProbOfOutcome::error = "`1`";
+    QuEST`CalcProbOfOutcome[___] := QuEST`Private`invalidArgError[CalcProbOfOutcome];
 
 :Begin:
 :Function:       wrapper_calcFidelity
@@ -223,6 +240,7 @@
 :Evaluate: 
     QuEST`CalcFidelity::usage = "CalcFidelity[qureg1, qureg2] returns the fidelity between the given states.";
     QuEST`CalcFidelity::error = "`1`";
+    QuEST`CalcFidelity[___] := QuEST`Private`invalidArgError[CalcFidelity];
 
 :Begin:
 :Function:       wrapper_calcInnerProduct
@@ -234,6 +252,7 @@
 :Evaluate: 
     QuEST`CalcInnerProduct::usage = "CalcInnerProduct[qureg1, qureg2] returns the complex inner product between the given states.";
     QuEST`CalcInnerProduct::error = "`1`";
+    QuEST`CalcInnerProduct[___] := QuEST`Private`invalidArgError[CalcInnerProduct];
 
 :Begin:
 :Function:       wrapper_calcDensityInnerProduct
@@ -245,6 +264,7 @@
 :Evaluate: 
     QuEST`CalcDensityInnerProduct::usage = "CalcDensityInnerProduct[qureg1, qureg2] returns the real Hilbert schmidt scalar product between two given density matrices.";
     QuEST`CalcDensityInnerProduct::error = "`1`";
+    QuEST`CalcDensityInnerProduct[___] := QuEST`Private`invalidArgError[CalcDensityInnerProduct];
 
 :Begin:
 :Function:       wrapper_calcPurity
@@ -256,6 +276,7 @@
 :Evaluate: 
     QuEST`CalcPurity::usage = "CalcPurity[qureg] returns the purity of the given density matrix.";
     QuEST`CalcPurity::error = "`1`";
+    QuEST`CalcPurity[___] := QuEST`Private`invalidArgError[CalcPurity];
 
 :Begin:
 :Function:       wrapper_calcTotalProb
@@ -267,6 +288,7 @@
 :Evaluate: 
     QuEST`CalcTotalProb::usage = "CalcTotalProb[qureg] returns the total probability (normalisation) of the statevector (sum of abs-squared of amplitudes) or density matrix (trace), which should be 1.";
     QuEST`CalcTotalProb::error = "`1`";
+    QuEST`CalcTotalProb[___] := QuEST`Private`invalidArgError[CalcTotalProb];
 
 :Begin:
 :Function:       wrapper_calcHilbertSchmidtDistance
@@ -278,6 +300,7 @@
 :Evaluate: 
     QuEST`CalcHilbertSchmidtDistance::usage = "CalcHilbertSchmidtDistance[qureg1, qureg2] returns the Hilbert-Schmidt distance (Frobenius norm of the difference) between the given density matrices.";
     QuEST`CalcHilbertSchmidtDistance::error = "`1`";
+    QuEST`CalcHilbertSchmidtDistance[___] := QuEST`Private`invalidArgError[CalcHilbertSchmidtDistance];
 
 :Begin:
 :Function:       internal_calcQuregDerivs
@@ -399,6 +422,7 @@
 :Evaluate: 
     QuEST`CollapseToOutcome::usage = "CollapseToOutcome[qureg, qubit, outcome] forces the target qubit to collapse to the given outcome.";
     QuEST`CollapseToOutcome::error = "`1`";
+    QuEST`CollapseToOutcome[___] := QuEST`Private`invalidArgError[CollapseToOutcome];
 
 
 
@@ -413,6 +437,7 @@
 :Evaluate: 
     QuEST`DestroyAllQuregs::usage = "DestroyAllQuregs[] destroys all remote quregs.";
     QuEST`DestroyAllQuregs::error = "`1`";
+    QuEST`DestroyAllQuregs[___] := QuEST`Private`invalidArgError[DestroyAllQuregs];
 
 :Begin:
 :Function:       callable_getAllQuregs
@@ -424,3 +449,4 @@
 :Evaluate: 
     QuEST`GetAllQuregs::usage = "GetAllQuregs[] returns all active quregs.";
     QuEST`GetAllQuregs::error = "`1`";
+    QuEST`GetAllQuregs[___] := QuEST`Private`invalidArgError[GetAllQuregs];

@@ -10,13 +10,12 @@ A [Mathematica](https://www.wolfram.com/mathematica/) package for remote multith
 
 QuESTlink can be immediately deployed in Mathematica without installation. Simply run
 ```Mathematica
-Import["https://qtechtheory.org/QuESTlink.m"]
+Import["https://qtechtheory.org/questlink.m"]
 
-CreateDownloadedQuESTEnv["MacOs"]
+CreateDownloadedQuESTEnv[]
 ```
 
-> Pre-prepared Windows and Linux builds of QuESTlink are coming soon.
-> In the meantime, read the [Doc](Doc/README.md) to compile QuESTlink from source on these platforms, and/or enable multithreading and GPU-acceleration.
+> Read the [Doc](Doc/README.md) to compile QuESTlink from source, to enable multithreading and GPU-acceleration, and set up a remote server.
 
 To learn how to use QuESTlink, see our [whitepaper](https://arxiv.org/abs/1912.07904), 
 or some demos at [questlink.qtechtheory.org](https://questlink.qtechtheory.org).

@@ -14,10 +14,10 @@ ______________
 
 ## Running
 
-Single-thread QuESTlink can be used immediately on MacOS, by running in Mathematica:
+Single-thread QuESTlink can be used immediately from within Mathematica:
 ```Mathematica 
-Import["https://qtechtheory.org/QuESTlink.m"]
-CreateDownloadedQuESTEnv["MacOs"]
+Import["https://qtechtheory.org/questlink.m"]
+CreateDownloadedQuESTEnv[]
 ```
 
 These commands download the QuESTlink Mathematica package file, and the `quest_link` executable, to your machine.
@@ -31,7 +31,7 @@ ______________________________
 
 ## Compiling
 
-Multithreaded and GPU-accelerated modes, or QuESTlink on Linux and Windows, require compiling QuESTlink from source, using [GNUMake](https://www.gnu.org/software/make/) with the provided [makefile](../makefile), and a C++ compiler (which supports C++11).
+Multithreaded and GPU-accelerated modes require compiling QuESTlink from source, using [GNUMake](https://www.gnu.org/software/make/) with the provided [makefile](../makefile), and a C++ compiler (which supports C++11).
 
 > See [here](WINDOWS.md) for complete guide on compiling on **Windows**, including how to obtain the necessary compilers.
 
