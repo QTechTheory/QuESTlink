@@ -1,9 +1,10 @@
 <img align="left" src="Doc/logo.png" alt="The QuEST logo">
 
 # [QuESTlink](https://questlink.qtechtheory.org/)
-A [Mathematica](https://www.wolfram.com/mathematica/) package for remote multithreaded and GPU emulation of quantum computers, using [QuEST](https://quest.qtechtheory.org/).
 
 [![Linux](https://github.com/QTechTheory/QuESTlink/workflows/Linux/badge.svg)](https://github.com/QTechTheory/QuESTlink/actions) [![MacOS](https://github.com/QTechTheory/QuESTlink/workflows/MacOS/badge.svg)](https://github.com/QTechTheory/QuESTlink/actions) [![Windows](https://github.com/QTechTheory/QuESTlink/workflows/Windows/badge.svg)](https://github.com/QTechTheory/QuESTlink/actions)
+
+A [Mathematica](https://www.wolfram.com/mathematica/) package for remote multithreaded and GPU emulation of quantum computers, using [QuEST](https://quest.qtechtheory.org/).
 
 > QuESTlink is currently considered as an early-release, and is under active development. 
 > The offered API may contain bugs and is liable to change.
