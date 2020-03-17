@@ -350,17 +350,19 @@ ifeq ($(GPUACCELERATED), 1)
 	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
   %.o: $(QUEST_COMMON_DIR)/%.c
 	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+  %.o: $(LINK_DIR)/%.c
+	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
 
   %.o: %.cu
 	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
   %.o: $(QUEST_INNER_DIR)/%.cu
 	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
 	
-  %.o: %.cpp
+  %.o: %.cpp quest_templates.tm.cpp
 	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
   %.o: $(QUEST_INNER_DIR)/%.cpp
 	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
-  %.o: $(LINK_DIR)/%.c
+  %.o: $(LINK_DIR)/%.cpp
 	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
 
 # distributed
@@ -407,7 +409,7 @@ endif
 ifeq ($(GPUACCELERATED), 1)
 
   all:	$(OBJ)
-		$(CUDA_COMPILER) $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) $(LINK_FLAGS)
+		$(CUDA_COMPILER) $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS)
 
 # MPI
 else ifeq ($(DISTRIBUTED), 1)
