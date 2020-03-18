@@ -1313,7 +1313,7 @@ void local_freeCircuit(
  * is aborted by the calling MMA (sends Abort[] to MMA), or aborted due to encountering
  * an invalid gate or a QuEST-core validation error (sends $Failed to MMA). 
  */
-void internal_applyCircuit(int id) {
+void internal_applyCircuit(int id, int storeBackup) {
     
     // get arguments from MMA link; these must be later freed!
     int numOps;
@@ -1325,7 +1325,7 @@ void internal_applyCircuit(int id) {
         &numOps, &opcodes, &ctrls, &numCtrlsPerOp, 
         &targs, &numTargsPerOp, &params, &numParamsPerOp,
         &totalNumCtrls, &totalNumTargs, &totalNumParams);
-            
+    
     // ensure qureg exists, else clean-up and exit
     try {
         local_throwExcepIfQuregNotCreated(id); // throws
@@ -1342,7 +1342,9 @@ void internal_applyCircuit(int id) {
     }
     
     Qureg qureg = quregs[id];
-    Qureg backup = createCloneQureg(qureg, env); // must clean-up
+    Qureg backup;
+    if (storeBackup)
+        createCloneQureg(qureg, env); // must clean-up
     
     // count the total number of measurements performed in a circuit
     int totalNumMesGates = 0;
@@ -1389,12 +1391,14 @@ void internal_applyCircuit(int id) {
     
     } catch (QuESTException& err) {
         
-        // restore backup
-        cloneQureg(qureg, backup);
-        
+        // restore backup (if made)
+        if (storeBackup) {
+            cloneQureg(qureg, backup);
+            destroyQureg(backup, env);
+        }
+                
         // all objs need cleaning
         free(mesOutcomeCache);
-        destroyQureg(backup, env);
         local_freeCircuit(
             opcodes, ctrls, numCtrlsPerOp, targs, 
             numTargsPerOp, params, numParamsPerOp,
