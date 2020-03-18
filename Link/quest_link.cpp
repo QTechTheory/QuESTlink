@@ -1344,7 +1344,7 @@ void internal_applyCircuit(int id, int storeBackup) {
     Qureg qureg = quregs[id];
     Qureg backup;
     if (storeBackup)
-        createCloneQureg(qureg, env); // must clean-up
+        backup = createCloneQureg(qureg, env); // must clean-up
     
     // count the total number of measurements performed in a circuit
     int totalNumMesGates = 0;
@@ -1382,8 +1382,9 @@ void internal_applyCircuit(int id, int storeBackup) {
         }
         
         // clean-up
+        if (storeBackup)
+            destroyQureg(backup, env);
         free(mesOutcomeCache);
-        destroyQureg(backup, env);
         local_freeCircuit(
             opcodes, ctrls, numCtrlsPerOp, targs, 
             numTargsPerOp, params, numParamsPerOp,
