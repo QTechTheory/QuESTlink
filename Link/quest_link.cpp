@@ -69,6 +69,11 @@
 #define OPCODE_G 18
 
 /*
+ * Codes for dynamically updating kernel variables, to indicate progress 
+ */
+#define CIRC_PROGRESS_VAR "QuEST`Private`circuitProgressVar"
+
+/*
  * Max number of target and control qubits which can be specified 
  * for an individual gate 
  */
@@ -880,6 +885,27 @@ ComplexMatrix4 local_getMatrix4FromFlatList(qreal* list) {
     return m;
 }
 
+/* updates the CIRC_PROGRESS_VAR in the front-end with the new passed value 
+ * which must lie in [0, 1]. This can be used to indicate progress of a long 
+ * evaluation to the user 
+ */
+void local_updateCircuitProgress(qreal progress) {
+
+    // send new packet to MMA
+    WSPutFunction(stdlink, "EvaluatePacket", 1);
+
+    // echo the message
+    WSPutFunction(stdlink, "Set", 2);
+    WSPutSymbol(stdlink, CIRC_PROGRESS_VAR);
+    WSPutReal64(stdlink, progress);
+
+    WSEndPacket(stdlink);
+    WSNextPacket(stdlink);
+    WSNewPacket(stdlink);
+    
+    // a new packet is now expected; caller MUST send something else
+}
+
 /* @param mesOutcomeCache may be NULL
  * @param finalCtrlInd, finalTargInd and finalParamInd are modified to point to 
  *  the final values of ctrlInd, targInd and paramInd, after the #numOps operation 
@@ -897,7 +923,8 @@ void local_applyGates(
     int* targs, int* numTargsPerOp, 
     qreal* params, int* numParamsPerOp,
     int* mesOutcomeCache,
-    int* finalCtrlInd, int* finalTargInd, int* finalParamInd
+    int* finalCtrlInd, int* finalTargInd, int* finalParamInd,
+    int showProgress
     ) {
         
     int ctrlInd = 0;
@@ -918,6 +945,10 @@ void local_applyGates(
                 throw QuESTException("Abort", "Circuit simulation aborted."); // throws
             }
         }
+        
+        // display progress to the user
+        if (showProgress)
+            local_updateCircuitProgress(opInd / (qreal) numOps);
 
         // get gate info
         int op = opcodes[opInd];
@@ -1313,7 +1344,7 @@ void local_freeCircuit(
  * is aborted by the calling MMA (sends Abort[] to MMA), or aborted due to encountering
  * an invalid gate or a QuEST-core validation error (sends $Failed to MMA). 
  */
-void internal_applyCircuit(int id, int storeBackup) {
+void internal_applyCircuit(int id, int storeBackup, int showProgress) {
     
     // get arguments from MMA link; these must be later freed!
     int numOps;
@@ -1368,7 +1399,8 @@ void internal_applyCircuit(int id, int storeBackup) {
             qureg, numOps, opcodes, ctrls, numCtrlsPerOp, 
             targs, numTargsPerOp, params, numParamsPerOp,
             mesOutcomeCache,
-            &finalCtrlInd, &finalTargInd, &finalParamInd); // throws
+            &finalCtrlInd, &finalTargInd, &finalParamInd,
+            showProgress); // throws
             
         // return lists of measurement outcomes
         mesInd = 0;
@@ -1443,6 +1475,9 @@ void local_getDerivativeQuregs(
     // don't record measurement outcomes
     int* mesOutcomes = NULL;
     
+    // don't dynamically update frontend with progress
+    int dontShowProgress = 0;
+    
     // compute each derivative one-by-one
     for (int v=0; v<numVars; v++) {
         
@@ -1471,7 +1506,8 @@ void local_getDerivativeQuregs(
         local_applyGates(
             qureg, (diffGateWasApplied)? varOp+1 : varOp, opcodes, 
             ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp,
-            mesOutcomes, &finalCtrlInd, &finalTargInd, &finalParamInd); // throws 
+            mesOutcomes, &finalCtrlInd, &finalTargInd, &finalParamInd, 
+            dontShowProgress); // throws 
 
         // details of (possibly already applied) to-be-differentiated gate
         int numCtrls = numCtrlsPerOp[varOp];
@@ -1561,7 +1597,8 @@ void local_getDerivativeQuregs(
             &ctrls[  finalCtrlInd], &numCtrlsPerOp[varOp+1], 
             &targs[  finalTargInd], &numTargsPerOp[varOp+1], 
             &params[finalParamInd], &numParamsPerOp[varOp+1],
-            mesOutcomes, &finalCtrlInd, &finalTargInd, &finalParamInd); // throws
+            mesOutcomes, &finalCtrlInd, &finalTargInd, &finalParamInd, 
+            dontShowProgress); // throws
     }
 }
 

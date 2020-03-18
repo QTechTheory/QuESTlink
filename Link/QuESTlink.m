@@ -102,6 +102,9 @@ CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the n
     PackageExport[WithBackup]
     WithBackup::usage = "Optional argument to ApplyCircuit, indicating whether to create a backup during circuit evaluation to restore the input state in case of a circuit error. This incurs additional memory (default True). If the circuit contains no error, this option has no effect besides wasting memory."
     
+    PackageExport[ShowProgress]
+    ShowProgress::usage = "Optional argument to ApplyCircuit, indicating whether to show a progress bar during circuit evaluation (default False). This slows evaluation slightly."
+    
     (* 
      * gate symbols, needed exporting so that their use below does not refer to a private var      
      *)
@@ -220,10 +223,20 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             
         (* declaring optional args to ApplyCircuit *)
         Options[ApplyCircuit] = {
-            WithBackup -> True
+            WithBackup -> True,
+            ShowProgress -> False
         };
         
         (* applying a sequence of symoblic gates to a qureg. ApplyCircuitInternal provided by WSTP *)
+        applyCircuitInner[qureg_, withBackup_, showProgress:0, circCodes__] :=
+            ApplyCircuitInternal[qureg, withBackup, showProgress, circCodes]
+        applyCircuitInner[qureg_, withBackup_, showProgress:1, circCodes__] :=
+            Monitor[
+                (* local private variable, updated by backend *)
+                circuitProgressVar = 0;
+                ApplyCircuitInternal[qureg, withBackup, showProgress, circCodes],
+                ProgressIndicator[circuitProgressVar]
+            ]
         ApplyCircuit[circuit_?isCircuitFormat, qureg_Integer, OptionsPattern[ApplyCircuit]] :=
         	With[
         		{codes = codifyCircuit[circuit]},
@@ -232,11 +245,15 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     Message[ApplyCircuit::error, "Circuit contains non-numerical parameters!"]; $Failed,
                     Not @ Or[OptionValue[WithBackup] === True, OptionValue[WithBackup] === False],
                     Message[ApplyCircuit::error, "Option WithBackup must be True or False."]; $Failed,
+                    Not @ Or[OptionValue[ShowProgress] === True, OptionValue[ShowProgress] === False],
+                    Message[ApplyCircuit::error, "Option ShowProgress must be True or False."]; $Failed,
                     True,
-        			ApplyCircuitInternal[
+        			applyCircuitInner[
                         qureg, 
                         If[OptionValue[WithBackup]===True,1,0], 
-                        unpackEncodedCircuit[codes]]
+                        If[OptionValue[ShowProgress]===True,1,0],
+                        unpackEncodedCircuit[codes]
+                    ]
         		]
         	]
         (* apply a circuit to get an output state without changing input state. CloneQureg provided by WSTP *)
