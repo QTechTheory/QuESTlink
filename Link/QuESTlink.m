@@ -148,6 +148,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
     PackageExport[G]
     G::usage = "G[phi] applies a global phase rotation of phi, by premultiplying Exp[i phi]."
+    PcakageExport[Id]
+    Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit."
  
     Begin["`Private`"]
     
@@ -199,7 +201,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
 
         (* converting gate sequence to code lists: {opcodes, ctrls, targs, params} *)
         codifyCircuit[circuit_List] :=
-        	circuit /. gatePatterns // Transpose
+        	(circuit /. Subscript[Id,__] -> Sequence[]) /. gatePatterns // Transpose
         codifyCircuit[circuit_] :=
             codifyCircuit @ {circuit}
             
@@ -598,6 +600,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	drawSpecialSwapLine[targ2,targ1,col]}
         	
         (* single qubit gate graphics *)
+        drawGate[Id, {}, {targs___}, col_] :=
+            {}
         drawGate[M, {}, {targs___}, col_] :=
         	Table[{
         		drawSingleBox[targ,col],
