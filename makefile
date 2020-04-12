@@ -27,7 +27,6 @@ WINDOWS_ARCH = 64
 
 # hardwares to target: 1 means use, 0 means don't use
 MULTITHREADED = 0
-DISTRIBUTED = 0
 GPUACCELERATED = 0
 
 # GPU hardware dependent, lookup at https://developer.nvidia.com/cuda-gpus, write without fullstop
@@ -225,7 +224,6 @@ QUESTLINK_INCLUDE = -I${QUEST_INCLUDE_DIR} -I$(QUEST_INNER_DIR) -I$(QUEST_COMMON
 #
 
 CUDA_COMPILER = nvcc
-MPI_COMPILER = mpicc
 
 
 
@@ -310,22 +308,12 @@ endif
 
 
 #
-# --- compiler environment vars
-#
-
-MPI_WRAPPED_COMP = I_MPI_CC=$(COMPILER) OMPI_CC=$(COMPILER) MPICH_CC=$(COMPILER)
-
-
-
-#
 # --- targets
 #
 
 OBJ = QuEST.o QuEST_validation.o QuEST_common.o QuEST_qasm.o mt19937ar.o
 ifeq ($(GPUACCELERATED), 1)
     OBJ += QuEST_gpu.o
-else ifeq ($(DISTRIBUTED), 1)
-    OBJ += QuEST_cpu.o QuEST_cpu_distributed.o
 else
     OBJ += QuEST_cpu.o QuEST_cpu_local.o
 endif
@@ -339,7 +327,6 @@ OBJ += $(addsuffix .o, $(SOURCES))
 # notes:
 #	- if $SOURCES appear as both c and c++ files, the c files will be compiled
 #	- CUDA won't compile .c files ($COMPILER will), only .cpp and .cu
-#	- MPICC will compile .c and .cpp files (wrapping $COMPILER)
 
 # GPU
 ifeq ($(GPUACCELERATED), 1)
@@ -364,23 +351,6 @@ ifeq ($(GPUACCELERATED), 1)
 	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
   %.o: $(LINK_DIR)/%.cpp
 	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
-
-# distributed
-else ifeq ($(DISTRIBUTED), 1)
-
-  %.o: %.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(QUEST_INNER_DIR)/%.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(QUEST_COMMON_DIR)/%.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-	
-  %.o: %.cpp
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(QUEST_INNER_DIR)/%.cpp
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(LINK_DIR)/%.cpp
-  	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 
 # CPU
 else
@@ -410,13 +380,6 @@ ifeq ($(GPUACCELERATED), 1)
 
   all:	$(OBJ)
 		$(CUDA_COMPILER) $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS)
-
-# MPI
-else ifeq ($(DISTRIBUTED), 1)
-
-  default:	$(EXE)
-  $(EXE):	$(OBJ)
-			$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) $(LINK_FLAGS)
 
 # C
 else
