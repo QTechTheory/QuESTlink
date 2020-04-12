@@ -1442,8 +1442,13 @@ void internal_applyCircuit(int id, int storeBackup, int showProgress) {
             numOps, totalNumCtrls, totalNumTargs, totalNumParams);
             
         // report error, depending on type
-        std::string backupNotice = " The qureg (" + std::to_string(id) + 
-            ") has been restored to its prior state.";
+        std::string backupNotice;
+        if (storeBackup)
+             backupNotice = " The qureg (id " + std::to_string(id) + 
+                ") has been restored to its prior state.";
+        else
+            backupNotice = " Since no backup was stored, the qureg (id " + std::to_string(id) + 
+                ") is now in an unknown state, and should be reinitialised.";
         
         if (err.thrower == "")
             local_sendErrorAndFail("ApplyCircuit", err.message + backupNotice);
