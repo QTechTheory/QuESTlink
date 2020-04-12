@@ -72,8 +72,8 @@ make tidy
 
 Next, run 
 ```bash 
-copy WSTP\Windws\wstp32i4.dll .
-copy WSTP\Windws\wstp64i4.dll .
+copy WSTP\Windows\wstp32i4.dll .
+copy WSTP\Windows\wstp64i4.dll .
 ```
 This copies the needed `.dll` files to the same location as `quest_link.exe`. Running `quest_link.exe` directly now will create a network prompt, which can be ignored/closed.
 
