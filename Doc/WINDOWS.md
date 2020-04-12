@@ -36,6 +36,8 @@ then
 ```bash 
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 ```
+> If these commands fail, you may need to reopen **Developer Powershell** as an administator.
+
 This downloads [Chocolatey](https://chocolatey.org/), a Windows package manager.
 
 ### 3 - GNUMake 
@@ -59,6 +61,8 @@ Next, open the [`makefile`](../makefile) in any editor, and set:
 - `COMPILER = cl`
 - `COMPILER_TYPE = MSVC`
 - `WINDOWS_ARCH = 64` if using 64-bit Windows, else `32` (for x86)
+
+> If using 64-bit Windows, in lieu of the **Developer Command Prompt** below, you must instead open a 64-bit equivalent prompt. E.g. `VS2019 x64 Native Tools Command Prompt`. You can find this in the same directory as the developer command prompt. 
 
 Then, in the **Developer Command Prompt**, navigate to the root QuESTlink directory (where [`makefile`](../makefile) is located) and run 
 ```bash 
