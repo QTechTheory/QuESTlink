@@ -27,7 +27,6 @@ WINDOWS_ARCH = 64
 
 # hardwares to target: 1 means use, 0 means don't use
 MULTITHREADED = 0
-DISTRIBUTED = 0
 GPUACCELERATED = 0
 
 # GPU hardware dependent, lookup at https://developer.nvidia.com/cuda-gpus, write without fullstop
@@ -35,6 +34,7 @@ GPU_COMPUTE_CAPABILITY = 61
 
 # whether to suppress the below warnings about compiler compatibility
 SUPPRESS_WARNING = 0
+
 
 
 #======================================================================#
@@ -60,6 +60,10 @@ LINK_DIR = Link
 
 # whether to use single, double or quad floating point precision in the state-vector {1,2,4}
 PRECISION = 2
+
+# wrapper compiler for GPU accel
+CUDA_COMPILER = nvcc
+
 
 
 #======================================================================#
@@ -169,12 +173,12 @@ endif
 endif
 
 
+
 #======================================================================#
 #                                                                      #
 #     Compilation                                                      #
 #                                                                      #
 #======================================================================#
-
 
 # 
 # --- WSTP path
@@ -187,6 +191,8 @@ else ifeq ($(OS), MACOS)
 else ifeq ($(OS), LINUX)
     WSTP_SRC_DIR = $(WSTP_DIR)/Linux
 endif
+
+
 
 #
 # --- libraries
@@ -202,6 +208,7 @@ else ifeq ($(OS), LINUX)
         LIBS := -Wl,--no-as-needed $(LIBS)
     endif
 endif
+
 
 
 #
@@ -220,28 +227,10 @@ endif
 QUESTLINK_INCLUDE = -I${QUEST_INCLUDE_DIR} -I$(QUEST_INNER_DIR) -I$(QUEST_COMMON_DIR) -I$(WSTP_SRC_DIR) -I$(LINK_DIR)
 
 
-#
-# --- wrapper compilers
-#
-
-CUDA_COMPILER = nvcc
-MPI_COMPILER = mpicc
-
-
 
 #
 # --- compiler flags
 #
-
-# note:
-#	several flag names depend not just on the compiler type, but also compiler version
-#	the user should update these below. For example:
-#
-#	- GNU C++ compilers of version < 4.7 use -std=c++0x instead of -std=c++11
-#	- INTEL compilers of version < ? use -openmp instead of -qopenmp
-#	- INTEL compilers of version < ? won't recognise -diad-disable and -cpu-dispatch
-#	- CLANG compilers don't support openmp (threading) at all
-
 
 # threading flag
 ifeq ($(MULTITHREADED), 1)
@@ -254,6 +243,13 @@ ifeq ($(MULTITHREADED), 1)
     endif
 else
     THREAD_FLAGS =
+endif
+
+# windows architecture flag
+ifeq ($(WINDOWS_ARCH), 32)
+    ARCH_FLAG = X86
+else
+    ARCH_FLAG = X64
 endif
 
 # c
@@ -269,7 +265,7 @@ CPP_INTEL_FLAGS = -O2 -std=c++11 -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag
 CPP_MSVC_FLAGS = -O2 -EHs -std:c++latest -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN$(WINDOWS_ARCH) -D_WINDOWS -Fo$@
 
 # wrappers
-CPP_CUDA_FLAGS = -O2 -arch=compute_$(GPU_COMPUTE_CAPABILITY) -code=sm_$(GPU_COMPUTE_CAPABILITY) -DQuEST_PREC=$(PRECISION) -ccbin $(COMPILER)
+CPP_CUDA_FLAGS := -O2 -arch=compute_$(GPU_COMPUTE_CAPABILITY) -code=sm_$(GPU_COMPUTE_CAPABILITY) -DQuEST_PREC=$(PRECISION)
 
 # choose c/c++ flags based on compiler type
 ifeq ($(COMPILER_TYPE), CLANG)
@@ -284,6 +280,9 @@ else ifeq ($(COMPILER_TYPE), INTEL)
 else ifeq ($(COMPILER_TYPE), MSVC)
     C_FLAGS = $(C_MSVC_FLAGS)
     CPP_FLAGS = $(CPP_MSVC_FLAGS)
+	
+	# must specify machine type on Windows
+    CPP_CUDA_FLAGS := $(CPP_CUDA_FLAGS) -m=$(WINDOWS_ARCH) -DDWIN$(WINDOWS_ARCH)
 endif
 
 
@@ -294,26 +293,20 @@ endif
 
 ifeq ($(COMPILER_TYPE), MSVC)
     C_MODE = 
-    LINKER = link
-    ifeq ($(WINDOWS_ARCH), 32)
-        ARCH_FLAG = X86
-		else
-        ARCH_FLAG = X64
-		endif
-    LINK_FLAGS = -out:$(EXE).exe -SUBSYSTEM:WINDOWS -nologo -MACHINE:$(ARCH_FLAG)
+    LINKER = link.exe
+    LINK_FLAGS := -SUBSYSTEM:WINDOWS -nologo -MACHINE:$(ARCH_FLAG)
+    	
+    # must forward linker flags from NVCC to link.exe on Windows
+    ifeq ($(GPUACCELERATED), 1)
+        LINK_FLAGS := -o $(EXE).exe $(foreach option, $(LINK_FLAGS), -Xlinker $(option))
+    else 
+        LINK_FLAGS := -out:$(EXE).exe $(LINK_FLAGS)
+    endif
 else
     C_MODE = -x c
     LINKER = $(COMPILER)
-    LINK_FLAGS = -o $(EXE)
+    LINK_FLAGS := -o $(EXE)
 endif
-
-
-
-#
-# --- compiler environment vars
-#
-
-MPI_WRAPPED_COMP = I_MPI_CC=$(COMPILER) OMPI_CC=$(COMPILER) MPICH_CC=$(COMPILER)
 
 
 
@@ -324,99 +317,64 @@ MPI_WRAPPED_COMP = I_MPI_CC=$(COMPILER) OMPI_CC=$(COMPILER) MPICH_CC=$(COMPILER)
 OBJ = QuEST.o QuEST_validation.o QuEST_common.o QuEST_qasm.o mt19937ar.o
 ifeq ($(GPUACCELERATED), 1)
     OBJ += QuEST_gpu.o
-else ifeq ($(DISTRIBUTED), 1)
-    OBJ += QuEST_cpu.o QuEST_cpu_distributed.o
 else
     OBJ += QuEST_cpu.o QuEST_cpu_local.o
 endif
 OBJ += $(addsuffix .o, $(SOURCES))
 
 
+
 #
 # --- rules
 #
 
-# notes:
-#	- if $SOURCES appear as both c and c++ files, the c files will be compiled
-#	- CUDA won't compile .c files ($COMPILER will), only .cpp and .cu
-#	- MPICC will compile .c and .cpp files (wrapping $COMPILER)
-
-# GPU
+# GPU (CUDA)
 ifeq ($(GPUACCELERATED), 1)
 
-  %.o: %.c
-	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(QUEST_INNER_DIR)/%.c
-	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(QUEST_COMMON_DIR)/%.c
-	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-
+  # final -o to force NVCC to use '.o' extension even on Windows
   %.o: %.cu
-	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
+	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) -ccbin $(COMPILER) $(QUESTLINK_INCLUDE) -o $@ $<
   %.o: $(QUEST_INNER_DIR)/%.cu
-	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
-	
-  %.o: %.cpp
-	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
-  %.o: $(QUEST_INNER_DIR)/%.cpp
-	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
-  %.o: $(LINK_DIR)/%.c
-	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) $<
-
-# distributed
-else ifeq ($(DISTRIBUTED), 1)
-
-  %.o: %.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(QUEST_INNER_DIR)/%.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(QUEST_COMMON_DIR)/%.c
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-	
-  %.o: %.cpp
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(QUEST_INNER_DIR)/%.cpp
-	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(LINK_DIR)/%.cpp
-  	$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-
-# CPU
-else
-
-  %.o: %.c
-	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(QUEST_INNER_DIR)/%.c
-	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(QUEST_COMMON_DIR)/%.c
-	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-	
-  %.o: %.cpp quest_templates.tm.cpp
-	$(COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
-  %.o: $(QUEST_INNER_DIR)/%.cpp
-	$(COMPILER) $(CPP_FLAGS) -c $<
-  %.o: $(LINK_DIR)/%.cpp
-	$(COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) -ccbin $(COMPILER) $(QUESTLINK_INCLUDE) -o $@ $<
 
 endif
 
+# CPU (C)
+%.o: %.c
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+%.o: $(QUEST_INNER_DIR)/%.c
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+%.o: $(QUEST_COMMON_DIR)/%.c
+	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+	
+# CPU (C++)
+%.o: %.cpp quest_templates.tm.cpp
+	$(COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+%.o: $(QUEST_INNER_DIR)/%.cpp
+	$(COMPILER) $(CPP_FLAGS) -c $<
+%.o: $(LINK_DIR)/%.cpp
+	$(COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
+
+
+
 #
-# --- build
+# --- linking
 #
 
 # CUDA
 ifeq ($(GPUACCELERATED), 1)
 
+  # a dirty hack to silence cl when NVCC linking
+  # (https://stackoverflow.com/questions/61178458/force-nvcc-straight-to-linking-phase)
+  SHUTUP := 
+  ifeq ($(COMPILER_TYPE), MSVC)
+      SHUTUP := -Xcompiler 2>nul:
+  endif
+
   all:	$(OBJ)
-		$(CUDA_COMPILER) $(CPP_CUDA_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) $(LINK_FLAGS)
+	$(CUDA_COMPILER) $(SHUTUP) $(CPP_CUDA_FLAGS) $(OBJ) $(LIBS) $(LINK_FLAGS)
 
-# MPI
-else ifeq ($(DISTRIBUTED), 1)
-
-  default:	$(EXE)
-  $(EXE):	$(OBJ)
-			$(MPI_WRAPPED_COMP) $(MPI_COMPILER) $(C_FLAGS) $(QUESTLINK_INCLUDE) -o $(EXE) $(OBJ) $(LIBS) $(LINK_FLAGS)
-
-# C
+# C and C++
 else
 
   default:	$(EXE)
@@ -464,11 +422,10 @@ endif
 # define tidy cmds
 .PHONY:		tidy clean veryclean
 tidy:
-			$(REM) *.o
+			$(REM) *.o *.lib *.exp
 			$(REM) quest_templates.tm.cpp
-clean:
-			$(REM) *.o $(EXE_FN)
-			$(REM) quest_templates.tm.cpp
+clean:	tidy
+			$(REM) $(EXE_FN)
 veryclean:	clean
 			$(REM) *.h~ *.c~ makefile~
 

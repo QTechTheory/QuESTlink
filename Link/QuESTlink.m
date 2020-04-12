@@ -11,9 +11,14 @@ BeginPackage["QuEST`"]
      * but will cause incorrect behaviour. When in doubt, give the full explicit name e.g. QuEST`CloneQureg or
      * QuEST`Private`ApplyCircuitInternal. 
      *)
+     
+     (*
+      * public API 
+      *)
     
     ApplyCircuit::usage = "ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
-ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg."
+ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg.
+Accepts optional arguments WithBackup."
     ApplyCircuit::error = "`1`"
     
     CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] sets the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in Rx, Ry, Rz, R or U (and controlled) of the given circuit ONCE (multiple times within a U matrix is allowed). The initState is unchanged. Note Rx[theta] is allowed, but Rx[f(theta)] is not. Furthermore U matrices must contain at most one parameter."
@@ -90,6 +95,16 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
 CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the number of present qubits."
     CalcCircuitMatrix::error = "`1`"
     
+    (*
+     * optional arguments to public functions
+     *)
+     
+    PackageExport[WithBackup]
+    WithBackup::usage = "Optional argument to ApplyCircuit, indicating whether to create a backup during circuit evaluation to restore the input state in case of a circuit error. This incurs additional memory (default True). If the circuit contains no error, this option has no effect besides wasting memory."
+    
+    PackageExport[ShowProgress]
+    ShowProgress::usage = "Optional argument to ApplyCircuit, indicating whether to show a progress bar during circuit evaluation (default False). This slows evaluation slightly."
+    
     (* 
      * gate symbols, needed exporting so that their use below does not refer to a private var      
      *)
@@ -133,13 +148,19 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
     PackageExport[G]
     G::usage = "G[phi] applies a global phase rotation of phi, by premultiplying Exp[i phi]."
+    PcakageExport[Id]
+    Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit."
  
     Begin["`Private`"]
+    
+    
     
         (* report a generic error that the function was passed with bad args (did not evaluate) *)
         invalidArgError[func_Symbol] := (
             Message[func::error, "Invalid arguments. See ?" <> ToString[func]];
             $Failed)
+               
+               
                
         (* opcodes *)
         getOpCode[gate_] :=
@@ -180,7 +201,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
 
         (* converting gate sequence to code lists: {opcodes, ctrls, targs, params} *)
         codifyCircuit[circuit_List] :=
-        	circuit /. gatePatterns // Transpose
+        	(circuit /. Subscript[Id,__] -> Sequence[]) /. gatePatterns // Transpose
         codifyCircuit[circuit_] :=
             codifyCircuit @ {circuit}
             
@@ -201,22 +222,47 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 Flatten @ codes[[3]], Length /@ codes[[3]],
                 Flatten[N /@ codes[[4]]], Length /@ codes[[4]]
             ]
-                
+            
+        (* declaring optional args to ApplyCircuit *)
+        Options[ApplyCircuit] = {
+            WithBackup -> True,
+            ShowProgress -> False
+        };
+        
         (* applying a sequence of symoblic gates to a qureg. ApplyCircuitInternal provided by WSTP *)
-        ApplyCircuit[circuit_?isCircuitFormat, qureg_Integer] :=
+        applyCircuitInner[qureg_, withBackup_, showProgress:0, circCodes__] :=
+            ApplyCircuitInternal[qureg, withBackup, showProgress, circCodes]
+        applyCircuitInner[qureg_, withBackup_, showProgress:1, circCodes__] :=
+            Monitor[
+                (* local private variable, updated by backend *)
+                circuitProgressVar = 0;
+                ApplyCircuitInternal[qureg, withBackup, showProgress, circCodes],
+                ProgressIndicator[circuitProgressVar]
+            ]
+        ApplyCircuit[circuit_?isCircuitFormat, qureg_Integer, OptionsPattern[ApplyCircuit]] :=
         	With[
         		{codes = codifyCircuit[circuit]},
-        		If[
-        			AllTrue[codes[[4]], NumericQ, 2],
-        			ApplyCircuitInternal[qureg, unpackEncodedCircuit[codes]], 
-        			Message[ApplyCircuit::error, "Circuit contains non-numerical parameters!"]; $Failed
+        		Which[
+        			Not @ AllTrue[codes[[4]], NumericQ, 2],
+                    Message[ApplyCircuit::error, "Circuit contains non-numerical parameters!"]; $Failed,
+                    Not @ Or[OptionValue[WithBackup] === True, OptionValue[WithBackup] === False],
+                    Message[ApplyCircuit::error, "Option WithBackup must be True or False."]; $Failed,
+                    Not @ Or[OptionValue[ShowProgress] === True, OptionValue[ShowProgress] === False],
+                    Message[ApplyCircuit::error, "Option ShowProgress must be True or False."]; $Failed,
+                    True,
+        			applyCircuitInner[
+                        qureg, 
+                        If[OptionValue[WithBackup]===True,1,0], 
+                        If[OptionValue[ShowProgress]===True,1,0],
+                        unpackEncodedCircuit[codes]
+                    ]
         		]
         	]
         (* apply a circuit to get an output state without changing input state. CloneQureg provided by WSTP *)
-        ApplyCircuit[circuit_?isCircuitFormat, inQureg_Integer, outQureg_Integer] :=
+        ApplyCircuit[circuit_?isCircuitFormat, inQureg_Integer, outQureg_Integer, opts:OptionsPattern[ApplyCircuit]] :=
         	Block[{},
         		QuEST`CloneQureg[outQureg, inQureg];
-        		ApplyCircuit[circuit, outQureg]
+        		ApplyCircuit[circuit, outQureg, opts]
         	]
         (* error for bad args *)
         ApplyCircuit[___] := invalidArgError[ApplyCircuit]
@@ -554,6 +600,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	drawSpecialSwapLine[targ2,targ1,col]}
         	
         (* single qubit gate graphics *)
+        drawGate[Id, {}, {targs___}, col_] :=
+            {}
         drawGate[M, {}, {targs___}, col_] :=
         	Table[{
         		drawSingleBox[targ,col],
