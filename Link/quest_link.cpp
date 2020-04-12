@@ -1005,9 +1005,11 @@ void local_applyGates(
                 else if (numCtrls == 1)
                     controlledNot(qureg, ctrls[ctrlInd], targs[targInd]); // throws
                 else {
-                    ComplexMatrix2 u = {
-                        .real={{0,1},{1,0}},
-                        .imag={{0}}};
+                    ComplexMatrix2 u;
+                    u.real[0][0] = 0; u.real[0][1] = 1; // verbose for old MSVC
+                    u.real[1][0] = 1; u.real[1][1] = 0;
+                    u.imag[0][0] = 0; u.imag[0][1] = 0;
+                    u.imag[1][0] = 0; u.imag[1][1] = 0;
                     multiControlledUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], u); // throws
                 }
             }
@@ -1176,9 +1178,11 @@ void local_applyGates(
                 } else {    
                     // core-QuEST doesn't yet support multiControlledSwapGate, 
                     // so we construct SWAP from 3 CNOT's, and add additional controls
-                    ComplexMatrix2 u = {
-                        .real={{0,1},{1,0}},
-                        .imag={{0}}};
+                    ComplexMatrix2 u;
+                    u.real[0][0] = 0; u.real[0][1] = 1; // verbose for old MSVC 
+                    u.real[1][0] = 1; u.real[1][1] = 0;
+                    u.imag[0][0] = 0; u.imag[0][1] = 0;
+                    u.imag[1][0] = 0; u.imag[1][1] = 0;
                     int* ctrlCache = local_prepareCtrlCache(ctrls, ctrlInd, numCtrls, targs[targInd]);
                     multiControlledUnitary(qureg, ctrlCache, numCtrls+1, targs[targInd+1], u); // throws
                     ctrlCache[numCtrls] = targs[targInd+1];
