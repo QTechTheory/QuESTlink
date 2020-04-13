@@ -117,7 +117,7 @@ quest_link.exe -linkcreate -linkprotocol TCPIP -linkname <PORT1>@<IP>,<PORT2>@<I
 ```
 substituting <PORT1> and <PORT2> with two open and available ports, and <IP> with the server IP or domain name.
 
-Then in your local Mathematica kernel, connect to it via
+Then in your Mathematica kernel on another machine, connect to it via
 
 ```Mathematica
 CreateRemoteQuESTEnv[<IP>, <PORT1>, <PORT2>];
