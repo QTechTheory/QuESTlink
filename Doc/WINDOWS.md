@@ -18,17 +18,17 @@ This will provide both the **Developer Powershell for VS** and the **Developer C
 Open **Developer Command Prompt** and check that commands
 
 ```bash 
-cl --version
+cl
 ```
 and 
 ```bash 
-link --version
+link -help
 ```
 are correctly recognised.
 
 ### 2 - Choco 
 
-Open **Developer Powershell** and enter 
+Open **Developer Powershell**  as an administrator and enter 
 ```bash 
 Set-ExecutionPolicy AllSigned
 ``` 
@@ -36,7 +36,8 @@ then
 ```bash 
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 ```
-> If these commands fail, you may need to reopen **Developer Powershell** as an administator.
+
+> If you are unable to paste this command via ctrl-v, click the icon top-left of the powershell window and select paste
 
 This downloads [Chocolatey](https://chocolatey.org/), a Windows package manager.
 
@@ -62,7 +63,11 @@ Next, open the [`makefile`](../makefile) in any editor, and set:
 - `COMPILER_TYPE = MSVC`
 - `WINDOWS_ARCH = 64` if using 64-bit Windows, else `32` (for x86)
 
-> If using 64-bit Windows, in lieu of the **Developer Command Prompt** below, you must instead open a 64-bit equivalent prompt. E.g. `VS2019 x64 Native Tools Command Prompt`. You can find this in the same directory as the developer command prompt. 
+> If using 64-bit Windows, you must use a *64-bit* **Developer Command Prompt** for the following instructions. E.g. `VS2019 x64 Native Tools Command Prompt`. You can find this prompt in the same directory as the developer command prompt. 
+
+To compile for GPU mode, install the [CUDA toolkit](https://developer.nvidia.com/cuda-downloads) (to get the `nvcc` command), and additionally set
+- `GPUACCELERATED = 1`
+- `GPU_COMPUTE_CAPABILITY = ` to the value corresponding to your GPU (look up [here](https://developer.nvidia.com/cuda-gpus)) with no decimal-point (e.g. `7.1` becomes `71`).
 
 Then, in the **Developer Command Prompt**, navigate to the root QuESTlink directory (where [`makefile`](../makefile) is located) and run 
 ```bash 
@@ -72,18 +77,19 @@ If successful, the `quest_link.exe` executable will be created, along with sever
 ```bash 
 make tidy 
 ```
-> Trying to run `quest_link.exe` directly at this stage will report a DLL error. 
-
-Next, run 
-```bash 
-copy WSTP\Windows\wstp32i4.dll .
-copy WSTP\Windows\wstp64i4.dll .
+To recompile after changing a setting in the makefile, run
+```bash
+make clean
+make
 ```
-This copies the needed `.dll` files to the same location as `quest_link.exe`. Running `quest_link.exe` directly now will create a network prompt, which can be ignored/closed.
+
+> Note that trying to run `quest_link.exe` directly at this stage will report a DLL error. 
 
 ### 5 - Run 
 
-With `wstp32i4.dll` (or `wstp64i4.dll`) in the same location as `quest_link.exe`, you can now open Mathematica and run 
+#### 5.1 - Locally
+
+You can now open Mathematica and run 
 
 ```Mathematica 
 SetDirectory["path/to/QuESTlink/"]
@@ -92,3 +98,27 @@ Import["Link/QuESTlink.m"]
 CreateLocalQuESTEnv["quest_link.exe"]
 ```
 and use all facilities of QuEST.
+
+
+
+#### 5.2 - Remotely
+
+The created `quest_link.exe` can be used as a server, accessed by Mathematica on another machine. To do this, after compiling, you must copy one of the following DLLs (depending on whether `WINDOWS_ARCH` is 32 or 64 bit) to the same location as `quest_link.exe`.
+
+```bash 
+copy WSTP\Windows\wstp32i4.dll .
+copy WSTP\Windows\wstp64i4.dll .
+```
+Running `quest_link.exe` directly now will create a network prompt, which can be ignored/closed.
+
+To launch the server from the **Developer Command Prompt**, run
+```bash
+quest_link.exe -linkcreate -linkprotocol TCPIP -linkname <PORT1>@<IP>,<PORT2>@<IP>
+```
+substituting <PORT1> and <PORT2> with two open and available ports, and <IP> with the server IP or domain name.
+
+Then in your local Mathematica kernel, connect to it via
+
+```Mathematica
+CreateRemoteQuESTEnv[<IP>, <PORT1>, <PORT2>];
+```
