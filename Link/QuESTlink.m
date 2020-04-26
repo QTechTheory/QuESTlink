@@ -50,7 +50,7 @@ CalcDensityInnerProducts[rhoId, omegaIds] returns a real vector with i-th elemen
     CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the matrix form of the given weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target."
     CalcPauliSumMatrix::error = "`1`"
 
-    DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
+    DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID. If qureg is a Symbol, it will additionally be cleared."
     DestroyQureg::error = "`1`"
     
     GetAmp::usage = "GetAmp[qureg, index] returns the complex amplitude of the state-vector qureg at the given index.
@@ -345,12 +345,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         Operator[op_?isOperatorFormat] :=
             Reverse @ Circuit @ op
 
-        (* destroying a qureg, and clearing the local symbol *)
+        (* destroying a qureg, and clearing the local symbol if recognised *)
         SetAttributes[DestroyQureg, HoldAll];
         DestroyQureg[qureg_Integer] :=
         	DestroyQuregInternal[qureg]
         DestroyQureg[qureg_Symbol] :=
         	Block[{}, DestroyQuregInternal[ReleaseHold@qureg]; Clear[qureg]]
+        DestroyQureg[qureg_] :=
+            DestroyQuregInternal @ ReleaseHold @ qureg
         DestroyQureg[___] := invalidArgError[DestroyQureg]
 
         (* get a local matrix representation of the qureg. GetQuregMatrixInternal provided by WSTP *)
