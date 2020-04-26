@@ -50,7 +50,7 @@ CalcDensityInnerProducts[rhoId, omegaIds] returns a real vector with i-th elemen
     CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the matrix form of the given weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target."
     CalcPauliSumMatrix::error = "`1`"
 
-    DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID or symbol."
+    DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID. If qureg is a Symbol, it will additionally be cleared."
     DestroyQureg::error = "`1`"
     
     GetAmp::usage = "GetAmp[qureg, index] returns the complex amplitude of the state-vector qureg at the given index.
