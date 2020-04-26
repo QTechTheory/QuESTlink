@@ -345,12 +345,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         Operator[op_?isOperatorFormat] :=
             Reverse @ Circuit @ op
 
-        (* destroying a qureg, and clearing the local symbol *)
+        (* destroying a qureg, and clearing the local symbol if recognised *)
         SetAttributes[DestroyQureg, HoldAll];
         DestroyQureg[qureg_Integer] :=
         	DestroyQuregInternal[qureg]
         DestroyQureg[qureg_Symbol] :=
         	Block[{}, DestroyQuregInternal[ReleaseHold@qureg]; Clear[qureg]]
+        DestroyQureg[qureg_] :=
+            DestroyQuregInternal @ ReleaseHold @ qureg
         DestroyQureg[___] := invalidArgError[DestroyQureg]
 
         (* get a local matrix representation of the qureg. GetQuregMatrixInternal provided by WSTP *)
