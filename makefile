@@ -294,7 +294,7 @@ endif
 ifeq ($(COMPILER_TYPE), MSVC)
     C_MODE = 
     LINKER = link.exe
-    LINK_FLAGS := -SUBSYSTEM:WINDOWS -nologo -MACHINE:$(ARCH_FLAG)
+    LINK_FLAGS := -SUBSYSTEM:WINDOWS -nologo -MACHINE:$(ARCH_FLAG) $(THREAD_FLAGS)
     	
     # must forward linker flags from NVCC to link.exe on Windows
     ifeq ($(GPUACCELERATED), 1)
@@ -305,7 +305,7 @@ ifeq ($(COMPILER_TYPE), MSVC)
 else
     C_MODE = -x c
     LINKER = $(COMPILER)
-    LINK_FLAGS := -o $(EXE)
+    LINK_FLAGS := -o $(EXE) $(THREAD_FLAGS)
 endif
 
 
