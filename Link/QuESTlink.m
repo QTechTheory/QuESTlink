@@ -649,41 +649,41 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             With[{matr2 = KroneckerProduct[ConjugateTranspose@{vec2}, vec2]},
                 PlotDensityMatrix[matr1, matr2, opts]]
         PlotDensityMatrix[matr1_?isNumericSquareMatrix, matr2_?isNumericSquareMatrix, opts:plotDensOptsPatt] :=
-        Block[{data1, data2, chartelem, space, offset},
-            (* unpack data and args (may throw Message) *)
-            data1 = extractMatrixData[OptionValue[PlotComponent], matr1];
-            data2 = extractMatrixData[OptionValue[PlotComponent], matr2];
-            chartelem = extractChartElemFunc[OptionValue[ChartElementFunction]];
-            space = extractBarSpacing[OptionValue[BarSpacing]];
-            offset = space {1,-1}/2;
-            (* return early if error *)
-            If[MemberQ[{data1,data2,chartelem,space}, $Failed], Return[$Failed]];
-            (* plot *)
-            Histogram3D[
-                {extractWeightedData[data1], extractWeightedData[data2]}, 
-                Max[Times @@ Dimensions @ data1, Times @@ Dimensions @ data2],
-                (* offset and possibly under-axis (negative values) bar graphics *)
-                ChartElementFunction -> {
-                    Function[{region, inds, meta}, ChartElementData[chartelem][
-                        (* we subtract "twice" negative values, to point e.g. cones downard *)
-                        region + {offset, offset, {0, 2 Min[0, Extract[data1, First@inds]]}}, inds, meta]],
-                    Function[{region, inds, meta}, ChartElementData[chartelem][
-                        (* we make the second matrix bars slightly inside the first's *)
-                        region + {1.001 offset, 1.001 offset, {0, 2 Min[0, Extract[data2, First@inds]]}}, inds, meta]]
-                    },
-                (* with user Histogram3D options *)
-                FilterRules[{opts}, Options[Histogram3D]],
-                (* and our overridable defaults *)
-                ChartStyle -> {Opacity[1], Opacity[.3]},
-                ColorFunction -> (ColorData["DeepSeaColors"][1 - #] &),
-                PlotRange -> {
-                    .5 + {0, Max[First @ Dimensions @ data1, First @ Dimensions @ data2]},
-                    .5 + {0, Max[Last @ Dimensions @ data1, Last @ Dimensions @ data2]},
-                    Automatic},
-                (* useless placebo *)
-                Method -> {"RelieveDPZFighting" -> True}
+            Block[{data1, data2, chartelem, space, offset},
+                (* unpack data and args (may throw Message) *)
+                data1 = extractMatrixData[OptionValue[PlotComponent], matr1];
+                data2 = extractMatrixData[OptionValue[PlotComponent], matr2];
+                chartelem = extractChartElemFunc[OptionValue[ChartElementFunction]];
+                space = extractBarSpacing[OptionValue[BarSpacing]];
+                offset = space {1,-1}/2;
+                (* return early if error *)
+                If[MemberQ[{data1,data2,chartelem,space}, $Failed], Return[$Failed]];
+                (* plot *)
+                Histogram3D[
+                    {extractWeightedData[data1], extractWeightedData[data2]}, 
+                    Max[Times @@ Dimensions @ data1, Times @@ Dimensions @ data2],
+                    (* offset and possibly under-axis (negative values) bar graphics *)
+                    ChartElementFunction -> {
+                        Function[{region, inds, meta}, ChartElementData[chartelem][
+                            (* we subtract "twice" negative values, to point e.g. cones downard *)
+                            region + {offset, offset, {0, 2 Min[0, Extract[data1, First@inds]]}}, inds, meta]],
+                        Function[{region, inds, meta}, ChartElementData[chartelem][
+                            (* we make the second matrix bars slightly inside the first's *)
+                            region + {1.001 offset, 1.001 offset, {0, 2 Min[0, Extract[data2, First@inds]]}}, inds, meta]]
+                        },
+                    (* with user Histogram3D options *)
+                    FilterRules[{opts}, Options[Histogram3D]],
+                    (* and our overridable defaults *)
+                    ChartStyle -> {Opacity[1], Opacity[.3]},
+                    ColorFunction -> (ColorData["DeepSeaColors"][1 - #] &),
+                    PlotRange -> {
+                        .5 + {0, Max[First @ Dimensions @ data1, First @ Dimensions @ data2]},
+                        .5 + {0, Max[Last @ Dimensions @ data1, Last @ Dimensions @ data2]},
+                        Automatic},
+                    (* useless placebo *)
+                    Method -> {"RelieveDPZFighting" -> True}
+                ]
             ]
-        ]
         PlotDensityMatrix[___] := (
             Message[PlotDensityMatrix::error, "Invalid arguments. See ?PlotDensityMatrix. Note the first argument must be a numeric square matrix."]; 
             $Failed)
