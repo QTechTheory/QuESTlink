@@ -631,7 +631,11 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     (* with user Histogram3D options *)
                     FilterRules[{opts}, Options[Histogram3D]],
                     (* and our overridable defaults *)
-                    ColorFunction -> (ColorData["DeepSeaColors"][1 - #] &)
+                    ColorFunction -> (ColorData["DeepSeaColors"][1 - #] &),
+                    PlotRange -> {
+                        .5 + {0, First @ Dimensions @ data},
+                        .5 + {0, Last @ Dimensions @ data},
+                        Automatic}
                 ]
             ]
         (* two matrix plot *)
@@ -672,6 +676,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 (* and our overridable defaults *)
                 ChartStyle -> {Opacity[1], Opacity[.3]},
                 ColorFunction -> (ColorData["DeepSeaColors"][1 - #] &),
+                PlotRange -> {
+                    .5 + {0, Max[First @ Dimensions @ data1, First @ Dimensions @ data2]},
+                    .5 + {0, Max[Last @ Dimensions @ data1, Last @ Dimensions @ data2]},
+                    Automatic},
                 (* useless placebo *)
                 Method -> {"RelieveDPZFighting" -> True}
             ]
