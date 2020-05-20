@@ -95,6 +95,13 @@ DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagra
 CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the number of present qubits."
     CalcCircuitMatrix::error = "`1`"
     
+    PlotDensityMatrix::usage = "PlotDensityMatrix[matrix] (accepts id or numeric matrix) plots a component (default is magnitude) of the given matrix as a 3D bar plot.
+PlotDensityMatrix[matrix1, matrix2] plots both matrix1 and matrix2 simultaneously, and the latter is intended as a \"reference\" state.
+PlotDensityMatrix[matrix, vector] converts the state-vector to a density matrix, and plots.
+PlotDensityMatrix accepts optional arguments PlotComponent, BarSpacing and all options for Histogram3D. Customising the colour may require overriding the default ColorFunction.
+When two matrices are passed, many options (e.g. ChartStyle) can accept a length-2 list."
+    PlotDensityMatrix::error = "`1`"
+    
     (*
      * optional arguments to public functions
      *)
@@ -104,6 +111,9 @@ CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the n
     
     PackageExport[ShowProgress]
     ShowProgress::usage = "Optional argument to ApplyCircuit, indicating whether to show a progress bar during circuit evaluation (default False). This slows evaluation slightly."
+    
+    PackageExport[PlotComponent]
+    PlotComponent::Usage = "Optional argument to PlotDensityMatrix, to plot the \"Real\", \"Imaginary\" component of the matrix, or its \"Magnitude\" (default)."
     
     (* 
      * gate symbols, needed exporting so that their use below does not refer to a private var      
@@ -549,6 +559,135 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         GetAmp[qureg_Integer, index_Integer] := GetAmpInternal[qureg, index, -1]
         GetAmp[qureg_Integer, row_Integer, col_Integer] := GetAmpInternal[qureg, row, col]
         GetAmp[___] := invalidArgError[GetAmp]
+        
+        
+        
+        (*
+         * Below is only front-end code for generating 3D plots of density matrices
+         *)
+         
+        Options[PlotDensityMatrix] = {
+            BarSpacing -> .5,
+            PlotComponent -> "Magnitude",
+            ChartElementFunction -> "ProfileCube"
+        };
+         
+        isNumericSquareMatrix[matrix_?MatrixQ] :=
+            And[SquareMatrixQ @ matrix, AllTrue[Flatten @ matrix, NumericQ]]
+        isNumericSquareMatrix[_] :=
+            False
+        isNumericVector[vector_?VectorQ] :=
+            AllTrue[Flatten @ vector, NumericQ]
+        isNumericVector[_] :=
+            False
+            
+        extractMatrixData[comp_, matrix_] := With[
+            {data = Switch[comp,
+                "Real", Re @ matrix,
+                "Imaginary", Im @ matrix,
+                "Magnitude", Abs @ matrix,
+                _, $Failed]},
+            If[data === $Failed, Message[PlotDensityMatrix::error, "PlotComponent must be \"Real\", \"Imaginary\" or \"Magnitude\"."]];
+            data]
+        extractWeightedData[data_] :=
+            WeightedData[Join @@ Array[List, Dimensions@#], Join @@ #]& @ Abs @ data (* forced positive *)
+        extractChartElemFunc[func_] := With[
+            {elem=(func /. Automatic -> 
+                OptionValue[Options[PlotDensityMatrix], ChartElementFunction])},
+            If[Not @ StringQ @ elem, 
+                Message[PlotDensityMatrix::error, "ChartElementFunction must be a string, or Automatic. See available options with ChartElementData[Histogram3D]."]; 
+                $Failed,
+                elem]]
+        extractBarSpacing[val_] := With[
+            {space = (val /. Automatic -> OptionValue[Options[PlotDensityMatrix], BarSpacing])},
+            If[Not[NumericQ@space] || Not[0 <= space < 1],
+                Message[PlotDensityMatrix::error, "BarSpacing (Automatic is .5) must be a number between 0 (inclusive) and 1 (exclusive)."];
+                $Failed,
+                space]]
+            
+        plotDensOptsPatt = OptionsPattern[{PlotDensityMatrix,Histogram3D}];
+         
+        (* single matrix plot *)
+        PlotDensityMatrix[id_Integer, opts:plotDensOptsPatt] :=
+            PlotDensityMatrix[GetQuregMatrix[id], opts]
+        PlotDensityMatrix[matrix_?isNumericSquareMatrix, opts:plotDensOptsPatt] :=
+            Block[{data, chartelem, space, offset},
+                (* unpack data and args (may throw Message) *)
+                data = extractMatrixData[OptionValue[PlotComponent], matrix];
+                chartelem = extractChartElemFunc[OptionValue[ChartElementFunction]];
+                space = extractBarSpacing[OptionValue[BarSpacing]];
+                offset = space {1,-1}/2;
+                (* return early if error *)
+                If[MemberQ[{data,chartelem,space}, $Failed], Return[$Failed]];
+                (* plot *)
+                Histogram3D[
+                    extractWeightedData[data], 
+                    Times @@ Dimensions @ data,
+                    (* offset and possibly under-axis (negative values) bar graphics *)
+                    ChartElementFunction->
+            			Function[{region, inds, meta}, ChartElementData[chartelem][
+                            (* we subtract "twice" negative values, to point e.g. cones downard *)
+                            region + {offset, offset, {0, 2 Min[0, Extract[data, First@inds]]}}, inds, meta]],
+                    (* with user Histogram3D options *)
+                    FilterRules[{opts}, Options[Histogram3D]],
+                    (* and our overridable defaults *)
+                    ColorFunction -> (ColorData["DeepSeaColors"][1 - #] &),
+                    PlotRange -> {
+                        .5 + {0, First @ Dimensions @ data},
+                        .5 + {0, Last @ Dimensions @ data},
+                        Automatic}
+                ]
+            ]
+        (* two matrix plot *)
+        PlotDensityMatrix[id1_Integer, id2_Integer, opts:plotDensOptsPatt] :=
+            PlotDensityMatrix[GetQuregMatrix[id1], GetQuregMatrix[id2], opts]
+        PlotDensityMatrix[id1_Integer, matr2_?isNumericSquareMatrix, opts:plotDensOptsPatt] :=
+            PlotDensityMatrix[GetQuregMatrix[id1], matr2, opts]
+        PlotDensityMatrix[matr1_?isNumericSquareMatrix, id2_Integer, opts:plotDensOptsPatt] :=
+            PlotDensityMatrix[matr1, GetQuregMatrix[id2], opts]
+        PlotDensityMatrix[matr1_?isNumericSquareMatrix, vec2_?isNumericVector, opts:plotDensOptsPatt] :=
+            With[{matr2 = KroneckerProduct[ConjugateTranspose@{vec2}, vec2]},
+                PlotDensityMatrix[matr1, matr2, opts]]
+        PlotDensityMatrix[matr1_?isNumericSquareMatrix, matr2_?isNumericSquareMatrix, opts:plotDensOptsPatt] :=
+            Block[{data1, data2, chartelem, space, offset},
+                (* unpack data and args (may throw Message) *)
+                data1 = extractMatrixData[OptionValue[PlotComponent], matr1];
+                data2 = extractMatrixData[OptionValue[PlotComponent], matr2];
+                chartelem = extractChartElemFunc[OptionValue[ChartElementFunction]];
+                space = extractBarSpacing[OptionValue[BarSpacing]];
+                offset = space {1,-1}/2;
+                (* return early if error *)
+                If[MemberQ[{data1,data2,chartelem,space}, $Failed], Return[$Failed]];
+                (* plot *)
+                Histogram3D[
+                    {extractWeightedData[data1], extractWeightedData[data2]}, 
+                    Max[Times @@ Dimensions @ data1, Times @@ Dimensions @ data2],
+                    (* offset and possibly under-axis (negative values) bar graphics *)
+                    ChartElementFunction -> {
+                        Function[{region, inds, meta}, ChartElementData[chartelem][
+                            (* we subtract "twice" negative values, to point e.g. cones downard *)
+                            region + {offset, offset, {0, 2 Min[0, Extract[data1, First@inds]]}}, inds, meta]],
+                        Function[{region, inds, meta}, ChartElementData[chartelem][
+                            (* we make the second matrix bars slightly inside the first's *)
+                            region + {1.001 offset, 1.001 offset, {0, 2 Min[0, Extract[data2, First@inds]]}}, inds, meta]]
+                        },
+                    (* with user Histogram3D options *)
+                    FilterRules[{opts}, Options[Histogram3D]],
+                    (* and our overridable defaults *)
+                    ChartStyle -> {Opacity[1], Opacity[.3]},
+                    ColorFunction -> (ColorData["DeepSeaColors"][1 - #] &),
+                    PlotRange -> {
+                        .5 + {0, Max[First @ Dimensions @ data1, First @ Dimensions @ data2]},
+                        .5 + {0, Max[Last @ Dimensions @ data1, Last @ Dimensions @ data2]},
+                        Automatic},
+                    (* useless placebo *)
+                    Method -> {"RelieveDPZFighting" -> True}
+                ]
+            ]
+        PlotDensityMatrix[___] := (
+            Message[PlotDensityMatrix::error, "Invalid arguments. See ?PlotDensityMatrix. Note the first argument must be a numeric square matrix."]; 
+            $Failed)
+        
         
         
         
