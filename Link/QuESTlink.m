@@ -158,7 +158,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
     PackageExport[G]
     G::usage = "G[phi] applies a global phase rotation of phi, by premultiplying Exp[i phi]."
-    PcakageExport[Id]
+    PackageExport[Id]
     Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit."
  
     Begin["`Private`"]
