@@ -67,6 +67,7 @@
 #define OPCODE_P 16
 #define OPCODE_Kraus 17
 #define OPCODE_G 18
+#define OPCODE_Id 19
 
 /*
  * Codes for dynamically updating kernel variables, to indicate progress 
@@ -1282,6 +1283,10 @@ void local_applyGates(
                     setWeightedQureg(zero, qureg, zero, qureg, fac, qureg); // throws
                 }
             }
+                break;
+                
+            case OPCODE_Id :
+                // any numCtrls, numParams and numTargs is valid; all do nothing!
                 break;
                 
             default:            

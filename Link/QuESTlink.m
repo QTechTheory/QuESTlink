@@ -159,7 +159,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     PackageExport[G]
     G::usage = "G[phi] applies a global phase rotation of phi, by premultiplying Exp[i phi]."
     PackageExport[Id]
-    Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit."
+    Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit, or as an alternative to removing gates in ApplyCircuit."
  
     Begin["`Private`"]
     
@@ -174,7 +174,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,_->-1}
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
         codifyMatrix[matr_] :=
@@ -211,7 +211,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
 
         (* converting gate sequence to code lists: {opcodes, ctrls, targs, params} *)
         codifyCircuit[circuit_List] :=
-        	(circuit /. Subscript[Id,__] -> Sequence[]) /. gatePatterns // Transpose
+        	circuit /. gatePatterns // Transpose
         codifyCircuit[circuit_] :=
             codifyCircuit @ {circuit}
             
