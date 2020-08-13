@@ -35,7 +35,7 @@ Multithreaded and GPU-accelerated modes require compiling QuESTlink from source,
 
 > See [here](WINDOWS.md) for complete guide on compiling on **Windows**, including how to obtain the necessary compilers.
 
-> Note **Linux** users should first run `sudo apt-get install uuid-dev` before compiling
+> Note **Linux** users should first run `sudo apt-get install uuid-dev` before compiling. If this fails (and/or compiling says `cannot find -luuid`, also try to install `uuid`, `uuid-devel` and `libuuid-devel`.
 
 Edit [makefile](../makefile) and set:
 
