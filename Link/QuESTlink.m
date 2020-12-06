@@ -104,6 +104,9 @@ When two matrices are passed, many options (e.g. ChartStyle) can accept a length
     
     CompactifyCircuit::usage = "CompactifyCircuit[circuit] divides circuit into sub-circuits of simultaneously-applied gates, filled from the left. Flatten the result to restore an equivalent but compacted Circuit."
     
+    ScheduleCircuit::usage = "ScheduleCircuit[circuit, config] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given hardware configuration. The returned structure is {{t1, circuit1}, {t2, circuit2}, ...}.
+ScheduleCircuit[subcircuits, config] uses the given division (lists of circuits), assumes each act on unique qubits, and performs the same scheduling."
+    
     (*
      * optional arguments to public functions
      *)
@@ -1086,7 +1089,17 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             ]
         ]
         
+        (* returns the duration of the longest gate in the given column *)
+        getColumnDuration[config_][col_] :=
+            Max @ Table[Replace[gate, config["gates"]]["duration"], {gate,col}]
             
+        (* assigns each of the given columns (unique-qubit subcircuits) a start-time *)
+        ScheduleCircuit[cols:{{__}..}, config_] := With[
+            {durs = getColumnDuration[config] /@ cols},
+            Transpose[{Accumulate @ Prepend[Most@durs, 0], cols}]]
+        ScheduleCircuit[circ_List, config_] :=
+            ScheduleCircuit[CompactifyCircuit[circ], config]
+        
     End[ ]
                                        
 EndPackage[]
