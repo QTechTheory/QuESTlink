@@ -102,6 +102,8 @@ PlotDensityMatrix accepts optional arguments PlotComponent, BarSpacing and all o
 When two matrices are passed, many options (e.g. ChartStyle) can accept a length-2 list."
     PlotDensityMatrix::error = "`1`"
     
+    CompactifyCircuit::usage = "CompactifyCircuit[circuit] divides circuit into sub-circuits of simultaneously-applied gates, filled from the left. Flatten the result to restore an equivalent but compacted Circuit."
+    
     (*
      * optional arguments to public functions
      *)
@@ -1025,6 +1027,65 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         CalcCircuitMatrix[gates_List] :=
         	CalcCircuitMatrix[gates, 1 + Max @ Cases[gates, (Subscript[_, q__]|Subscript[_, q__][__]):> Max @ q, \[Infinity]]]
         CalcCircuitMatrix[___] := invalidArgError[CalcCircuitMatrix]
+        
+        
+        
+        (*
+         * Below are front-end functions for 
+         * modifying circuits to capture hardware
+         * constraints and noise
+         *)
+         
+        (* divide circ into columns, filling the left-most first *)
+        CompactifyCircuit[circ_List] := With[{
+            numQb=getNumQubitsInCircuit[circ],
+            numGates=Length[circ]},
+            Module[{
+                gates=circ, column={}, index=1, nextIndex=Null,
+                available=ConstantArray[True,numQb], compactified={}, 
+                qb, i},
+                
+                (* continue until all gates have been grouped into a column *)
+                While[index <= numGates,
+                    
+                    (* visit each gate from start index or until column is full (no qubits available) *)
+                    For[i=index, And[i <= numGates, Not[And @@ Not /@ available]], i++,
+                    
+                        (* skip Null-marked gates (present in a previous column) *)
+                        If[gates[[i]] === Null, Continue[]];
+                        
+                        (* extract all target and control qubits of gate (indexed from 1) *)
+                        qb = 1 + Flatten @ getSymbCtrlsTargs[gates[[i]]][[{2,3}]];
+                        
+                        If[
+                            (* if all of the gate's qubits are so far untouched in this column... *)
+                            And @@ available[[qb]],
+                            
+                            (* then add the gate to the column *)
+                            available[[qb]] = False;
+                            AppendTo[column, gates[[i]]];
+                            gates[[i]] = Null,
+                            
+                            (* otherwise mark all the gate's qubits as unavailable (since they're blocked by this gate) *)
+    						available[[qb]] = False;
+    						(* and if this was the first not-in-column gate, mark for next start index *)
+    						If[nextIndex === Null, nextIndex=i];
+                        ]
+                    ];
+                    
+                    (* finalize the new column *)
+                    AppendTo[compactified, column];
+                    column = {};
+                    available = ConstantArray[True,numQb];
+                    index = nextIndex;
+                    nextIndex = Null;
+                ];
+                
+                (* return new gate ordering, grouped into column sub-lists *)
+                compactified
+            ]
+        ]
+        
             
     End[ ]
                                        
