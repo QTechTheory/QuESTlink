@@ -104,7 +104,7 @@ When two matrices are passed, many options (e.g. ChartStyle) can accept a length
     
     CompactifyCircuit::usage = "CompactifyCircuit[circuit] divides circuit into sub-circuits of simultaneously-applied gates, filled from the left. Flatten the result to restore an equivalent but compacted Circuit."
     
-    ScheduleCircuit::usage = "ScheduleCircuit[circuit, config] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given hardware configuration. The returned structure is {{t1, circuit1}, {t2, circuit2}, ...}.
+    ScheduleCircuit::usage = "ScheduleCircuit[circuit, config] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given hardware configuration. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}.
 ScheduleCircuit[subcircuits, config] uses the given division (lists of circuits), assumes each act on unique qubits, and performs the same scheduling."
     
     (*
@@ -1100,6 +1100,53 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         ScheduleCircuit[circ_List, config_] :=
             ScheduleCircuit[CompactifyCircuit[circ], config]
         
+        getActiveNoise[cols:{{__}..}, config_] :=
+            Table[
+                Flatten @ Table[Replace[gate, config["gates"]]["activeNoise"], {gate,col}],
+                {col, cols}
+            ]
+        getActiveNoise[schedule:{{_, _List}..}, config_] :=
+            getActiveNoise[schedule[[All,2]], config]
+            
+        getSubcircPassiveNoise[subcirc_, subcircDur_, config_] := Module[
+            (* records which qubits have been assigned noise already *)
+            {noised=ConstantArray[False, config["numQubits"]]},
+            Join[
+                (* collect noise on gated qubits, applying for the remaining subcirc duration *)
+                Flatten @ Table[
+                    With[{
+                        gateDur = Replace[gate, config["gates"]]["duration"],
+                        qubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
+                        
+                        noised[[1 + qubits]] = True;
+                        Table[qb[subcircDur-gateDur] /. config["passiveNoise"], {qb,qubits}]],
+                    {gate, subcirc}],
+                (* collect noise on remaining qubits, applying for full subcirc duration *)
+                Flatten @ Table[
+                    If[noised[[qb+1]], Nothing, qb[subcircDur] /. config["passiveNoise"]],
+                    {qb, 0, config["numQubits"]-1}]
+            ]
+        ]
+        getPassiveNoise[schedule:{{_, _List}..}, config_] := Module[
+            {times, subcircs},
+            {times, subcircs} = Transpose[schedule];
+            (* if first event is t>0, passive-noise all qubits until then *)
+            If[First[times] > 0, PrependTo[times, 0]; PrependTo[subcircs, {}]];
+            (* passive noise for duration between scheduled subcircuits (and after last) *)
+            With[{durations = Append[Differences[times], getColumnDuration[config] @ Last @ subcircs]},
+                MapThread[getSubcircPassiveNoise[#1,#2,config]&, {subcircs, durations}]
+            ]
+        ]
+
+        InsertCircuitNoise[schedule:{{_, _List}..}, config_] :=
+            With[{
+                active = getActiveNoise[schedule, config],
+                passive = getPassiveNoise[schedule, config]},
+                Transpose[{schedule[[All,2]], active, passive}]
+            ]
+        InsertCircuitNoise[colsOrCirc_, config_] :=
+            InsertCircuitNoise[ScheduleCircuit[colsOrCirc, config], config]
+
     End[ ]
                                        
 EndPackage[]
