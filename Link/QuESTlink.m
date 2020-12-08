@@ -108,7 +108,8 @@ When two matrices are passed, many options (e.g. ChartStyle) can accept a length
     GetCircuitColumns::usage = "GetCircuitColumns[circuit] divides circuit into sub-circuits of gates on unique qubits (i.e. columns), filled from the left. Flatten the result to restore an equivalent but potentially compacted Circuit."
     
     ScheduleCircuit::usage = "ScheduleCircuit[circuit, config] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given hardware configuration. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}.
-ScheduleCircuit[subcircuits, config] uses the given division (lists of circuits), assumes each act on unique qubits, and performs the same scheduling."
+ScheduleCircuit[subcircuits, config] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling."
+    ScheduleCircuit::error = "`1`"
     
     (*
      * optional arguments to public functions
@@ -1002,11 +1003,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 FilterRules[{opts}, Options[Graphics]],
                 ImageSize -> 30 (numCols+1),
                 PlotRangePadding -> None
-                
-                (* 
-                PlotRangePadding -> None,
-                Method -> {"ShrinkWrap" -> True}
-                *)
+                (* , Method -> {"ShrinkWrap" -> True} *)
             ]
             
         (* optionally compactifies a circuit via GetColumnCircuits[] *)
@@ -1183,7 +1180,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 While[index <= numGates,
                     
                     (* visit each gate from start index or until column is full (no qubits available) *)
-                    For[i=index, And[i <= numGates, Not[And @@ Not /@ available]], i++,
+                    For[i=index, (And[i <= numGates, Not[And @@ Not /@ available]]), i++,
                     
                         (* skip Null-marked gates (present in a previous column) *)
                         If[gates[[i]] === Null, Continue[]];
@@ -1195,17 +1192,22 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                             (* if all of the gate's qubits are so far untouched in this column... *)
                             And @@ available[[qb]],
                             
-                            (* then add the gate to the column *)
+                            ( (* then add the gate to the column *)
                             available[[qb]] = False;
                             AppendTo[column, gates[[i]]];
-                            gates[[i]] = Null,
+                            gates[[i]] = Null;
+                            ),
                             
-                            (* otherwise mark all the gate's qubits as unavailable (since they're blocked by this gate) *)
-    						available[[qb]] = False;
-    						(* and if this was the first not-in-column gate, mark for next start index *)
-    						If[nextIndex === Null, nextIndex=i];
+                            ( (* otherwise mark all the gate's qubits as unavailable (since they're blocked by this gate) *)
+                            available[[qb]] = False;
+                            (* and if this was the first not-in-column gate, mark for next start index *)
+                            If[nextIndex === Null, nextIndex=i];
+                            )
                         ]
                     ];
+                    
+                    (* nextIndex is unchanged if a gate occupies all qubits *)
+                    If[nextIndex === Null, nextIndex=index+1];
                     
                     (* finalize the new column *)
                     AppendTo[compactified, column];
