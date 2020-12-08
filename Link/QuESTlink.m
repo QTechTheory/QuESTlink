@@ -102,7 +102,7 @@ PlotDensityMatrix accepts optional arguments PlotComponent, BarSpacing and all o
 When two matrices are passed, many options (e.g. ChartStyle) can accept a length-2 list."
     PlotDensityMatrix::error = "`1`"
     
-    CompactifyCircuit::usage = "CompactifyCircuit[circuit] divides circuit into sub-circuits of simultaneously-applied gates, filled from the left. Flatten the result to restore an equivalent but compacted Circuit."
+    GetCircuitColumns::usage = "GetCircuitColumns[circuit] divides circuit into sub-circuits of gates on unique qubits (i.e. columns), filled from the left. Flatten the result to restore an equivalent but potentially compacted Circuit."
     
     ScheduleCircuit::usage = "ScheduleCircuit[circuit, config] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given hardware configuration. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}.
 ScheduleCircuit[subcircuits, config] uses the given division (lists of circuits), assumes each act on unique qubits, and performs the same scheduling."
@@ -1040,7 +1040,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
          *)
          
         (* divide circ into columns, filling the left-most first *)
-        CompactifyCircuit[circ_List] := With[{
+        GetCircuitColumns[circ_List] := With[{
             numQb=getNumQubitsInCircuit[circ],
             numGates=Length[circ]},
             Module[{
@@ -1098,8 +1098,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             {durs = getColumnDuration[config] /@ cols},
             Transpose[{Accumulate @ Prepend[Most@durs, 0], cols}]]
         ScheduleCircuit[circ_List, config_] :=
-            ScheduleCircuit[CompactifyCircuit[circ], config]
-        
+            ScheduleCircuit[GetCircuitColumns[circ], config]
+            
         getActiveNoise[cols:{{__}..}, config_] :=
             Table[
                 Flatten @ Table[Replace[gate, config["gates"]]["activeNoise"], {gate,col}],
