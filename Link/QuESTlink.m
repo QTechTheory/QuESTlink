@@ -86,9 +86,12 @@ SetWeightedQureg[fac1, q1, qOut] modifies qureg qOut to be fac1 * q1. qOut can b
 SetWeightedQureg[fac, qOut] modifies qureg qOut to be fac qOut; that is, qOut is scaled by factor fac."
     SetWeightedQureg::error = "`1`"
 
-    DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram.
-DrawCircuit[circuit, numQubits] generates a circuit diagram with numQubits, useful for overriding the automated inferrence of the number of qubits if incorrect.
-DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagram."
+    DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram. The circuit can contain symbolic parameters.
+DrawCircuit[circuit, numQubits] generates a circuit diagram with numQubits, which can be more or less than that inferred from the circuit.
+DrawCircuit[{circ1, circ2, ...}] draws the total circuit, divided into the given subcircuits. This is the output format of GetCircuitColumns[].
+DrawCircuit[{{t1, circ1}, {t2, circ2}, ...}] draws the total circuit, divided into the given subcircuits, labeled by their scheduled times {t1, t2, ...}. This is the output format of ScheduleCircuit[].
+DrawCircuit[{{t1, A1,A2,A3}, {t2, B1,B2,B3}, ...}] draws the total circuit, divided into subcircuits {A1 A2 A3, B1 B2 B3, ...}, labeled by their scheduled times {t1, t2, ...}. This is the output format of InsertCircuitNoise[].
+DrawCircuit accepts optional arguments Compactify, DividerStyle, SubcircuitSpacing, SubcircuitLabels, LabelDrawer and any Graphics option."
     DrawCircuit::error = "`1`"
 
     CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic expression for the given unitary circuit, which may contain undefined symbols. The number of qubits is inferred from the circuit indices (0 to maximum specified).
@@ -119,6 +122,21 @@ ScheduleCircuit[subcircuits, config] uses the given division (lists of circuits)
     
     PackageExport[PlotComponent]
     PlotComponent::Usage = "Optional argument to PlotDensityMatrix, to plot the \"Real\", \"Imaginary\" component of the matrix, or its \"Magnitude\" (default)."
+    
+    PackageExport[Compactify]
+    Compactify::usage = "Optional argument to DrawCircuit, to specify (True or False) whether to attempt to compactify the circuit (or each subcircuit) by left-filling columns of gates on unique qubits (the result of GetCircuitColumns[]). No compactifying may yield better results for circuits with multi-target gates (which invoke swaps)."
+    
+    PackageExport[DividerStyle]
+    DividerStyle::usage = "Optional argument to DrawCircuit, to style the vertical lines separating subcircuits. Use DividerStyle -> None to draw without dividers, and DividerStyle -> Directive[...] to specify multiple styles properties."
+    
+    PackageExport[SubcircuitSpacing]
+    SubcircuitSpacing::usage = "Optional argument to DrawCircuit, to specify the horizontal space inserted between subcircuits."
+    
+    PackageExport[SubcircuitLabels]
+    SubcircuitLabels::usage = "Optional argument to DrawCircuit, specifying the list of labels to display between subcircuits. Use 'None' to skip a label while still drawing the divider (except for the first and last divider). Customise these labels with LabelDrawer."
+    
+    PackageExport[LabelDrawer]
+    LabelDrawer::usage = "Optional argument to DrawCircuit, to specify a two-argument function for drawing subcircuit labels. For example, Function[{msg,x},Text[msg,{x,-.5}]]. Use LabelDrawer -> None to show no labels."
     
     (* 
      * gate symbols, needed exporting so that their use below does not refer to a private var      
@@ -735,8 +753,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+1-.1}]
         drawDoubleBox[targ_, col_] :=
         	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+2-.1}]
-        drawQubitLines[qubits_List, col_] :=
-        	Table[Line[{{col,qb+.5},{col+1,qb+.5}}], {qb,qubits}]
+        drawQubitLines[qubits_List, col_, width_:1] :=
+        	Table[Line[{{col,qb+.5},{col+width,qb+.5}}], {qb,qubits}]
         drawSpecialSwapLine[targ1_, targ2_, col_] := {
         	Line[{{col,targ1+.5},{col+.1,targ1+.5}}],
         	Line[{{col+.1,targ1+.5},{col+.5-.1,targ2+.5}}],
@@ -817,96 +835,209 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	drawGate[label, {}, targs, col]}
         
         (* generating background qubit lines in a whole circuit column *)
-        drawQubitColumn[isSpecialSwapCol_, specialSwapQubits_, numQubits_, curCol_] :=
+        drawQubitColumn[isSpecialSwapCol_, specialSwapQubits_, numQubits_, curCol_, width_:1] :=
         	If[isSpecialSwapCol,
         		(* for a special column, draw all middle lines then non-special left/right nubs *)
         		With[{nonspecial=Complement[Range[0,numQubits-1], specialSwapQubits]}, {
-        			drawQubitLines[Range[0,numQubits-1],curCol+.5],
-        			drawQubitLines[nonspecial,curCol],
-        			drawQubitLines[nonspecial,curCol+1]}],
+        			drawQubitLines[Range[0,numQubits-1],curCol+.5,width],
+        			drawQubitLines[nonspecial,curCol,width],
+        			drawQubitLines[nonspecial,curCol+1,width]}],
         		(* for a non special column, draw all qubit lines *)
-        		drawQubitLines[Range[0,numQubits-1],curCol]
+        		drawQubitLines[Range[0,numQubits-1],curCol,width]
         	]
             
-        generateCircuitGraphics[gates_List, numQubits_Integer] :=
-        Module[{
-        	qubitgraphics,gategraphics,
-        	curCol,curSymb,curCtrls,curTargs,curInterval,curIsSpecialSwap,
-        	prevIntervals,prevIsSpecialSwap,prevSpecialQubits},
-        	
-            (* outputs *)
-        	qubitgraphics = {};
-        	gategraphics = {};
-        	
-            (* status of whether a gate can fit in the previous column *)
-        	curCol = 0;
-        	prevIntervals = {};
-        	prevIsSpecialSwap = False;
-        	prevSpecialQubits = {};
+        (* subcircuit seperator and scheduling label graphics *)
+        drawSubcircSpacerLine[col_, numQubits_, style_] := 
+            If[style === None, Nothing, {
+                style,
+                Line[{{col,0},{col,numQubits}}]}]
             
-            (* for each gate... *)
-        	Table[
-        		(* extract data from gate *)
-        		{curSymb,curCtrls,curTargs} = getSymbCtrlsTargs[gate];
-        		curInterval = getQubitInterval[curCtrls,curTargs];
-        		curIsSpecialSwap = needsSpecialSwap[curSymb,curTargs];
-        		
-        		(* decide whether gate will fit in previous column *)
-        		If[Or[
-        			And[curIsSpecialSwap, Not[prevIsSpecialSwap]],
-        			AnyTrue[prevIntervals, (IntervalIntersection[curInterval,#] =!= Interval[]&)]],
-        			(* will not fit: *)
-        			(
-        				(* draw qubit lines for the previous column *)
-        				AppendTo[qubitgraphics, 
-        					drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]];
-        				
-        				(* then make a new column *)
-        				curCol = curCol + If[prevIsSpecialSwap,2,1]; 
-        				prevIntervals = {curInterval};
-        				prevIsSpecialSwap = curIsSpecialSwap;
-        				prevSpecialQubits = {};
-        			),
-        			(* will fit *)
-        			AppendTo[prevIntervals, curInterval]
-        		];
-        		
-        		(* record whether this gate requires special swaps *)
-        		If[curIsSpecialSwap, 
-        			With[{qbs=getFixedThenBotTopSwappedQubits[curTargs]},
-        				AppendTo[prevSpecialQubits, qbs[[2]]];
-        				AppendTo[prevSpecialQubits, qbs[[3]]]]];
-        	
-        		(* draw gate *)
-        		AppendTo[gategraphics,
-        			drawGate[
-        				curSymb,curCtrls,curTargs,
-        				curCol + If[prevIsSpecialSwap ~And~ Not[curIsSpecialSwap], .5, 0]]];,
-        		{gate,gates}
-        	];
-        	
-        	(* perform the final round of qubit drawing *)
-        	AppendTo[qubitgraphics, 
-        		drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]];
-        	
-            (* return *)
-        	{curCol, qubitgraphics, gategraphics}
+        (* labels below seperator *)
+        defaultSubcircLabelDrawer[label_, col_] :=
+            Rotate[Text[label, {col,-.5}], -15 Degree]
+        defaultTimeLabelDrawer[time_, col_] := 
+            defaultSubcircLabelDrawer[DisplayForm @ RowBox[{"t=",time}], col]
+            
+        (* creates a graphics description of the given list of subcircuits *)
+        generateCircuitGraphics[subcircs_List, numQubits_Integer, opts:OptionsPattern[]] := With[{
+            
+            (* unpack optional arguments *)
+            subSpacing=OptionValue[{opts,Options[DrawCircuit]}, SubcircuitSpacing],
+            dividerStyle=OptionValue[{opts,Options[DrawCircuit]}, DividerStyle],
+            labelDrawFunc=OptionValue[{opts,Options[DrawCircuit]}, LabelDrawer],
+            labels=OptionValue[{opts, Options[DrawCircuit]}, SubcircuitLabels]},
+            
+            (* prepare local variables *)
+            Module[{
+            	qubitgraphics,gategraphics,
+            	curCol,curSymb,curCtrls,curTargs,curInterval,curIsSpecialSwap,
+            	prevIntervals,prevIsSpecialSwap,prevSpecialQubits,
+                isFirstGate,subcircInd=0,subcircIndMax=Length[subcircs],
+                gates},
+
+                (* outputs *)
+            	qubitgraphics = {};
+            	gategraphics = {};
+            	
+                (* status of whether a gate can fit in the previous column *)
+            	curCol = 0;
+            	prevIntervals = {};
+            	prevIsSpecialSwap = False;
+            	prevSpecialQubits = {};
+                
+                (* draw divider left-of-circuit for the first label (else don't draw it) *)
+                If[And[labelDrawFunc =!= None, labels =!= {}, First[labels] =!= None], 
+                    AppendTo[gategraphics, drawSubcircSpacerLine[subSpacing/2, numQubits, dividerStyle]];
+                    AppendTo[gategraphics, labelDrawFunc[First @ labels, subSpacing/2]];
+                    curCol = subSpacing;
+                ];
+                
+                (* for each subcircuit... *)
+                Table[
+                    gates = compactCirc[OptionValue[{opts,Options[DrawCircuit]}, Compactify]][subcirc /. G[_] -> Nothing];
+                    subcircInd++;
+                    isFirstGate = True;
+                
+                    (* for each gate... *)
+                	Table[
+                    
+                		(* extract data from gate *)
+                		{curSymb,curCtrls,curTargs} = getSymbCtrlsTargs[gate];
+                		curInterval = getQubitInterval[curCtrls,curTargs];
+                		curIsSpecialSwap = needsSpecialSwap[curSymb,curTargs];
+                		
+                		(* decide whether gate will fit in previous column *)
+                		If[Or[
+                			And[curIsSpecialSwap, Not[prevIsSpecialSwap]],
+                			AnyTrue[prevIntervals, (IntervalIntersection[curInterval,#] =!= Interval[]&)]],
+                			(* will not fit: *)
+                			(
+
+                				(* draw qubit lines for the previous column (if it exists) *)
+                                If[Not[isFirstGate],
+                                    AppendTo[qubitgraphics,
+                                        drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]]];
+                				
+                				(* then make a new column *)
+                				curCol = curCol + If[isFirstGate, 0, If[prevIsSpecialSwap,2,1]]; 
+                				prevIntervals = {curInterval};
+                				prevIsSpecialSwap = curIsSpecialSwap;
+                				prevSpecialQubits = {};
+                                    
+                			),
+                			(* will fit *)
+                			AppendTo[prevIntervals, curInterval]
+                		];
+                        
+                        (* record that this is no longer the first gate in the subcircuit *)
+                        isFirstGate = False;
+                		
+                		(* record whether this gate requires special swaps *)
+                		If[curIsSpecialSwap, 
+                			With[{qbs=getFixedThenBotTopSwappedQubits[curTargs]},
+                				AppendTo[prevSpecialQubits, qbs[[2]]];
+                				AppendTo[prevSpecialQubits, qbs[[3]]]]];
+                	
+                		(* draw gate *)
+                		AppendTo[gategraphics,
+                			drawGate[
+                				curSymb,curCtrls,curTargs,
+                				curCol + If[prevIsSpecialSwap ~And~ Not[curIsSpecialSwap], .5, 0]]];        
+                        ,
+                		{gate,gates}
+                	];
+            	
+                	(* perform the final round of qubit line drawing (for previous column) *)
+                	AppendTo[qubitgraphics, 
+                		drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]];
+                        
+                    (* make a new column (just accounting for previous subcircuit) *)
+                    curCol = curCol + If[prevIsSpecialSwap,2,1]; 
+                    prevIntervals = {};
+                    prevIsSpecialSwap = False;
+                    prevSpecialQubits = {};
+                        
+                    (* if this was not the final subcircuit... *)
+                    If[subcircInd < subcircIndMax, 
+                    
+                        (* add subcircit seperator line  *)
+                        AppendTo[gategraphics, 
+                            drawSubcircSpacerLine[curCol + subSpacing/2, numQubits, dividerStyle]];
+                                
+                        (* add label below seperator line (unless None) *)
+                        If[And[labelDrawFunc =!= None, subcircInd+1 <= Length[labels], labels[[subcircInd+1]] =!= None],
+                            AppendTo[gategraphics, 
+                                labelDrawFunc[labels[[subcircInd+1]], curCol + subSpacing/2]]];
+                    
+                        (* add offset for subcircuit spacing (avoid 0 length for visual artefact) *)
+                        If[subSpacing > 0,
+                            AppendTo[qubitgraphics, 
+                                drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol, subSpacing]];
+                            curCol = curCol + subSpacing];
+                    ]
+                    ,
+                    {subcirc, subcircs}
+                ];
+                
+                (* if there's a remaining label, draw it and a final (otherwise superfluous) divider *)
+                If[And[labelDrawFunc =!= None, subcircInd+1 <= Length[labels], labels[[subcircInd+1]] =!= None],
+                    AppendTo[gategraphics, 
+                        labelDrawFunc[labels[[subcircInd+1]], curCol + subSpacing/2]];
+                    AppendTo[gategraphics, 
+                        drawSubcircSpacerLine[curCol + subSpacing/2, numQubits, dividerStyle]]
+                ];
+            	
+                (* return *)
+            	{curCol, qubitgraphics, gategraphics}
+            ]    
         ]
         
-        (* public function to fully render a circuit *)
-        DrawCircuit[circ_List, numQubits_Integer, opts:OptionsPattern[]] :=
-        Module[{numCols,qubitgraphics,gategraphics},
-        	{numCols,qubitgraphics,gategraphics} = generateCircuitGraphics[DeleteCases[circ,G[_]], numQubits];
-        	Graphics[{
-                FaceForm[White], EdgeForm[Black],
-                qubitgraphics, gategraphics},
-                opts,
-        		ImageSize -> 30 (numCols+1),
+        (* renders a circuit graphics description *)
+        displayCircuitGraphics[{numCols_, qubitgraphics_, gategraphics_}, opts___] :=
+            Graphics[
+                {
+                    FaceForm[White], EdgeForm[Black],
+                    qubitgraphics, gategraphics
+                },
+                FilterRules[{opts}, Options[Graphics]],
+                ImageSize -> 30 (numCols+1),
+                PlotRangePadding -> None
+                
+                (* 
+                PlotRangePadding -> None,
                 Method -> {"ShrinkWrap" -> True}
-        	]
-        ]
-        DrawCircuit[circ_List, opts:OptionsPattern[]] :=
-            DrawCircuit[circ, getNumQubitsInCircuit[circ], opts]
+                *)
+            ]
+            
+        (* optionally compactifies a circuit via GetColumnCircuits[] *)
+        compactCirc[flag_][circ_] :=
+            If[flag, Flatten @ GetCircuitColumns[circ], circ]
+        
+        (* declaring optional args to DrawCircuit *)
+        Options[DrawCircuit] = {
+            Compactify -> True,
+            DividerStyle -> Directive[Dashed, Gray], (* None for no dividers *)
+            SubcircuitSpacing -> .25,
+            SubcircuitLabels -> {},
+            LabelDrawer -> defaultSubcircLabelDrawer
+        };
+        
+        (* public functions to fully render a circuit *)
+        DrawCircuit[noisySched:{{_, _List, _List, _List}..}, Repeated[numQubits_, {0,1}], opts:OptionsPattern[]] :=
+            (* compactify each subcirc but not their union *)
+            DrawCircuit[{First[#], Join @@ compactCirc[OptionValue[Compactify]] /@ Rest[#]}& /@ noisySched, numQubits, Compactify -> False, opts]
+        DrawCircuit[schedule:{{_, _List}..}, numQubits_Integer, opts:OptionsPattern[]] :=
+            displayCircuitGraphics[
+                generateCircuitGraphics[schedule[[All,2]], numQubits, opts, SubcircuitLabels -> schedule[[All,1]], LabelDrawer -> defaultTimeLabelDrawer], opts]
+        DrawCircuit[schedule:{{_, _List}..}, opts:OptionsPattern[]] :=
+            DrawCircuit[schedule, getNumQubitsInCircuit[Flatten @ schedule[[All,2]]], opts]
+        DrawCircuit[cols:{{__}..}, numQubits_Integer, opts:OptionsPattern[]] := 
+            displayCircuitGraphics[
+                generateCircuitGraphics[cols, numQubits, {}, opts], opts]
+        DrawCircuit[cols:{{__}..}, opts:OptionsPattern[]] :=
+            DrawCircuit[cols, getNumQubitsInCircuit[Flatten @ cols], opts]
+        DrawCircuit[circ_List, args___] :=
+            DrawCircuit[{circ}, args]
         DrawCircuit[___] := invalidArgError[DrawCircuit]
         
         
