@@ -108,15 +108,21 @@ When two matrices are passed, many options (e.g. ChartStyle) can accept a length
     GetCircuitColumns::usage = "GetCircuitColumns[circuit] divides circuit into sub-circuits of gates on unique qubits (i.e. columns), filled from the left. Flatten the result to restore an equivalent but potentially compacted Circuit."
     GetCircuitColumns::error = "`1`"
     
-    GetCircuitSchedule::usage = "GetCircuitSchedule[circuit, config] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given hardware configuration. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}.
+    GetCircuitSchedule::usage = "GetCircuitSchedule[circuit, config] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given hardware configuration. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
 GetCircuitSchedule[subcircuits, config] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling."
     GetCircuitSchedule::error = "`1`"
     
-    InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, config] divides the circuit into scheduled subcircuits, and their sequences of active and passive noise, according to the given hardware configuration. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, subcirc1, active, passive}, ...}, which can be given directly to DrawCircuit[].
+    InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, config] divides the circuit into scheduled subcircuits, and their sequences of active and passive noise, according to the given hardware configuration. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, subcirc1, active, passive}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
 InsertCircuitNoise[{circ1, circ2, ...}, config] uses the given list of sub-circuits (output format of GetCircuitColumns[]), assuming each contain gates which can be simultaneously performed.
 InsertCircuitNoise[{{t1, circ1}, {t2, circ2}, ...} assumes the given schedule (output format of GetCircuitSchedule[]) of {t1,t2,...} for the rounds of gates and noise. These times can be symbolic.
 InsertCircuitNoise accepts optional argument NoiseMode, to specify whether to calculate only the \"Active\" or \"Passive\" noise sources (or \"Both\", as is default)."
     InsertCircuitNoise::error = "`1`"
+    
+    ExtractCircuit::usage = "ExtractCircuit[] returns the ultimate circuit from the outputs of InsertCircuitNoise[], GetCircuitSchedule[] and GetCircuitSchedule[]."
+    ExtractCircuit::error = "`1`"
+    
+    ViewCircuitSchedule::usage = "ViewCircuitSchedule[schedule] displays a table form of the given circuit schedule, as output by InsertCircuitNoise[] or GetCircuitSchedule[]."
+    ViewCircuitSchedule::error = "`1`"
     
     (*
      * optional arguments to public functions
@@ -1313,6 +1319,26 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         ]
         InsertCircuitNoise[colsOrCirc_, config_, opts:OptionsPattern[]] :=
             InsertCircuitNoise[GetCircuitSchedule[colsOrCirc, config], config, opts]
+            
+            
+        ExtractCircuit[schedule:{{_, (_List ..)}..}] :=
+            Flatten @ schedule[[All,2;;]]
+        ExtractCircuit[subcircs:{_List..}] :=
+            Flatten @ subcircs
+        ExtractCircuit[circuit_List] :=
+            circuit
+
+
+
+        ViewCircuitSchedule[sched:{{_, Repeated[_List,{1,3}]}..}, opts:OptionsPattern[]] :=
+            Grid[
+                Prepend[
+                    {First[#], Sequence @@ (Column /@ Rest[#])}& /@ sched,
+                    {"time","gates","active noise","passive noise"}[[;; Length @ First @ sched ]]
+                ],
+                opts,
+                Dividers->All
+            ]
 
     End[ ]
                                        
