@@ -89,7 +89,7 @@ SetWeightedQureg[fac, qOut] modifies qureg qOut to be fac qOut; that is, qOut is
     DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram. The circuit can contain symbolic parameters.
 DrawCircuit[circuit, numQubits] generates a circuit diagram with numQubits, which can be more or less than that inferred from the circuit.
 DrawCircuit[{circ1, circ2, ...}] draws the total circuit, divided into the given subcircuits. This is the output format of GetCircuitColumns[].
-DrawCircuit[{{t1, circ1}, {t2, circ2}, ...}] draws the total circuit, divided into the given subcircuits, labeled by their scheduled times {t1, t2, ...}. This is the output format of ScheduleCircuit[].
+DrawCircuit[{{t1, circ1}, {t2, circ2}, ...}] draws the total circuit, divided into the given subcircuits, labeled by their scheduled times {t1, t2, ...}. This is the output format of GetCircuitSchedule[].
 DrawCircuit[{{t1, A1,A2,A3}, {t2, B1,B2,B3}, ...}] draws the total circuit, divided into subcircuits {A1 A2 A3, B1 B2 B3, ...}, labeled by their scheduled times {t1, t2, ...}. This is the output format of InsertCircuitNoise[].
 DrawCircuit accepts optional arguments Compactify, DividerStyle, SubcircuitSpacing, SubcircuitLabels, LabelDrawer and any Graphics option."
     DrawCircuit::error = "`1`"
@@ -107,9 +107,9 @@ When two matrices are passed, many options (e.g. ChartStyle) can accept a length
     
     GetCircuitColumns::usage = "GetCircuitColumns[circuit] divides circuit into sub-circuits of gates on unique qubits (i.e. columns), filled from the left. Flatten the result to restore an equivalent but potentially compacted Circuit."
     
-    ScheduleCircuit::usage = "ScheduleCircuit[circuit, config] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given hardware configuration. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}.
-ScheduleCircuit[subcircuits, config] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling."
-    ScheduleCircuit::error = "`1`"
+    GetCircuitSchedule::usage = "GetCircuitSchedule[circuit, config] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given hardware configuration. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}.
+GetCircuitSchedule[subcircuits, config] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling."
+    GetCircuitSchedule::error = "`1`"
     
     (*
      * optional arguments to public functions
@@ -1227,11 +1227,11 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Max @ Table[Replace[gate, config["gates"]]["duration"], {gate,col}]
             
         (* assigns each of the given columns (unique-qubit subcircuits) a start-time *)
-        ScheduleCircuit[cols:{{__}..}, config_] := With[
+        GetCircuitSchedule[cols:{{__}..}, config_] := With[
             {durs = getColumnDuration[config] /@ cols},
             Transpose[{Accumulate @ Prepend[Most@durs, 0], cols}]]
-        ScheduleCircuit[circ_List, config_] :=
-            ScheduleCircuit[GetCircuitColumns[circ], config]
+        GetCircuitSchedule[circ_List, config_] :=
+            GetCircuitSchedule[GetCircuitColumns[circ], config]
             
         getActiveNoise[cols:{{__}..}, config_] :=
             Table[
