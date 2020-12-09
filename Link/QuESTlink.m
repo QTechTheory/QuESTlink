@@ -121,7 +121,8 @@ InsertCircuitNoise accepts optional argument NoiseMode, to specify whether to ca
     ExtractCircuit::usage = "ExtractCircuit[] returns the ultimate circuit from the outputs of InsertCircuitNoise[], GetCircuitSchedule[] and GetCircuitSchedule[]."
     ExtractCircuit::error = "`1`"
     
-    ViewCircuitSchedule::usage = "ViewCircuitSchedule[schedule] displays a table form of the given circuit schedule, as output by InsertCircuitNoise[] or GetCircuitSchedule[]."
+    ViewCircuitSchedule::usage = "ViewCircuitSchedule[schedule] displays a table form of the given circuit schedule, as output by InsertCircuitNoise[] or GetCircuitSchedule[].
+ViewCircuitSchedule accepts all optional arguments of Grid[] (e.g. FrameStyle)."
     ViewCircuitSchedule::error = "`1`"
     
     (*
@@ -1320,15 +1321,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         InsertCircuitNoise[colsOrCirc_, config_, opts:OptionsPattern[]] :=
             InsertCircuitNoise[GetCircuitSchedule[colsOrCirc, config], config, opts]
             
-            
         ExtractCircuit[schedule:{{_, (_List ..)}..}] :=
             Flatten @ schedule[[All,2;;]]
         ExtractCircuit[subcircs:{_List..}] :=
             Flatten @ subcircs
         ExtractCircuit[circuit_List] :=
             circuit
-
-
 
         ViewCircuitSchedule[sched:{{_, Repeated[_List,{1,3}]}..}, opts:OptionsPattern[]] :=
             Grid[
@@ -1337,8 +1335,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     {"time","gates","active noise","passive noise"}[[;; Length @ First @ sched ]]
                 ],
                 opts,
-                Dividers->All
-            ]
+                Dividers -> All,
+                FrameStyle -> LightGray]
 
     End[ ]
                                        
