@@ -106,10 +106,17 @@ When two matrices are passed, many options (e.g. ChartStyle) can accept a length
     PlotDensityMatrix::error = "`1`"
     
     GetCircuitColumns::usage = "GetCircuitColumns[circuit] divides circuit into sub-circuits of gates on unique qubits (i.e. columns), filled from the left. Flatten the result to restore an equivalent but potentially compacted Circuit."
+    GetCircuitColumns::error = "`1`"
     
     GetCircuitSchedule::usage = "GetCircuitSchedule[circuit, config] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given hardware configuration. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}.
 GetCircuitSchedule[subcircuits, config] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling."
     GetCircuitSchedule::error = "`1`"
+    
+    InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, config] divides the circuit into scheduled subcircuits, and their sequences of active and passive noise, according to the given hardware configuration. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, subcirc1, active, passive}, ...}, which can be given directly to DrawCircuit[].
+InsertCircuitNoise[{circ1, circ2, ...}, config] uses the given list of sub-circuits (output format of GetCircuitColumns[]), assuming each contain gates which can be simultaneously performed.
+InsertCircuitNoise[{{t1, circ1}, {t2, circ2}, ...} assumes the given schedule (output format of GetCircuitSchedule[]) of {t1,t2,...} for the rounds of gates and noise. These times can be symbolic.
+InsertCircuitNoise accepts optional argument NoiseMode, to specify whether to calculate only the \"Active\" or \"Passive\" noise sources (or \"Both\", as is default)."
+    InsertCircuitNoise::error = "`1`"
     
     (*
      * optional arguments to public functions
@@ -138,6 +145,9 @@ GetCircuitSchedule[subcircuits, config] uses the given division (lists of circui
     
     PackageExport[LabelDrawer]
     LabelDrawer::usage = "Optional argument to DrawCircuit, to specify a two-argument function for drawing subcircuit labels. For example, Function[{msg,x},Text[msg,{x,-.5}]]. Use LabelDrawer -> None to show no labels."
+    
+    PackageExport[NoiseMode]
+    NoiseMode::usage = "Optional argument to InsertCircuitNoise, to specify which kind of noise to insert, of \"Active\", \"Passive\" or \"All\" (default)."
     
     (* 
      * gate symbols, needed exporting so that their use below does not refer to a private var      
@@ -858,6 +868,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Rotate[Text[label, {col,-.5}], -15 Degree]
         defaultTimeLabelDrawer[time_, col_] := 
             defaultSubcircLabelDrawer[DisplayForm @ RowBox[{"t=",time}], col]
+                
+        (* optionally compactifies a circuit via GetColumnCircuits[] *)
+        compactCirc[flag_][circ_] :=
+            If[flag, Flatten @ GetCircuitColumns[circ], circ]
             
         (* creates a graphics description of the given list of subcircuits *)
         generateCircuitGraphics[subcircs_List, numQubits_Integer, opts:OptionsPattern[]] := With[{
@@ -1005,10 +1019,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 PlotRangePadding -> None
                 (* , Method -> {"ShrinkWrap" -> True} *)
             ]
-            
-        (* optionally compactifies a circuit via GetColumnCircuits[] *)
-        compactCirc[flag_][circ_] :=
-            If[flag, Flatten @ GetCircuitColumns[circ], circ]
         
         (* declaring optional args to DrawCircuit *)
         Options[DrawCircuit] = {
@@ -1028,10 +1038,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 generateCircuitGraphics[schedule[[All,2]], numQubits, opts, SubcircuitLabels -> schedule[[All,1]], LabelDrawer -> defaultTimeLabelDrawer], opts]
         DrawCircuit[schedule:{{_, _List}..}, opts:OptionsPattern[]] :=
             DrawCircuit[schedule, getNumQubitsInCircuit[Flatten @ schedule[[All,2]]], opts]
-        DrawCircuit[cols:{{__}..}, numQubits_Integer, opts:OptionsPattern[]] := 
+        DrawCircuit[cols:{{___}..}, numQubits_Integer, opts:OptionsPattern[]] := 
             displayCircuitGraphics[
                 generateCircuitGraphics[cols, numQubits, {}, opts], opts]
-        DrawCircuit[cols:{{__}..}, opts:OptionsPattern[]] :=
+        DrawCircuit[cols:{{___}..}, opts:OptionsPattern[]] :=
             DrawCircuit[cols, getNumQubitsInCircuit[Flatten @ cols], opts]
         DrawCircuit[circ_List, args___] :=
             DrawCircuit[{circ}, args]
@@ -1168,6 +1178,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
          *)
          
         (* divide circ into columns, filling the left-most first *)
+        GetCircuitColumns[{}] := {}
         GetCircuitColumns[circ_List] := With[{
             numQb=getNumQubitsInCircuit[circ],
             numGates=Length[circ]},
@@ -1209,8 +1220,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     (* nextIndex is unchanged if a gate occupies all qubits *)
                     If[nextIndex === Null, nextIndex=index+1];
                     
-                    (* finalize the new column *)
-                    AppendTo[compactified, column];
+                    (* finalize the new column; empty column can arise from a trailing iteration by above edge-case *)
+                    AppendTo[compactified, If[column =!= {}, column, Nothing]];
                     column = {};
                     available = ConstantArray[True,numQb];
                     index = nextIndex;
@@ -1264,21 +1275,44 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             {times, subcircs},
             {times, subcircs} = Transpose[schedule];
             (* if first event is t>0, passive-noise all qubits until then *)
-            If[First[times] > 0, PrependTo[times, 0]; PrependTo[subcircs, {}]];
+            If[First[times] =!= 0, PrependTo[times, 0]; PrependTo[subcircs, {}]];
             (* passive noise for duration between scheduled subcircuits (and after last) *)
             With[{durations = Append[Differences[times], getColumnDuration[config] @ Last @ subcircs]},
                 MapThread[getSubcircPassiveNoise[#1,#2,config]&, {subcircs, durations}]
             ]
         ]
+        
+        (* declaring optional args to InsertCircuitNoise *)
+        Options[InsertCircuitNoise] = {
+            NoiseMode -> "Both"
+        };
 
-        InsertCircuitNoise[schedule:{{_, _List}..}, config_] :=
-            With[{
-                active = getActiveNoise[schedule, config],
-                passive = getPassiveNoise[schedule, config]},
-                Transpose[{schedule[[All,2]], active, passive}]
+        InsertCircuitNoise[schedule:{{_, _List}..}, config_, opts:OptionsPattern[]] := With[
+            {mode = OptionValue[NoiseMode], numEvents=Length[schedule]},
+            {incPas = (mode =!= "Active"), incAct = (mode =!= "Passive")},
+            Module[{
+                (* compute active and passive noises separately *)
+                times = schedule[[All,1]],
+                subcircs = schedule[[All,2]],
+                active = If[incAct, getActiveNoise[schedule, config], ConstantArray[{}, numEvents]],
+                passive = If[incPas, getPassiveNoise[schedule, config], ConstantArray[{}, numEvents]],
+                    
+                (* infer whether passive includes extra initial phase *)
+                pad = And[incPas, schedule[[1,1]] =!= 0]},
+                
+                (* if the first event is t>0, passive was padded, so pad everything else *)
+                If[pad, (
+                    PrependTo[times, 0];
+                    PrependTo[subcircs, {}];
+                    PrependTo[active, {}]; )
+                ];
+                
+                (* return { {t1,subcirc1,active1,passive1}, ...} *)
+                Transpose[{times, subcircs, active, passive}]
             ]
-        InsertCircuitNoise[colsOrCirc_, config_] :=
-            InsertCircuitNoise[ScheduleCircuit[colsOrCirc, config], config]
+        ]
+        InsertCircuitNoise[colsOrCirc_, config_, opts:OptionsPattern[]] :=
+            InsertCircuitNoise[GetCircuitSchedule[colsOrCirc, config], config, opts]
 
     End[ ]
                                        
