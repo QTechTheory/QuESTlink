@@ -91,7 +91,7 @@ DrawCircuit[circuit, numQubits] generates a circuit diagram with numQubits, whic
 DrawCircuit[{circ1, circ2, ...}] draws the total circuit, divided into the given subcircuits. This is the output format of GetCircuitColumns[].
 DrawCircuit[{{t1, circ1}, {t2, circ2}, ...}] draws the total circuit, divided into the given subcircuits, labeled by their scheduled times {t1, t2, ...}. This is the output format of GetCircuitSchedule[].
 DrawCircuit[{{t1, A1,A2,A3}, {t2, B1,B2,B3}, ...}] draws the total circuit, divided into subcircuits {A1 A2 A3, B1 B2 B3, ...}, labeled by their scheduled times {t1, t2, ...}. This is the output format of InsertCircuitNoise[].
-DrawCircuit accepts optional arguments Compactify, DividerStyle, SubcircuitSpacing, SubcircuitLabels, LabelDrawer and any Graphics option."
+DrawCircuit accepts optional arguments Compactify, DividerStyle, SubcircuitSpacing, SubcircuitLabels, LabelDrawer and any Graphics option. For example, the fonts can be changed with 'BaseStyle -> {FontFamily -> \"Arial\"}'."
     DrawCircuit::error = "`1`"
 
     CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic expression for the given unitary circuit, which may contain undefined symbols. The number of qubits is inferred from the circuit indices (0 to maximum specified).
@@ -122,7 +122,7 @@ InsertCircuitNoise accepts optional argument NoiseMode, to specify whether to ca
     ExtractCircuit::error = "`1`"
     
     ViewCircuitSchedule::usage = "ViewCircuitSchedule[schedule] displays a table form of the given circuit schedule, as output by InsertCircuitNoise[] or GetCircuitSchedule[].
-ViewCircuitSchedule accepts all optional arguments of Grid[] (e.g. FrameStyle)."
+ViewCircuitSchedule accepts all optional arguments of Grid[], for example 'FrameStyle', and 'BaseStyle -> {FontFamily -> \"CMU Serif\"}'."
     ViewCircuitSchedule::error = "`1`"
     
     (*
@@ -881,13 +881,15 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             If[flag, Flatten @ GetCircuitColumns[circ], circ]
             
         (* creates a graphics description of the given list of subcircuits *)
-        generateCircuitGraphics[subcircs_List, numQubits_Integer, opts:OptionsPattern[]] := With[{
+        generateCircuitGraphics[subcircs_List, numQubits_Integer, opts___] := With[{
             
             (* unpack optional arguments *)
             subSpacing=OptionValue[{opts,Options[DrawCircuit]}, SubcircuitSpacing],
             dividerStyle=OptionValue[{opts,Options[DrawCircuit]}, DividerStyle],
             labelDrawFunc=OptionValue[{opts,Options[DrawCircuit]}, LabelDrawer],
-            labels=OptionValue[{opts, Options[DrawCircuit]}, SubcircuitLabels]},
+            labels=OptionValue[{opts, Options[DrawCircuit]}, SubcircuitLabels],
+            compactFlag=OptionValue[{opts,Options[DrawCircuit]}, Compactify]
+            },
             
             (* prepare local variables *)
             Module[{
@@ -916,7 +918,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 
                 (* for each subcircuit... *)
                 Table[
-                    gates = compactCirc[OptionValue[{opts,Options[DrawCircuit]}, Compactify]][subcirc /. G[_] -> Nothing];
+                    gates = compactCirc[compactFlag][subcirc /. G[_] -> Nothing];
                     subcircInd++;
                     isFirstGate = True;
                 
