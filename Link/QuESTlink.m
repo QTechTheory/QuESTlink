@@ -85,6 +85,11 @@ SetWeightedQureg[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + 
 SetWeightedQureg[fac1, q1, qOut] modifies qureg qOut to be fac1 * q1. qOut can be q1.
 SetWeightedQureg[fac, qOut] modifies qureg qOut to be fac qOut; that is, qOut is scaled by factor fac."
     SetWeightedQureg::error = "`1`"
+    
+    SimplifyPaulis::usage = "SimplifyPaulis[expr] freezes commutation and analytically simplifies the given expression of Pauli operators, and expands it in the Pauli basis. The input expression can include sums, products, powers and non-commuting products of (subscripted) X, Y and Z operators and other Mathematica symbols (including variables defined as Pauli expressions). 
+For example, try SimplifyPaulis[ Subscript[Y,0] (a Subscript[X,0] + b Subscript[Z,0] Subscript[X,1])^3 ].
+Be careful of performing algebra with Pauli operators outside of SimplifyPaulis[], since Mathematica may erroneously automatically commute them."
+    SimplifyPaulis::error = "`1`"
 
     DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram. The circuit can contain symbolic parameters.
 DrawCircuit[circuit, numQubits] generates a circuit diagram with numQubits, which can be more or less than that inferred from the circuit.
@@ -600,6 +605,77 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         GetAmp[qureg_Integer, index_Integer] := GetAmpInternal[qureg, index, -1]
         GetAmp[qureg_Integer, row_Integer, col_Integer] := GetAmpInternal[qureg, row, col]
         GetAmp[___] := invalidArgError[GetAmp]
+        
+        
+        
+        (* 
+         * Below is only front-end code for analytically simplifying expressions 
+         * of Pauli tensors
+         *)
+         
+         (* post-processing step to combine Pauli products that have identical symbols and indices... *)
+        getPauliSig[ a: Subscript[(X|Y|Z), _Integer] ] := {a}
+        getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, Subscript[(X|Y|Z), _]]
+        getPauliSig[ _ ] := {}
+        (* which works by splitting a sum into groups containing the same Pauli tensor, and simplifying each *)
+        factorPaulis[s_Plus] := Simplify /@ Plus @@@ GatherBy[List @@ s, getPauliSig] // Total
+        factorPaulis[e_] := e
+        
+        (* SimplifyPaulis prevents Mathemtica commutation (and inadvertently, variable substitution)
+         * in order to perform all operator simplification correctly. It accepts expressions containing 
+         * sums, products, powers and non-commuting multiples of Pauli operators (literals, and in variables), 
+         * and the structures of remaining patterns/symbols/expressions can be anything at all.
+         *)
+        SetAttributes[SimplifyPaulis, HoldAll]
+        
+        SimplifyPaulis[ a:Subscript[(X|Y|Z), _] ] := 
+            a
+
+        SimplifyPaulis[ (a:Subscript[(X|Y|Z), _])^n_Integer ] /; (n >= 0) :=
+        	If[EvenQ[n],1,a]
+        
+        SimplifyPaulis[ Verbatim[Times][t__] ] := With[
+        	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
+        	{nc = SimplifyPaulis /@ (NonCommutativeMultiply @@ (SimplifyPaulis /@ Hold[t]))},
+        	(* pass product (which now contains no powers of pauli expressions) to simplify *)
+        	SimplifyPaulis[nc]]
+
+        SimplifyPaulis[ Power[b_, n_Integer] ] /; (Not[FreeQ[b,Subscript[(X|Y|Z), _]]] && n >= 0) :=
+        	(* simplify the base, then pass a (non-expanded) product to simplify (to trigger above def) *)
+        	With[{s=ConstantArray[SimplifyPaulis[b], n]}, 
+        		SimplifyPaulis @@ (Times @@@ Hold[s])]
+        		
+        SimplifyPaulis[ Plus[t__] ] := With[
+        	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
+        	{s = Plus @@ (SimplifyPaulis /@ (List @@ (SimplifyPaulis /@ Hold[t])))},
+        	(* combine identical Pauli tensors in the resulting sum *)
+        	factorPaulis[s]
+        ]
+
+        SimplifyPaulis[ NonCommutativeMultiply[t__] ] := With[
+        	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
+        	{s = SimplifyPaulis /@ (NonCommutativeMultiply @@ (SimplifyPaulis /@ Hold[t]))},
+        	(* expand all multiplication into non-commuting; this means ex can be a sum now *)
+        	{ex = Distribute[s /. Times -> NonCommutativeMultiply]},
+        	(* notation shortcuts *)
+        	{\[Sigma] = X|Y|Z, \[CapitalPi] = NonCommutativeMultiply}, 
+        	(* since ex can now be a sum, after below transformation, factorise *)
+        	factorPaulis[
+        		ex //. {
+        		(* destroy exponents of single terms *)
+        		(a:Subscript[\[Sigma], _])^n_ :> If[EvenQ[n],1,a], 
+        		(* move scalars to their own element (to clean pauli pattern) *)
+        		\[CapitalPi][r1___, (\[Lambda]:Except[Subscript[\[Sigma], _]]) (a:Subscript[\[Sigma], _]) , r2___] :> \[CapitalPi][\[Lambda],r1,a,r2],
+        		(* map same-qubit adjacent (closest) pauli matrices to their product *)
+        		\[CapitalPi][r1___, Subscript[(a:\[Sigma]), q_],r2:Shortest[___],Subscript[(b:\[Sigma]), q_], r3___] :>
+        			If[a === b, \[CapitalPi][r1,r2,r3], With[{c = First @ Complement[List@@\[Sigma], {a,b}]},
+        				\[CapitalPi][r1, I If[Sort[{a,b}]==={a,b},1,-1] Subscript[c, q], r2, r3]]]
+        	(* finally, restore products (overwriting user non-comms) and simplify scalars *)
+        	} /. NonCommutativeMultiply -> Times]]
+        	
+        (* let everything else evaluate (to admit scalars, or let variables be substituted *)
+        SimplifyPaulis[e_] :=
+        	e
         
         
         
