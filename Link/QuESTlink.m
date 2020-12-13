@@ -113,6 +113,11 @@ When two matrices are passed, many options (e.g. ChartStyle) can accept a length
     GetCircuitColumns::usage = "GetCircuitColumns[circuit] divides circuit into sub-circuits of gates on unique qubits (i.e. columns), filled from the left. Flatten the result to restore an equivalent but potentially compacted Circuit."
     GetCircuitColumns::error = "`1`"
     
+    GetUnsupportedGates::usage = "GetUnsupportedGates[circuit, config] returns a list of the gates in circuit which either on non-existent qubits or are not present in or satisfy the gate rules in the hardware specification. The circuit can contain symbolic parameters, though if it cannot be inferred that the parameter satisfies a gate condition, the gate is assumed unsupported.
+GetUnsupportedGates[{circ1, circ2, ...}, config] returns the unsupported gates in each subcircuit, as separate lists.
+GetUnsupportedGates[{{t1, circ1}, {t2, circ2}, ...}, config] ignores the times in the schedule and returns the unsupported gates in each subcircuit, as separate lists."
+    GetUnsupportedGates::error = "`1`"
+    
     GetCircuitSchedule::usage = "GetCircuitSchedule[circuit, config] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given hardware configuration. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
 GetCircuitSchedule[subcircuits, config] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling."
     GetCircuitSchedule::error = "`1`"
@@ -1317,6 +1322,23 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 compactified
             ]
         ]
+        
+        (* returns whether the circuit is supported by the hardware spec *)
+        isCompatibleGate[config_][gate_] := With[
+            {qubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
+            And[
+                (* all gate's qubit indices are valid *)
+                AllTrue[qubits, LessThan[config["numQubits"]]],
+                (* the gate satisfies a gate pattern *)
+                MatchQ[gate, Alternatives @@ Keys @ config["gates"]]]]
+        
+        GetUnsupportedGates[sched:{{_, _List}..}, config_] :=
+            GetUnsupportedGates[ sched[[All, 2]], config ]
+        GetUnsupportedGates[cols:{_List ..}, config_] :=
+            GetUnsupportedGates[#, config]& /@ cols
+        GetUnsupportedGates[circ_List, config_] :=
+    	   Select[circ, (Not[isCompatibleGate[config][#]]&) ]
+        GetUnsupportedGates[___] := invalidArgError[GetUnsupportedGates]
         
         (* returns the duration of the longest gate in the given column *)
         getColumnDuration[config_][col_] :=
