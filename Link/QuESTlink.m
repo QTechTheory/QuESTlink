@@ -994,6 +994,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 If[And[labelDrawFunc =!= None, labels =!= {}, First[labels] =!= None], 
                     AppendTo[gategraphics, drawSubcircSpacerLine[subSpacing/2, numQubits, dividerStyle]];
                     AppendTo[gategraphics, labelDrawFunc[First @ labels, subSpacing/2]];
+                    AppendTo[qubitgraphics, drawQubitColumn[False, {} , numQubits, curCol + subSpacing/2, subSpacing/2]];
                     curCol = subSpacing;
                 ];
                 
@@ -1089,7 +1090,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     AppendTo[gategraphics, 
                         labelDrawFunc[labels[[subcircInd+1]], curCol + subSpacing/2]];
                     AppendTo[gategraphics, 
-                        drawSubcircSpacerLine[curCol + subSpacing/2, numQubits, dividerStyle]]
+                        drawSubcircSpacerLine[curCol + subSpacing/2, numQubits, dividerStyle]];
+                    AppendTo[qubitgraphics,
+                        drawQubitColumn[False, {} , numQubits, curCol, subSpacing/2]];
                 ];
             	
                 (* return *)
