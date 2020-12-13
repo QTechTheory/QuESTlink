@@ -1115,7 +1115,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         };
         
         (* public functions to fully render a circuit *)
-        DrawCircuit[noisySched:{{_, _List, _List, _List}..}, Repeated[numQubits_, {0,1}], opts:OptionsPattern[]] :=
+        DrawCircuit[noisySched:{{_, _List, _List, _List}..}, Repeated[numQubits_, {0,1}], opts:OptionsPattern[{DrawCircuit,Graphics}]] :=
             (* compactify each subcirc but not their union *)
             DrawCircuit[{First[#], Join @@ compactCirc[OptionValue[Compactify]] /@ Rest[#]}& /@ noisySched, numQubits, Compactify -> False, opts]
         DrawCircuit[schedule:{{_, _List}..}, numQubits_Integer, opts:OptionsPattern[]] :=
