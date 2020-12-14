@@ -1406,6 +1406,16 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 ]
             ]]
         CheckCircuitSchedule[___] := invalidArgError[CheckCircuitSchedule]
+            
+        isCompatibleSched[sched:{{_, _List}..}, config_] := 
+            And[
+                (* schedule contains only valid gates *)
+                isCompatibleCirc[ sched[[All,2]], config ],
+                (* and that the schedule times are valid (to avoid Check* errors below) *)
+                areMonotonicTimes @ sched[[All,1]],
+                (* AND there (may) exist a symbol assignment for which the circuit is valid *)
+                CheckCircuitSchedule[sched, config] =!= False
+            ]
         
         GetUnsupportedGates[sched:{{_, _List}..}, config_] :=
             GetUnsupportedGates[ sched[[All, 2]], config ]
@@ -1420,17 +1430,20 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Max @ Table[Replace[gate, config["gates"]]["duration"], {gate,col}]
             
         (* assigns each of the given columns (unique-qubit subcircuits) a start-time *)
-        GetCircuitSchedule[cols:{{__}..}, config_] := With[
+        GetCircuitSchedule[cols:{{__}..}, config_] /; isCompatibleCirc[cols,config] := With[
             {durs = getColumnDuration[config] /@ cols},
             Transpose[{Accumulate @ Prepend[Most@durs, 0], cols}]]
-        GetCircuitSchedule[circ_List, config_] :=
+        GetCircuitSchedule[circ_List, config_] /; isCompatibleCirc[circ,config] :=
             GetCircuitSchedule[GetCircuitColumns[circ], config]
+        GetCircuitSchedule[a_, config_] /; Not[isCompatibleCirc[a,config]] := (
+            Message[GetCircuitSchedule::error, "The circuit(s) contains gates unsupported by the specified system. See ?GetUnsupportedGates."];
+            $Failed)
+        GetCircuitSchedule[___] := invalidArgError[GetCircuitSchedule]
             
         getActiveNoise[cols:{{__}..}, config_] :=
             Table[
                 Flatten @ Table[Replace[gate, config["gates"]]["activeNoise"], {gate,col}],
-                {col, cols}
-            ]
+                {col, cols}]
         getActiveNoise[schedule:{{_, _List}..}, config_] :=
             getActiveNoise[schedule[[All,2]], config]
             
@@ -1469,32 +1482,45 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             NoiseMode -> "Both"
         };
 
-        InsertCircuitNoise[schedule:{{_, _List}..}, config_, opts:OptionsPattern[]] := With[
-            {mode = OptionValue[NoiseMode], numEvents=Length[schedule]},
-            {incPas = (mode =!= "Active"), incAct = (mode =!= "Passive")},
-            Module[{
-                (* compute active and passive noises separately *)
-                times = schedule[[All,1]],
-                subcircs = schedule[[All,2]],
-                active = If[incAct, getActiveNoise[schedule, config], ConstantArray[{}, numEvents]],
-                passive = If[incPas, getPassiveNoise[schedule, config], ConstantArray[{}, numEvents]],
-                    
-                (* infer whether passive includes extra initial phase *)
-                pad = And[incPas, schedule[[1,1]] =!= 0]},
+        InsertCircuitNoise[schedule:{{_, _List}..}, config_, opts:OptionsPattern[]] :=
+            If[isCompatibleSched[schedule, config], 
+                (* if schedule is compatible *)
+                With[
+                    {mode = OptionValue[NoiseMode], numEvents=Length[schedule]},
+                    {incPas = (mode =!= "Active"), incAct = (mode =!= "Passive")},
+                    Module[{
+                        (* compute active and passive noises separately *)
+                        times = schedule[[All,1]],
+                        subcircs = schedule[[All,2]],
+                        active = If[incAct, getActiveNoise[schedule, config], ConstantArray[{}, numEvents]],
+                        passive = If[incPas, getPassiveNoise[schedule, config], ConstantArray[{}, numEvents]],
+                            
+                        (* infer whether passive includes extra initial phase *)
+                        pad = And[incPas, schedule[[1,1]] =!= 0]},
+                        
+                        (* if the first event is t>0, passive was padded, so pad everything else *)
+                        If[pad, (
+                            PrependTo[times, 0];
+                            PrependTo[subcircs, {}];
+                            PrependTo[active, {}]; )
+                        ];
+                        
+                        (* attempt simplification of any symbolic passive noise using schedule monotonicity *)
+                        passive = Simplify[passive, Assumptions -> getMotonicTimesConditions[times]];
+                        
+                        (* return { {t1,subcirc1,active1,passive1}, ...} *)
+                        Transpose[{times, subcircs, active, passive}]
+                    ]
+                ],
+                (* else give error *)
+                (Message[InsertCircuitNoise::error, "The given schedule is either invalid, or incompatible with the specified system, either through unsupported gates, or by prescribing overlapping (in time) sub-circuits."];
+                $Failed)]
                 
-                (* if the first event is t>0, passive was padded, so pad everything else *)
-                If[pad, (
-                    PrependTo[times, 0];
-                    PrependTo[subcircs, {}];
-                    PrependTo[active, {}]; )
-                ];
-                
-                (* return { {t1,subcirc1,active1,passive1}, ...} *)
-                Transpose[{times, subcircs, active, passive}]
-            ]
-        ]
-        InsertCircuitNoise[colsOrCirc_, config_, opts:OptionsPattern[]] :=
-            InsertCircuitNoise[GetCircuitSchedule[colsOrCirc, config], config, opts]
+        InsertCircuitNoise[colsOrCirc_, config_, opts:OptionsPattern[]] := 
+            If[isCompatibleCirc[colsOrCirc, config],
+                InsertCircuitNoise[GetCircuitSchedule[colsOrCirc, config], config, opts],
+                (Message[InsertCircuitNoise::error, "The given circuit(s) is contains gates not supported by the given system specification. See ?GetUnsupportedGates."];
+                $Failed)]
             
         ExtractCircuit[schedule:{{_, (_List ..)}..}] :=
             Flatten @ schedule[[All,2;;]]
