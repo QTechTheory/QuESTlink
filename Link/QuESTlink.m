@@ -122,6 +122,12 @@ GetUnsupportedGates[{{t1, circ1}, {t2, circ2}, ...}, config] ignores the times i
 GetCircuitSchedule[subcircuits, config] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling."
     GetCircuitSchedule::error = "`1`"
     
+    CheckCircuitSchedule::usage = "CheckCircuitSchedule[{{t1, circ1}, {t2, circ2}, ...}, config] checks whether the given schedule of sub-circuits is compatible with the hardware system, else if it prescribes overlapping sub-circuit execution (regardless of targeted qubits). Times and gate parameters can be symbolic. All gates in a sub-circuit are assumed applicable simultaneously, even if they target overlapping qubits.
+CheckCircuitSchedule returns False if the (possibly symbolic) times cannot possibly be monotonic, nor admit a sufficient duration for any sub-circuit.
+CheckCircuitSchedule returns True if the schedule is valid for any assignment of the times and gate parameters.
+CheckCircuitSchedule returns a list of symbolic conditions which must be simultaneously satisfied for the schedule to be valid, if it cannot determine so absolutely. These conditions include constraints of both motonicity and duration."
+    CheckCircuitSchedule::error = "`1`"
+    
     InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, config] divides the circuit into scheduled subcircuits, and their sequences of active and passive noise, according to the given hardware configuration. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, subcirc1, active, passive}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
 InsertCircuitNoise[{circ1, circ2, ...}, config] uses the given list of sub-circuits (output format of GetCircuitColumns[]), assuming each contain gates which can be simultaneously performed.
 InsertCircuitNoise[{{t1, circ1}, {t2, circ2}, ...} assumes the given schedule (output format of GetCircuitSchedule[]) of {t1,t2,...} for the rounds of gates and noise. These times can be symbolic.
@@ -1334,6 +1340,72 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 AllTrue[qubits, LessThan[config["numQubits"]]],
                 (* the gate satisfies a gate pattern *)
                 MatchQ[gate, Alternatives @@ Keys @ config["gates"]]]]
+        isCompatibleCirc[circOrCols_List, config_] := 
+            AllTrue[ Flatten[circOrCols], isCompatibleGate[config]]
+        isCompatibleCirc[_, config_] :=
+            False
+            
+        (* the symbolic conditions (list) under which times is monotonically increasing (and real, >0) *)
+        getMotonicTimesConditions[times_List] :=
+            Join[
+                MapThread[Less, {Most @ times, Rest @ times} ],
+                GreaterEqualThan[0] /@ times,
+                (Element[#,Reals]&) /@ times]
+            
+        areMonotonicTimes[times_List] := 
+            If[(* times must be real (else symbolic) to continue *)
+                AnyTrue[(Element[#, Reals]&) /@ times, (# === False &)],
+                False,
+                With[{conds = getMotonicTimesConditions[times]},
+                    And[
+                        (* adjacent numbers increase *)
+                        Not @ MemberQ[conds, False], 
+                        (* symbolic numbers MAY increase (it's not impossible for them to be monotonic) *)
+                        Not[False === Simplify[And @@ conds]]]]]
+        
+        CheckCircuitSchedule[sched:{{_, _List}..}, config_] /; Not[isCompatibleCirc[sched[[All,2]], config]] := (
+            Message[CheckCircuitSchedule::error, "The given schedule contains gates incompatible with the system. See ?GetUnsupportedGates"];
+            $Failed)
+        CheckCircuitSchedule[sched:{{_, _List}..}, config_] /; Not[areMonotonicTimes[sched[[All,1]]]] := (
+            Message[CheckCircuitSchedule::error, "The given schedule times are not motonically increasing, nor can be for any assignment of symbols, or they are not real and positive."];
+            $Failed)
+            
+        (* this is currently naive, and assumes each sub-circuit is valid (contains simultaneous gates), and 
+         * that overlapping sub-circuits is invalid. A smarter function would
+         * check sub-circuits contain gates on unique qubits, and check whether 
+         * overlapping sub-circuits act on uniqe qubits (which would be ok).
+         *)
+        CheckCircuitSchedule[sched:{{_, _List}..}, config_] := With[
+            {times = sched[[All,1]], subcircs = sched[[All,2]]},
+            (* the duration scheduled for each subcircuit *)
+            {schedDurs = Differences @ times},
+            (* the minimum required duration of each subcircuit *)
+            {minDurs = getColumnDuration[config] /@ Most[subcircs]},
+            (* list of (possibly symbolic) assumptions implied by monotonicity of given schedule *)
+            {mono = getMotonicTimesConditions[times]},
+            (* list of (possibly symbolic) conditions that each subcircuit has sufficient duration *)
+            {conds = MapThread[Function[{big, small}, 
+                        (* if both values are numerical, we need to add wiggle room for precision *)
+                        If[ NumberQ[big] && NumberQ[small],
+                        Or[big >= small, Abs @ N[big-small] < 100 $MachineEpsilon],
+                        (* symbolic values become a symbolic inequality *)
+                        big >= small]], {schedDurs,minDurs}]},
+
+            (* combine the conditions with the monotonicty constraint *)
+            With[{valid=Simplify[conds, Assumptions -> mono]},
+                Which[
+                    (* if any condition is broken regardless of symbols, schedule is invalid *)
+                    MemberQ[valid, False], 
+                        False,
+                    (* if all conditions are satisfied despite symbol assignments, the schedule is valid *)
+                    AllTrue[valid, TrueQ],
+                        True,
+                    (* otherwise return the symbolic conditions under which the schedule is valid *)
+                    True,
+                        DeleteCases[valid, True]
+                ]
+            ]]
+        CheckCircuitSchedule[___] := invalidArgError[CheckCircuitSchedule]
         
         GetUnsupportedGates[sched:{{_, _List}..}, config_] :=
             GetUnsupportedGates[ sched[[All, 2]], config ]
