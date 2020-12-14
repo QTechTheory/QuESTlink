@@ -669,18 +669,18 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	(* expand all multiplication into non-commuting; this means ex can be a sum now *)
         	{ex = Distribute[s /. Times -> NonCommutativeMultiply]},
         	(* notation shortcuts *)
-        	{\[Sigma] = X|Y|Z, \[CapitalPi] = NonCommutativeMultiply}, 
+        	{xyz = X|Y|Z, ncm = NonCommutativeMultiply}, 
         	(* since ex can now be a sum, after below transformation, factorise *)
         	factorPaulis[
         		ex //. {
         		(* destroy exponents of single terms *)
-        		(a:Subscript[\[Sigma], _])^n_ :> If[EvenQ[n],1,a], 
+        		(a:Subscript[xyz, _])^n_ :> If[EvenQ[n],1,a], 
         		(* move scalars to their own element (to clean pauli pattern) *)
-        		\[CapitalPi][r1___, (\[Lambda]:Except[Subscript[\[Sigma], _]]) (a:Subscript[\[Sigma], _]) , r2___] :> \[CapitalPi][\[Lambda],r1,a,r2],
+        		ncm[r1___, (f:Except[Subscript[xyz, _]]) (a:Subscript[xyz, _]) , r2___] :> ncm[f,r1,a,r2],
         		(* map same-qubit adjacent (closest) pauli matrices to their product *)
-        		\[CapitalPi][r1___, Subscript[(a:\[Sigma]), q_],r2:Shortest[___],Subscript[(b:\[Sigma]), q_], r3___] :>
-        			If[a === b, \[CapitalPi][r1,r2,r3], With[{c = First @ Complement[List@@\[Sigma], {a,b}]},
-        				\[CapitalPi][r1, I If[Sort[{a,b}]==={a,b},1,-1] Subscript[c, q], r2, r3]]]
+        		ncm[r1___, Subscript[(a:xyz), q_],r2:Shortest[___],Subscript[(b:xyz), q_], r3___] :>
+        			If[a === b, ncm[r1,r2,r3], With[{c = First @ Complement[List@@xyz, {a,b}]},
+        				ncm[r1, I If[Sort[{a,b}]==={a,b},1,-1] Subscript[c, q], r2, r3]]]
         	(* finally, restore products (overwriting user non-comms) and simplify scalars *)
         	} /. NonCommutativeMultiply -> Times]]
         	
