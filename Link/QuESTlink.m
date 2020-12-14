@@ -684,9 +684,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	(* finally, restore products (overwriting user non-comms) and simplify scalars *)
         	} /. NonCommutativeMultiply -> Times]]
         	
-        (* let everything else evaluate (to admit scalars, or let variables be substituted *)
-        SimplifyPaulis[e_] :=
-        	e
+        SimplifyPaulis[uneval_] := With[
+            (* let everything else evaluate (to admit scalars, or let variables be substituted *)
+            {eval=uneval},
+            (* and if changed by its evaluation, attempt to simplify the new form *)
+            If[Unevaluated[uneval] === eval, eval, SimplifyPaulis[eval]]]
+            (* your eyes don't deceive you; === is smart enough to check inside Unevaluated! Nice one Stephen! *)
         
         
         
