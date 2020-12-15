@@ -143,7 +143,7 @@ ViewCircuitSchedule accepts all optional arguments of Grid[], for example 'Frame
     ViewCircuitSchedule::error = "`1`"
     
     ViewDeviceSpec::usage = "ViewDeviceSpec[spec] displays all information about the given device specification in table form.
-ViewDeviceSpec accepts all optional arguments of Grid[] (to customise both tables), and Column[] (to customise their placement)."
+ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables), and Column[] (to customise their placement)."
     ViewDeviceSpec::error = "`1`"
     
     (*
@@ -1574,19 +1574,35 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         frozenCircToList[Circuit[gs_Times]] := ReleaseHold[List @@@ Hold[gs]]
         frozenCircToList[Circuit[g_]] := {g}
         frozenCircToList[gs_List] := gs
+        
+        (* a table summary of the gate shortcuts defined for the specification *)
+        viewShortcuts[spec_, opts___] :=
+            Grid[
+                Join[
+                    (* table heafings *)
+                    {{"shortcut", "definition"}},
+                    (* row for each shortcut, displaying gate matrices in MatrixForm *)
+                    Table[
+                        {First[row], Row[frozenCircToList[Last[row]] /. m_?MatrixQ :> MatrixForm[m], Spacer[0]]},
+                        {row, List @@@ spec["shortcuts"]}]],
+                (* default aesthetic (overridable) *)
+                FilterRules[{opts}, Options[Grid]],
+                Dividers -> All,
+                FrameStyle -> LightGray]
 
         (* a table summary of the gates and active noise in the specification *)
         viewActiveGates[spec_, opts___] := 
             Grid[
-                Prepend[
+                Join[
+                    (* table headings *)
+                    {{"gate", "duration", "active noise"}},
+                    (* row for each supported gate *)
                     Function[{gatespec}, With[{props=Last[gatespec]}, 
                         {First[gatespec], props["duration"],
                             (* add small gap between active noise gates *)
                             Row[(frozenCircToList @ props["activeNoise"]), Spacer[0]]
                         (* render gate matrices in MatrixForm *)
-                        }] /. m_?MatrixQ :> MatrixForm[m]] /@ spec["gates"],
-                (* table headings *)
-                {"gate", "duration", "active noise"}],
+                        }] /. m_?MatrixQ :> MatrixForm[m]] /@ spec["gates"]],
                 (* default aesthetic (overridable *)
                 FilterRules[{opts}, Options[Grid]],
                 Dividers -> All,
@@ -1595,12 +1611,13 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* a table summary of the passive noise, listed for each qubit *)
         viewPassiveNoise[spec_, opts___] := 
             Grid[
-                Prepend[
-                    Table[
-                        {q, "t", Row[q["t"] /. spec["passiveNoise"], Spacer[2]]}, 
-                        {q, 0, spec["numQubits"]-1} ],
+                Join[
                     (* table headings *)
-                    {"qubit", "duration", "passive noise"}],
+                    {{"qubit", "duration", "passive noise"}},
+                    (* row for each qubit *)
+                    Table[
+                        {q, "t", Row[q["t"] /. spec["passiveNoise"], Spacer[0]]}, 
+                        {q, 0, spec["numQubits"]-1} ]],
                 (* default aesthetic (overridable *)
                 FilterRules[{opts}, Options[Grid]],
                 Dividers -> All,
@@ -1608,9 +1625,11 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         
         ViewDeviceSpec[spec_Association, opts:OptionsPattern[{Grid,Column}]] :=
             Column[{
+                If[Length[spec["shortcuts"]] > 0, viewShortcuts[spec,opts], Nothing],
                 viewActiveGates[spec, opts],
                 viewPassiveNoise[spec, opts]},
-                FilterRules[{opts}, Options[Column]]]
+                FilterRules[{opts}, Options[Column]],
+                Spacings -> {Automatic, 1}]
 
     End[ ]
                                        
