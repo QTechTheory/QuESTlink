@@ -119,7 +119,8 @@ GetUnsupportedGates[{{t1, circ1}, {t2, circ2}, ...}, spec] ignores the times in 
     GetUnsupportedGates::error = "`1`"
     
     GetCircuitSchedule::usage = "GetCircuitSchedule[circuit, spec] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given device specification. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
-GetCircuitSchedule[subcircuits, spec] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling."
+GetCircuitSchedule[subcircuits, spec] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling.
+GetCircuitSchedule accepts optional argument ReplaceShortcuts."
     GetCircuitSchedule::error = "`1`"
     
     CheckCircuitSchedule::usage = "CheckCircuitSchedule[{{t1, circ1}, {t2, circ2}, ...}, spec] checks whether the given schedule of sub-circuits is compatible with the device specification, else if it prescribes overlapping sub-circuit execution (regardless of targeted qubits). Times and gate parameters can be symbolic. All gates in a sub-circuit are assumed applicable simultaneously, even if they target overlapping qubits.
@@ -131,7 +132,7 @@ CheckCircuitSchedule returns a list of symbolic conditions which must be simulta
     InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, spec] divides the circuit into scheduled subcircuits, and their sequences of active and passive noise, according to the given device specification. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, subcirc1, active, passive}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
 InsertCircuitNoise[{circ1, circ2, ...}, spec] uses the given list of sub-circuits (output format of GetCircuitColumns[]), assuming each contain gates which can be simultaneously performed.
 InsertCircuitNoise[{{t1, circ1}, {t2, circ2}, ...} assumes the given schedule (output format of GetCircuitSchedule[]) of {t1,t2,...} for the rounds of gates and noise. These times can be symbolic.
-InsertCircuitNoise accepts optional argument NoiseMode, to specify whether to calculate only the \"Active\" or \"Passive\" noise sources (or \"Both\", as is default)."
+InsertCircuitNoise accepts optional arguments NoiseMode and ReplaceShortcuts."
     InsertCircuitNoise::error = "`1`"
     
     ExtractCircuit::usage = "ExtractCircuit[] returns the ultimate circuit from the outputs of InsertCircuitNoise[], GetCircuitSchedule[] and GetCircuitSchedule[]."
@@ -175,6 +176,10 @@ ViewDeviceSpec accepts all optional arguments of Grid[] (to customise both table
     
     PackageExport[NoiseMode]
     NoiseMode::usage = "Optional argument to InsertCircuitNoise, to specify which kind of noise to insert, of \"Active\", \"Passive\" or \"All\" (default)."
+    
+    PackageExport[ReplaceShortcuts]
+    ReplaceShortcuts::usage = "Optional argument to GetCircuitSchedule and InsertCircuitNoise, specifying (True or False) whether to substitute the device specification's shortcut operators in the output (including in gates and active/passive noise). This is False by default, but must be True to pass the output circuits to ApplyCircuit.
+If ReplaceShortcuts -> True, then the output of GetCircuitSchedule might not be compatible as an input to InsertCircuitNoise."
     
     (* 
      * gate symbols, needed exporting so that their use below does not refer to a private var      
@@ -1435,13 +1440,25 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getColumnDuration[spec_][col_] :=
             Max @ Table[Replace[gate, spec["gates"]]["duration"], {gate,col}]
             
+        (* declaring optional args to GetCircuitSchedule *)
+        Options[GetCircuitSchedule] = {
+            ReplaceShortcuts -> False
+        };
+            
         (* assigns each of the given columns (unique-qubit subcircuits) a start-time *)
-        GetCircuitSchedule[cols:{{__}..}, spec_Association] /; isCompatibleCirc[cols,spec] := With[
+        GetCircuitSchedule[cols:{{__}..}, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[cols,spec] := With[
             {durs = getColumnDuration[spec] /@ cols},
-            Transpose[{Accumulate @ Prepend[Most@durs, 0], cols}]]
-        GetCircuitSchedule[circ_List, spec_Association] /; isCompatibleCirc[circ,spec] :=
-            GetCircuitSchedule[GetCircuitColumns[circ], spec]
-        GetCircuitSchedule[a_, spec_Association] /; Not[isCompatibleCirc[a,spec]] := (
+            Transpose[{Accumulate @ Prepend[Most@durs, 0], 
+                If[
+                    OptionValue[ReplaceShortcuts],
+                    (* replace shortcut symbols with their circuit, in-place (no list nesting *)
+                    (* note this is overriding shortcut rule -> with :> which should be fine *)
+                    cols /. (#1 :> Sequence @@ #2 &) @@@ spec["shortcuts"],
+                    cols
+                ]}]]
+        GetCircuitSchedule[circ_List, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[circ,spec] :=
+            GetCircuitSchedule[GetCircuitColumns[circ], spec, opts]
+        GetCircuitSchedule[a_, spec_Association, opts:OptionsPattern[]] /; Not[isCompatibleCirc[a,spec]] := (
             Message[GetCircuitSchedule::error, "The circuit(s) contains gates unsupported by the given device specification. See ?GetUnsupportedGates."];
             $Failed)
         GetCircuitSchedule[___] := invalidArgError[GetCircuitSchedule]
@@ -1485,7 +1502,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         
         (* declaring optional args to InsertCircuitNoise *)
         Options[InsertCircuitNoise] = {
-            NoiseMode -> "Both"
+            NoiseMode -> "Both",
+            ReplaceShortcuts -> False
         };
 
         InsertCircuitNoise[schedule:{{_, _List}..}, spec_Association, opts:OptionsPattern[]] :=
@@ -1515,7 +1533,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         passive = Simplify[passive, Assumptions -> getMotonicTimesConditions[times]];
                         
                         (* return { {t1,subcirc1,active1,passive1}, ...} *)
-                        Transpose[{times, subcircs, active, passive}]
+                        Transpose[{times, subcircs, active, passive}] /. If[
+                            OptionValue[ReplaceShortcuts],
+                            (* replace shortcut symbols (in gates & noise) with their circuit, in-place (no list nesting *)
+                            (* note this is overriding shortcut rule -> with :> which should be fine *)
+                            (#1 :> Sequence @@ #2 &) @@@ spec["shortcuts"],
+                            {}]
                     ]
                 ],
                 (* else give error *)
@@ -1538,7 +1561,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         ViewCircuitSchedule[sched:{{_, Repeated[_List,{1,3}]}..}, opts:OptionsPattern[]] :=
             Grid[
                 Prepend[
-                    {First[#], Sequence @@ (Column /@ Rest[#])}& /@ sched,
+                    (* use as many columns as exist in sched, add inter-gate space, and format any gate matrices in MatrixForm *)
+                    ({First[#], Sequence @@ ((Row[#,Spacer[0]]&) /@ Rest[#] /. m_?MatrixQ :> MatrixForm[m] ) } & /@ sched),
                     {"time","gates","active noise","passive noise"}[[;; Length @ First @ sched ]]
                 ],
                 opts,
@@ -1558,7 +1582,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     Function[{gatespec}, With[{props=Last[gatespec]}, 
                         {First[gatespec], props["duration"],
                             (* add small gap between active noise gates *)
-                            Row[(frozenCircToList @ props["activeNoise"]), Spacer[2]]
+                            Row[(frozenCircToList @ props["activeNoise"]), Spacer[0]]
                         (* render gate matrices in MatrixForm *)
                         }] /. m_?MatrixQ :> MatrixForm[m]] /@ spec["gates"],
                 (* table headings *)
