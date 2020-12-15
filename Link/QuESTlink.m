@@ -141,6 +141,10 @@ InsertCircuitNoise accepts optional argument NoiseMode, to specify whether to ca
 ViewCircuitSchedule accepts all optional arguments of Grid[], for example 'FrameStyle', and 'BaseStyle -> {FontFamily -> \"CMU Serif\"}'."
     ViewCircuitSchedule::error = "`1`"
     
+    ViewDeviceSpec::usage = "ViewDeviceSpec[spec] displays all information about the given device specification in table form.
+ViewDeviceSpec accepts all optional arguments of Grid[] (to customise both tables), and Column[] (to customise their placement)."
+    ViewDeviceSpec::error = "`1`"
+    
     (*
      * optional arguments to public functions
      *)
@@ -818,7 +822,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         PlotDensityMatrix[___] := (
             Message[PlotDensityMatrix::error, "Invalid arguments. See ?PlotDensityMatrix. Note the first argument must be a numeric square matrix."]; 
             $Failed)
-        
         
         
         
@@ -1541,6 +1544,49 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 opts,
                 Dividers -> All,
                 FrameStyle -> LightGray]
+        
+        (* the gates in active noise can contain symbolic qubits that won't trigger 
+         * Circuit[] evaluation. This function forces Circuit[] to a list *)
+        frozenCircToList[Circuit[gs_Times]] := ReleaseHold[List @@@ Hold[gs]]
+        frozenCircToList[Circuit[g_]] := {g}
+        frozenCircToList[gs_List] := gs
+
+        (* a table summary of the gates and active noise in the specification *)
+        viewActiveGates[spec_, opts___] := 
+            Grid[
+                Prepend[
+                    Function[{gatespec}, With[{props=Last[gatespec]}, 
+                        {First[gatespec], props["duration"],
+                            (* add small gap between active noise gates *)
+                            Row[(frozenCircToList @ props["activeNoise"]), Spacer[2]]
+                        (* render gate matrices in MatrixForm *)
+                        }] /. m_?MatrixQ :> MatrixForm[m]] /@ spec["gates"],
+                (* table headings *)
+                {"gate", "duration", "active noise"}],
+                (* default aesthetic (overridable *)
+                FilterRules[{opts}, Options[Grid]],
+                Dividers -> All,
+                FrameStyle -> LightGray]
+        	
+        (* a table summary of the passive noise, listed for each qubit *)
+        viewPassiveNoise[spec_, opts___] := 
+            Grid[
+                Prepend[
+                    Table[
+                        {q, "t", Row[q["t"] /. spec["passiveNoise"], Spacer[2]]}, 
+                        {q, 0, spec["numQubits"]-1} ],
+                    (* table headings *)
+                    {"qubit", "duration", "passive noise"}],
+                (* default aesthetic (overridable *)
+                FilterRules[{opts}, Options[Grid]],
+                Dividers -> All,
+                FrameStyle -> LightGray]
+        
+        ViewDeviceSpec[spec_, opts:OptionsPattern[{Grid,Column}]] :=
+            Column[{
+                viewActiveGates[spec, opts],
+                viewPassiveNoise[spec, opts]},
+                FilterRules[{opts}, Options[Column]]]
 
     End[ ]
                                        
