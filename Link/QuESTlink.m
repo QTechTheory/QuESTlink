@@ -836,6 +836,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
          *)
          
         (* convert symbolic gate form to {symbol, ctrls, targets} *)
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]] ]] := {Join[{R}, {paulis}[[All,1]]], {ctrls}, {paulis}[[All,2]]}
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Subscript[pauli:(X|Y|Z), targ_Integer]] ]] := {{R,pauli}, {ctrls}, {targ}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] := {gate, {},{targs}}
@@ -940,6 +942,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[SWAP, {ctrls__}, {targs__}, col_] := {
         	drawControls[{ctrls},{targs},col],
         	drawGate[SWAP, {}, {targs}, col]}
+        drawGate[ops:{R, (X|Y|Z)..}, {ctrls__}, {targs__}, col_] := {
+            drawControls[{ctrls},{targs},col],
+            drawGate[ops, {}, {targs}, col]}
         drawGate[label_Symbol, {ctrls__}, {targ_}, col_] := {
         	drawControls[{ctrls},{targ},col],
         	drawGate[label, {}, {targ}, col]}
