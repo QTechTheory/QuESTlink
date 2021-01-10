@@ -98,6 +98,11 @@ DrawCircuit[{{t1, circ1}, {t2, circ2}, ...}] draws the total circuit, divided in
 DrawCircuit[{{t1, A1,A2,A3}, {t2, B1,B2,B3}, ...}] draws the total circuit, divided into subcircuits {A1 A2 A3, B1 B2 B3, ...}, labeled by their scheduled times {t1, t2, ...}. This is the output format of InsertCircuitNoise[].
 DrawCircuit accepts optional arguments Compactify, DividerStyle, SubcircuitSpacing, SubcircuitLabels, LabelDrawer and any Graphics option. For example, the fonts can be changed with 'BaseStyle -> {FontFamily -> \"Arial\"}'."
     DrawCircuit::error = "`1`"
+    
+    DrawCircuitTopology::usage = "DrawCircuitTopology[circuit] generates a graph plot of the qubit connectivity implied by the given circuit. The precise nature of the information plotted depends on the following options.
+DrawCircuitTopology accepts optional arguments DistinguishBy, ShowLocalGates, ShowRepetitions to modify the presented graph.
+DrawCircuitTopology additionally accepts DistinguishedStyles and all options of Graph[], Show[] and LineLegend[] for customising the plot aesthetic."
+    DrawCircuitTopology::error = "`1`"
 
     CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic expression for the given unitary circuit, which may contain undefined symbols. The number of qubits is inferred from the circuit indices (0 to maximum specified).
 CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the number of present qubits."
@@ -173,6 +178,26 @@ ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables
     
     PackageExport[LabelDrawer]
     LabelDrawer::usage = "Optional argument to DrawCircuit, to specify a two-argument function for drawing subcircuit labels. For example, Function[{msg,x},Text[msg,{x,-.5}]]. Use LabelDrawer -> None to show no labels."
+    
+    PackageExport[ShowLocalGates]
+    ShowLocalGates::usage = "Optional argument to DrawCircuitTopology, to specify (True or False) whether single-qubit gates should be included in the plot (as single-vertex loops)."
+    
+    PackageExport[ShowRepetitions]
+    ShowRepetitions::usage = "Optional argument to DrawCircuitTopology, to specify (True or False) whether repeated instances of gates (or other groups as set by DistinguishBy) in the circuit should each yield a distinct edge.
+For example, if ShowRepetitions -> True and DistinguishBy -> \"Qubits\", then a circuit containing three C[Rz] gates between qubits 0 and 1 will produce a graph with three edges between vertices 0 and 1."
+    
+    PackageExport[DistinguishBy]
+    DistinguishBy::usage = "Optional argument to DrawCircuitTopology to specify how gates are aggregated into graph edges and legend labels. The possible values (in order of decreasing specificity) are \"Parameters\", \"Qubits\", \"NumberOfQubits\", \"Gates\", \"None\", and a distinct \"Connectivity\" mode.
+DistinguishBy -> \"Parameters\" assigns every unique gate (even distinguishing similar operators with different parameters) its own label.
+DistinguishBy -> \"Qubits\" discards gate parameters, but respects target qubits, so will assign similar gates (acting on the same qubits) but with different parameters to the same label.
+DistinguishBy -> \"NumberOfQubits\" discards gate qubit indices, but respects the number of qubits in a gate. Hence, for example, similar gates controlled on different pairs of qubits will be merged together, but not with the same gate controlled on three qubits.
+DistinguishBy -> \"Gates\" respects only the gate type (and whether it is controlled or not), and discards all qubit and parameter information. Hence similar gates acting on different numbers of qubits will be merged to one label. This does not apply to pauli-gadget gates R, which remain distinguished for unique pauli sequences (though discarding qubit indices).
+DistinguishBy -> \"None\" performs no labelling or distinguishing of edges.
+DistinguishBy -> \"Connectivity\" merges all gates, regardless of type, acting upon the same set of qubits (orderless)."
+
+    PackageExport[DistinguishedStyles]
+    DistinguishedStyles::usage = "Optional argument to DrawCircuitTopology, to specify the colours/styles used for each distinguished group (hence ultimately, the edge and legend styles). This must be a list of graphic directives, and will be repeated if it contains too few elements.
+DistinguishedStyles -> Automatic will colour the groups by sampling ColorData[\"Rainbow\"]."
     
     PackageExport[NoiseMode]
     NoiseMode::usage = "Optional argument to InsertCircuitNoise, to specify which kind of noise to insert, of \"Active\", \"Passive\" or \"All\" (default)."
@@ -1162,6 +1187,136 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             DrawCircuit[{circ}, args]
         DrawCircuit[___] := invalidArgError[DrawCircuit]
         
+        
+        
+        (*
+         * Below is only front-end code for drawing topology diagrams of circuits
+         *)
+         
+        (* every gate is distinguished in 'Parameters' mode, even if differing only by parameter *)
+        getTopolGateLabel["Parameters"][g_] := g
+        
+        (* in 'Qubits' mode, parameters are removed/ignored *)
+        getTopolGateLabel["Qubits"][Subscript[C, q__][s_]] := Subscript[C, q][ getTopolGateLabel["Qubits"][s] ]
+        getTopolGateLabel["Qubits"][R[_, p_]] := R[p]
+        getTopolGateLabel["Qubits"][Subscript[s_, q__][__]] := Subscript[s, q]
+        getTopolGateLabel["Qubits"][s_] := s
+        
+        (* in 'NumQubits' mode, specific qubit indices are ignored, replaced by a-z *)
+        getLetterSeq[len_Integer, start_] := Sequence @@ Table[ FromLetterNumber[t], {t,start,start+len-1} ]
+        getLetterSeq[list_List, start_] := getLetterSeq[Length[list], start]
+        alphabetisizeGate[Subscript[C, {q__}|q__][s_]] := Subscript[C, getLetterSeq[{q},1]][ alphabetisizeGate[s, 1+Length@{q}]]
+        alphabetisizeGate[Subscript[s_, {q__}|q__], i_:1] := Subscript[s, getLetterSeq[{q},i]]
+        alphabetisizeGate[Subscript[s_, {q__}|q__][_], i_:1] := Subscript[s, getLetterSeq[{q},i]]
+        alphabetisizeGate[R[_, p_Times], i_:1] := R[Times @@ Subscript @@@ Transpose[{(List @@ p)[[All,1]], List @ getLetterSeq[Length[p],i]}]]
+        alphabetisizeGate[R[_, Subscript[p_, q_]], i_:1] := R[Subscript[p, getLetterSeq[1,i]]]
+        getTopolGateLabel["NumberOfQubits"][g_] := alphabetisizeGate[g]
+        
+        (* in 'Gates' mode, all qubits are ignored and removed *)
+        getTopolGateLabel["Gates"][Subscript[C, q__][s_]] := C[ getTopolGateLabel["Gates"][s] ]
+        getTopolGateLabel["Gates"][R[_, p_Times]] := R[Row @ (List @@ p)[[All,1]]]
+        getTopolGateLabel["Gates"][R[_, Subscript[p_, q_]]] := R[p]
+        getTopolGateLabel["Gates"][Subscript[s_, __]|Subscript[s_, __][__]] := s
+        
+        (* in 'None' mode, all gate properties are discarded *)
+        getTopolGateLabel["None"][s_] := None
+        
+        (* 'Connectivity' mode is handled entirely in DrawCircuitTopology[] *)
+        
+        getCircTopolGraphData[circ_, showReps_, showLocal_, groupMode_] := Module[
+            {edges = {}, edgeLabels = <||>},
+            
+            (* for every gate ... *)
+            Table[ With[
+                (* extract targeted qubits, choose group/label *)
+                {qubits = getSymbCtrlsTargs[gate][[{2,3}]] // Flatten},
+                {label = If[groupMode === "Connectivity", 
+                    Row[Sort[qubits],Spacer[.1]], 
+                    getTopolGateLabel[groupMode][gate]]},
+                    
+                (* optionally admit single-qubit gates *)
+                {vertices = If[showLocal && Length[qubits] === 1, 
+                    Join[qubits, qubits],
+                    qubits]},
+                
+                (* for every pair of targeted qubits... *)
+                Table[ With[ {key = UndirectedEdge @@ Sort[pair] },
+                    If[ KeyExistsQ[edgeLabels, key],
+                    
+                        (* if the edge exists, but the label is new (or we allow repetition), record it (else do nothing) *)
+                        If[ showReps || Not @ MemberQ[edgeLabels[key], label],
+                            AppendTo[edges, key];
+                            AppendTo[edgeLabels[key], label]],
+                            
+                        (* else if the edge is new, record it unconditionally *)
+                        AppendTo[edges, key];
+                        edgeLabels[key] = {label}
+                    ]],
+                    {pair, Subsets[vertices, {2}]}
+                ]],
+                {gate, circ}];
+                
+            (* return *)
+            {edges, edgeLabels}]
+        
+        Options[DrawCircuitTopology] = {
+            ShowRepetitions -> False,
+            ShowLocalGates -> True,
+            DistinguishBy -> "Gates",
+            DistinguishedStyles -> Automatic
+        };
+        
+        DrawCircuitTopology[circ_List, opts:OptionsPattern[{DrawCircuitTopology, Graph, Show, LineLegend}]] := Module[
+            {edges, edgeLabels, edgeIndices, graph},
+            
+            (* validate opt args *)
+            
+            (* extract topology data from circuit *)
+            {edges, edgeLabels} = getCircTopolGraphData[circ, 
+                OptionValue[{opts,Options[DrawCircuitTopology]}, ShowRepetitions], 
+                OptionValue[{opts,Options[DrawCircuitTopology]}, ShowLocalGates], 
+                OptionValue[{opts,Options[DrawCircuitTopology]}, DistinguishBy]];
+            
+            (* maintain indices for the list of labels recorded for each edge (init to 1) *)
+            edgeIndices = <| Rule @@@ Transpose[{Keys[edgeLabels], ConstantArray[1, Length[edgeLabels]]}] |>;
+        
+            (* prepare an undirected graph (graphical form) with place-holder styles *)
+            graph = Show[ 
+                Graph[
+                    Table[Style[edge, STYLES[edge]], {edge,edges}],
+                    (* user-overridable default Graph properties *)
+                    Sequence @@ FilterRules[{opts}, Options[Graph]],     (* Sequence[] shouldn't be necessary; another MMA Graph bug, sigh! *)
+                    VertexStyle -> White,
+                    VertexSize -> .1,
+                    VertexLabels -> Automatic],
+                (* user-overridable Show options *)
+                FilterRules[{opts}, Options[Show]]];
+                
+            (* if there are no distinguishing gate groups, remove place-holder styles and return graph *)
+            If[OptionValue[DistinguishBy] === "None",
+                Return[ graph /. STYLES[_] -> Automatic ]];
+                
+            (* otherwise...  *)
+            With[
+                (* prepare legend with unique labels *)
+                {legLabels = DeleteDuplicates @ Flatten @ Values @ edgeLabels},
+                {legStyles = If[
+                        OptionValue[DistinguishedStyles] === Automatic,
+                        ColorData["Rainbow"] /@ Range[0,1,1/(Length[legLabels]-1)],
+                        PadRight[OptionValue[DistinguishedStyles], Length[legLabels], OptionValue[DistinguishedStyles]]
+                ]},
+                {edgeStyles = Rule @@@ Transpose[{legLabels, legStyles}]},
+                
+                (* style each graph edge one by one *)
+                {graphic = graph /. STYLES[edge_] :> (edgeLabels[edge][[ edgeIndices[edge]++ ]] /. edgeStyles)},
+                
+                (* return the styled graph with a line legend *)
+                Legended[graphic,
+                    LineLegend[legStyles, StandardForm /@ legLabels, 
+                        Sequence @@ FilterRules[{opts}, Options[LineLegend]]]]
+            ]
+        ]
+                
         
         
         (*
