@@ -1630,7 +1630,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getActiveNoise[schedule:{{_, _List}..}, spec_] :=
             getActiveNoise[schedule[[All,2]], spec]
             
-        getSubcircPassiveNoise[subcirc_, subcircDur_, spec_] := Module[
+        getSubcircPassiveNoise[subcirc_, subcircDur_, subcircTime_, spec_] := Module[
             (* records which qubits have been assigned noise already *)
             {noised=ConstantArray[False, spec["numQubits"]]},
             Join[
@@ -1641,11 +1641,11 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         qubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
                         
                         noised[[1 + qubits]] = True;
-                        Table[qb[subcircDur-gateDur] /. spec["passiveNoise"], {qb,qubits}]],
+                        Table[qb[subcircDur-gateDur, subcircTime+gateDur] /. spec["passiveNoise"], {qb,qubits}]],
                     {gate, subcirc}],
                 (* collect noise on remaining qubits, applying for full subcirc duration *)
                 Flatten @ Table[
-                    If[noised[[qb+1]], Nothing, qb[subcircDur] /. spec["passiveNoise"]],
+                    If[noised[[qb+1]], Nothing, qb[subcircDur, subcircTime] /. spec["passiveNoise"]],
                     {qb, 0, spec["numQubits"]-1}]
             ]
         ]
@@ -1656,7 +1656,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             If[First[times] =!= 0, PrependTo[times, 0]; PrependTo[subcircs, {}]];
             (* passive noise for duration between scheduled subcircuits (and after last) *)
             With[{durations = Append[Differences[times], getColumnDuration[spec] @ Last @ subcircs]},
-                MapThread[getSubcircPassiveNoise[#1,#2,spec]&, {subcircs, durations}]
+                MapThread[getSubcircPassiveNoise[#1,#2,#3,spec]&, {subcircs, durations, times}]
             ]
         ]
         
