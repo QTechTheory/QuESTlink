@@ -125,7 +125,7 @@ GetUnsupportedGates[{{t1, circ1}, {t2, circ2}, ...}, spec] ignores the times in 
     
     GetCircuitSchedule::usage = "GetCircuitSchedule[circuit, spec] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given device specification. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
 GetCircuitSchedule[subcircuits, spec] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling.
-GetCircuitSchedule accepts optional argument ReplaceShortcuts."
+GetCircuitSchedule accepts optional argument ReplaceAliases."
     GetCircuitSchedule::error = "`1`"
     
     CheckCircuitSchedule::usage = "CheckCircuitSchedule[{{t1, circ1}, {t2, circ2}, ...}, spec] checks whether the given schedule of sub-circuits is compatible with the device specification, else if it prescribes overlapping sub-circuit execution (regardless of targeted qubits). Times and gate parameters can be symbolic. All gates in a sub-circuit are assumed applicable simultaneously, even if they target overlapping qubits.
@@ -137,7 +137,7 @@ CheckCircuitSchedule returns a list of symbolic conditions which must be simulta
     InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, spec] divides the circuit into scheduled subcircuits, and their sequences of active and passive noise, according to the given device specification. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, subcirc1, active, passive}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
 InsertCircuitNoise[{circ1, circ2, ...}, spec] uses the given list of sub-circuits (output format of GetCircuitColumns[]), assuming each contain gates which can be simultaneously performed.
 InsertCircuitNoise[{{t1, circ1}, {t2, circ2}, ...} assumes the given schedule (output format of GetCircuitSchedule[]) of {t1,t2,...} for the rounds of gates and noise. These times can be symbolic.
-InsertCircuitNoise accepts optional arguments NoiseMode and ReplaceShortcuts."
+InsertCircuitNoise accepts optional arguments NoiseMode and ReplaceAliases."
     InsertCircuitNoise::error = "`1`"
     
     ExtractCircuit::usage = "ExtractCircuit[] returns the ultimate circuit from the outputs of InsertCircuitNoise[], GetCircuitSchedule[] and GetCircuitSchedule[]."
@@ -202,9 +202,9 @@ DistinguishedStyles -> Automatic will colour the groups by sampling ColorData[\"
     PackageExport[NoiseMode]
     NoiseMode::usage = "Optional argument to InsertCircuitNoise, to specify which kind of noise to insert, of \"Active\", \"Passive\" or \"All\" (default)."
     
-    PackageExport[ReplaceShortcuts]
-    ReplaceShortcuts::usage = "Optional argument to GetCircuitSchedule and InsertCircuitNoise, specifying (True or False) whether to substitute the device specification's shortcut operators in the output (including in gates and active/passive noise). This is False by default, but must be True to pass the output circuits to ApplyCircuit.
-If ReplaceShortcuts -> True, then the output of GetCircuitSchedule might not be compatible as an input to InsertCircuitNoise."
+    PackageExport[ReplaceAliases]
+    ReplaceAliases::usage = "Optional argument to GetCircuitSchedule and InsertCircuitNoise, specifying (True or False) whether to substitute the device specification's alias operators in the output (including in gates and active/passive noise). This is False by default, but must be True to pass the output circuits to ApplyCircuit.
+If ReplaceAliases -> True, then the output of GetCircuitSchedule might not be compatible as an input to InsertCircuitNoise."
     
     (* 
      * gate symbols, needed exporting so that their use below does not refer to a private var      
@@ -1602,7 +1602,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             
         (* declaring optional args to GetCircuitSchedule *)
         Options[GetCircuitSchedule] = {
-            ReplaceShortcuts -> False
+            ReplaceAliases -> False
         };
             
         (* assigns each of the given columns (unique-qubit subcircuits) a start-time *)
@@ -1610,10 +1610,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             {durs = getColumnDuration[spec] /@ cols},
             Transpose[{Accumulate @ Prepend[Most@durs, 0], 
                 If[
-                    OptionValue[ReplaceShortcuts],
-                    (* replace shortcut symbols with their circuit, in-place (no list nesting *)
-                    (* note this is overriding shortcut rule -> with :> which should be fine *)
-                    cols /. (#1 :> Sequence @@ #2 &) @@@ spec["shortcuts"],
+                    OptionValue[ReplaceAliases],
+                    (* replace aliases with their circuit, in-place (no list nesting *)
+                    (* note this is overriding alias rule -> with :> which should be fine *)
+                    cols /. (#1 :> Sequence @@ #2 &) @@@ spec["aliases"],
                     cols
                 ]}]]
         GetCircuitSchedule[circ_List, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[circ,spec] :=
@@ -1663,7 +1663,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* declaring optional args to InsertCircuitNoise *)
         Options[InsertCircuitNoise] = {
             NoiseMode -> "Both",
-            ReplaceShortcuts -> False
+            ReplaceAliases -> False
         };
 
         InsertCircuitNoise[schedule:{{_, _List}..}, spec_Association, opts:OptionsPattern[]] :=
@@ -1694,10 +1694,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         
                         (* return { {t1,subcirc1,active1,passive1}, ...} *)
                         Transpose[{times, subcircs, active, passive}] /. If[
-                            OptionValue[ReplaceShortcuts],
-                            (* replace shortcut symbols (in gates & noise) with their circuit, in-place (no list nesting *)
-                            (* note this is overriding shortcut rule -> with :> which should be fine *)
-                            (#1 :> Sequence @@ #2 &) @@@ spec["shortcuts"],
+                            OptionValue[ReplaceAliases],
+                            (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
+                            (* note this is overriding alias rule -> with :> which should be fine *)
+                            (#1 :> Sequence @@ #2 &) @@@ spec["aliases"],
                             {}]
                     ]
                 ],
@@ -1735,16 +1735,16 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         frozenCircToList[Circuit[g_]] := {g}
         frozenCircToList[gs_List] := gs
         
-        (* a table summary of the gate shortcuts defined for the specification *)
-        viewShortcuts[spec_, opts___] :=
+        (* a table summary of the gate aliases defined for the specification *)
+        viewAliases[spec_, opts___] :=
             Grid[
                 Join[
                     (* table heafings *)
-                    {{"shortcut", "definition"}},
-                    (* row for each shortcut, displaying gate matrices in MatrixForm *)
+                    {{"alias", "definition"}},
+                    (* row for each alias, displaying gate matrices in MatrixForm *)
                     Table[
                         {First[row], Row[frozenCircToList[Last[row]] /. m_?MatrixQ :> MatrixForm[m], Spacer[0]]},
-                        {row, List @@@ spec["shortcuts"]}]],
+                        {row, List @@@ spec["aliases"]}]],
                 (* default aesthetic (overridable) *)
                 FilterRules[{opts}, Options[Grid]],
                 Dividers -> All,
@@ -1785,7 +1785,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         
         ViewDeviceSpec[spec_Association, opts:OptionsPattern[{Grid,Column}]] :=
             Column[{
-                If[Length[spec["shortcuts"]] > 0, viewShortcuts[spec,opts], Nothing],
+                If[Length[spec["aliases"]] > 0, viewAliases[spec,opts], Nothing],
                 viewActiveGates[spec, opts],
                 viewPassiveNoise[spec, opts]},
                 FilterRules[{opts}, Options[Column]],
