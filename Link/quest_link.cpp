@@ -388,7 +388,7 @@ void callable_getAllQuregs(void) {
     
     // collect all created quregs
     int numQuregs = 0;
-    int* idList = (int*) malloc(quregs.size());
+    int* idList = (int*) malloc(quregs.size() * sizeof *idList);
     for (size_t id=0; id < quregs.size(); id++)
         if (quregIsCreated[id])
             idList[numQuregs++] = id;
