@@ -151,6 +151,10 @@ ViewCircuitSchedule accepts all optional arguments of Grid[], for example 'Frame
 ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables), and Column[] (to customise their placement)."
     ViewDeviceSpec::error = "`1`"
     
+    GetCircuitProperties::usage = "GetCircuitProperties[circuit, property, spec] returns a list of each circuit gate's property according to the device specification.
+For example, GetCircuitProperties[circuit, \"duration\", spec] returns the duration of each gate in circuit as prescribed by spec."
+    GetCircuitProperties::error = "`1`"
+    
     (*
      * optional arguments to public functions
      *)
@@ -1790,6 +1794,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 viewPassiveNoise[spec, opts]},
                 FilterRules[{opts}, Options[Column]],
                 Spacings -> {Automatic, 1}]
+                
+        GetCircuitProperties[circ_, property_String, spec_Association] :=
+        	property // circ /. spec["gates"] // Through
+        GetCircuitProperties[___] := invalidArgError[GetCircuitProperties]
 
     End[ ]
                                        
