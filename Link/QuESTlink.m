@@ -1779,10 +1779,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Grid[
                 Join[
                     (* table headings *)
-                    {{"qubit", "duration", "passive noise"}},
+                    {{"qubit", "time", "duration", "passive noise"}},
                     (* row for each qubit *)
                     Table[
-                        {q, "t", Row[q["t"] /. spec["passiveNoise"], Spacer[0]]}, 
+                        {q, "t", "d", Row[q["d","t"] /. spec["passiveNoise"], Spacer[0]]}, 
                         {q, 0, spec["numQubits"]-1} ]],
                 (* default aesthetic (overridable *)
                 FilterRules[{opts}, Options[Grid]],
