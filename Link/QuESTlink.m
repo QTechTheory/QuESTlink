@@ -207,8 +207,9 @@ DistinguishedStyles -> Automatic will colour the groups by sampling ColorData[\"
     NoiseMode::usage = "Optional argument to InsertCircuitNoise, to specify which kind of noise to insert, of \"Active\", \"Passive\" or \"All\" (default)."
     
     PackageExport[ReplaceAliases]
-    ReplaceAliases::usage = "Optional argument to GetCircuitSchedule and InsertCircuitNoise, specifying (True or False) whether to substitute the device specification's alias operators in the output (including in gates and active/passive noise). This is False by default, but must be True to pass the output circuits to ApplyCircuit.
-If ReplaceAliases -> True, then the output of GetCircuitSchedule might not be compatible as an input to InsertCircuitNoise."
+    ReplaceAliases::usage = "Optional argument to GetCircuitSchedule and InsertCircuitNoise, specifying (True or False) whether to substitute the device specification's alias operators in the output (including in gates and active/passive noise). 
+This is False by default, but must be True to pass the output circuits to (for example) ApplyCircuit which don't recognise the alias.
+Note if ReplaceAliases -> True, then the output of GetCircuitSchedule might not be compatible as an input to InsertCircuitNoise."
     
     (* 
      * gate symbols, needed exporting so that their use below does not refer to a private var      
@@ -1617,7 +1618,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     OptionValue[ReplaceAliases],
                     (* replace aliases with their circuit, in-place (no list nesting *)
                     (* note this is overriding alias rule -> with :> which should be fine *)
-                    cols /. (#1 :> Sequence @@ #2 &) @@@ spec["aliases"],
+                    cols //. (#1 :> Sequence @@ #2 &) @@@ spec["aliases"],
                     cols
                 ]}]]
         GetCircuitSchedule[circ_List, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[circ,spec] :=
@@ -1697,7 +1698,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         passive = Simplify[passive, Assumptions -> getMotonicTimesConditions[times]];
                         
                         (* return { {t1,subcirc1,active1,passive1}, ...} *)
-                        Transpose[{times, subcircs, active, passive}] /. If[
+                        Transpose[{times, subcircs, active, passive}] //. If[
                             OptionValue[ReplaceAliases],
                             (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
                             (* note this is overriding alias rule -> with :> which should be fine *)
