@@ -1708,12 +1708,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 (* else give error *)
                 (Message[InsertCircuitNoise::error, "The given schedule is either invalid, or incompatible with the device specification, either through unsupported gates, or by prescribing overlapping (in time) sub-circuits."];
                 $Failed)]
-                
         InsertCircuitNoise[colsOrCirc_, spec_Association, opts:OptionsPattern[]] := 
             If[isCompatibleCirc[colsOrCirc, spec],
                 InsertCircuitNoise[GetCircuitSchedule[colsOrCirc, spec], spec, opts],
                 (Message[InsertCircuitNoise::error, "The given circuit(s) is contains gates not supported by the given device specification. See ?GetUnsupportedGates."];
                 $Failed)]
+        InsertCircuitNoise[___] := invalidArgError[InsertCircuitNoise]
             
         ExtractCircuit[schedule:{{_, (_List ..)}..}] :=
             Flatten @ schedule[[All,2;;]]
@@ -1721,6 +1721,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Flatten @ subcircs
         ExtractCircuit[circuit_List] :=
             circuit
+        ExtractCircuit[___] := invalidArgError[ExtractCircuit]
 
         ViewCircuitSchedule[sched:{{_, Repeated[_List,{1,3}]}..}, opts:OptionsPattern[]] :=
             Grid[
@@ -1732,6 +1733,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 opts,
                 Dividers -> All,
                 FrameStyle -> LightGray]
+        ViewCircuitSchedule[___] := invalidArgError[ViewCircuitSchedule]
         
         (* the gates in active noise can contain symbolic qubits that won't trigger 
          * Circuit[] evaluation. This function forces Circuit[] to a list *)
@@ -1794,6 +1796,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 viewPassiveNoise[spec, opts]},
                 FilterRules[{opts}, Options[Column]],
                 Spacings -> {Automatic, 1}]
+        ViewDeviceSpec[___] := invalidArgError[ViewDeviceSpec]
                 
         GetCircuitProperties[circ_, property_String, spec_Association] :=
         	property // circ /. spec["gates"] // Through
