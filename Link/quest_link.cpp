@@ -1072,10 +1072,12 @@ void local_applyGates(
             case OPCODE_Rz :
                 if (numParams != 1)
                     throw local_wrongNumGateParamsExcep("Rz", numParams, 1); // throws
-                if (numCtrls > 1)
+                if (numCtrls > 1 && numTargs == 1)
                     throw local_gateUnsupportedExcep("multi-controlled Rotate Z"); // throws
+                if (numCtrls > 1 && numTargs > 1)
+                    throw local_gateUnsupportedExcep("multi-controlled multi-rotate Z"); // throws
                 if (numCtrls == 1 && numTargs > 1)
-                    throw local_gateUnsupportedExcep("multi-controlled multi-rotateZ"); // throws
+                    throw local_gateUnsupportedExcep("controlled multi-rotate Z"); // throws
                 if (numTargs == 1) {
                     if (numCtrls == 0)
                         rotateZ(qureg, targs[targInd], params[paramInd]); // throws
