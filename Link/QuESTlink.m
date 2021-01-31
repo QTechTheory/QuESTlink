@@ -95,7 +95,7 @@ Be careful of performing algebra with Pauli operators outside of SimplifyPaulis[
 DrawCircuit[circuit, numQubits] generates a circuit diagram with numQubits, which can be more or less than that inferred from the circuit.
 DrawCircuit[{circ1, circ2, ...}] draws the total circuit, divided into the given subcircuits. This is the output format of GetCircuitColumns[].
 DrawCircuit[{{t1, circ1}, {t2, circ2}, ...}] draws the total circuit, divided into the given subcircuits, labeled by their scheduled times {t1, t2, ...}. This is the output format of GetCircuitSchedule[].
-DrawCircuit[{{t1, A1,A2,A3}, {t2, B1,B2,B3}, ...}] draws the total circuit, divided into subcircuits {A1 A2 A3, B1 B2 B3, ...}, labeled by their scheduled times {t1, t2, ...}. This is the output format of InsertCircuitNoise[].
+DrawCircuit[{{t1, A1,A2}, {t2, B1,B2}, ...}] draws the total circuit, divided into subcircuits {A1 A2, B1 B2, ...}, labeled by their scheduled times {t1, t2, ...}. This is the output format of InsertCircuitNoise[].
 DrawCircuit accepts optional arguments Compactify, DividerStyle, SubcircuitSpacing, SubcircuitLabels, LabelDrawer and any Graphics option. For example, the fonts can be changed with 'BaseStyle -> {FontFamily -> \"Arial\"}'."
     DrawCircuit::error = "`1`"
     
@@ -134,7 +134,7 @@ CheckCircuitSchedule returns True if the schedule is valid for any assignment of
 CheckCircuitSchedule returns a list of symbolic conditions which must be simultaneously satisfied for the schedule to be valid, if it cannot determine so absolutely. These conditions include constraints of both motonicity and duration."
     CheckCircuitSchedule::error = "`1`"
     
-    InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, spec] divides the circuit into scheduled subcircuits, and their sequences of active and passive noise, according to the given device specification. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, subcirc1, active, passive}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
+    InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, spec] divides the circuit into scheduled subcircuits, then replaces them with rounds of active and passive noise, according to the given device specification. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, active, passive}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
 InsertCircuitNoise[{circ1, circ2, ...}, spec] uses the given list of sub-circuits (output format of GetCircuitColumns[]), assuming each contain gates which can be simultaneously performed.
 InsertCircuitNoise[{{t1, circ1}, {t2, circ2}, ...} assumes the given schedule (output format of GetCircuitSchedule[]) of {t1,t2,...} for the rounds of gates and noise. These times can be symbolic.
 InsertCircuitNoise accepts optional arguments NoiseMode and ReplaceAliases."
@@ -1175,7 +1175,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         };
         
         (* public functions to fully render a circuit *)
-        DrawCircuit[noisySched:{{_, _List, _List, _List}..}, Repeated[numQubits_, {0,1}], opts:OptionsPattern[{DrawCircuit,Graphics}]] :=
+        DrawCircuit[noisySched:{{_, _List, _List}..}, Repeated[numQubits_, {0,1}], opts:OptionsPattern[{DrawCircuit,Graphics}]] :=
             (* compactify each subcirc but not their union *)
             DrawCircuit[{First[#], Join @@ compactCirc[OptionValue[Compactify]] /@ Rest[#]}& /@ noisySched, numQubits, Compactify -> False, opts]
         DrawCircuit[schedule:{{_, _List}..}, numQubits_Integer, opts:OptionsPattern[]] :=
@@ -1698,7 +1698,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         passive = Simplify[passive, Assumptions -> getMotonicTimesConditions[times]];
                         
                         (* return { {t1,subcirc1,active1,passive1}, ...} *)
-                        Transpose[{times, subcircs, active, passive}] //. If[
+                        Transpose[{times, active, passive}] //. If[
                             OptionValue[ReplaceAliases],
                             (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
                             (* note this is overriding alias rule -> with :> which should be fine *)
@@ -1723,17 +1723,38 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         ExtractCircuit[circuit_List] :=
             circuit
         ExtractCircuit[___] := invalidArgError[ExtractCircuit]
-
-        ViewCircuitSchedule[sched:{{_, Repeated[_List,{1,3}]}..}, opts:OptionsPattern[]] :=
+        
+        formatGateParamMatrices[circ_List] :=
+            circ /. m_?MatrixQ :> MatrixForm[m]
+            
+        ViewCircuitSchedule[sched:{{_, Repeated[_List,{1,2}]}..}, opts:OptionsPattern[]] := With[
+            {isPureCirc = Length @ First @ sched == 2},
+            {isActiveOnly = And[Not[isPureCirc], Flatten[ Transpose[sched][[3]] ] == {}],
+             isPassiveOnly = And[Not[isPureCirc], Flatten[ Transpose[sched][[2]] ] == {}]},
             Grid[
-                Prepend[
-                    (* use as many columns as exist in sched, add inter-gate space, and format any gate matrices in MatrixForm *)
-                    ({First[#], Sequence @@ ((Row[#,Spacer[0]]&) /@ Rest[#] /. m_?MatrixQ :> MatrixForm[m] ) } & /@ sched),
-                    {"time","gates","active noise","passive noise"}[[;; Length @ First @ sched ]]
-                ],
+                Which[
+                    isPureCirc,
+                    Join[
+                        {{"time", "gates"}},
+                        Function[{t,g}, {t, Row[formatGateParamMatrices[g], Spacer[0]] }] @@@ sched],
+                    isActiveOnly,
+                    Join[
+                        {{"time", "active noise"}},
+                        Function[{t,a,p}, {t, Row[formatGateParamMatrices[a], Spacer[0]] }] @@@ sched],
+                    isPassiveOnly,
+                    Join[
+                        {{"time", "passive noise"}},
+                        Function[{t,a,p}, {t, Row[formatGateParamMatrices[p], Spacer[0]] }] @@@ sched],
+                    True,
+                    Join[
+                        {{"time", "active noise", "passive noise"}},
+                        Function[{t,a,p}, {t, 
+                            Row[formatGateParamMatrices[a], Spacer[0]], 
+                            Row[formatGateParamMatrices[p], Spacer[0]] }] @@@ sched]
+                ],    
                 opts,
                 Dividers -> All,
-                FrameStyle -> LightGray]
+                FrameStyle -> LightGray]]
         ViewCircuitSchedule[___] := invalidArgError[ViewCircuitSchedule]
         
         (* the gates in active noise can contain symbolic qubits that won't trigger 
