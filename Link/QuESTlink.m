@@ -125,19 +125,22 @@ GetUnsupportedGates[{{t1, circ1}, {t2, circ2}, ...}, spec] ignores the times in 
     
     GetCircuitSchedule::usage = "GetCircuitSchedule[circuit, spec] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given device specification. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
 GetCircuitSchedule[subcircuits, spec] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling.
-GetCircuitSchedule accepts optional argument ReplaceAliases."
+GetCircuitSchedule accepts optional argument ReplaceAliases.
+GetCircuitSchedule will take into consideration gates with durations dependent on their scheduled start time."
     GetCircuitSchedule::error = "`1`"
     
     CheckCircuitSchedule::usage = "CheckCircuitSchedule[{{t1, circ1}, {t2, circ2}, ...}, spec] checks whether the given schedule of sub-circuits is compatible with the device specification, else if it prescribes overlapping sub-circuit execution (regardless of targeted qubits). Times and gate parameters can be symbolic. All gates in a sub-circuit are assumed applicable simultaneously, even if they target overlapping qubits.
 CheckCircuitSchedule returns False if the (possibly symbolic) times cannot possibly be monotonic, nor admit a sufficient duration for any sub-circuit.
 CheckCircuitSchedule returns True if the schedule is valid for any assignment of the times and gate parameters.
-CheckCircuitSchedule returns a list of symbolic conditions which must be simultaneously satisfied for the schedule to be valid, if it cannot determine so absolutely. These conditions include constraints of both motonicity and duration."
+CheckCircuitSchedule returns a list of symbolic conditions which must be simultaneously satisfied for the schedule to be valid, if it cannot determine so absolutely. These conditions include constraints of both motonicity and duration.
+CheckCircuitSchedule will take into consideration gates with durations dependent on their scheduled start time."
     CheckCircuitSchedule::error = "`1`"
     
-    InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, spec] divides the circuit into scheduled subcircuits, then replaces them with rounds of active and passive noise, according to the given device specification. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, active, passive}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
+    InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, spec] divides the circuit into scheduled subcircuits, then replaces them with rounds of active and passive noise, according to the given device specification. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, active, passive}, ...}, which can be given directly to DrawCircuit[], ViewCircuitSchedule[] or ExtractCircuit[].
 InsertCircuitNoise[{circ1, circ2, ...}, spec] uses the given list of sub-circuits (output format of GetCircuitColumns[]), assuming each contain gates which can be simultaneously performed.
 InsertCircuitNoise[{{t1, circ1}, {t2, circ2}, ...} assumes the given schedule (output format of GetCircuitSchedule[]) of {t1,t2,...} for the rounds of gates and noise. These times can be symbolic.
-InsertCircuitNoise accepts optional arguments NoiseMode and ReplaceAliases."
+InsertCircuitNoise accepts optional arguments NoiseMode and ReplaceAliases.
+InsertCircuitNoise can handle gates with time-dependent noise operators and durations."
     InsertCircuitNoise::error = "`1`"
     
     ExtractCircuit::usage = "ExtractCircuit[] returns the ultimate circuit from the outputs of InsertCircuitNoise[], GetCircuitSchedule[] and GetCircuitSchedule[]."
@@ -151,8 +154,10 @@ ViewCircuitSchedule accepts all optional arguments of Grid[], for example 'Frame
 ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables), and Column[] (to customise their placement)."
     ViewDeviceSpec::error = "`1`"
     
-    GetCircuitProperties::usage = "GetCircuitProperties[circuit, property, spec] returns a list of each circuit gate's property according to the device specification.
-For example, GetCircuitProperties[circuit, \"duration\", spec] returns the duration of each gate in circuit as prescribed by spec."
+    GetCircuitProperties::usage = "GetCircuitProperties[circuit, property, spec] returns a list of each gate's property, according to the device specification. If the property depends on time, the circuit is automatically scheduled by GetCircuitSchedule[].
+GetCircuitProperties[schedule, property, spec] returns a nested list of each scheduled subcircuit's gate properties.
+GetCircuitProperties[subcircuits, property, spec] returns a nested list of each subcircuit's gate properties, as scheduled by GetCircuitSchedule[].
+For example, GetCircuitProperties[circuit, \"duration\", spec] returns the duration of each gate in the circuit as prescribed by spec (with an assumed schedule, if gate durations depend on their start time)."
     GetCircuitProperties::error = "`1`"
     
     (*
@@ -1508,14 +1513,15 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             ]
         ]
         
-        (* returns whether the circuit is supported by the device spec *)
+        (* returns whether the circuit is supported by the device spec
+           (assumes that scheduled time does not influence gate validity) *)
         isCompatibleGate[spec_][gate_] := With[
             {qubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
             And[
                 (* all gate's qubit indices are valid *)
                 AllTrue[qubits, LessThan[spec["numQubits"]]],
                 (* the gate satisfies a gate pattern *)
-                MatchQ[gate, Alternatives @@ Keys @ spec["gates"]]]]
+                MatchQ[gate, Alternatives @@ Keys @ spec["gates"][dummyTimeVar]]]]
         isCompatibleCirc[circOrCols_List, spec_] := 
             AllTrue[ Flatten[circOrCols], isCompatibleGate[spec]]
         isCompatibleCirc[_, spec_] :=
@@ -1539,13 +1545,16 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         (* symbolic numbers MAY increase (it's not impossible for them to be monotonic) *)
                         Not[False === Simplify[And @@ conds]]]]]
         
+        (* returns the duration of the longest gate in the given column (may be col time dependent) *)
+        getColumnDuration[spec_][col_, time_] :=
+            Max @ Table[Replace[gate, spec["gates"][time]]["duration"], {gate,col}]
+            
         CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] /; Not[isCompatibleCirc[sched[[All,2]], spec]] := (
             Message[CheckCircuitSchedule::error, "The given schedule contains gates incompatible with the device specification. See ?GetUnsupportedGates"];
             $Failed)
         CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] /; Not[areMonotonicTimes[sched[[All,1]]]] := (
             Message[CheckCircuitSchedule::error, "The given schedule times are not motonically increasing, nor can be for any assignment of symbols, or they are not real and positive."];
-            $Failed)
-            
+            $Failed) 
         (* this is currently naive, and assumes each sub-circuit is valid (contains simultaneous gates), and 
          * that overlapping sub-circuits is invalid. A smarter function would
          * check sub-circuits contain gates on unique qubits, and check whether 
@@ -1556,7 +1565,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             (* the duration scheduled for each subcircuit *)
             {schedDurs = Differences @ times},
             (* the minimum required duration of each subcircuit *)
-            {minDurs = getColumnDuration[spec] /@ Most[subcircs]},
+            {minDurs = MapThread[getColumnDuration[spec], {Most[subcircs], Most[times]}]},
             (* list of (possibly symbolic) assumptions implied by monotonicity of given schedule *)
             {mono = getMotonicTimesConditions[times]},
             (* list of (possibly symbolic) conditions that each subcircuit has sufficient duration *)
@@ -1600,10 +1609,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         GetUnsupportedGates[circ_List, spec_Association] :=
     	   Select[circ, (Not[isCompatibleGate[spec][#]]&) ]
         GetUnsupportedGates[___] := invalidArgError[GetUnsupportedGates]
-        
-        (* returns the duration of the longest gate in the given column *)
-        getColumnDuration[spec_][col_] :=
-            Max @ Table[Replace[gate, spec["gates"]]["duration"], {gate,col}]
             
         (* declaring optional args to GetCircuitSchedule *)
         Options[GetCircuitSchedule] = {
@@ -1611,8 +1616,15 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         };
             
         (* assigns each of the given columns (unique-qubit subcircuits) a start-time *)
-        GetCircuitSchedule[cols:{{__}..}, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[cols,spec] := With[
-            {durs = getColumnDuration[spec] /@ cols},
+        GetCircuitSchedule[cols:{{__}..}, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[cols,spec] := Module[
+            {durs, d, t=0},
+            (* determine subcircuit durations (which may themselves be time dependent) *)
+            durs = Table[
+                d = getColumnDuration[spec][col, t];
+                t += d;
+                d,
+                {col, cols}];
+            (* schedule from t=0 *)
             Transpose[{Accumulate @ Prepend[Most@durs, 0], 
                 If[
                     OptionValue[ReplaceAliases],
@@ -1628,12 +1640,11 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             $Failed)
         GetCircuitSchedule[___] := invalidArgError[GetCircuitSchedule]
             
-        getActiveNoise[cols:{{__}..}, spec_] :=
-            Table[
-                Flatten @ Table[Replace[gate, spec["gates"]]["activeNoise"], {gate,col}],
-                {col, cols}]
-        getActiveNoise[schedule:{{_, _List}..}, spec_] :=
-            getActiveNoise[schedule[[All,2]], spec]
+        getActiveNoise[schedule:{{_, _List}..}, spec_] := 
+            MapThread[
+                Function[{t,s},
+                    Flatten @ Table[ Replace[g, spec["gates"][t] ]["activeNoise"], {g, s}]],
+                Transpose[schedule]]
             
         getSubcircPassiveNoise[subcirc_, subcircDur_, subcircTime_, spec_] := Module[
             (* records which qubits have been assigned noise already *)
@@ -1642,7 +1653,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 (* collect noise on gated qubits, applying for the remaining subcirc duration *)
                 Flatten @ Table[
                     With[{
-                        gateDur = Replace[gate, spec["gates"]]["duration"],
+                        gateDur = Replace[gate, spec["gates"][subcircTime] ]["duration"],
                         qubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
                         
                         noised[[1 + qubits]] = True;
@@ -1660,7 +1671,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             (* if first event is t>0, passive-noise all qubits until then *)
             If[First[times] =!= 0, PrependTo[times, 0]; PrependTo[subcircs, {}]];
             (* passive noise for duration between scheduled subcircuits (and after last) *)
-            With[{durations = Append[Differences[times], getColumnDuration[spec] @ Last @ subcircs]},
+            With[{durations = Append[Differences[times], getColumnDuration[spec][Last@subcircs, Last@times]]},
                 MapThread[getSubcircPassiveNoise[#1,#2,#3,spec]&, {subcircs, durations, times}]
             ]
         ]
@@ -1783,14 +1794,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Grid[
                 Join[
                     (* table headings *)
-                    {{"gate", "duration", "active noise"}},
+                    {{"gate", "time", "duration", "active noise"}},
                     (* row for each supported gate *)
                     Function[{gatespec}, With[{props=Last[gatespec]}, 
-                        {First[gatespec], props["duration"],
+                        {First[gatespec], "t", props["duration"],
                             (* add small gap between active noise gates *)
                             Row[(frozenCircToList @ props["activeNoise"]), Spacer[0]]
                         (* render gate matrices in MatrixForm *)
-                        }] /. m_?MatrixQ :> MatrixForm[m]] /@ spec["gates"]],
+                        }] /. m_?MatrixQ :> MatrixForm[m]] /@ spec["gates"]["t"]],
                 (* default aesthetic (overridable *)
                 FilterRules[{opts}, Options[Grid]],
                 Dividers -> All,
@@ -1819,9 +1830,15 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 FilterRules[{opts}, Options[Column]],
                 Spacings -> {Automatic, 1}]
         ViewDeviceSpec[___] := invalidArgError[ViewDeviceSpec]
-                
-        GetCircuitProperties[circ_, property_String, spec_Association] :=
-        	property // circ /. spec["gates"] // Through
+
+        GetCircuitProperties[schedule:{{_, _List}..}, property_String, spec_Association] :=
+            Function[{time,subcirc},
+                property // subcirc /. spec["gates"][time] // Through
+            ] @@@ schedule
+        GetCircuitProperties[subcircs:{{__}..}, property_String, spec_Association] :=    
+            GetCircuitProperties[ GetCircuitSchedule[subcircs, spec], property, spec]
+        GetCircuitProperties[circ_List, property_String, spec_Association] :=
+            Flatten @ GetCircuitProperties[ GetCircuitSchedule[circ, spec], property, spec]
         GetCircuitProperties[___] := invalidArgError[GetCircuitProperties]
 
     End[ ]
