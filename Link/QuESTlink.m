@@ -164,38 +164,29 @@ For example, GetCircuitProperties[circuit, \"duration\", spec] returns the durat
      * optional arguments to public functions
      *)
      
-    PackageExport[WithBackup]
+    BeginPackage["`Option`"]
+
     WithBackup::usage = "Optional argument to ApplyCircuit, indicating whether to create a backup during circuit evaluation to restore the input state in case of a circuit error. This incurs additional memory (default True). If the circuit contains no error, this option has no effect besides wasting memory."
     
-    PackageExport[ShowProgress]
     ShowProgress::usage = "Optional argument to ApplyCircuit, indicating whether to show a progress bar during circuit evaluation (default False). This slows evaluation slightly."
     
-    PackageExport[PlotComponent]
     PlotComponent::Usage = "Optional argument to PlotDensityMatrix, to plot the \"Real\", \"Imaginary\" component of the matrix, or its \"Magnitude\" (default)."
     
-    PackageExport[Compactify]
     Compactify::usage = "Optional argument to DrawCircuit, to specify (True or False) whether to attempt to compactify the circuit (or each subcircuit) by left-filling columns of gates on unique qubits (the result of GetCircuitColumns[]). No compactifying may yield better results for circuits with multi-target gates (which invoke swaps)."
     
-    PackageExport[DividerStyle]
     DividerStyle::usage = "Optional argument to DrawCircuit, to style the vertical lines separating subcircuits. Use DividerStyle -> None to draw without dividers, and DividerStyle -> Directive[...] to specify multiple styles properties."
     
-    PackageExport[SubcircuitSpacing]
     SubcircuitSpacing::usage = "Optional argument to DrawCircuit, to specify the horizontal space inserted between subcircuits."
     
-    PackageExport[SubcircuitLabels]
     SubcircuitLabels::usage = "Optional argument to DrawCircuit, specifying the list of labels to display between subcircuits. Use 'None' to skip a label while still drawing the divider (except for the first and last divider). Customise these labels with LabelDrawer."
     
-    PackageExport[LabelDrawer]
     LabelDrawer::usage = "Optional argument to DrawCircuit, to specify a two-argument function for drawing subcircuit labels. For example, Function[{msg,x},Text[msg,{x,-.5}]]. Use LabelDrawer -> None to show no labels."
     
-    PackageExport[ShowLocalGates]
     ShowLocalGates::usage = "Optional argument to DrawCircuitTopology, to specify (True or False) whether single-qubit gates should be included in the plot (as single-vertex loops)."
     
-    PackageExport[ShowRepetitions]
     ShowRepetitions::usage = "Optional argument to DrawCircuitTopology, to specify (True or False) whether repeated instances of gates (or other groups as set by DistinguishBy) in the circuit should each yield a distinct edge.
 For example, if ShowRepetitions -> True and DistinguishBy -> \"Qubits\", then a circuit containing three C[Rz] gates between qubits 0 and 1 will produce a graph with three edges between vertices 0 and 1."
     
-    PackageExport[DistinguishBy]
     DistinguishBy::usage = "Optional argument to DrawCircuitTopology to specify how gates are aggregated into graph edges and legend labels. The possible values (in order of decreasing specificity) are \"Parameters\", \"Qubits\", \"NumberOfQubits\", \"Gates\", \"None\", and a distinct \"Connectivity\" mode.
 DistinguishBy -> \"Parameters\" assigns every unique gate (even distinguishing similar operators with different parameters) its own label.
 DistinguishBy -> \"Qubits\" discards gate parameters, but respects target qubits, so will assign similar gates (acting on the same qubits) but with different parameters to the same label.
@@ -204,63 +195,69 @@ DistinguishBy -> \"Gates\" respects only the gate type (and whether it is contro
 DistinguishBy -> \"None\" performs no labelling or distinguishing of edges.
 DistinguishBy -> \"Connectivity\" merges all gates, regardless of type, acting upon the same set of qubits (orderless)."
 
-    PackageExport[DistinguishedStyles]
     DistinguishedStyles::usage = "Optional argument to DrawCircuitTopology, to specify the colours/styles used for each distinguished group (hence ultimately, the edge and legend styles). This must be a list of graphic directives, and will be repeated if it contains too few elements.
 DistinguishedStyles -> Automatic will colour the groups by sampling ColorData[\"Rainbow\"]."
     
-    PackageExport[NoiseMode]
     NoiseMode::usage = "Optional argument to InsertCircuitNoise, to specify which kind of noise to insert, of \"Active\", \"Passive\" or \"All\" (default)."
     
-    PackageExport[ReplaceAliases]
     ReplaceAliases::usage = "Optional argument to GetCircuitSchedule and InsertCircuitNoise, specifying (True or False) whether to substitute the device specification's alias operators in the output (including in gates and active/passive noise). 
 This is False by default, but must be True to pass the output circuits to (for example) ApplyCircuit which don't recognise the alias.
 Note if ReplaceAliases -> True, then the output of GetCircuitSchedule might not be compatible as an input to InsertCircuitNoise."
     
+    EndPackage[]
+    
+    
+    
     (* 
-     * gate symbols, needed exporting so that their use below does not refer to a private var      
+     * gate symbols    
      *)
+     
+    BeginPackage["`Gate`"]
 
-    PackageExport[H]
     H::usage = "H is the Hadamard gate."
-    PackageExport[X]
+    
     X::usage = "X is the Pauli X gate, a.k.a NOT or bit-flip gate."
-    PackageExport[Y]
+    
     Y::usage = "Y is the Pauli Y gate."
-    PackageExport[Z]
+    
     Z::usage = "Z is the Pauli Z gate."
-    PackageExport[Rx]
+    
     Rx::usage = "Rx[theta] is a rotation of theta around the x-axis of the Bloch sphere."        
-    PackageExport[Ry]
+    
     Ry::usage = "Ry[theta] is a rotation of theta around the y-axis of the Bloch sphere." 
-    PackageExport[Rz]
+    
     Rz::usage = "Rz[theta] is a rotation of theta around the z-axis of the Bloch sphere. Multiple targets enacts Exp[-i \[Theta]/2 Za ... Zc]." 
-    PackageExport[R]
+    
     R::usage = "R[theta, paulis] is the unitary Exp[-i \[Theta]/2 paulis]."   
-    PackageExport[S]
+    
     S::usage = "S is the S gate, a.k.a. PI/2 gate."
-    PackageExport[T]
+    
     T::usage = "T is the T gate, a.k.a PI/4 gate."
-    PackageExport[U]
+    
     U::usage = "U[matrix] is a general 1 or 2 qubit unitary gate, enacting the given 2x2 or 4x4 matrix."
-    PackageExport[Deph]
+    
     Deph::usage = "Deph[prob] is a 1 or 2 qubit dephasing with probability prob of error."
-    PackageExport[Depol]
+    
     Depol::usage = "Depol[prob] is a 1 or 2 qubit depolarising with probability prob of error."
-    PackageExport[Damp]
+    
     Damp::usage = "Damp[prob] is 1 qubit amplitude damping with the givern decay probability."
-    PackageExport[SWAP]
+    
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
-    PackageExport[M]
+    
     M::usage = "M is a destructive measurement gate which measures the indicated qubits in the Z basis."
-    PackageExport[P]
+    
     P::usage = "P[val] is a (normalised) projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
 P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
-    PackageExport[Kraus]
+    
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
-    PackageExport[G]
+    
     G::usage = "G[phi] applies a global phase rotation of phi, by premultiplying Exp[i phi]."
-    PackageExport[Id]
+    
     Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit, or as an alternative to removing gates in ApplyCircuit."
+ 
+    EndPackage[]
+ 
+ 
  
     Begin["`Private`"]
     
@@ -1844,3 +1841,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     End[ ]
                                        
 EndPackage[]
+
+Needs["QuEST`Option`"]
+
+Needs["QuEST`Gate`"]
+
