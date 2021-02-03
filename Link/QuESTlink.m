@@ -1518,7 +1518,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 (* all gate's qubit indices are valid *)
                 AllTrue[qubits, LessThan[spec["numQubits"]]],
                 (* the gate satisfies a gate pattern *)
-                MatchQ[gate, Alternatives @@ Keys @ spec["gates"][dummyTimeVar]]]]
+                MatchQ[gate, Alternatives @@ Keys @ spec["gates"]]]]
         isCompatibleCirc[circOrCols_List, spec_] := 
             AllTrue[ Flatten[circOrCols], isCompatibleGate[spec]]
         isCompatibleCirc[_, spec_] :=
@@ -1544,7 +1544,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         
         (* returns the duration of the longest gate in the given column (may be col time dependent) *)
         getColumnDuration[spec_][col_, time_] :=
-            Max @ Table[Replace[gate, spec["gates"][time]]["duration"], {gate,col}]
+            Max @ Table[Replace[gate, spec["gates"]]["duration"] /. spec["timeSymbol"] -> time, {gate,col}]
             
         CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] /; Not[isCompatibleCirc[sched[[All,2]], spec]] := (
             Message[CheckCircuitSchedule::error, "The given schedule contains gates incompatible with the device specification. See ?GetUnsupportedGates"];
@@ -1640,7 +1640,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getActiveNoise[schedule:{{_, _List}..}, spec_] := 
             MapThread[
                 Function[{t,s},
-                    Flatten @ Table[ Replace[g, spec["gates"][t] ]["activeNoise"], {g, s}]],
+                    Flatten @ Table[ Replace[g, spec["gates"] ]["activeNoise"] /. spec["timeSymbol"] -> t, {g, s}]],
                 Transpose[schedule]]
             
         getSubcircPassiveNoise[subcirc_, subcircDur_, subcircTime_, spec_] := Module[
@@ -1650,15 +1650,20 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 (* collect noise on gated qubits, applying for the remaining subcirc duration *)
                 Flatten @ Table[
                     With[{
-                        gateDur = Replace[gate, spec["gates"][subcircTime] ]["duration"],
+                        gateDur = Replace[gate, spec["gates"] ]["duration"] /. spec["timeSymbol"] -> subcircTime,
                         qubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
                         
                         noised[[1 + qubits]] = True;
-                        Table[qb[subcircDur-gateDur, subcircTime+gateDur] /. spec["passiveNoise"], {qb,qubits}]],
+                        Table[
+                            qb[subcircDur-gateDur] /. spec["passiveNoise"] /. spec["timeSymbol"] -> subcircTime + gateDur, 
+                            {qb,qubits}]],
                     {gate, subcirc}],
                 (* collect noise on remaining qubits, applying for full subcirc duration *)
                 Flatten @ Table[
-                    If[noised[[qb+1]], Nothing, qb[subcircDur, subcircTime] /. spec["passiveNoise"]],
+                    If[noised[[qb+1]], 
+                        Nothing, 
+                        qb[subcircDur] /. spec["passiveNoise"] /. spec["timeSymbol"] -> subcircTime
+                    ],
                     {qb, 0, spec["numQubits"]-1}]
             ]
         ]
@@ -1794,11 +1799,11 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     {{"gate", "time", "duration", "active noise"}},
                     (* row for each supported gate *)
                     Function[{gatespec}, With[{props=Last[gatespec]}, 
-                        {First[gatespec], "t", props["duration"],
+                        {First[gatespec], spec["timeSymbol"], props["duration"],
                             (* add small gap between active noise gates *)
                             Row[(frozenCircToList @ props["activeNoise"]), Spacer[0]]
                         (* render gate matrices in MatrixForm *)
-                        }] /. m_?MatrixQ :> MatrixForm[m]] /@ spec["gates"]["t"]],
+                        }] /. m_?MatrixQ :> MatrixForm[m]] /@ spec["gates"]],
                 (* default aesthetic (overridable *)
                 FilterRules[{opts}, Options[Grid]],
                 Dividers -> All,
@@ -1812,7 +1817,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     {{"qubit", "time", "duration", "passive noise"}},
                     (* row for each qubit *)
                     Table[
-                        {q, "t", "d", Row[q["d","t"] /. spec["passiveNoise"], Spacer[0]]}, 
+                        {q, "t", "d", 
+                            Row[q["d"] /. spec["passiveNoise"] /. spec["timeSymbol"] -> "t", Spacer[0]]}, 
                         {q, 0, spec["numQubits"]-1} ]],
                 (* default aesthetic (overridable *)
                 FilterRules[{opts}, Options[Grid]],
@@ -1830,7 +1836,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
 
         GetCircuitProperties[schedule:{{_, _List}..}, property_String, spec_Association] :=
             Function[{time,subcirc},
-                property // subcirc /. spec["gates"][time] // Through
+                property // subcirc /. (spec["gates"] /. spec["timeSymbol"] -> time) // Through
             ] @@@ schedule
         GetCircuitProperties[subcircs:{{__}..}, property_String, spec_Association] :=    
             GetCircuitProperties[ GetCircuitSchedule[subcircs, spec], property, spec]
