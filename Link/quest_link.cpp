@@ -886,6 +886,15 @@ ComplexMatrix4 local_getMatrix4FromFlatList(qreal* list) {
     return m;
 }
 
+void local_setMatrixNFromFlatList(qreal* list, ComplexMatrixN m, int numQubits) {
+    long long int dim = (1LL << numQubits);
+    for (long long int r=0; r<dim; r++)
+        for (long long int c=0; c<dim; c++) {
+            m.real[r][c] = list[2*(dim*r+c)];
+            m.imag[r][c] = list[2*(dim*r+c)+1];
+        }
+}
+
 /* updates the CIRC_PROGRESS_VAR in the front-end with the new passed value 
  * which must lie in [0, 1]. This can be used to indicate progress of a long 
  * evaluation to the user 
@@ -1103,12 +1112,14 @@ void local_applyGates(
                 break;
             
             case OPCODE_U : {
-                if (numTargs == 1 && numParams != 2*2*2)
-                    throw QuESTException("", "single qubit U accepts only 2x2 matrices"); // throws
-                if (numTargs == 2 && numParams != 4*4*2)
-                    throw QuESTException("", "two qubit U accepts only 4x4 matrices"); // throws
-                if (numTargs != 1 && numTargs != 2)
-                    throw local_wrongNumGateTargsExcep("U", numTargs, "1 or 2 targets"); // throws
+                ; // empty post-label statement, courtesy of weird C99 standard.
+                // this was added when QuESTlink was already refactored for C++11,
+                // however the quirk of being unable to define a variable on the first 
+                // line of a switch case in C99 is so strange, I carry on the tradition anyway
+                long long int dim = (1 << numTargs);
+                if (numParams != 2 * dim*dim)
+                    throw QuESTException("", std::to_string(numTargs) + "-qubit U accepts only " + 
+                        std::to_string(dim) + "x" +  std::to_string(dim) + " matrices."); // throws
                 
                 if (numTargs == 1) {
                     ComplexMatrix2 u = local_getMatrix2FromFlatList(&params[paramInd]);
@@ -1123,6 +1134,16 @@ void local_applyGates(
                         twoQubitUnitary(qureg, targs[targInd], targs[targInd+1], u); // throws
                     else
                         multiControlledTwoQubitUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], targs[targInd+1], u); // throws
+                } 
+                else {
+                    // this is wastefully(?) allocating and deallocating memory on the fly!
+                    ComplexMatrixN u = createComplexMatrixN(numTargs);
+                    local_setMatrixNFromFlatList(&params[paramInd], u, numTargs);
+                    if (numCtrls == 0)
+                        multiQubitUnitary(qureg, &targs[targInd], numTargs, u); // throws
+                    else
+                        multiControlledMultiQubitUnitary(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], numTargs, u); // throws
+                    destroyComplexMatrixN(u);
                 }
             }
                 break;
