@@ -780,7 +780,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[{R, rots:(X|Y|Z)..}, {}, targs_List, col_] := {
             Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
             Sequence @@ MapThread[drawGate[#1/.{X->Rx,Y->Ry,Z->Rz}, {}, {#2}, col]&, {{rots}, targs}]}
-        	
+        drawGate[label_Symbol, {}, targs_List, col_] := {
+            Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
+            Sequence @@ (drawGate[label, {}, {#1}, col]& /@ targs)}
+                
         (* two-qubit gate graphics *)
         drawGate[symb:(Deph|Depol), {}, {targ1_,targ2_}, col_] := {
         	EdgeForm[Dashed],
