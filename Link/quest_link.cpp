@@ -1244,8 +1244,9 @@ void local_applyGates(
                     (numTargs == 1 && numKrausOps > 4 ) ||
                     (numTargs == 2 && numKrausOps > 16))
                     throw QuESTException("", 
-                        std::to_string(numKrausOps) + " operators were passed to single-qubit Kraus[ops], " + 
-                        "which accepts only >0 and <=" + std::to_string((numTargs==1)? 4:16) + " operators!"); // throws
+                        std::to_string(numKrausOps) + " operators were passed to " +
+                        std::to_string(numTargs) +  "-qubit Kraus[ops], which accepts only >0 and <=" + 
+                        std::to_string((numTargs==1)? 4:16) + " operators!"); // throws
                 if (numTargs == 1 && (numParams-1) != 2*2*2*numKrausOps)
                     throw QuESTException("", "one-qubit Kraus expects 2-by-2 matrices!"); // throws
                 if (numTargs == 2 && (numParams-1) != 4*4*2*numKrausOps)
