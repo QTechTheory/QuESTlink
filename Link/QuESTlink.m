@@ -281,6 +281,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     
     DurationSymbol::usage = "The symbol representing the duration (in a scheduled circuit) of gates or noise channels, which can inform their properties."
     
+    InitVariables::usage = "The function to call at the start of circuit/schedule processing, to re-initialise circuit variables (optional)."
+    
+    UpdateVariables::usage = "The function to call after each active gate or processed passive noise, to update circuit variables (optional)."
+    
     EndPackage[]
  
  
@@ -1569,10 +1573,167 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         Not @ MemberQ[conds, False], 
                         (* symbolic numbers MAY increase (it's not impossible for them to be monotonic) *)
                         Not[False === Simplify[And @@ conds]]]]]
+            
+        (* determines subcircuit duration, active noise and passive noise of 
+         * a sub-circuit, considering the circuit variables and updating them *)
+        getDurAndNoiseFromSubcirc[subcirc_, subcircTime_, spec_, forcedSubcircDur_:None] := Module[
+            {activeNoises={}, passiveNoises={}, gateDurs={}, subcircDur,
+             qubitActiveDurs = ConstantArray[0, spec[NumQubits]], slowestGateDur},
+            
+            (* iterating gates in order of appearence in subcircuit... *)
+            Do[ 
+                With[
+                    {gateProps = Replace[gate, spec[Gates]]},
+                    (* work out gate duration (time and var dependent) *)
+                    {gateDur = gateProps[GateDuration] 
+                        /. spec[TimeSymbol] -> subcircTime},
+                    (* work out active noise (time, dur and var dependent) *)
+                    {gateActive = gateProps[ActiveNoise] 
+                        /. spec[DurationSymbol] -> gateDur 
+                        /. spec[TimeSymbol] -> subcircTime},
+                    (* work out var-update function (time and dur dependent) *)
+                    {gateVarFunc = If[KeyExistsQ[gateProps, UpdateVariables],
+                        gateProps[UpdateVariables] 
+                            /. spec[DurationSymbol] -> gateDur 
+                            /. spec[TimeSymbol] -> subcircTime,
+                        Function[None]]},
+                    
+                    (* collect gate info *) 
+                    AppendTo[activeNoises, gateActive];
+                    AppendTo[gateDurs, gateDur];
+                    
+                    (* update circuit variables (time, dur, var dependent, but not fixedSubcircDur dependent) *)
+                    gateVarFunc[];
+                    
+                    (* record how long the involved qubits were activated (to later infer passive dur) *)
+                    qubitActiveDurs[[ 1 + Flatten @ getSymbCtrlsTargs[gate][[{2,3}]] ]] = gateDur;
+                ],
+                {gate,subcirc}];
+                
+            (* infer the whole subcircuit duration (unless forced) *)
+            slowestGateDur = Max[gateDurs];
+            subcircDur = If[
+                forcedSubcircDur === None,
+                slowestGateDur,
+                forcedSubcircDur];
+            (* note slowestGateDur is returned even if overriden here, for schedule-checking functions *)
+                
+            (* iterate qubits from 0 to numQubits-1 *)
+            Do[
+                With[
+                    {qubitProps = Replace[qubit, spec[Qubits]]},
+                    (* work out start-time and duration of qubit's passive noise (pre-determined) *)
+                    {passiveTime = subcircTime + qubitActiveDurs[[ 1 + qubit ]]},
+                    {passiveDur = subcircDur - qubitActiveDurs[[ 1 + qubit ]]},
+                    (* work out passive noise (time, dur and var dependent *)
+                    {qubitPassive = qubitProps[PassiveNoise] 
+                        /. spec[DurationSymbol] -> passiveDur 
+                        /. spec[TimeSymbol] -> passiveTime},
+                    (* work out var-update function (time and dur dependent *)
+                    {qubitVarFunc = If[KeyExistsQ[qubitProps, UpdateVariables],
+                        qubitProps[UpdateVariables]
+                            /. spec[DurationSymbol] -> passiveDur 
+                            /. spec[TimeSymbol] -> passiveTime,
+                        Function[None]]},
+                        
+                    (* collect qubit info *) 
+                    AppendTo[passiveNoises, qubitPassive];
+                    
+                    (* update circuit variables (can be time, var, dur, and fixedSubcircDur dependent) *)
+                    qubitVarFunc[];
+                ],    
+                {qubit, 0, spec[NumQubits]-1}
+            ];
         
-        (* returns the duration of the longest gate in the given column (may be col time dependent) *)
-        getColumnDuration[spec_][col_, time_] :=
-            Max @ Table[Replace[gate, spec[Gates]][GateDuration] /. spec[TimeSymbol] -> time, {gate,col}]
+            (* return. Note slowestGateDur is returned even when subcircDur overrides, 
+             * since that info is useful to schedule-check utilities *)
+            {slowestGateDur (* subcircDur *), activeNoises, passiveNoises}
+        ]
+        
+        getSchedAndNoiseFromSubcircs[subcircs_, spec_] := Module[
+            {subcircTimes={}, subcircActives={}, subcircPassives={},
+             curTime, curDur, curActive, curPassive},
+                
+            (* initialise circuit variables *)
+            curTime = 0;
+            If[KeyExistsQ[spec, InitVariables],
+                spec[InitVariables][]];
+            
+            Do[
+                (* get each subcirc's noise (updates circuit variables) *)
+                {curDur, curActive, curPassive} = getDurAndNoiseFromSubcirc[sub, curTime, spec];
+                    
+                (* losing info here (mering separate gate infos into subcirc-wide) *)
+                AppendTo[subcircTimes, curTime];
+                AppendTo[subcircActives, Flatten[curActive]];
+                AppendTo[subcircPassives, Flatten[curPassive]];
+                
+                (* keep track of the inferred schedule time *)
+                curTime += curDur,
+                {sub, subcircs}
+            ];
+            
+            (* return *)    
+            {subcircTimes, subcircActives, subcircPassives}
+        ]
+        
+        getNoiseFromSched[subcircs_, subcircTimes_, spec_] := Module[
+            {subcircActives={}, subcircPassives={}, subcircDurs=Differences[subcircTimes],
+             dummyDur, curActive, curPassive},
+             
+            (* initialise circuit variables *)
+            If[KeyExistsQ[spec, InitVariables],
+                spec[InitVariables][]];
+            
+            (* if the first subcirc isn't scheduled at time=0, start with passive noise round.
+             * the caller must determine this occurred (since the returned arrays are now one-item longer) *) 
+            If[ First[subcircTimes] =!= 0, 
+                {dummyDur, curActive, curPassive} = getDurAndNoiseFromSubcirc[{}, 0, spec, First[subcircTimes]];
+                AppendTo[subcircActives, Flatten[curActive]];
+                AppendTo[subcircPassives, Flatten[curPassive]];
+            ];
+            
+            Do[
+                (* get each subcirc's noise (updates circuit variables) *)
+                {dummyDur, curActive, curPassive} = getDurAndNoiseFromSubcirc[subcircs[[i]], subcircTimes[[i]], spec,
+                    (* force subcirc durations based on schedule, except for the final unconstrained subcirc *)
+                    If[i > Length[subcircDurs], None, subcircDurs[[i]]]];
+                
+                AppendTo[subcircActives, Flatten[curActive]];
+                AppendTo[subcircPassives, Flatten[curPassive]]; ,
+                {i, Length[subcircTimes]}
+            ];
+            
+            (* return *)    
+            {subcircActives, subcircPassives}
+        ]
+        
+        getCondsForValidSchedDurs[spec_, subcircs_, subcircTimes_] := Module[
+            {forcedSubcircDurs = Differences[subcircTimes], minSubcircDur,
+             dummyActive, dummyPassive},
+            
+            (* initialise circuit variables *)
+            If[KeyExistsQ[spec, InitVariables],
+                spec[InitVariables][]];
+            
+            (* for all but the final (irrelevant) subcircuit... *)
+            Table[
+                (* find the slowest gate (duration possibly dependent on time, 
+                 * previous passive durations and vars (which are updated) *)
+                {minSubcircDur, dummyActive, dummyPassive} = getDurAndNoiseFromSubcirc[
+                    subcircs[[i]], subcircTimes[[i]], spec, forcedSubcircDurs[[i]]];
+                (* and condition that its faster than the forced subcircuit duration *)
+                Function[{small, big},
+                    (* if both values are numerical... *)
+                    If[ NumberQ[small] && NumberQ[big],
+                        (* then we need to add wiggle room for precision *)
+                        Or[small <= big, Abs @ N[big-small] < 100 $MachineEpsilon],
+                        (* otherwise we make a symbolic inequality *)
+                        small <= big]
+                ][minSubcircDur, forcedSubcircDurs[[i]]],
+                {i, Length[forcedSubcircDurs]}
+            ]
+        ]
             
         CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] /; Not[isCompatibleCirc[sched[[All,2]], spec]] := (
             Message[CheckCircuitSchedule::error, "The given schedule contains gates incompatible with the device specification. See ?GetUnsupportedGates"];
@@ -1587,20 +1748,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
          *)
         CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] := With[
             {times = sched[[All,1]], subcircs = sched[[All,2]]},
-            (* the duration scheduled for each subcircuit *)
-            {schedDurs = Differences @ times},
-            (* the minimum required duration of each subcircuit *)
-            {minDurs = MapThread[getColumnDuration[spec], {Most[subcircs], Most[times]}]},
+            (* list of (possibly symbolic) conditions of sufficiently long subcircuit durations *)
+            {conds = getCondsForValidSchedDurs[spec, subcircs, times]},
             (* list of (possibly symbolic) assumptions implied by monotonicity of given schedule *)
             {mono = getMotonicTimesConditions[times]},
-            (* list of (possibly symbolic) conditions that each subcircuit has sufficient duration *)
-            {conds = MapThread[Function[{big, small}, 
-                        (* if both values are numerical, we need to add wiggle room for precision *)
-                        If[ NumberQ[big] && NumberQ[small],
-                        Or[big >= small, Abs @ N[big-small] < 100 $MachineEpsilon],
-                        (* symbolic values become a symbolic inequality *)
-                        big >= small]], {schedDurs,minDurs}]},
-
             (* combine the conditions with the monotonicty constraint *)
             With[{valid=Simplify[conds, Assumptions -> mono]},
                 Which[
@@ -1635,87 +1786,27 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     	   Select[circ, (Not[isCompatibleGate[spec][#]]&) ]
         GetUnsupportedGates[___] := invalidArgError[GetUnsupportedGates]
             
+        (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
+        (* note this is overriding alias rule -> with :> which should be fine *)
+        optionalReplaceAliases[False, spec_Association][in_] := in 
+        optionalReplaceAliases[True, spec_Association][in_] := in //. (#1 :> Sequence @@ #2 &) @@@ spec[Aliases]
+        
         (* declaring optional args to GetCircuitSchedule *)
         Options[GetCircuitSchedule] = {
             ReplaceAliases -> False
         };
             
         (* assigns each of the given columns (unique-qubit subcircuits) a start-time *)
-        GetCircuitSchedule[cols:{{__}..}, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[cols,spec] := Module[
-            {durs, d, t=0},
-            (* determine subcircuit durations (which may themselves be time dependent) *)
-            durs = Table[
-                d = getColumnDuration[spec][col, t];
-                t += d;
-                d,
-                {col, cols}];
-            (* schedule from t=0 *)
-            Transpose[{Accumulate @ Prepend[Most@durs, 0], 
-                If[
-                    OptionValue[ReplaceAliases],
-                    (* replace aliases with their circuit, in-place (no list nesting *)
-                    (* note this is overriding alias rule -> with :> which should be fine *)
-                    cols //. (#1 :> Sequence @@ #2 &) @@@ spec[Aliases],
-                    cols
-                ]}]]
+        GetCircuitSchedule[cols:{{__}..}, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[cols,spec] := With[
+            {times = First @ getSchedAndNoiseFromSubcircs[cols,spec]},
+            Transpose[{times, cols}] // optionalReplaceAliases[OptionValue[ReplaceAliases], spec]
+        ]
         GetCircuitSchedule[circ_List, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[circ,spec] :=
             GetCircuitSchedule[GetCircuitColumns[circ], spec, opts]
         GetCircuitSchedule[a_, spec_Association, opts:OptionsPattern[]] /; Not[isCompatibleCirc[a,spec]] := (
             Message[GetCircuitSchedule::error, "The circuit(s) contains gates unsupported by the given device specification. See ?GetUnsupportedGates."];
             $Failed)
         GetCircuitSchedule[___] := invalidArgError[GetCircuitSchedule]
-            
-        getActiveNoise[schedule:{{_, _List}..}, spec_] := 
-            MapThread[
-                Function[{time,subcirc},
-                    Flatten @ Table[ 
-                        With[
-                            {gateInfo = Replace[gate, spec[Gates]]},
-                            (* sequential replacements, since the duration may depend on time *)
-                            gateInfo[ActiveNoise] /. spec[DurationSymbol] -> gateInfo[GateDuration] /. spec[TimeSymbol] -> time],
-                        {gate, subcirc}
-                    ]],
-                Transpose[schedule]]
-            
-        getSubcircPassiveNoise[subcirc_, subcircDur_, subcircTime_, spec_] := Module[
-            (* records which qubits have been assigned noise already *)
-            {noised=ConstantArray[False, spec[NumQubits]]},
-            Join[
-                (* collect noise on gated qubits, applying for the remaining subcirc duration *)
-                Flatten @ Table[
-                    With[{
-                        gateDur = Replace[gate, spec[Gates] ][GateDuration] /. spec[TimeSymbol] -> subcircTime,
-                        qubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
-                        
-                        noised[[1 + qubits]] = True;
-                        Table[
-                            (* collect the passive noise AFTER the gate, for the remaining subcircuit time *)
-                            Replace[qb, spec[Qubits]][PassiveNoise] /. {
-                                spec[DurationSymbol] -> subcircDur - gateDur, 
-                                spec[TimeSymbol] -> subcircTime + gateDur},
-                            {qb,qubits}]],
-                    {gate, subcirc}],
-                (* apply noise on untouched qubits, applying for full subcirc duration *)
-                Flatten @ Table[
-                    If[noised[[qb+1]], 
-                        Nothing, 
-                        Replace[qb, spec[Qubits]][PassiveNoise] /. {
-                            spec[DurationSymbol] -> subcircDur, 
-                            spec[TimeSymbol] -> subcircTime}
-                    ],
-                    {qb, 0, spec[NumQubits]-1}]
-            ]
-        ]
-        getPassiveNoise[schedule:{{_, _List}..}, spec_] := Module[
-            {times, subcircs},
-            {times, subcircs} = Transpose[schedule];
-            (* if first event is t>0, passive-noise all qubits until then *)
-            If[First[times] =!= 0, PrependTo[times, 0]; PrependTo[subcircs, {}]];
-            (* passive noise for duration between scheduled subcircuits (and after last) *)
-            With[{durations = Append[Differences[times], getColumnDuration[spec][Last@subcircs, Last@times]]},
-                MapThread[getSubcircPassiveNoise[#1,#2,#3,spec]&, {subcircs, durations, times}]
-            ]
-        ]
         
         (* declaring optional args to InsertCircuitNoise *)
         Options[InsertCircuitNoise] = {
@@ -1725,46 +1816,32 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         InsertCircuitNoise[schedule:{{_, _List}..}, spec_Association, opts:OptionsPattern[]] :=
             If[isCompatibleSched[schedule, spec], 
                 (* if schedule is compatible *)
-                With[
-                    {mode = OptionValue[NoiseMode], numEvents=Length[schedule]},
-                    {incPas = (mode =!= "Active"), incAct = (mode =!= "Passive")},
-                    Module[{
-                        (* compute active and passive noises separately *)
-                        times = schedule[[All,1]],
-                        subcircs = schedule[[All,2]],
-                        active = If[incAct, getActiveNoise[schedule, spec], ConstantArray[{}, numEvents]],
-                        passive = If[incPas, getPassiveNoise[schedule, spec], ConstantArray[{}, numEvents]],
-                            
-                        (* infer whether passive includes extra initial phase *)
-                        pad = And[incPas, schedule[[1,1]] =!= 0]},
-                        
-                        (* if the first event is t>0, passive was padded, so pad everything else *)
-                        If[pad, (
-                            PrependTo[times, 0];
-                            PrependTo[subcircs, {}];
-                            PrependTo[active, {}]; )
-                        ];
-                        
-                        (* attempt simplification of any symbolic passive noise using schedule monotonicity *)
-                        passive = Simplify[passive, Assumptions -> getMotonicTimesConditions[times]];
-                        
-                        (* return { {t1,subcirc1,active1,passive1}, ...} *)
-                        Transpose[{times, active, passive}] //. If[
-                            OptionValue[ReplaceAliases],
-                            (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
-                            (* note this is overriding alias rule -> with :> which should be fine *)
-                            (#1 :> Sequence @@ #2 &) @@@ spec[Aliases],
-                            {}]
-                    ]
+                Module[
+                    {times, subcircs, actives, passives},
+                    {times, subcircs} = Transpose[schedule];
+                    {actives, passives} = getNoiseFromSched[subcircs, times, spec];
+                    
+                    (* pad times with initial passive noise *)
+                    If[ First[times] =!= 0, PrependTo[times, 0] ];
+                    (* return { {t1,subcirc1,active1,passive1}, ...} *)
+                    Transpose[{times, actives, passives}] // 
+                        optionalReplaceAliases[OptionValue[ReplaceAliases], spec]
                 ],
-                (* else give error *)
+                (* if schedule is incompatible, give error *)
                 (Message[InsertCircuitNoise::error, "The given schedule is either invalid, or incompatible with the device specification, either through unsupported gates, or by prescribing overlapping (in time) sub-circuits."];
                 $Failed)]
-        InsertCircuitNoise[colsOrCirc_, spec_Association, opts:OptionsPattern[]] := 
-            If[isCompatibleCirc[colsOrCirc, spec],
-                InsertCircuitNoise[GetCircuitSchedule[colsOrCirc, spec], spec, opts],
-                (Message[InsertCircuitNoise::error, "The given circuit(s) is contains gates not supported by the given device specification. See ?GetUnsupportedGates."];
-                $Failed)]
+        InsertCircuitNoise[subcircs:{{__}..}, spec_Association, opts:OptionsPattern[]] := 
+            If[isCompatibleCirc[subcircs, spec],
+                Transpose[getSchedAndNoiseFromSubcircs[subcircs,spec]] // 
+                    optionalReplaceAliases[OptionValue[ReplaceAliases], spec],
+                (Message[InsertCircuitNoise::error, "The given subcircuits contain gates not supported by the given device specification. See ?GetUnsupportedGates."];
+                $Failed)]    
+        InsertCircuitNoise[circ_List, spec_Association, opts:OptionsPattern[]] := 
+            If[isCompatibleCirc[circ, spec],
+                Transpose[getSchedAndNoiseFromSubcircs[GetCircuitColumns[circ],spec]] // 
+                    optionalReplaceAliases[OptionValue[ReplaceAliases], spec],
+                (Message[InsertCircuitNoise::error, "The given subcircuits contain gates not supported by the given device specification. See ?GetUnsupportedGates."];
+                $Failed)]    
         InsertCircuitNoise[___] := invalidArgError[InsertCircuitNoise]
             
         ExtractCircuit[schedule:{{_, (_List ..)}..}] :=
