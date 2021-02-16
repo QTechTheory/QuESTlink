@@ -139,7 +139,7 @@ CheckCircuitSchedule will take into consideration gates with durations dependent
     InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, spec] divides the circuit into scheduled subcircuits, then replaces them with rounds of active and passive noise, according to the given device specification. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, active, passive}, ...}, which can be given directly to DrawCircuit[], ViewCircuitSchedule[] or ExtractCircuit[].
 InsertCircuitNoise[{circ1, circ2, ...}, spec] uses the given list of sub-circuits (output format of GetCircuitColumns[]), assuming each contain gates which can be simultaneously performed.
 InsertCircuitNoise[{{t1, circ1}, {t2, circ2}, ...} assumes the given schedule (output format of GetCircuitSchedule[]) of {t1,t2,...} for the rounds of gates and noise. These times can be symbolic.
-InsertCircuitNoise accepts optional arguments NoiseMode and ReplaceAliases.
+InsertCircuitNoise accepts optional argument ReplaceAliases.
 InsertCircuitNoise can handle gates with time-dependent noise operators and durations."
     InsertCircuitNoise::error = "`1`"
     
@@ -197,9 +197,7 @@ DistinguishBy -> \"Connectivity\" merges all gates, regardless of type, acting u
 
     DistinguishedStyles::usage = "Optional argument to DrawCircuitTopology, to specify the colours/styles used for each distinguished group (hence ultimately, the edge and legend styles). This must be a list of graphic directives, and will be repeated if it contains too few elements.
 DistinguishedStyles -> Automatic will colour the groups by sampling ColorData[\"Rainbow\"]."
-    
-    NoiseMode::usage = "Optional argument to InsertCircuitNoise, to specify which kind of noise to insert, of \"Active\", \"Passive\" or \"All\" (default)."
-    
+        
     ReplaceAliases::usage = "Optional argument to GetCircuitSchedule and InsertCircuitNoise, specifying (True or False) whether to substitute the device specification's alias operators in the output (including in gates and active/passive noise). 
 This is False by default, but must be True to pass the output circuits to (for example) ApplyCircuit which don't recognise the alias.
 Note if ReplaceAliases -> True, then the output of GetCircuitSchedule might not be compatible as an input to InsertCircuitNoise."
@@ -1721,7 +1719,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         
         (* declaring optional args to InsertCircuitNoise *)
         Options[InsertCircuitNoise] = {
-            NoiseMode -> "Both",
             ReplaceAliases -> False
         };
 
