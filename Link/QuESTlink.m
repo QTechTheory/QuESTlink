@@ -263,6 +263,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
  
     BeginPackage["`DeviceSpec`"]
     
+    DeviceDescription::usage = "A description of the specified device."
+    
     NumQubits::usage = "The number of qubits in the represented device."
     
     Aliases::usage = "Custom aliases for general unitary gates or sub-circuits, recognised by the device specification as elementary gates."
@@ -1884,75 +1886,108 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 Dividers -> All,
                 FrameStyle -> LightGray]]
         ViewCircuitSchedule[___] := invalidArgError[ViewCircuitSchedule]
+                
+        (* removes suffixes $ or $123... (etc) from all symbols in expression.
+           these suffixes are expected to have appeared by Mathematica's automatic 
+           variable renaming in nested scoping structs (Module[ Function[]]) *)
+        tidySymbolNames[exp_] :=
+            exp /. s_Symbol :> RuleCondition @ Symbol @
+                StringReplace[SymbolName[s], "$"~~Repeated[NumberString,{0,1}] -> ""]
         
-        (* the gates in active noise can contain symbolic qubits that won't trigger 
-         * Circuit[] evaluation. This function forces Circuit[] to a list *)
-        frozenCircToList[Circuit[gs_Times]] := ReleaseHold[List @@@ Hold[gs]]
-        frozenCircToList[Circuit[g_]] := {g}
-        frozenCircToList[gs_List] := gs
-        
-        (* a table summary of the gate aliases defined for the specification *)
-        viewAliases[spec_, opts___] :=
-            Grid[
-                Join[
-                    (* table heafings *)
-                    {{"alias", "definition"}},
-                    (* row for each alias, displaying gate matrices in MatrixForm *)
-                    Table[
-                        {First[row], Row[frozenCircToList[Last[row]] /. m_?MatrixQ :> MatrixForm[m], Spacer[0]]},
-                        {row, List @@@ spec[Aliases]}]],
-                (* default aesthetic (overridable) *)
+        viewDevSpecFields[spec_, opts___] :=
+            Grid[{
+                {Style["Fields",Bold], SpanFromLeft},
+                {"Number of qubits", spec[NumQubits]},
+                {"Time symbol", spec[TimeSymbol]},
+                {"Duration symbol", spec[DurationSymbol]},
+                If[KeyExistsQ[spec, InitVariables],
+                    {"Variable init", spec[InitVariables]},
+                    Nothing],
+                {"Description", spec[DeviceDescription]}
+                },
                 FilterRules[{opts}, Options[Grid]],
                 Dividers -> All,
-                FrameStyle -> LightGray]
-
-        (* a table summary of the gates and active noise in the specification *)
-        viewActiveGates[spec_, opts___] := 
-            Grid[
-                Join[
-                    (* table headings *)
-                    {{"gate", "time", "duration", "active noise"}},
-                    (* row for each supported gate *)
-                    Function[{gatespec}, With[{props=Last[gatespec]}, 
-                        {First[gatespec], spec[TimeSymbol], props[GateDuration],
-                            (* add small gap between active noise gates *)
-                            Row[
-                                (* force Circuit[] to eval to list, even with symbolic qubit indices *)
-                                frozenCircToList[props[ActiveNoise]] /. 
-                                    (* replace duration symbol with gate's duration *)
-                                    spec[DurationSymbol] -> props[GateDuration], 
-                                Spacer[0]]
-                        (* render gate matrices in MatrixForm *)
-                        }] /. m_?MatrixQ :> MatrixForm[m]] /@ spec[Gates]],
-                (* default aesthetic (overridable *)
+                FrameStyle -> LightGray
+            ] // tidySymbolNames
+            
+        viewDevSpecAliases[spec_, opts___] :=
+            Grid[{
+                {Style["Aliases",Bold], SpanFromLeft},
+                {"Operator", "Definition"}
+                } ~Join~ Table[
+                    {
+                        First[row], 
+                        Row[frozenCircToList[Last[row]] /. m_?MatrixQ :> MatrixForm[m], Spacer[0]]
+                    },
+                    {row, List @@@ spec[Aliases]}],
                 FilterRules[{opts}, Options[Grid]],
                 Dividers -> All,
-                FrameStyle -> LightGray]
-        	
-        (* a table summary of the passive noise, listed for each qubit *)
-        viewPassiveNoise[spec_, opts___] := 
-            Grid[
-                Join[
-                    (* table headings *)
-                    {{"qubit", "time", "duration", "passive noise"}},
-                    (* row for each qubit *)
-                    Table[
-                        {q, spec[TimeSymbol], spec[DurationSymbol], 
-                            Row[ Replace[q, spec[Qubits]][PassiveNoise], 
-                                Spacer[0]]}, 
-                        {q, 0, spec[NumQubits]-1} ]],
-                (* default aesthetic (overridable *)
+                FrameStyle -> LightGray
+            ] // tidySymbolNames
+            
+        viewOperatorSeq[circ_] :=
+            Column[frozenCircToList[circ]]
+            
+        viewDevSpecActiveGates[spec_, opts___] := With[
+            {showConds = Not @ FreeQ[First /@ spec[Gates], _Condition]},
+            {showVars = Or @@ (KeyExistsQ[UpdateVariables] /@ Last /@ spec[Gates])},
+            Grid[{
+                {Style["Gates", Bold], SpanFromLeft},
+                {"Gate", If[showConds,"Condition",Nothing], "Active noise", 
+                 "Duration (" <> ToString@tidySymbolNames@spec[DurationSymbol] <> ")",
+                 If[showVars, "Variable update", Nothing]} 
+                } ~Join~ Table[
+                    With[
+                        {key=First[row], props=Last[row]},
+                        {gate=key //. c_Condition :> First[c]},
+                        {conds=Cases[key, c_Condition :> Last[c], {0,Infinity}, Heads -> True]},
+                        {
+                            gate,
+                            If[showConds, Column@conds, Nothing], 
+                            viewOperatorSeq @ props[ActiveNoise] /. m_?MatrixQ :> MatrixForm[m], 
+                            props[GateDuration], 
+                            If[showVars, If[KeyExistsQ[props,UpdateVariables],props[UpdateVariables],""], Nothing]
+                        }],
+                    {row, spec[Gates]}
+                ],
                 FilterRules[{opts}, Options[Grid]],
                 Dividers -> All,
-                FrameStyle -> LightGray]
+                FrameStyle -> LightGray    
+            ]  // tidySymbolNames
+        ]
         
+        viewDevSpecPassiveQubits[spec_, opts___] := With[
+            {showVars = Or @@ (KeyExistsQ[UpdateVariables] /@ Last /@ spec[Qubits])},
+            Grid[{
+                {Style["Qubits", Bold], SpanFromLeft},
+                {"Qubit", "Passive noise", If[showVars, "Variable update", Nothing]}
+                } ~Join~ Table[
+                    With[
+                        {props = Replace[qubit, spec[Qubits]]},
+                        {
+                            qubit,
+                            viewOperatorSeq @ props[PassiveNoise] /. m_?MatrixQ :> MatrixForm[m], 
+                            If[showVars, If[KeyExistsQ[props,UpdateVariables],props[UpdateVariables],""], Nothing]
+                        }],
+                    {qubit, 0, spec[NumQubits]-1}
+                ],
+                FilterRules[{opts}, Options[Grid]],
+                Dividers -> All,
+                FrameStyle -> LightGray 
+            ] // tidySymbolNames
+        ]
+            
         ViewDeviceSpec[spec_Association, opts:OptionsPattern[{Grid,Column}]] :=
             Column[{
-                If[Length[spec[Aliases]] > 0, viewAliases[spec,opts], Nothing],
-                viewActiveGates[spec, opts],
-                viewPassiveNoise[spec, opts]},
+                viewDevSpecFields[spec, opts],
+                If[KeyExistsQ[spec, Aliases] && spec[Aliases] =!= {},
+                    viewDevSpecAliases[spec, opts], Nothing],
+                viewDevSpecActiveGates[spec, opts],
+                viewDevSpecPassiveQubits[spec, opts]
+                },
                 FilterRules[{opts}, Options[Column]],
-                Spacings -> {Automatic, 1}]
+                Spacings -> {Automatic, 1}
+            ]
         ViewDeviceSpec[___] := invalidArgError[ViewDeviceSpec]
 
         GetCircuitProperties[schedule:{{_, _List}..}, property_, spec_Association] :=
