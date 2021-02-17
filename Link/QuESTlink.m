@@ -265,7 +265,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     
     DeviceDescription::usage = "A description of the specified device."
     
-    NumQubits::usage = "The number of qubits in the represented device."
+    NumLogicQubits::usage = "The number of qubits which can be targeted by user-given circuits in the represented device. These are assumed to be at adjacent indices, starting at 0."
+    
+    NumTotalQubits::usage = "The number of qubits targeted by all noise in the represented device. This can exceed 'NumLogicQubits', since it includes hidden qubits used for advanced noise modelling. Hidden qubits are assumed to start at index 'NumLogicQubits'."
     
     Aliases::usage = "Custom aliases for general unitary gates or sub-circuits, recognised by the device specification as elementary gates."
     
@@ -1550,7 +1552,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             {qubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
             And[
                 (* all gate's qubit indices are valid *)
-                AllTrue[qubits, LessThan[spec[NumQubits]]],
+                AllTrue[qubits, LessThan[spec[NumLogicQubits]]],
                 (* the gate satisfies a gate pattern *)
                 MatchQ[gate, Alternatives @@ Keys @ spec[Gates]]]]
         isCompatibleCirc[circOrCols_List, spec_] := 
@@ -1580,7 +1582,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
          * a sub-circuit, considering the circuit variables and updating them *)
         getDurAndNoiseFromSubcirc[subcirc_, subcircTime_, spec_, forcedSubcircDur_:None] := Module[
             {activeNoises={}, passiveNoises={}, gateDurs={}, subcircDur,
-             qubitActiveDurs = ConstantArray[0, spec[NumQubits]], slowestGateDur},
+             qubitActiveDurs = ConstantArray[0, spec[NumLogicQubits]], slowestGateDur},
             
             (* iterating gates in order of appearence in subcircuit... *)
             Do[ 
@@ -1644,7 +1646,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     (* update circuit variables (can be time, var, dur, and fixedSubcircDur dependent) *)
                     qubitVarFunc[];
                 ],    
-                {qubit, 0, spec[NumQubits]-1}
+                {qubit, 0, spec[NumLogicQubits]-1}
             ];
         
             (* return. Note slowestGateDur is returned even when subcircDur overrides, 
@@ -1906,7 +1908,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         viewDevSpecFields[spec_, opts___] :=
             Grid[{
                 {Style["Fields",Bold], SpanFromLeft},
-                {"Number of qubits", spec[NumQubits]},
+                {"Number of logical qubits", spec[NumLogicQubits]},
+                {"Number of hidden qubits", spec[NumTotalQubits] - spec[NumLogicQubits]},
+                {"Number of qubits (total)", spec[NumTotalQubits]},
                 {"Time symbol", spec[TimeSymbol]},
                 {"Duration symbol", spec[DurationSymbol]},
                 If[KeyExistsQ[spec, InitVariables],
@@ -1975,7 +1979,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                             viewOperatorSeq @ props[PassiveNoise] /. m_?MatrixQ :> MatrixForm[m], 
                             If[showVars, If[KeyExistsQ[props,UpdateVariables],props[UpdateVariables],""], Nothing]
                         }],
-                    {qubit, 0, spec[NumQubits]-1}
+                    {qubit, 0, spec[NumLogicQubits]-1}
                 ],
                 FilterRules[{opts}, Options[Grid]],
                 Dividers -> All,
