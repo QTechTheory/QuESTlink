@@ -1893,6 +1893,15 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         tidySymbolNames[exp_] :=
             exp /. s_Symbol :> RuleCondition @ Symbol @
                 StringReplace[SymbolName[s], "$"~~Repeated[NumberString,{0,1}] -> ""]
+                
+        (* the gates in active noise can contain symbolic qubits that won't trigger 
+         * Circuit[] evaluation. This function forces Circuit[] to a list *)
+        frozenCircToList[Circuit[gs_Times]] := ReleaseHold[List @@@ Hold[gs]]
+        frozenCircToList[Circuit[g_]] := {g}
+        frozenCircToList[gs_List] := gs
+        
+        viewOperatorSeq[circ_] :=
+            Column[frozenCircToList[circ]]
         
         viewDevSpecFields[spec_, opts___] :=
             Grid[{
@@ -1924,9 +1933,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 Dividers -> All,
                 FrameStyle -> LightGray
             ] // tidySymbolNames
-            
-        viewOperatorSeq[circ_] :=
-            Column[frozenCircToList[circ]]
             
         viewDevSpecActiveGates[spec_, opts___] := With[
             {showConds = Not @ FreeQ[First /@ spec[Gates], _Condition]},
