@@ -154,6 +154,9 @@ ViewCircuitSchedule accepts all optional arguments of Grid[], for example 'Frame
 ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables), and Column[] (to customise their placement)."
     ViewDeviceSpec::error = "`1`"
     
+    CheckDeviceSpec::usage = "CheckDeviceSpec[spec] checks that the given device specification satisfies a set of validity requirements, returning True if so, otherwise reporting a specific error. This is a useful debugging tool when creating a device specification, though a result of True does not gaurantee the spec is valid."
+    CheckDeviceSpec::error = "`1`"
+    
     GetCircuitProperties::usage = "GetCircuitProperties[circuit, property, spec] returns a list of each gate's property, according to the device specification. If the property depends on time, the circuit is automatically scheduled by GetCircuitSchedule[].
 GetCircuitProperties[schedule, property, spec] returns a nested list of each scheduled subcircuit's gate properties.
 GetCircuitProperties[subcircuits, property, spec] returns a nested list of each subcircuit's gate properties, as scheduled by GetCircuitSchedule[].
@@ -1999,7 +2002,126 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 Spacings -> {Automatic, 1}
             ]
         ViewDeviceSpec[___] := invalidArgError[ViewDeviceSpec]
+        
+        getDeviceSpecIssueString[spec_] := Catch[
+            
+            (* check top-level required keys *)
+            Do[
+                If[ Not @ KeyExistsQ[spec, key], 
+                    Throw["Specification is missing the required key: " <> SymbolName[key] <> "."]],
+                {key, {DeviceDescription, NumLogicQubits, NumTotalQubits, 
+                       Aliases, TimeSymbol, DurationSymbol, Gates, Qubits}}];
+            
+            (* check number of qubits *)
+            Do[ 
+                If[ Not @ MatchQ[spec[key], n_Integer /; n > 0 ], 
+                    Throw["NumLogicQubits and NumTotalQubits must be positive integers."]],
+                {key, {NumLogicQubits, NumTotalQubits}}];
 
+            If[ spec[NumLogicQubits] > spec[NumTotalQubits],
+                Throw["NumLogicQubits cannot exceed NumTotalQubits."]];
+            
+            (* check symbols are indeed symbols *)
+            Do[
+                If[ Not @ MatchQ[spec[key], _Symbol], 
+                    Throw["TimeSymbol and DurationSymbol must be symbols."] ],
+                {key, {TimeSymbol, DurationSymbol}}];
+                
+            (* check  alias is a list of delayed rules to circuits *)
+            If[ Not @ MatchQ[ spec[Aliases], { (_ :>  (_Circuit | _List)) ... } ],
+                Throw["Aliases must be a list of DelayedRule, each pointing to a Circuit (or a list of operators)."]]
+                
+            (* check aliases do not contain symbols *)
+            Do[
+                If[ Not @ FreeQ[spec[Aliases], spec[key]], 
+                    Throw["Aliases (definitions or operators) must not feature TimeSymbol nor DurationSymbol; they can instead be passed as arguments to the alias operator."] ],
+                {key, {TimeSymbol, DurationSymbol}}];
+                
+            (* check init-var is zero-arg function *)
+            If[ KeyExistsQ[spec, InitVariables],
+                If[ Not[
+                    MatchQ[ spec[InitVariables], _Function ] &&
+                    Quiet @ Check[ spec[InitVariables][]; True, False ] ], (* duck typed *)
+                    Throw["InitVariables must be a zero-argument Function (or excluded entirely), which initialises any variables needing later modification in UpdateVariables."]]];
+            
+            (* check Gates and Qubits are list of RuleDelayed, to an association *)
+            Do[
+                (* If[ (Not @ MatchQ[spec[key], _List]) || (Not @ AllTrue[spec[key], MatchQ[RuleDelayed[_, _Association]]]), *)
+                If[ Not @ MatchQ[spec[key], { (_ :>  _Association) ... }],
+                    Throw["Gates and Qubits must each be a list of RuleDelayed, each pointing to an Association."]],
+                {key, {Gates,Qubits}}];
+                
+            (* check every Gates association has required keys *)
+            Do[
+                If[ Not @ KeyExistsQ[assoc, key],
+                    Throw["An Association in Gates is missing required key " <> SymbolName[key] <> "."]],
+                {assoc, Last /@ spec[Gates]},
+                {key, {ActiveNoise, GateDuration}}];
+                
+            (* check that Gates patterns do not refer to symbols *)
+            Do[
+                If[ Not @ FreeQ[pattern, symb],
+                    Throw["The operator patterns in Gates (left-hand side of the rules) must not include the TimeSymbol or the DurationSymbol (though the right-hand side may)."]],
+                {pattern, First /@ spec[Gates]},
+                {symb, {spec[TimeSymbol], spec[DurationSymbol]}}];
+                
+            (* check every Gates' GateDuration doesn't contain the duration symbol (self-reference) *)
+            Do[
+                If[ Not @ FreeQ[dur, spec[DurationSymbol]],
+                    Throw["A GateDuration cannot refer to the DurationSymbol, since the DurationSymbol is substituted the value of the former."]],
+                {dur, spec[Gates][[All, 2]][GateDuration] // Through}];
+                
+            (* check every active noise is a list (or Circuit, not yet evaluating) *)
+            Do[
+                If[ Not @ MatchQ[active, _List|_Circuit],
+                    Throw["Each ActiveNoise must be a Circuit[] or list of operators."]],
+                {active, spec[Gates][[All, 2]][ActiveNoise] // Through}];
+                
+            (* check every Qubit assoc contains required keys *)
+            Do[
+                If[ Not @ KeyExistsQ[assoc, PassiveNoise],
+                    Throw["An association in Qubits is missing required key PassiveNoise."]],
+                {assoc, Last /@ spec[Qubits]}]
+                
+            (* check every passive noise is a list (or Circuit, not yet evaluating) *)
+            Do[
+                If[ Not @ MatchQ[passive, _List|_Circuit],
+                    Throw["Each PassiveNoise must be a Circuit[] or list of operators."]],
+                {passive, spec[Qubits][[All, 2]][PassiveNoise] // Through}];
+                
+            (* check every update-vars (in Gates and Qubits assoc) is a zero-arg function *)
+            Do[
+                If[ KeyExistsQ[assoc, UpdateVariables],
+                    If[ Not[
+                        MatchQ[ assoc[UpdateVariables], _Function ] &&
+                        Quiet @ Check[ assoc[UpdateVariables][]; True, False ] ], (* duck typed *)
+                        Throw["Each UpdateVariables must be a zero-argument Function (or excluded entirely)."]]],
+                {assoc, Join[spec[Gates][[All,2]], spec[Qubits][[All,2]]] }];
+                
+            (* check all logic qubits are featured in Qubits *)
+            With[
+                {unmatched = Range[0, spec[NumLogicQubits]-1] /. (#->Nothing&) /@ spec[Qubits][[All,1]]},
+                If[
+                    Length[unmatched] > 0,
+                    Throw["Qubits did not include patterns to match the following logical qubits: " <> ToString[unmatched]]]];
+                    
+            (* check alias LHS don't include conditions *)
+            If[ Not @ FreeQ[First /@ spec[Aliases], Condition],
+                Throw["Aliases must not include Condition in their operators (the left-hand side of RuleDelayed)."]];
+                
+            (* no detected issues *)
+            None
+        ]
+        
+        CheckDeviceSpec[spec_Association] := With[
+            {issue = getDeviceSpecIssueString[spec]},
+            If[ issue === None, 
+                True,
+                Message[CheckDeviceSpec::error, issue]; False]]    
+        CheckDeviceSpec[___] := (
+            Message[CheckDeviceSpec::error, "Argument must be a single Association."];
+            $Failed)
+            
         GetCircuitProperties[schedule:{{_, _List}..}, property_, spec_Association] :=
             Function[{time,subcirc},
                 Table[
