@@ -1956,7 +1956,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     With[
                         {key=First[row], props=Last[row]},
                         {gate=key //. c_Condition :> First[c]},
-                        {conds=Cases[key, c_Condition :> Last[c], {0,Infinity}, Heads -> True]},
+                        {conds=Cases[key, Verbatim[Condition][_,con_] :> HoldForm[con], {0,Infinity}, Heads -> True]},
                         {
                             gate,
                             If[showConds, Column@conds, Nothing], 
