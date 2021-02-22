@@ -1892,7 +1892,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
            variable renaming in nested scoping structs (Module[ Function[]]) *)
         tidySymbolNames[exp_] :=
             exp /. s_Symbol :> RuleCondition @ Symbol @
-                StringReplace[SymbolName[s], "$"~~Repeated[NumberString,{0,1}] -> ""]
+                StringReplace[ToString[HoldForm[s]], "$"~~Repeated[NumberString,{0,1}] -> ""]
                 
         (* the gates in active noise can contain symbolic qubits that won't trigger 
          * Circuit[] evaluation. This function forces Circuit[] to a list *)
