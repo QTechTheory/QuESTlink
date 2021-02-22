@@ -272,7 +272,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     
     NumTotalQubits::usage = "The number of qubits targeted by all noise in the represented device. This can exceed 'NumLogicQubits', since it includes hidden qubits used for advanced noise modelling. Hidden qubits are assumed to start at index 'NumLogicQubits'."
     
-    Aliases::usage = "Custom aliases for general unitary gates or sub-circuits, recognised by the device specification as elementary gates."
+    Aliases::usage = "Custom aliases for general unitary gates or sub-circuits, recognised by the device specification as elementary gates (optional)."
     
     Gates::usage = "The gates supported by the device, along with their duration and effective operation under active noise."
     
@@ -1796,7 +1796,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
         (* note this is overriding alias rule -> with :> which should be fine *)
         optionalReplaceAliases[False, spec_Association][in_] := in 
-        optionalReplaceAliases[True, spec_Association][in_] := in //. (#1 :> Sequence @@ #2 &) @@@ spec[Aliases]
+        optionalReplaceAliases[True, spec_Association][in_] := in //. If[
+            KeyExistsQ[spec, Alisaes], (#1 :> Sequence @@ #2 &) @@@ spec[Aliases], {}]
         
         (* declaring optional args to GetCircuitSchedule *)
         Options[GetCircuitSchedule] = {
@@ -2010,7 +2011,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 If[ Not @ KeyExistsQ[spec, key], 
                     Throw["Specification is missing the required key: " <> SymbolName[key] <> "."]],
                 {key, {DeviceDescription, NumLogicQubits, NumTotalQubits, 
-                       Aliases, TimeSymbol, DurationSymbol, Gates, Qubits}}];
+                       TimeSymbol, DurationSymbol, Gates, Qubits}}];
             
             (* check number of qubits *)
             Do[ 
@@ -2028,14 +2029,21 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {key, {TimeSymbol, DurationSymbol}}];
                 
             (* check  alias is a list of delayed rules to circuits *)
-            If[ Not @ MatchQ[ spec[Aliases], { (_ :>  (_Circuit | _List)) ... } ],
-                Throw["Aliases must be a list of DelayedRule, each pointing to a Circuit (or a list of operators)."]]
+            If[ KeyExistsQ[spec, Aliases], 
+                If[ Not @ MatchQ[ spec[Aliases], { (_ :>  (_Circuit | _List)) ... } ],
+                    Throw["Aliases must be a list of DelayedRule, each pointing to a Circuit (or a list of operators)."]]]
                 
             (* check aliases do not contain symbols *)
-            Do[
-                If[ Not @ FreeQ[spec[Aliases], spec[key]], 
-                    Throw["Aliases (definitions or operators) must not feature TimeSymbol nor DurationSymbol; they can instead be passed as arguments to the alias operator."] ],
-                {key, {TimeSymbol, DurationSymbol}}];
+            If[ KeyExistsQ[spec, Aliases], 
+                Do[
+                    If[ Not @ FreeQ[spec[Aliases], spec[key]], 
+                        Throw["Aliases (definitions or operators) must not feature TimeSymbol nor DurationSymbol; they can instead be passed as arguments to the alias operator."] ],
+                    {key, {TimeSymbol, DurationSymbol}}]];
+                    
+            (* check alias LHS don't include conditions *)
+            If[ KeyExistsQ[spec, Aliases], 
+                If[ Not @ FreeQ[First /@ spec[Aliases], Condition],
+                    Throw["Aliases must not include Condition in their operators (the left-hand side of RuleDelayed)."]]];
                 
             (* check init-var is zero-arg function *)
             If[ KeyExistsQ[spec, InitVariables],
@@ -2104,10 +2112,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 If[
                     Length[unmatched] > 0,
                     Throw["Qubits did not include patterns to match the following logical qubits: " <> ToString[unmatched]]]];
-                    
-            (* check alias LHS don't include conditions *)
-            If[ Not @ FreeQ[First /@ spec[Aliases], Condition],
-                Throw["Aliases must not include Condition in their operators (the left-hand side of RuleDelayed)."]];
                 
             (* no detected issues *)
             None
