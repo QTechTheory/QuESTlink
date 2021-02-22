@@ -278,9 +278,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     
     GateDuration::usage = "The duration of performing a gate on the represented device."
     
-    TimeSymbol::usage = "The symbol representing the start time (in a scheduled circuit) of gates and noise channels, which can inform their properties."
+    TimeSymbol::usage = "The symbol representing the start time (in a scheduled circuit) of gates and noise channels, which can inform their properties (optional)."
     
-    DurationSymbol::usage = "The symbol representing the duration (in a scheduled circuit) of gates or noise channels, which can inform their properties."
+    DurationSymbol::usage = "The symbol representing the duration (in a scheduled circuit) of gates or noise channels, which can inform their properties (optional)."
     
     InitVariables::usage = "The function to call at the start of circuit/schedule processing, to re-initialise circuit variables (optional)."
     
@@ -1574,6 +1574,16 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         Not @ MemberQ[conds, False], 
                         (* symbolic numbers MAY increase (it's not impossible for them to be monotonic) *)
                         Not[False === Simplify[And @@ conds]]]]]
+                        
+        replaceTimeDurSymbols[expr_, spec_, timeVal_, durVal_:None] := (
+            expr /. If[
+                (* substitute dur value first, since it may become time dependent *)
+                KeyExistsQ[spec, DurationSymbol] && durVal =!= None,
+                spec[DurationSymbol] -> durVal, {}
+            ] /. If[
+                KeyExistsQ[spec, TimeSymbol],
+                spec[TimeSymbol] -> timeVal, {}]
+        )
             
         (* determines subcircuit duration, active noise and passive noise of 
          * a sub-circuit, considering the circuit variables and updating them *)
@@ -1586,17 +1596,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 With[
                     {gateProps = Replace[gate, spec[Gates]]},
                     (* work out gate duration (time and var dependent) *)
-                    {gateDur = gateProps[GateDuration] 
-                        /. spec[TimeSymbol] -> subcircTime},
+                    {gateDur = replaceTimeDurSymbols[gateProps[GateDuration], spec, subcircTime]},    
                     (* work out active noise (time, dur and var dependent) *)
-                    {gateActive = gateProps[ActiveNoise] 
-                        /. spec[DurationSymbol] -> gateDur 
-                        /. spec[TimeSymbol] -> subcircTime},
+                    {gateActive = replaceTimeDurSymbols[gateProps[ActiveNoise], spec, subcircTime, gateDur]},
                     (* work out var-update function (time and dur dependent) *)
                     {gateVarFunc = If[KeyExistsQ[gateProps, UpdateVariables],
-                        gateProps[UpdateVariables] 
-                            /. spec[DurationSymbol] -> gateDur 
-                            /. spec[TimeSymbol] -> subcircTime,
+                        replaceTimeDurSymbols[gateProps[UpdateVariables], spec, subcircTime, gateDur],
                         Function[None]]},
                     
                     (* collect gate info *) 
@@ -1627,14 +1632,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     {passiveTime = subcircTime + qubitActiveDurs[[ 1 + qubit ]]},
                     {passiveDur = subcircDur - qubitActiveDurs[[ 1 + qubit ]]},
                     (* work out passive noise (time, dur and var dependent *)
-                    {qubitPassive = qubitProps[PassiveNoise] 
-                        /. spec[DurationSymbol] -> passiveDur 
-                        /. spec[TimeSymbol] -> passiveTime},
+                    {qubitPassive = replaceTimeDurSymbols[qubitProps[PassiveNoise], spec, passiveTime, passiveDur]},
                     (* work out var-update function (time and dur dependent *)
                     {qubitVarFunc = If[KeyExistsQ[qubitProps, UpdateVariables],
-                        qubitProps[UpdateVariables]
-                            /. spec[DurationSymbol] -> passiveDur 
-                            /. spec[TimeSymbol] -> passiveTime,
+                        replaceTimeDurSymbols[qubitProps[UpdateVariables], spec, passiveTime, passiveDur],
                         Function[None]]},
                         
                     (* collect qubit info *) 
@@ -1909,8 +1910,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {"Number of logical qubits", spec[NumLogicQubits]},
                 {"Number of hidden qubits", spec[NumTotalQubits] - spec[NumLogicQubits]},
                 {"Number of qubits (total)", spec[NumTotalQubits]},
-                {"Time symbol", spec[TimeSymbol]},
-                {"Duration symbol", spec[DurationSymbol]},
+                If[ KeyExistsQ[spec, TimeSymbol],
+                    {"Time symbol", spec[TimeSymbol]},
+                    Nothing],
+                If[ KeyExistsQ[spec, DurationSymbol],
+                    {"Duration symbol", spec[DurationSymbol]},
+                    Nothing],
                 If[KeyExistsQ[spec, InitVariables],
                     {"Variable init", spec[InitVariables]},
                     Nothing],
@@ -1942,8 +1947,11 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Grid[{
                 {Style["Gates", Bold], SpanFromLeft},
                 {"Gate", If[showConds,"Condition",Nothing], "Active noise", 
-                 "Duration (" <> ToString@tidySymbolNames@spec[DurationSymbol] <> ")",
-                 If[showVars, "Variable update", Nothing]} 
+                    If[ KeyExistsQ[spec, DurationSymbol],
+                        "Duration (" <> ToString@tidySymbolNames@spec[DurationSymbol] <> ")",
+                        "Duration"],
+                    If[showVars, "Variable update", Nothing]
+                } 
                 } ~Join~ Table[
                     With[
                         {key=First[row], props=Last[row]},
@@ -2005,7 +2013,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 If[ Not @ KeyExistsQ[spec, key], 
                     Throw["Specification is missing the required key: " <> SymbolName[key] <> "."]],
                 {key, {DeviceDescription, NumLogicQubits, NumTotalQubits, 
-                       TimeSymbol, DurationSymbol, Gates, Qubits}}];
+                       Gates, Qubits}}];
             
             (* check number of qubits *)
             Do[ 
@@ -2018,8 +2026,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             
             (* check symbols are indeed symbols *)
             Do[
-                If[ Not @ MatchQ[spec[key], _Symbol], 
-                    Throw["TimeSymbol and DurationSymbol must be symbols."] ],
+                If[ KeyExistsQ[spec, key],
+                    If[ Not @ MatchQ[spec[key], _Symbol], 
+                        Throw["TimeSymbol and DurationSymbol must be symbols."] ]],
                 {key, {TimeSymbol, DurationSymbol}}];
                 
             (* check  alias is a list of delayed rules to circuits *)
@@ -2030,8 +2039,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             (* check aliases do not contain symbols *)
             If[ KeyExistsQ[spec, Aliases], 
                 Do[
-                    If[ Not @ FreeQ[spec[Aliases], spec[key]], 
-                        Throw["Aliases (definitions or operators) must not feature TimeSymbol nor DurationSymbol; they can instead be passed as arguments to the alias operator."] ],
+                    If[ KeyExistsQ[spec, key],
+                        If[ Not @ FreeQ[spec[Aliases], spec[key]], 
+                            Throw["Aliases (definitions or operators) must not feature TimeSymbol nor DurationSymbol; they can instead be passed as arguments to the alias operator."]]],
                     {key, {TimeSymbol, DurationSymbol}}]];
                     
             (* check alias LHS don't include conditions *)
@@ -2062,16 +2072,18 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 
             (* check that Gates patterns do not refer to symbols *)
             Do[
-                If[ Not @ FreeQ[pattern, symb],
-                    Throw["The operator patterns in Gates (left-hand side of the rules) must not include the TimeSymbol or the DurationSymbol (though the right-hand side may)."]],
+                If[ KeyExistsQ[spec, key],
+                    If[ Not @ FreeQ[pattern, spec[key]],
+                        Throw["The operator patterns in Gates (left-hand side of the rules) must not include the TimeSymbol or the DurationSymbol (though the right-hand side may)."]]],
                 {pattern, First /@ spec[Gates]},
-                {symb, {spec[TimeSymbol], spec[DurationSymbol]}}];
+                {key, {TimeSymbol, DurationSymbol}}];
                 
             (* check every Gates' GateDuration doesn't contain the duration symbol (self-reference) *)
-            Do[
-                If[ Not @ FreeQ[dur, spec[DurationSymbol]],
-                    Throw["A GateDuration cannot refer to the DurationSymbol, since the DurationSymbol is substituted the value of the former."]],
-                {dur, spec[Gates][[All, 2]][GateDuration] // Through}];
+            If[ KeyExistsQ[spec, DurationSymbol],  
+                Do[
+                    If[ Not @ FreeQ[dur, spec[DurationSymbol]],
+                        Throw["A GateDuration cannot refer to the DurationSymbol, since the DurationSymbol is substituted the value of the former."]],
+                    {dur, spec[Gates][[All, 2]][GateDuration] // Through}]];
                 
             (* check every active noise is a list (or Circuit, not yet evaluating) *)
             Do[
