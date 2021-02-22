@@ -157,12 +157,6 @@ ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables
     CheckDeviceSpec::usage = "CheckDeviceSpec[spec] checks that the given device specification satisfies a set of validity requirements, returning True if so, otherwise reporting a specific error. This is a useful debugging tool when creating a device specification, though a result of True does not gaurantee the spec is valid."
     CheckDeviceSpec::error = "`1`"
     
-    GetCircuitProperties::usage = "GetCircuitProperties[circuit, property, spec] returns a list of each gate's property, according to the device specification. If the property depends on time, the circuit is automatically scheduled by GetCircuitSchedule[].
-GetCircuitProperties[schedule, property, spec] returns a nested list of each scheduled subcircuit's gate properties.
-GetCircuitProperties[subcircuits, property, spec] returns a nested list of each subcircuit's gate properties, as scheduled by GetCircuitSchedule[].
-For example, GetCircuitProperties[circuit, \"duration\", spec] returns the duration of each gate in the circuit as prescribed by spec (with an assumed schedule, if gate durations depend on their start time)."
-    GetCircuitProperties::error = "`1`"
-    
     (*
      * optional arguments to public functions
      *)
@@ -2125,22 +2119,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         CheckDeviceSpec[___] := (
             Message[CheckDeviceSpec::error, "Argument must be a single Association."];
             $Failed)
-            
-        GetCircuitProperties[schedule:{{_, _List}..}, property_, spec_Association] :=
-            Function[{time,subcirc},
-                Table[
-                    With[
-                        {gateInfo = Replace[gate, spec[Gates]]},
-                        (* note that the schedule informs only start times, NOT gate durations *)
-                        gateInfo[property] /. spec[DurationSymbol] -> gateInfo[GateDuration] /. spec[TimeSymbol] -> time],
-                    {gate,subcirc}
-                ]
-            ] @@@ schedule
-        GetCircuitProperties[subcircs:{{__}..}, property_, spec_Association] :=    
-            GetCircuitProperties[ GetCircuitSchedule[subcircs, spec], property, spec]
-        GetCircuitProperties[circ_List, property_, spec_Association] :=
-            Flatten @ GetCircuitProperties[ GetCircuitSchedule[circ, spec], property, spec]
-        GetCircuitProperties[___] := invalidArgError[GetCircuitProperties]
 
     End[ ]
                                        
