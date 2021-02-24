@@ -235,7 +235,7 @@ Note if ReplaceAliases -> True, then the output of GetCircuitSchedule might not 
     
     Depol::usage = "Depol[prob] is a 1 or 2 qubit depolarising with probability prob of error."
     
-    Damp::usage = "Damp[prob] is 1 qubit amplitude damping with the givern decay probability."
+    Damp::usage = "Damp[prob] is 1 qubit amplitude damping with the given decay probability."
     
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
     
@@ -1792,7 +1792,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* note this is overriding alias rule -> with :> which should be fine *)
         optionalReplaceAliases[False, spec_Association][in_] := in 
         optionalReplaceAliases[True, spec_Association][in_] := in //. If[
-            KeyExistsQ[spec, Alisaes], (#1 :> Sequence @@ #2 &) @@@ spec[Aliases], {}]
+            KeyExistsQ[spec, Aliases], (#1 :> Sequence @@ #2 &) @@@ spec[Aliases], {}]
         
         (* declaring optional args to GetCircuitSchedule *)
         Options[GetCircuitSchedule] = {
@@ -1900,6 +1900,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         frozenCircToList[Circuit[gs_Times]] := ReleaseHold[List @@@ Hold[gs]]
         frozenCircToList[Circuit[g_]] := {g}
         frozenCircToList[gs_List] := gs
+        frozenCircToList[else_] := else
         
         viewOperatorSeq[circ_] :=
             Column[frozenCircToList[circ]]
@@ -1933,7 +1934,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 } ~Join~ Table[
                     {
                         First[row], 
-                        Row[frozenCircToList[Last[row]] /. m_?MatrixQ :> MatrixForm[m], Spacer[0]]
+                        (* attempt to render element as spaced list *)
+                        With[
+                            {attemptedList = frozenCircToList[Last[row]]},
+                            If[ Head[attemptedList] === List,
+                                Row[attemptedList /. m_?MatrixQ :> MatrixForm[m], Spacer[0]],
+                                HoldForm[attemptedList] /. m_?MatrixQ :> MatrixForm[m]
+                            ]
+                        ]
                     },
                     {row, List @@@ spec[Aliases]}],
                 FilterRules[{opts}, Options[Grid]],
@@ -1946,7 +1954,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             {showVars = Or @@ (KeyExistsQ[UpdateVariables] /@ Last /@ spec[Gates])},
             Grid[{
                 {Style["Gates", Bold], SpanFromLeft},
-                {"Gate", If[showConds,"Condition",Nothing], "Active noise", 
+                {"Gate", If[showConds,"Conditions",Nothing], "Active noise", 
                     If[ KeyExistsQ[spec, DurationSymbol],
                         "Duration (" <> ToString@tidySymbolNames@spec[DurationSymbol] <> ")",
                         "Duration"],
