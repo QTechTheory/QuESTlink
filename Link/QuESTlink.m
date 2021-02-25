@@ -1589,7 +1589,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
          * a sub-circuit, considering the circuit variables and updating them *)
         getDurAndNoiseFromSubcirc[subcirc_, subcircTime_, spec_, forcedSubcircDur_:None] := Module[
             {activeNoises={}, passiveNoises={}, gateDurs={}, subcircDur,
-             qubitActiveDurs = ConstantArray[0, spec[NumLogicQubits]], slowestGateDur},
+             qubitActiveDurs = ConstantArray[0, spec[NumTotalQubits]], slowestGateDur},
+             (* note that the final #hidden qubits of qubitActiveDurs is never non-zero *)
             
             (* iterating gates in order of appearence in subcircuit... *)
             Do[ 
@@ -1624,28 +1625,31 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 forcedSubcircDur];
             (* note slowestGateDur is returned even if overriden here, for schedule-checking functions *)
                 
-            (* iterate qubits from 0 to numQubits-1 *)
+            (* iterate all qubits (including hidden) from index 0, upward *)
             Do[
                 With[
                     {qubitProps = Replace[qubit, spec[Qubits]]},
-                    (* work out start-time and duration of qubit's passive noise (pre-determined) *)
-                    {passiveTime = subcircTime + qubitActiveDurs[[ 1 + qubit ]]},
-                    {passiveDur = subcircDur - qubitActiveDurs[[ 1 + qubit ]]},
-                    (* work out passive noise (time, dur and var dependent *)
-                    {qubitPassive = replaceTimeDurSymbols[qubitProps[PassiveNoise], spec, passiveTime, passiveDur]},
-                    (* work out var-update function (time and dur dependent *)
-                    {qubitVarFunc = If[KeyExistsQ[qubitProps, UpdateVariables],
-                        replaceTimeDurSymbols[qubitProps[UpdateVariables], spec, passiveTime, passiveDur],
-                        Function[None]]},
-                        
-                    (* collect qubit info *) 
-                    AppendTo[passiveNoises, qubitPassive];
-                    
-                    (* update circuit variables (can be time, var, dur, and fixedSubcircDur dependent) *)
-                    qubitVarFunc[];
+                    (* continue only if qubit matches a rule in spec[Qubits] (don't noise unspecified qubits) *)
+                    If[
+                        qubitProps =!= qubit,
+                        With[
+                            (* work out start-time and duration of qubit's passive noise (pre-determined) *)
+                            {passiveTime = subcircTime + qubitActiveDurs[[ 1 + qubit ]]},
+                            {passiveDur = subcircDur - qubitActiveDurs[[ 1 + qubit ]]},
+                            (* work out passive noise (time, dur and var dependent *)
+                            {qubitPassive = replaceTimeDurSymbols[qubitProps[PassiveNoise], spec, passiveTime, passiveDur]},
+                            (* work out var-update function (time and dur dependent *)
+                            {qubitVarFunc = If[KeyExistsQ[qubitProps, UpdateVariables],
+                                replaceTimeDurSymbols[qubitProps[UpdateVariables], spec, passiveTime, passiveDur],
+                                Function[None]]},
+                                
+                            (* collect qubit info *) 
+                            AppendTo[passiveNoises, qubitPassive];
+                            
+                            (* update circuit variables (can be time, var, dur, and fixedSubcircDur dependent) *)
+                            qubitVarFunc[]]]
                 ],    
-                {qubit, 0, spec[NumLogicQubits]-1}
-            ];
+                {qubit, 0, spec[NumTotalQubits]-1}];
         
             (* return. Note slowestGateDur is returned even when subcircDur overrides, 
              * since that info is useful to schedule-check utilities *)
@@ -1988,12 +1992,20 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 } ~Join~ Table[
                     With[
                         {props = Replace[qubit, spec[Qubits]]},
-                        {
-                            qubit,
-                            viewOperatorSeq @ props[PassiveNoise] /. m_?MatrixQ :> MatrixForm[m], 
-                            If[showVars, If[KeyExistsQ[props,UpdateVariables],props[UpdateVariables],""], Nothing]
-                        }],
-                    {qubit, 0, spec[NumLogicQubits]-1}
+                        {row = If[props === qubit,
+                            (* show qubit with empty row for absent qubits *)
+                            {qubit, "", If[showVars, "", Nothing]},
+                            (* else, show its fields *)
+                            {qubit,
+                             viewOperatorSeq @ props[PassiveNoise] /. m_?MatrixQ :> MatrixForm[m], 
+                             If[showVars, If[KeyExistsQ[props,UpdateVariables],props[UpdateVariables],""], Nothing]}]},     
+                        (* insert labeled row at transition to hidden qubits *)
+                        ReleaseHold @ If[qubit === spec[NumLogicQubits],
+                            Hold[Sequence[{Style["Hidden qubits",Bold], SpanFromLeft}, row]],
+                            row
+                        ]
+                    ],
+                    {qubit, 0, spec[NumTotalQubits]-1}
                 ],
                 FilterRules[{opts}, Options[Grid]],
                 Dividers -> All,
@@ -2119,13 +2131,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         Quiet @ Check[ assoc[UpdateVariables][]; True, False ] ], (* duck typed *)
                         Throw["Each UpdateVariables must be a zero-argument Function (or excluded entirely)."]]],
                 {assoc, Join[spec[Gates][[All,2]], spec[Qubits][[All,2]]] }];
-                
-            (* check all logic qubits are featured in Qubits *)
-            With[
-                {unmatched = Range[0, spec[NumLogicQubits]-1] /. (#->Nothing&) /@ spec[Qubits][[All,1]]},
-                If[
-                    Length[unmatched] > 0,
-                    Throw["Qubits did not include patterns to match the following logical qubits: " <> ToString[unmatched]]]];
                 
             (* no detected issues *)
             None
