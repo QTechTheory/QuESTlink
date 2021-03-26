@@ -272,7 +272,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     
     Qubits::usage = "The qubit properties of the device, such as their passive noise."
     
-    ActiveNoise::usage = "The channel (expressed as a sub-circuit) describing the noisy, imperfect operation of a device gate."
+    NoisyForm::usage = "The channel (expressed as a sub-circuit) describing the noisy, imperfect operation of a device gate."
     
     PassiveNoise::usage = "The channel (expressed as a sub-circuit) describing the passive decoherence of a qubit when not being operated upon by gates."
     
@@ -1599,7 +1599,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     (* work out gate duration (time and var dependent) *)
                     {gateDur = replaceTimeDurSymbols[gateProps[GateDuration], spec, subcircTime]},    
                     (* work out active noise (time, dur and var dependent) *)
-                    {gateActive = replaceTimeDurSymbols[gateProps[ActiveNoise], spec, subcircTime, gateDur]},
+                    {gateActive = replaceTimeDurSymbols[gateProps[NoisyForm], spec, subcircTime, gateDur]},
                     (* work out var-update function (time and dur dependent) *)
                     {gateVarFunc = If[KeyExistsQ[gateProps, UpdateVariables],
                         replaceTimeDurSymbols[gateProps[UpdateVariables], spec, subcircTime, gateDur],
@@ -1958,7 +1958,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             {showVars = Or @@ (KeyExistsQ[UpdateVariables] /@ Last /@ spec[Gates])},
             Grid[{
                 {Style["Gates", Bold], SpanFromLeft},
-                {"Gate", If[showConds,"Conditions",Nothing], "Active noise", 
+                {"Gate", If[showConds,"Conditions",Nothing], "Noisy form", 
                     If[ KeyExistsQ[spec, DurationSymbol],
                         "Duration (" <> ToString@tidySymbolNames@spec[DurationSymbol] <> ")",
                         "Duration"],
@@ -1972,7 +1972,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         {
                             gate,
                             If[showConds, Column@conds, Nothing], 
-                            viewOperatorSeq @ props[ActiveNoise] /. m_?MatrixQ :> MatrixForm[m], 
+                            viewOperatorSeq @ props[NoisyForm] /. m_?MatrixQ :> MatrixForm[m], 
                             props[GateDuration], 
                             If[showVars, If[KeyExistsQ[props,UpdateVariables],props[UpdateVariables],""], Nothing]
                         }],
@@ -2088,7 +2088,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 If[ Not @ KeyExistsQ[assoc, key],
                     Throw["An Association in Gates is missing required key " <> SymbolName[key] <> "."]],
                 {assoc, Last /@ spec[Gates]},
-                {key, {ActiveNoise, GateDuration}}];
+                {key, {NoisyForm, GateDuration}}];
                 
             (* check that Gates patterns do not refer to symbols *)
             Do[
@@ -2108,8 +2108,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             (* check every active noise is a list (or Circuit, not yet evaluating) *)
             Do[
                 If[ Not @ MatchQ[active, _List|_Circuit],
-                    Throw["Each ActiveNoise must be a Circuit[] or list of operators."]],
-                {active, spec[Gates][[All, 2]][ActiveNoise] // Through}];
+                    Throw["Each NoisyForm must be a Circuit[] or list of operators."]],
+                {active, spec[Gates][[All, 2]][NoisyForm] // Through}];
                 
             (* check every Qubit assoc contains required keys *)
             Do[
