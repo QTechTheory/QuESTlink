@@ -262,9 +262,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     
     DeviceDescription::usage = "A description of the specified device."
     
-    NumLogicQubits::usage = "The number of qubits which can be targeted by user-given circuits in the represented device. These are assumed to be at adjacent indices, starting at 0."
+    NumAccessibleQubits::usage = "The number of qubits which can be targeted by user-given circuits in the represented device. These are assumed to be at adjacent indices, starting at 0."
     
-    NumTotalQubits::usage = "The number of qubits targeted by all noise in the represented device. This can exceed 'NumLogicQubits', since it includes hidden qubits used for advanced noise modelling. Hidden qubits are assumed to start at index 'NumLogicQubits'."
+    NumTotalQubits::usage = "The number of qubits targeted by all noise in the represented device. This can exceed 'NumAccessibleQubits', since it includes hidden qubits used for advanced noise modelling. Hidden qubits are assumed to start at index 'NumAccessibleQubits'."
     
     Aliases::usage = "Custom aliases for general unitary gates or sub-circuits, recognised by the device specification as elementary gates (optional)."
     
@@ -1549,7 +1549,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             {qubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
             And[
                 (* all gate's qubit indices are valid *)
-                AllTrue[qubits, LessThan[spec[NumLogicQubits]]],
+                AllTrue[qubits, LessThan[spec[NumAccessibleQubits]]],
                 (* the gate satisfies a gate pattern *)
                 MatchQ[gate, Alternatives @@ Keys @ spec[Gates]]]]
         isCompatibleCirc[circOrCols_List, spec_] := 
@@ -1912,8 +1912,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         viewDevSpecFields[spec_, opts___] :=
             Grid[{
                 {Style["Fields",Bold], SpanFromLeft},
-                {"Number of logical qubits", spec[NumLogicQubits]},
-                {"Number of hidden qubits", spec[NumTotalQubits] - spec[NumLogicQubits]},
+                {"Number of accessible qubits", spec[NumAccessibleQubits]},
+                {"Number of hidden qubits", spec[NumTotalQubits] - spec[NumAccessibleQubits]},
                 {"Number of qubits (total)", spec[NumTotalQubits]},
                 If[ KeyExistsQ[spec, TimeSymbol],
                     {"Time symbol", spec[TimeSymbol]},
@@ -2000,7 +2000,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                              viewOperatorSeq @ props[PassiveNoise] /. m_?MatrixQ :> MatrixForm[m], 
                              If[showVars, If[KeyExistsQ[props,UpdateVariables],props[UpdateVariables],""], Nothing]}]},     
                         (* insert labeled row at transition to hidden qubits *)
-                        ReleaseHold @ If[qubit === spec[NumLogicQubits],
+                        ReleaseHold @ If[qubit === spec[NumAccessibleQubits],
                             Hold[Sequence[{Style["Hidden qubits",Bold], SpanFromLeft}, row]],
                             row
                         ]
@@ -2032,17 +2032,17 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Do[
                 If[ Not @ KeyExistsQ[spec, key], 
                     Throw["Specification is missing the required key: " <> SymbolName[key] <> "."]],
-                {key, {DeviceDescription, NumLogicQubits, NumTotalQubits, 
+                {key, {DeviceDescription, NumAccessibleQubits, NumTotalQubits, 
                        Gates, Qubits}}];
             
             (* check number of qubits *)
             Do[ 
                 If[ Not @ MatchQ[spec[key], n_Integer /; n > 0 ], 
-                    Throw["NumLogicQubits and NumTotalQubits must be positive integers."]],
-                {key, {NumLogicQubits, NumTotalQubits}}];
+                    Throw["NumAccessibleQubits and NumTotalQubits must be positive integers."]],
+                {key, {NumAccessibleQubits, NumTotalQubits}}];
 
-            If[ spec[NumLogicQubits] > spec[NumTotalQubits],
-                Throw["NumLogicQubits cannot exceed NumTotalQubits."]];
+            If[ spec[NumAccessibleQubits] > spec[NumTotalQubits],
+                Throw["NumAccessibleQubits cannot exceed NumTotalQubits."]];
             
             (* check symbols are indeed symbols *)
             Do[
