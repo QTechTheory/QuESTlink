@@ -1643,8 +1643,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                                 replaceTimeDurSymbols[qubitProps[UpdateVariables], spec, passiveTime, passiveDur],
                                 Function[None]]},
                                 
-                            (* collect qubit info *) 
-                            AppendTo[passiveNoises, qubitPassive];
+                            (* disregard passive channel if definitely passiveDur == 0 *)
+                            If[ And[ passiveDur =!= 0, passiveDur =!= 0.` ],
+                                AppendTo[passiveNoises, qubitPassive]];
                             
                             (* update circuit variables (can be time, var, dur, and fixedSubcircDur dependent) *)
                             qubitVarFunc[]]]
