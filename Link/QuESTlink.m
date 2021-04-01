@@ -380,6 +380,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 ApplyCircuitInternal[qureg, withBackup, showProgress, circCodes],
                 ProgressIndicator[circuitProgressVar]
             ]
+        ApplyCircuit[{}, qureg_Integer, OptionsPattern[ApplyCircuit]] :=
+            {}
         ApplyCircuit[circuit_?isCircuitFormat, qureg_Integer, OptionsPattern[ApplyCircuit]] :=
         	With[
         		{codes = codifyCircuit[circuit]},
