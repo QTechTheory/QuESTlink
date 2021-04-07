@@ -250,6 +250,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     
     Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit, or as an alternative to removing gates in ApplyCircuit."
  
+    Ph::usage = "Ph is the phase shift gate, which introduces phase factor exp(i*theta) upon state |1...1> of the target and control qubits. The gate is the same under different orderings of qubits, and division between control and target qubits."
+ 
     EndPackage[]
  
  
@@ -303,7 +305,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,_->-1}
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
         codifyMatrix[matr_] :=
@@ -918,7 +920,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getNumQubitsInCircuit[circ_List] :=
         	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], \[Infinity]],    
         		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], \[Infinity]]]
-        needsSpecialSwap[(SWAP|M|Rz), _List] := False
+        needsSpecialSwap[(SWAP|M|Rz|Ph), _List] := False
         needsSpecialSwap[{R, (X|Y|Z)..}, _List] := False
         needsSpecialSwap[label_Symbol, targs_List] :=
         	And[Length[targs] === 2, Abs[targs[[1]] - targs[[2]]] > 1]
@@ -929,7 +931,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawCross[targ_, col_] := {
         	Line[{{col+.5,targ+.5}-{.1,.1},{col+.5,targ+.5}+{.1,.1}}],
         	Line[{{col+.5,targ+.5}-{-.1,.1},{col+.5,targ+.5}+{-.1,.1}}]}
-        drawControls[{ctrls__}, {targs__}, col_] := {
+        drawControls[{ctrls__}, {targs___}, col_] := {
         	FaceForm[Black],
         	Table[Disk[{col+.5,ctrl+.5},.1],{ctrl,{ctrls}}],
         	With[{top=Max@{ctrls,targs},bot=Min@{ctrls,targs}},
@@ -947,6 +949,18 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawSpecialSwap[targ1_,targ2_,col_] := {
         	drawSpecialSwapLine[targ1,targ2,col],
         	drawSpecialSwapLine[targ2,targ1,col]}
+            
+        (* special gate graphics *)
+        drawGate[SWAP, {}, {targs___}, col_] := {
+            (drawCross[#,col]&) /@ {targs},
+            Line[{{col+.5,.5+Min@targs},{col+.5,.5+Max@targs}}]}
+        drawGate[Z, {ctrls__}, {targ_}, col_] := {
+            drawControls[{ctrls,targ},{targ},col],
+            Line[{{col+.5,.5+Min@ctrls},{col+.5,.5+Max@ctrls}}]}
+        drawGate[Ph, {ctrls___}, {targs__}, col_] := {
+            drawControls[{ctrls,targs},{},col],
+            Text["\[Theta]", {col+.75,Min[{ctrls,targs}]+.75}]
+        }
         	
         (* single qubit gate graphics *)
         drawGate[Id, {}, {targs___}, col_] :=
@@ -972,14 +986,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[label_Symbol, {}, {targ_}, col_] := {
         	drawSingleBox[targ, col],
         	Text[SymbolName@label, {col+.5,targ+.5}]}
-            
-        (* special gate graphics *)
-        drawGate[SWAP, {}, {targs___}, col_] := {
-        	(drawCross[#,col]&) /@ {targs},
-        	Line[{{col+.5,.5+Min@targs},{col+.5,.5+Max@targs}}]}
-        drawGate[Z, {ctrls__}, {targ_}, col_] := {
-            drawControls[{ctrls,targ},{targ},col],
-            Line[{{col+.5,.5+Min@ctrls},{col+.5,.5+Max@ctrls}}]}
             
         (* multi-qubit gate graphics *)
         drawGate[Rz, {}, targs_List, col_] := {
@@ -1443,9 +1449,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getAnalGateMatrix[Subscript[Y, _]] = PauliMatrix[2];
         getAnalGateMatrix[Subscript[Z, _]] = PauliMatrix[3];
         getAnalGateMatrix[Subscript[S, _]] = {{1,0},{0,I}};
-        getAnalGateMatrix[Subscript[T, _]] = {{1,0},{0,Exp[I \[Pi]/4]}};
+        getAnalGateMatrix[Subscript[T, _]] = {{1,0},{0,Exp[I Pi/4]}};
         getAnalGateMatrix[Subscript[SWAP, _,_]] = {{1,0,0,0},{0,0,1,0},{0,1,0,0},{0,0,0,1}};
         getAnalGateMatrix[Subscript[U, __][m_]] = m;
+        getAnalGateMatrix[Subscript[Ph, t__][a_]] = DiagonalMatrix[ Append[ConstantArray[1, 2^Length[{t}] - 1], Exp[I a]] ];
         getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
         getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]];
         getAnalGateMatrix[Subscript[Ry, _][a_]] = MatrixExp[-I a/2 PauliMatrix[2]];

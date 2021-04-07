@@ -68,6 +68,7 @@
 #define OPCODE_Kraus 17
 #define OPCODE_G 18
 #define OPCODE_Id 19
+#define OPCODE_Ph 20
 
 /*
  * Codes for dynamically updating kernel variables, to indicate progress 
@@ -1290,6 +1291,31 @@ void local_applyGates(
                 
             case OPCODE_Id :
                 // any numCtrls, numParams and numTargs is valid; all do nothing!
+                break;
+                
+            case OPCODE_Ph : {
+                if (numParams != 1)
+                    throw local_wrongNumGateParamsExcep("Ph", numParams, 1); // throws
+                int numQubits = numCtrls + numTargs;
+                if (numQubits < 1)
+                    throw local_wrongNumGateTargsExcep("Ph", numQubits, "at least 1 qubit (between control and target qubits)"); // throws
+                if (params[paramInd] == 0)
+                    break;
+                    
+                // unpack all controls and targets (since symmetric)
+                // (ctrlCache has length [MAX_NUM_TARGS_CTRLS], so it can fit all targs)
+                int* qubitCache = local_prepareCtrlCache(ctrls, ctrlInd, numCtrls, -1);
+                for (int i=0; i<numTargs; i++)
+                    qubitCache[numCtrls+i] = targs[targInd+i];
+                
+                // attempt optimisations first
+                if (numQubits == 1)
+                    phaseShift(qureg, qubitCache[0], params[paramInd]);
+                else if (numQubits == 2)
+                    controlledPhaseShift(qureg, qubitCache[0], qubitCache[1], params[paramInd]);
+                else
+                    multiControlledPhaseShift(qureg, qubitCache, numQubits, params[paramInd]);
+            }
                 break;
                 
             default:            
