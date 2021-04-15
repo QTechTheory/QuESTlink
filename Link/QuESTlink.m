@@ -21,7 +21,7 @@ ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies 
 Accepts optional arguments WithBackup and ShowProgress."
     ApplyCircuit::error = "`1`"
     
-    CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] sets the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in Rx, Ry, Rz, R or U (and controlled) of the given circuit ONCE (multiple times within a U matrix is allowed). The initState is unchanged. Note Rx[theta] is allowed, but Rx[f(theta)] is not. Furthermore U matrices must contain at most one parameter."
+    CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] sets the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in Rx, Ry, Rz, R or U (and controlled) of the given circuit ONCE (multiple times within a U matrix is allowed). The initQureg is unchanged. Note Rx[theta] is allowed, but Rx[f(theta)] is not. Furthermore U matrices must contain at most one parameter."
     CalcQuregDerivs::error = "`1`"
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
@@ -85,11 +85,24 @@ SetWeightedQureg[fac1, q1, fac2, q2, qOut] modifies qureg qOut to be (fac1 q1 + 
 SetWeightedQureg[fac1, q1, qOut] modifies qureg qOut to be fac1 * q1. qOut can be q1.
 SetWeightedQureg[fac, qOut] modifies qureg qOut to be fac qOut; that is, qOut is scaled by factor fac."
     SetWeightedQureg::error = "`1`"
+    
+    SimplifyPaulis::usage = "SimplifyPaulis[expr] freezes commutation and analytically simplifies the given expression of Pauli operators, and expands it in the Pauli basis. The input expression can include sums, products, powers and non-commuting products of (subscripted) X, Y and Z operators and other Mathematica symbols (including variables defined as Pauli expressions). 
+For example, try SimplifyPaulis[ Subscript[Y,0] (a Subscript[X,0] + b Subscript[Z,0] Subscript[X,1])^3 ].
+Be careful of performing algebra with Pauli operators outside of SimplifyPaulis[], since Mathematica may erroneously automatically commute them."
+    SimplifyPaulis::error = "`1`"
 
-    DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram.
-DrawCircuit[circuit, numQubits] generates a circuit diagram with numQubits, useful for overriding the automated inferrence of the number of qubits if incorrect.
-DrawCircuit[circuit, opts] enables Graphics options to modify the circuit diagram."
+    DrawCircuit::usage = "DrawCircuit[circuit] generates a circuit diagram. The circuit can contain symbolic parameters.
+DrawCircuit[circuit, numQubits] generates a circuit diagram with numQubits, which can be more or less than that inferred from the circuit.
+DrawCircuit[{circ1, circ2, ...}] draws the total circuit, divided into the given subcircuits. This is the output format of GetCircuitColumns[].
+DrawCircuit[{{t1, circ1}, {t2, circ2}, ...}] draws the total circuit, divided into the given subcircuits, labeled by their scheduled times {t1, t2, ...}. This is the output format of GetCircuitSchedule[].
+DrawCircuit[{{t1, A1,A2}, {t2, B1,B2}, ...}] draws the total circuit, divided into subcircuits {A1 A2, B1 B2, ...}, labeled by their scheduled times {t1, t2, ...}. This is the output format of InsertCircuitNoise[].
+DrawCircuit accepts optional arguments Compactify, DividerStyle, SubcircuitSpacing, SubcircuitLabels, LabelDrawer and any Graphics option. For example, the fonts can be changed with 'BaseStyle -> {FontFamily -> \"Arial\"}'."
     DrawCircuit::error = "`1`"
+    
+    DrawCircuitTopology::usage = "DrawCircuitTopology[circuit] generates a graph plot of the qubit connectivity implied by the given circuit. The precise nature of the information plotted depends on the following options.
+DrawCircuitTopology accepts optional arguments DistinguishBy, ShowLocalGates, ShowRepetitions to modify the presented graph.
+DrawCircuitTopology additionally accepts DistinguishedStyles and all options of Graph[], Show[] and LineLegend[] for customising the plot aesthetic."
+    DrawCircuitTopology::error = "`1`"
 
     CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic expression for the given unitary circuit, which may contain undefined symbols. The number of qubits is inferred from the circuit indices (0 to maximum specified).
 CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the number of present qubits."
@@ -102,64 +115,182 @@ PlotDensityMatrix accepts optional arguments PlotComponent, BarSpacing and all o
 When two matrices are passed, many options (e.g. ChartStyle) can accept a length-2 list."
     PlotDensityMatrix::error = "`1`"
     
+    GetCircuitColumns::usage = "GetCircuitColumns[circuit] divides circuit into sub-circuits of gates on unique qubits (i.e. columns), filled from the left. Flatten the result to restore an equivalent but potentially compacted Circuit."
+    GetCircuitColumns::error = "`1`"
+    
+    GetUnsupportedGates::usage = "GetUnsupportedGates[circuit, spec] returns a list of the gates in circuit which either on non-existent qubits or are not present in or satisfy the gate rules in the device specification. The circuit can contain symbolic parameters, though if it cannot be inferred that the parameter satisfies a gate condition, the gate is assumed unsupported.
+GetUnsupportedGates[{circ1, circ2, ...}, spec] returns the unsupported gates in each subcircuit, as separate lists.
+GetUnsupportedGates[{{t1, circ1}, {t2, circ2}, ...}, spec] ignores the times in the schedule and returns the unsupported gates in each subcircuit, as separate lists."
+    GetUnsupportedGates::error = "`1`"
+    
+    GetCircuitSchedule::usage = "GetCircuitSchedule[circuit, spec] divides circuit into sub-circuits of simultaneously-applied gates (filled from the left), and assigns each a start-time based on the duration of the slowest gate according to the given device specification. The returned structure is {{t1, sub-circuit1}, {t2, sub-circuit2}, ...}, which can be given directly to DrawCircuit[] or ViewCircuitSchedule[].
+GetCircuitSchedule[subcircuits, spec] uses the given division (lists of circuits), assumes the gates in each can be performed simultaneously, and performs the same scheduling.
+GetCircuitSchedule accepts optional argument ReplaceAliases.
+GetCircuitSchedule will take into consideration gates with durations dependent on their scheduled start time."
+    GetCircuitSchedule::error = "`1`"
+    
+    CheckCircuitSchedule::usage = "CheckCircuitSchedule[{{t1, circ1}, {t2, circ2}, ...}, spec] checks whether the given schedule of sub-circuits is compatible with the device specification, else if it prescribes overlapping sub-circuit execution (regardless of targeted qubits). Times and gate parameters can be symbolic. All gates in a sub-circuit are assumed applicable simultaneously, even if they target overlapping qubits.
+CheckCircuitSchedule returns False if the (possibly symbolic) times cannot possibly be monotonic, nor admit a sufficient duration for any sub-circuit.
+CheckCircuitSchedule returns True if the schedule is valid for any assignment of the times and gate parameters.
+CheckCircuitSchedule returns a list of symbolic conditions which must be simultaneously satisfied for the schedule to be valid, if it cannot determine so absolutely. These conditions include constraints of both motonicity and duration.
+CheckCircuitSchedule will take into consideration gates with durations dependent on their scheduled start time."
+    CheckCircuitSchedule::error = "`1`"
+    
+    InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, spec] divides the circuit into scheduled subcircuits, then replaces them with rounds of active and passive noise, according to the given device specification. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, active, passive}, ...}, which can be given directly to DrawCircuit[], ViewCircuitSchedule[] or ExtractCircuit[].
+InsertCircuitNoise[{circ1, circ2, ...}, spec] uses the given list of sub-circuits (output format of GetCircuitColumns[]), assuming each contain gates which can be simultaneously performed.
+InsertCircuitNoise[{{t1, circ1}, {t2, circ2}, ...} assumes the given schedule (output format of GetCircuitSchedule[]) of {t1,t2,...} for the rounds of gates and noise. These times can be symbolic.
+InsertCircuitNoise accepts optional argument ReplaceAliases.
+InsertCircuitNoise can handle gates with time-dependent noise operators and durations."
+    InsertCircuitNoise::error = "`1`"
+    
+    ExtractCircuit::usage = "ExtractCircuit[] returns the ultimate circuit from the outputs of InsertCircuitNoise[], GetCircuitSchedule[] and GetCircuitSchedule[]."
+    ExtractCircuit::error = "`1`"
+    
+    ViewCircuitSchedule::usage = "ViewCircuitSchedule[schedule] displays a table form of the given circuit schedule, as output by InsertCircuitNoise[] or GetCircuitSchedule[].
+ViewCircuitSchedule accepts all optional arguments of Grid[], for example 'FrameStyle', and 'BaseStyle -> {FontFamily -> \"CMU Serif\"}'."
+    ViewCircuitSchedule::error = "`1`"
+    
+    ViewDeviceSpec::usage = "ViewDeviceSpec[spec] displays all information about the given device specification in table form.
+ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables), and Column[] (to customise their placement)."
+    ViewDeviceSpec::error = "`1`"
+    
+    CheckDeviceSpec::usage = "CheckDeviceSpec[spec] checks that the given device specification satisfies a set of validity requirements, returning True if so, otherwise reporting a specific error. This is a useful debugging tool when creating a device specification, though a result of True does not gaurantee the spec is valid."
+    CheckDeviceSpec::error = "`1`"
+    
     (*
      * optional arguments to public functions
      *)
      
-    PackageExport[WithBackup]
+    BeginPackage["`Option`"]
+
     WithBackup::usage = "Optional argument to ApplyCircuit, indicating whether to create a backup during circuit evaluation to restore the input state in case of a circuit error. This incurs additional memory (default True). If the circuit contains no error, this option has no effect besides wasting memory."
     
-    PackageExport[ShowProgress]
     ShowProgress::usage = "Optional argument to ApplyCircuit, indicating whether to show a progress bar during circuit evaluation (default False). This slows evaluation slightly."
     
-    PackageExport[PlotComponent]
     PlotComponent::Usage = "Optional argument to PlotDensityMatrix, to plot the \"Real\", \"Imaginary\" component of the matrix, or its \"Magnitude\" (default)."
     
-    (* 
-     * gate symbols, needed exporting so that their use below does not refer to a private var      
-     *)
+    Compactify::usage = "Optional argument to DrawCircuit, to specify (True or False) whether to attempt to compactify the circuit (or each subcircuit) by left-filling columns of gates on unique qubits (the result of GetCircuitColumns[]). No compactifying may yield better results for circuits with multi-target gates (which invoke swaps)."
+    
+    DividerStyle::usage = "Optional argument to DrawCircuit, to style the vertical lines separating subcircuits. Use DividerStyle -> None to draw without dividers, and DividerStyle -> Directive[...] to specify multiple styles properties."
+    
+    SubcircuitSpacing::usage = "Optional argument to DrawCircuit, to specify the horizontal space inserted between subcircuits."
+    
+    SubcircuitLabels::usage = "Optional argument to DrawCircuit, specifying the list of labels to display between subcircuits. Use 'None' to skip a label while still drawing the divider (except for the first and last divider). Customise these labels with LabelDrawer."
+    
+    LabelDrawer::usage = "Optional argument to DrawCircuit, to specify a two-argument function for drawing subcircuit labels. For example, Function[{msg,x},Text[msg,{x,-.5}]]. Use LabelDrawer -> None to show no labels."
+    
+    ShowLocalGates::usage = "Optional argument to DrawCircuitTopology, to specify (True or False) whether single-qubit gates should be included in the plot (as single-vertex loops)."
+    
+    ShowRepetitions::usage = "Optional argument to DrawCircuitTopology, to specify (True or False) whether repeated instances of gates (or other groups as set by DistinguishBy) in the circuit should each yield a distinct edge.
+For example, if ShowRepetitions -> True and DistinguishBy -> \"Qubits\", then a circuit containing three C[Rz] gates between qubits 0 and 1 will produce a graph with three edges between vertices 0 and 1."
+    
+    DistinguishBy::usage = "Optional argument to DrawCircuitTopology to specify how gates are aggregated into graph edges and legend labels. The possible values (in order of decreasing specificity) are \"Parameters\", \"Qubits\", \"NumberOfQubits\", \"Gates\", \"None\", and a distinct \"Connectivity\" mode.
+DistinguishBy -> \"Parameters\" assigns every unique gate (even distinguishing similar operators with different parameters) its own label.
+DistinguishBy -> \"Qubits\" discards gate parameters, but respects target qubits, so will assign similar gates (acting on the same qubits) but with different parameters to the same label.
+DistinguishBy -> \"NumberOfQubits\" discards gate qubit indices, but respects the number of qubits in a gate. Hence, for example, similar gates controlled on different pairs of qubits will be merged together, but not with the same gate controlled on three qubits.
+DistinguishBy -> \"Gates\" respects only the gate type (and whether it is controlled or not), and discards all qubit and parameter information. Hence similar gates acting on different numbers of qubits will be merged to one label. This does not apply to pauli-gadget gates R, which remain distinguished for unique pauli sequences (though discarding qubit indices).
+DistinguishBy -> \"None\" performs no labelling or distinguishing of edges.
+DistinguishBy -> \"Connectivity\" merges all gates, regardless of type, acting upon the same set of qubits (orderless)."
 
-    PackageExport[H]
+    DistinguishedStyles::usage = "Optional argument to DrawCircuitTopology, to specify the colours/styles used for each distinguished group (hence ultimately, the edge and legend styles). This must be a list of graphic directives, and will be repeated if it contains too few elements.
+DistinguishedStyles -> Automatic will colour the groups by sampling ColorData[\"Rainbow\"]."
+        
+    ReplaceAliases::usage = "Optional argument to GetCircuitSchedule and InsertCircuitNoise, specifying (True or False) whether to substitute the device specification's alias operators in the output (including in gates and active/passive noise). 
+This is False by default, but must be True to pass the output circuits to (for example) ApplyCircuit which don't recognise the alias.
+Note if ReplaceAliases -> True, then the output of GetCircuitSchedule might not be compatible as an input to InsertCircuitNoise."
+    
+    EndPackage[]
+    
+    
+    
+    (* 
+     * gate symbols    
+     *)
+     
+    BeginPackage["`Gate`"]
+
     H::usage = "H is the Hadamard gate."
-    PackageExport[X]
+    
     X::usage = "X is the Pauli X gate, a.k.a NOT or bit-flip gate."
-    PackageExport[Y]
+    
     Y::usage = "Y is the Pauli Y gate."
-    PackageExport[Z]
+    
     Z::usage = "Z is the Pauli Z gate."
-    PackageExport[Rx]
+    
     Rx::usage = "Rx[theta] is a rotation of theta around the x-axis of the Bloch sphere."        
-    PackageExport[Ry]
+    
     Ry::usage = "Ry[theta] is a rotation of theta around the y-axis of the Bloch sphere." 
-    PackageExport[Rz]
+    
     Rz::usage = "Rz[theta] is a rotation of theta around the z-axis of the Bloch sphere. Multiple targets enacts Exp[-i \[Theta]/2 Za ... Zc]." 
-    PackageExport[R]
+    
     R::usage = "R[theta, paulis] is the unitary Exp[-i \[Theta]/2 paulis]."   
-    PackageExport[S]
+    
     S::usage = "S is the S gate, a.k.a. PI/2 gate."
-    PackageExport[T]
+    
     T::usage = "T is the T gate, a.k.a PI/4 gate."
-    PackageExport[U]
+    
     U::usage = "U[matrix] is a general 1 or 2 qubit unitary gate, enacting the given 2x2 or 4x4 matrix."
-    PackageExport[Deph]
+    
     Deph::usage = "Deph[prob] is a 1 or 2 qubit dephasing with probability prob of error."
-    PackageExport[Depol]
+    
     Depol::usage = "Depol[prob] is a 1 or 2 qubit depolarising with probability prob of error."
-    PackageExport[Damp]
-    Damp::usage = "Damp[prob] is 1 qubit amplitude damping with the givern decay probability."
-    PackageExport[SWAP]
+    
+    Damp::usage = "Damp[prob] is 1 qubit amplitude damping with the given decay probability."
+    
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
-    PackageExport[M]
+    
     M::usage = "M is a destructive measurement gate which measures the indicated qubits in the Z basis."
-    PackageExport[P]
+    
     P::usage = "P[val] is a (normalised) projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
 P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
-    PackageExport[Kraus]
+    
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
-    PackageExport[G]
+    
     G::usage = "G[phi] applies a global phase rotation of phi, by premultiplying Exp[i phi]."
-    PackageExport[Id]
+    
     Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit, or as an alternative to removing gates in ApplyCircuit."
+ 
+    Ph::usage = "Ph is the phase shift gate, which introduces phase factor exp(i*theta) upon state |1...1> of the target and control qubits. The gate is the same under different orderings of qubits, and division between control and target qubits."
+ 
+    EndPackage[]
+ 
+ 
+ 
+    (* 
+     * device specification keys
+     *)
+ 
+    BeginPackage["`DeviceSpec`"]
+    
+    DeviceDescription::usage = "A description of the specified device."
+    
+    NumAccessibleQubits::usage = "The number of qubits which can be targeted by user-given circuits in the represented device. These are assumed to be at adjacent indices, starting at 0."
+    
+    NumTotalQubits::usage = "The number of qubits targeted by all noise in the represented device. This can exceed 'NumAccessibleQubits', since it includes hidden qubits used for advanced noise modelling. Hidden qubits are assumed to start at index 'NumAccessibleQubits'."
+    
+    Aliases::usage = "Custom aliases for general unitary gates or sub-circuits, recognised by the device specification as elementary gates (optional)."
+    
+    Gates::usage = "The gates supported by the device, along with their duration and effective operation under active noise."
+    
+    Qubits::usage = "The qubit properties of the device, such as their passive noise."
+    
+    NoisyForm::usage = "The channel (expressed as a sub-circuit) describing the noisy, imperfect operation of a device gate."
+    
+    PassiveNoise::usage = "The channel (expressed as a sub-circuit) describing the passive decoherence of a qubit when not being operated upon by gates."
+    
+    GateDuration::usage = "The duration of performing a gate on the represented device."
+    
+    TimeSymbol::usage = "The symbol representing the start time (in a scheduled circuit) of gates and noise channels, which can inform their properties (optional)."
+    
+    DurationSymbol::usage = "The symbol representing the duration (in a scheduled circuit) of gates or noise channels, which can inform their properties (optional)."
+    
+    InitVariables::usage = "The function to call at the start of circuit/schedule processing, to re-initialise circuit variables (optional)."
+    
+    UpdateVariables::usage = "The function to call after each active gate or processed passive noise, to update circuit variables (optional)."
+    
+    EndPackage[]
+ 
+ 
  
     Begin["`Private`"]
     
@@ -174,7 +305,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,_->-1}
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
         codifyMatrix[matr_] :=
@@ -195,6 +326,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {getOpCode[gate], {ctrls}, {targs}, {args}},
         	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {}},
+            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][R[param_, ({paulis:pattPauli..}|Verbatim[Times][paulis:pattPauli..]|paulis:pattPauli__)]] :>
+                {getOpCode[R], {ctrls}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
             R[param_, ({paulis:pattPauli..}|Verbatim[Times][paulis:pattPauli..]|paulis:pattPauli__)] :>
                 {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
         	Subscript[U, (targs:__Integer)|{targs:__Integer}][matr:_List] :> 
@@ -249,6 +382,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 ApplyCircuitInternal[qureg, withBackup, showProgress, circCodes],
                 ProgressIndicator[circuitProgressVar]
             ]
+        ApplyCircuit[{}, qureg_Integer, OptionsPattern[ApplyCircuit]] :=
+            {}
         ApplyCircuit[circuit_?isCircuitFormat, qureg_Integer, OptionsPattern[ApplyCircuit]] :=
         	With[
         		{codes = codifyCircuit[circuit]},
@@ -279,7 +414,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         
         (* apply the derivatives of a circuit on an initial state, storing the ersults in the given quregs *)
         extractUnitaryMatrix[Subscript[U, __Integer][u_List]] := u
-        extractUnitaryMatrix[Subscript[C, __Integer][Subscript[U, __Integer][u_List]]] := u
+        extractUnitaryMatrix[Subscript[C, (__Integer|{__Integer})][Subscript[U, __Integer][u_List]]] := u
         calcUnitaryDeriv[{param_, gate_}] := 
             D[extractUnitaryMatrix[gate], param]
         CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] :=
@@ -562,6 +697,80 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         
         
         
+        (* 
+         * Below is only front-end code for analytically simplifying expressions 
+         * of Pauli tensors
+         *)
+         
+         (* post-processing step to combine Pauli products that have identical symbols and indices... *)
+        getPauliSig[ a: Subscript[(X|Y|Z), _Integer] ] := {a}
+        getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, Subscript[(X|Y|Z), _]]
+        getPauliSig[ _ ] := {}
+        (* which works by splitting a sum into groups containing the same Pauli tensor, and simplifying each *)
+        factorPaulis[s_Plus] := Simplify /@ Plus @@@ GatherBy[List @@ s, getPauliSig] // Total
+        factorPaulis[e_] := e
+        
+        (* SimplifyPaulis prevents Mathemtica commutation (and inadvertently, variable substitution)
+         * in order to perform all operator simplification correctly. It accepts expressions containing 
+         * sums, products, powers and non-commuting multiples of Pauli operators (literals, and in variables), 
+         * and the structures of remaining patterns/symbols/expressions can be anything at all.
+         *)
+        SetAttributes[SimplifyPaulis, HoldAll]
+        
+        SimplifyPaulis[ a:Subscript[(X|Y|Z), _] ] := 
+            a
+
+        SimplifyPaulis[ (a:Subscript[(X|Y|Z), _])^n_Integer ] /; (n >= 0) :=
+        	If[EvenQ[n],1,a]
+        
+        SimplifyPaulis[ Verbatim[Times][t__] ] := With[
+        	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
+        	{nc = SimplifyPaulis /@ (NonCommutativeMultiply @@ (SimplifyPaulis /@ Hold[t]))},
+        	(* pass product (which now contains no powers of pauli expressions) to simplify *)
+        	SimplifyPaulis[nc]]
+
+        SimplifyPaulis[ Power[b_, n_Integer] ] /; (Not[FreeQ[b,Subscript[(X|Y|Z), _]]] && n >= 0) :=
+        	(* simplify the base, then pass a (non-expanded) product to simplify (to trigger above def) *)
+        	With[{s=ConstantArray[SimplifyPaulis[b], n]}, 
+        		SimplifyPaulis @@ (Times @@@ Hold[s])]
+        		
+        SimplifyPaulis[ Plus[t__] ] := With[
+        	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
+        	{s = Plus @@ (SimplifyPaulis /@ (List @@ (SimplifyPaulis /@ Hold[t])))},
+        	(* combine identical Pauli tensors in the resulting sum *)
+        	factorPaulis[s]
+        ]
+
+        SimplifyPaulis[ NonCommutativeMultiply[t__] ] := With[
+        	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
+        	{s = SimplifyPaulis /@ (NonCommutativeMultiply @@ (SimplifyPaulis /@ Hold[t]))},
+        	(* expand all multiplication into non-commuting; this means ex can be a sum now *)
+        	{ex = Distribute[s /. Times -> NonCommutativeMultiply]},
+        	(* notation shortcuts *)
+        	{xyz = X|Y|Z, ncm = NonCommutativeMultiply}, 
+        	(* since ex can now be a sum, after below transformation, factorise *)
+        	factorPaulis[
+        		ex //. {
+        		(* destroy exponents of single terms *)
+        		(a:Subscript[xyz, _])^n_ :> If[EvenQ[n],1,a], 
+        		(* move scalars to their own element (to clean pauli pattern) *)
+        		ncm[r1___, (f:Except[Subscript[xyz, _]]) (a:Subscript[xyz, _]) , r2___] :> ncm[f,r1,a,r2],
+        		(* map same-qubit adjacent (closest) pauli matrices to their product *)
+        		ncm[r1___, Subscript[(a:xyz), q_],r2:Shortest[___],Subscript[(b:xyz), q_], r3___] :>
+        			If[a === b, ncm[r1,r2,r3], With[{c = First @ Complement[List@@xyz, {a,b}]},
+        				ncm[r1, I If[Sort[{a,b}]==={a,b},1,-1] Subscript[c, q], r2, r3]]]
+        	(* finally, restore products (overwriting user non-comms) and simplify scalars *)
+        	} /. NonCommutativeMultiply -> Times]]
+        	
+        SimplifyPaulis[uneval_] := With[
+            (* let everything else evaluate (to admit scalars, or let variables be substituted *)
+            {eval=uneval},
+            (* and if changed by its evaluation, attempt to simplify the new form *)
+            If[Unevaluated[uneval] === eval, eval, SimplifyPaulis[eval]]]
+            (* your eyes don't deceive you; === is smart enough to check inside Unevaluated! Nice one Stephen! *)
+        
+        
+        
         (*
          * Below is only front-end code for generating 3D plots of density matrices
          *)
@@ -690,13 +899,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         
         
         
-        
         (*
          * Below is only front-end code for generating circuit diagrams from
          * from circuit the same format circuit specification
          *)
          
         (* convert symbolic gate form to {symbol, ctrls, targets} *)
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]] ]] := {Join[{R}, {paulis}[[All,1]]], {ctrls}, {paulis}[[All,2]]}
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Subscript[pauli:(X|Y|Z), targ_Integer]] ]] := {{R,pauli}, {ctrls}, {targ}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] := {gate, {},{targs}}
@@ -710,7 +920,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getNumQubitsInCircuit[circ_List] :=
         	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], \[Infinity]],    
         		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], \[Infinity]]]
-        needsSpecialSwap[(SWAP|M|Rz), _List] := False
+        needsSpecialSwap[(SWAP|M|Rz|Ph), _List] := False
         needsSpecialSwap[{R, (X|Y|Z)..}, _List] := False
         needsSpecialSwap[label_Symbol, targs_List] :=
         	And[Length[targs] === 2, Abs[targs[[1]] - targs[[2]]] > 1]
@@ -721,7 +931,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawCross[targ_, col_] := {
         	Line[{{col+.5,targ+.5}-{.1,.1},{col+.5,targ+.5}+{.1,.1}}],
         	Line[{{col+.5,targ+.5}-{-.1,.1},{col+.5,targ+.5}+{-.1,.1}}]}
-        drawControls[{ctrls__}, {targs__}, col_] := {
+        drawControls[{ctrls__}, {targs___}, col_] := {
         	FaceForm[Black],
         	Table[Disk[{col+.5,ctrl+.5},.1],{ctrl,{ctrls}}],
         	With[{top=Max@{ctrls,targs},bot=Min@{ctrls,targs}},
@@ -730,8 +940,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+1-.1}]
         drawDoubleBox[targ_, col_] :=
         	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+2-.1}]
-        drawQubitLines[qubits_List, col_] :=
-        	Table[Line[{{col,qb+.5},{col+1,qb+.5}}], {qb,qubits}]
+        drawQubitLines[qubits_List, col_, width_:1] :=
+        	Table[Line[{{col,qb+.5},{col+width,qb+.5}}], {qb,qubits}]
         drawSpecialSwapLine[targ1_, targ2_, col_] := {
         	Line[{{col,targ1+.5},{col+.1,targ1+.5}}],
         	Line[{{col+.1,targ1+.5},{col+.5-.1,targ2+.5}}],
@@ -739,6 +949,18 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawSpecialSwap[targ1_,targ2_,col_] := {
         	drawSpecialSwapLine[targ1,targ2,col],
         	drawSpecialSwapLine[targ2,targ1,col]}
+            
+        (* special gate graphics *)
+        drawGate[SWAP, {}, {targs___}, col_] := {
+            (drawCross[#,col]&) /@ {targs},
+            Line[{{col+.5,.5+Min@targs},{col+.5,.5+Max@targs}}]}
+        drawGate[Z, {ctrls__}, {targ_}, col_] := {
+            drawControls[{ctrls,targ},{targ},col],
+            Line[{{col+.5,.5+Min@ctrls},{col+.5,.5+Max@ctrls}}]}
+        drawGate[Ph, {ctrls___}, {targs__}, col_] := {
+            drawControls[{ctrls,targs},{},col],
+            Text["\[Theta]", {col+.75,Min[{ctrls,targs}]+.75}]
+        }
         	
         (* single qubit gate graphics *)
         drawGate[Id, {}, {targs___}, col_] :=
@@ -764,14 +986,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[label_Symbol, {}, {targ_}, col_] := {
         	drawSingleBox[targ, col],
         	Text[SymbolName@label, {col+.5,targ+.5}]}
-            
-        (* special gate graphics *)
-        drawGate[SWAP, {}, {targs___}, col_] := {
-        	(drawCross[#,col]&) /@ {targs},
-        	Line[{{col+.5,.5+Min@targs},{col+.5,.5+Max@targs}}]}
-        drawGate[Z, {ctrls__}, {targ_}, col_] := {
-            drawControls[{ctrls,targ},{targ},col],
-            Line[{{col+.5,.5+Min@ctrls},{col+.5,.5+Max@ctrls}}]}
             
         (* multi-qubit gate graphics *)
         drawGate[Rz, {}, targs_List, col_] := {
@@ -804,6 +1018,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[SWAP, {ctrls__}, {targs__}, col_] := {
         	drawControls[{ctrls},{targs},col],
         	drawGate[SWAP, {}, {targs}, col]}
+        drawGate[ops:{R, (X|Y|Z)..}, {ctrls__}, {targs__}, col_] := {
+            drawControls[{ctrls},{targs},col],
+            drawGate[ops, {}, {targs}, col]}
         drawGate[label_Symbol, {ctrls__}, {targ_}, col_] := {
         	drawControls[{ctrls},{targ},col],
         	drawGate[label, {}, {targ}, col]}
@@ -815,98 +1032,342 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	drawGate[label, {}, targs, col]}
         
         (* generating background qubit lines in a whole circuit column *)
-        drawQubitColumn[isSpecialSwapCol_, specialSwapQubits_, numQubits_, curCol_] :=
+        drawQubitColumn[isSpecialSwapCol_, specialSwapQubits_, numQubits_, curCol_, width_:1] :=
         	If[isSpecialSwapCol,
         		(* for a special column, draw all middle lines then non-special left/right nubs *)
         		With[{nonspecial=Complement[Range[0,numQubits-1], specialSwapQubits]}, {
-        			drawQubitLines[Range[0,numQubits-1],curCol+.5],
-        			drawQubitLines[nonspecial,curCol],
-        			drawQubitLines[nonspecial,curCol+1]}],
+        			drawQubitLines[Range[0,numQubits-1],curCol+.5,width],
+        			drawQubitLines[nonspecial,curCol,width],
+        			drawQubitLines[nonspecial,curCol+1,width]}],
         		(* for a non special column, draw all qubit lines *)
-        		drawQubitLines[Range[0,numQubits-1],curCol]
+        		drawQubitLines[Range[0,numQubits-1],curCol,width]
         	]
             
-        generateCircuitGraphics[gates_List, numQubits_Integer] :=
-        Module[{
-        	qubitgraphics,gategraphics,
-        	curCol,curSymb,curCtrls,curTargs,curInterval,curIsSpecialSwap,
-        	prevIntervals,prevIsSpecialSwap,prevSpecialQubits},
-        	
-            (* outputs *)
-        	qubitgraphics = {};
-        	gategraphics = {};
-        	
-            (* status of whether a gate can fit in the previous column *)
-        	curCol = 0;
-        	prevIntervals = {};
-        	prevIsSpecialSwap = False;
-        	prevSpecialQubits = {};
+        (* subcircuit seperator and scheduling label graphics *)
+        drawSubcircSpacerLine[col_, numQubits_, style_] := 
+            If[style === None, Nothing, {
+                style,
+                Line[{{col,0},{col,numQubits}}]}]
             
-            (* for each gate... *)
-        	Table[
-        		(* extract data from gate *)
-        		{curSymb,curCtrls,curTargs} = getSymbCtrlsTargs[gate];
-        		curInterval = getQubitInterval[curCtrls,curTargs];
-        		curIsSpecialSwap = needsSpecialSwap[curSymb,curTargs];
-        		
-        		(* decide whether gate will fit in previous column *)
-        		If[Or[
-        			And[curIsSpecialSwap, Not[prevIsSpecialSwap]],
-        			AnyTrue[prevIntervals, (IntervalIntersection[curInterval,#] =!= Interval[]&)]],
-        			(* will not fit: *)
-        			(
-        				(* draw qubit lines for the previous column *)
-        				AppendTo[qubitgraphics, 
-        					drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]];
-        				
-        				(* then make a new column *)
-        				curCol = curCol + If[prevIsSpecialSwap,2,1]; 
-        				prevIntervals = {curInterval};
-        				prevIsSpecialSwap = curIsSpecialSwap;
-        				prevSpecialQubits = {};
-        			),
-        			(* will fit *)
-        			AppendTo[prevIntervals, curInterval]
-        		];
-        		
-        		(* record whether this gate requires special swaps *)
-        		If[curIsSpecialSwap, 
-        			With[{qbs=getFixedThenBotTopSwappedQubits[curTargs]},
-        				AppendTo[prevSpecialQubits, qbs[[2]]];
-        				AppendTo[prevSpecialQubits, qbs[[3]]]]];
-        	
-        		(* draw gate *)
-        		AppendTo[gategraphics,
-        			drawGate[
-        				curSymb,curCtrls,curTargs,
-        				curCol + If[prevIsSpecialSwap ~And~ Not[curIsSpecialSwap], .5, 0]]];,
-        		{gate,gates}
-        	];
-        	
-        	(* perform the final round of qubit drawing *)
-        	AppendTo[qubitgraphics, 
-        		drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]];
-        	
-            (* return *)
-        	{curCol, qubitgraphics, gategraphics}
+        (* labels below seperator *)
+        defaultSubcircLabelDrawer[label_, col_] :=
+            Rotate[Text[label, {col,-.5}], -15 Degree]
+        defaultTimeLabelDrawer[time_, col_] := 
+            defaultSubcircLabelDrawer[DisplayForm @ RowBox[{"t=",time}], col]
+                
+        (* optionally compactifies a circuit via GetColumnCircuits[] *)
+        compactCirc[flag_][circ_] :=
+            If[flag, Flatten @ GetCircuitColumns[circ], circ]
+            
+        (* creates a graphics description of the given list of subcircuits *)
+        generateCircuitGraphics[subcircs_List, numQubits_Integer, opts___] := With[{
+            
+            (* unpack optional arguments *)
+            subSpacing=OptionValue[{opts,Options[DrawCircuit]}, SubcircuitSpacing],
+            dividerStyle=OptionValue[{opts,Options[DrawCircuit]}, DividerStyle],
+            labelDrawFunc=OptionValue[{opts,Options[DrawCircuit]}, LabelDrawer],
+            labels=OptionValue[{opts, Options[DrawCircuit]}, SubcircuitLabels],
+            compactFlag=OptionValue[{opts,Options[DrawCircuit]}, Compactify]
+            },
+            
+            (* prepare local variables *)
+            Module[{
+            	qubitgraphics,gategraphics,
+            	curCol,curSymb,curCtrls,curTargs,curInterval,curIsSpecialSwap,
+            	prevIntervals,prevIsSpecialSwap,prevSpecialQubits,
+                isFirstGate,subcircInd=0,subcircIndMax=Length[subcircs],
+                gates},
+
+                (* outputs *)
+            	qubitgraphics = {};
+            	gategraphics = {};
+            	
+                (* status of whether a gate can fit in the previous column *)
+            	curCol = 0;
+            	prevIntervals = {};
+            	prevIsSpecialSwap = False;
+            	prevSpecialQubits = {};
+                
+                (* draw divider left-of-circuit for the first label (else don't draw it) *)
+                If[And[labelDrawFunc =!= None, labels =!= {}, First[labels] =!= None], 
+                    AppendTo[gategraphics, drawSubcircSpacerLine[subSpacing/2, numQubits, dividerStyle]];
+                    AppendTo[gategraphics, labelDrawFunc[First @ labels, subSpacing/2]];
+                    AppendTo[qubitgraphics, drawQubitColumn[False, {} , numQubits, curCol + subSpacing/2, subSpacing/2]];
+                    curCol = subSpacing;
+                ];
+                
+                (* for each subcircuit... *)
+                Table[
+                    gates = compactCirc[compactFlag][subcirc /. G[_] -> Nothing];
+                    subcircInd++;
+                    isFirstGate = True;
+                
+                    (* for each gate... *)
+                	Table[
+                    
+                		(* extract data from gate *)
+                		{curSymb,curCtrls,curTargs} = getSymbCtrlsTargs[gate];
+                		curInterval = getQubitInterval[curCtrls,curTargs];
+                		curIsSpecialSwap = needsSpecialSwap[curSymb,curTargs];
+                		
+                		(* decide whether gate will fit in previous column *)
+                		If[Or[
+                			And[curIsSpecialSwap, Not[prevIsSpecialSwap]],
+                			AnyTrue[prevIntervals, (IntervalIntersection[curInterval,#] =!= Interval[]&)]],
+                			(* will not fit: *)
+                			(
+
+                				(* draw qubit lines for the previous column (if it exists) *)
+                                If[Not[isFirstGate],
+                                    AppendTo[qubitgraphics,
+                                        drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]]];
+                				
+                				(* then make a new column *)
+                				curCol = curCol + If[isFirstGate, 0, If[prevIsSpecialSwap,2,1]]; 
+                				prevIntervals = {curInterval};
+                				prevIsSpecialSwap = curIsSpecialSwap;
+                				prevSpecialQubits = {};
+                                    
+                			),
+                			(* will fit *)
+                			AppendTo[prevIntervals, curInterval]
+                		];
+                        
+                        (* record that this is no longer the first gate in the subcircuit *)
+                        isFirstGate = False;
+                		
+                		(* record whether this gate requires special swaps *)
+                		If[curIsSpecialSwap, 
+                			With[{qbs=getFixedThenBotTopSwappedQubits[curTargs]},
+                				AppendTo[prevSpecialQubits, qbs[[2]]];
+                				AppendTo[prevSpecialQubits, qbs[[3]]]]];
+                	
+                		(* draw gate *)
+                		AppendTo[gategraphics,
+                			drawGate[
+                				curSymb,curCtrls,curTargs,
+                				curCol + If[prevIsSpecialSwap ~And~ Not[curIsSpecialSwap], .5, 0]]];        
+                        ,
+                		{gate,gates}
+                	];
+            	
+                	(* perform the final round of qubit line drawing (for previous column) *)
+                	AppendTo[qubitgraphics, 
+                		drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]];
+                        
+                    (* make a new column (just accounting for previous subcircuit) *)
+                    curCol = curCol + If[prevIsSpecialSwap,2,1]; 
+                    prevIntervals = {};
+                    prevIsSpecialSwap = False;
+                    prevSpecialQubits = {};
+                        
+                    (* if this was not the final subcircuit... *)
+                    If[subcircInd < subcircIndMax, 
+                    
+                        (* add subcircit seperator line  *)
+                        AppendTo[gategraphics, 
+                            drawSubcircSpacerLine[curCol + subSpacing/2, numQubits, dividerStyle]];
+                                
+                        (* add label below seperator line (unless None) *)
+                        If[And[labelDrawFunc =!= None, subcircInd+1 <= Length[labels], labels[[subcircInd+1]] =!= None],
+                            AppendTo[gategraphics, 
+                                labelDrawFunc[labels[[subcircInd+1]], curCol + subSpacing/2]]];
+                    
+                        (* add offset for subcircuit spacing (avoid 0 length for visual artefact) *)
+                        If[subSpacing > 0,
+                            AppendTo[qubitgraphics, 
+                                drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol, subSpacing]];
+                            curCol = curCol + subSpacing];
+                    ]
+                    ,
+                    {subcirc, subcircs}
+                ];
+                
+                (* if there's a remaining label, draw it and a final (otherwise superfluous) divider *)
+                If[And[labelDrawFunc =!= None, subcircInd+1 <= Length[labels], labels[[subcircInd+1]] =!= None],
+                    AppendTo[gategraphics, 
+                        labelDrawFunc[labels[[subcircInd+1]], curCol + subSpacing/2]];
+                    AppendTo[gategraphics, 
+                        drawSubcircSpacerLine[curCol + subSpacing/2, numQubits, dividerStyle]];
+                    AppendTo[qubitgraphics,
+                        drawQubitColumn[False, {} , numQubits, curCol, subSpacing/2]];
+                ];
+            	
+                (* return *)
+            	{curCol, qubitgraphics, gategraphics}
+            ]    
         ]
         
-        (* public function to fully render a circuit *)
-        DrawCircuit[circ_List, numQubits_Integer, opts:OptionsPattern[]] :=
-        Module[{numCols,qubitgraphics,gategraphics},
-        	{numCols,qubitgraphics,gategraphics} = generateCircuitGraphics[DeleteCases[circ,G[_]], numQubits];
-        	Graphics[{
-                FaceForm[White], EdgeForm[Black],
-                qubitgraphics, gategraphics},
-                opts,
-        		ImageSize -> 30 (numCols+1),
-                Method -> {"ShrinkWrap" -> True}
-        	]
-        ]
-        DrawCircuit[circ_List, opts:OptionsPattern[]] :=
-            DrawCircuit[circ, getNumQubitsInCircuit[circ], opts]
+        (* renders a circuit graphics description *)
+        displayCircuitGraphics[{numCols_, qubitgraphics_, gategraphics_}, opts___] :=
+            Graphics[
+                {
+                    FaceForm[White], EdgeForm[Black],
+                    qubitgraphics, gategraphics
+                },
+                FilterRules[{opts}, Options[Graphics]],
+                ImageSize -> 30 (numCols+1),
+                PlotRangePadding -> None
+                (* , Method -> {"ShrinkWrap" -> True} *)
+            ]
+        
+        (* declaring optional args to DrawCircuit *)
+        Options[DrawCircuit] = {
+            Compactify -> True,
+            DividerStyle -> Directive[Dashed, Gray], (* None for no dividers *)
+            SubcircuitSpacing -> .25,
+            SubcircuitLabels -> {},
+            LabelDrawer -> defaultSubcircLabelDrawer
+        };
+        
+        (* public functions to fully render a circuit *)
+        DrawCircuit[noisySched:{{_, _List, _List}..}, Repeated[numQubits_, {0,1}], opts:OptionsPattern[{DrawCircuit,Graphics}]] :=
+            (* compactify each subcirc but not their union *)
+            DrawCircuit[{First[#], Join @@ compactCirc[OptionValue[Compactify]] /@ Rest[#]}& /@ noisySched, numQubits, Compactify -> False, opts]
+        DrawCircuit[schedule:{{_, _List}..}, numQubits_Integer, opts:OptionsPattern[]] :=
+            displayCircuitGraphics[
+                generateCircuitGraphics[schedule[[All,2]], numQubits, opts, SubcircuitLabels -> schedule[[All,1]], LabelDrawer -> defaultTimeLabelDrawer], opts]
+        DrawCircuit[schedule:{{_, _List}..}, opts:OptionsPattern[]] :=
+            DrawCircuit[schedule, getNumQubitsInCircuit[Flatten @ schedule[[All,2]]], opts]
+        DrawCircuit[cols:{{___}..}, numQubits_Integer, opts:OptionsPattern[]] := 
+            displayCircuitGraphics[
+                generateCircuitGraphics[cols, numQubits, {}, opts], opts]
+        DrawCircuit[cols:{{___}..}, opts:OptionsPattern[]] :=
+            DrawCircuit[cols, getNumQubitsInCircuit[Flatten @ cols], opts]
+        DrawCircuit[circ_List, args___] :=
+            DrawCircuit[{circ}, args]
         DrawCircuit[___] := invalidArgError[DrawCircuit]
         
+        
+        
+        (*
+         * Below is only front-end code for drawing topology diagrams of circuits
+         *)
+         
+        (* every gate is distinguished in 'Parameters' mode, even if differing only by parameter *)
+        getTopolGateLabel["Parameters"][g_] := g
+        
+        (* in 'Qubits' mode, parameters are removed/ignored *)
+        getTopolGateLabel["Qubits"][Subscript[C, q__][s_]] := Subscript[C, q][ getTopolGateLabel["Qubits"][s] ]
+        getTopolGateLabel["Qubits"][R[_, p_]] := R[p]
+        getTopolGateLabel["Qubits"][Subscript[s_, q__][__]] := Subscript[s, q]
+        getTopolGateLabel["Qubits"][s_] := s
+        
+        (* in 'NumQubits' mode, specific qubit indices are ignored, replaced by a-z *)
+        getLetterSeq[len_Integer, start_] := Sequence @@ Table[ FromLetterNumber[t], {t,start,start+len-1} ]
+        getLetterSeq[list_List, start_] := getLetterSeq[Length[list], start]
+        alphabetisizeGate[Subscript[C, {q__}|q__][s_]] := Subscript[C, getLetterSeq[{q},1]][ alphabetisizeGate[s, 1+Length@{q}]]
+        alphabetisizeGate[Subscript[s_, {q__}|q__], i_:1] := Subscript[s, getLetterSeq[{q},i]]
+        alphabetisizeGate[Subscript[s_, {q__}|q__][_], i_:1] := Subscript[s, getLetterSeq[{q},i]]
+        alphabetisizeGate[R[_, p_Times], i_:1] := R[Times @@ Subscript @@@ Transpose[{(List @@ p)[[All,1]], List @ getLetterSeq[Length[p],i]}]]
+        alphabetisizeGate[R[_, Subscript[p_, q_]], i_:1] := R[Subscript[p, getLetterSeq[1,i]]]
+        getTopolGateLabel["NumberOfQubits"][g_] := alphabetisizeGate[g]
+        
+        (* in 'Gates' mode, all qubits are ignored and removed *)
+        getTopolGateLabel["Gates"][Subscript[C, q__][s_]] := C[ getTopolGateLabel["Gates"][s] ]
+        getTopolGateLabel["Gates"][R[_, p_Times]] := R[Row @ (List @@ p)[[All,1]]]
+        getTopolGateLabel["Gates"][R[_, Subscript[p_, q_]]] := R[p]
+        getTopolGateLabel["Gates"][Subscript[s_, __]|Subscript[s_, __][__]] := s
+        
+        (* in 'None' mode, all gate properties are discarded *)
+        getTopolGateLabel["None"][s_] := None
+        
+        (* 'Connectivity' mode is handled entirely in DrawCircuitTopology[] *)
+        
+        getCircTopolGraphData[circ_, showReps_, showLocal_, groupMode_] := Module[
+            {edges = {}, edgeLabels = <||>},
+            
+            (* for every gate ... *)
+            Table[ With[
+                (* extract targeted qubits, choose group/label *)
+                {qubits = getSymbCtrlsTargs[gate][[{2,3}]] // Flatten},
+                {label = If[groupMode === "Connectivity", 
+                    Row[Sort[qubits],Spacer[.1]], 
+                    getTopolGateLabel[groupMode][gate]]},
+                    
+                (* optionally admit single-qubit gates *)
+                {vertices = If[showLocal && Length[qubits] === 1, 
+                    Join[qubits, qubits],
+                    qubits]},
+                
+                (* for every pair of targeted qubits... *)
+                Table[ With[ {key = UndirectedEdge @@ Sort[pair] },
+                    If[ KeyExistsQ[edgeLabels, key],
+                    
+                        (* if the edge exists, but the label is new (or we allow repetition), record it (else do nothing) *)
+                        If[ showReps || Not @ MemberQ[edgeLabels[key], label],
+                            AppendTo[edges, key];
+                            AppendTo[edgeLabels[key], label]],
+                            
+                        (* else if the edge is new, record it unconditionally *)
+                        AppendTo[edges, key];
+                        edgeLabels[key] = {label}
+                    ]],
+                    {pair, Subsets[vertices, {2}]}
+                ]],
+                {gate, circ}];
+                
+            (* return *)
+            {edges, edgeLabels}]
+        
+        Options[DrawCircuitTopology] = {
+            ShowRepetitions -> False,
+            ShowLocalGates -> True,
+            DistinguishBy -> "Gates",
+            DistinguishedStyles -> Automatic
+        };
+        
+        DrawCircuitTopology[circ_List, opts:OptionsPattern[{DrawCircuitTopology, Graph, Show, LineLegend}]] := Module[
+            {edges, edgeLabels, edgeIndices, graph},
+            
+            (* validate opt args *)
+            
+            (* extract topology data from circuit *)
+            {edges, edgeLabels} = getCircTopolGraphData[circ, 
+                OptionValue[{opts,Options[DrawCircuitTopology]}, ShowRepetitions], 
+                OptionValue[{opts,Options[DrawCircuitTopology]}, ShowLocalGates], 
+                OptionValue[{opts,Options[DrawCircuitTopology]}, DistinguishBy]];
+            
+            (* maintain indices for the list of labels recorded for each edge (init to 1) *)
+            edgeIndices = <| Rule @@@ Transpose[{Keys[edgeLabels], ConstantArray[1, Length[edgeLabels]]}] |>;
+        
+            (* prepare an undirected graph (graphical form) with place-holder styles *)
+            graph = Show[ 
+                Graph[
+                    Table[Style[edge, STYLES[edge]], {edge,edges}],
+                    (* user-overridable default Graph properties *)
+                    Sequence @@ FilterRules[{opts}, Options[Graph]],     (* Sequence[] shouldn't be necessary; another MMA Graph bug, sigh! *)
+                    VertexStyle -> White,
+                    VertexSize -> .1,
+                    VertexLabels -> Automatic],
+                (* user-overridable Show options *)
+                FilterRules[{opts}, Options[Show]]];
+                
+            (* if there are no distinguishing gate groups, remove place-holder styles and return graph *)
+            If[OptionValue[DistinguishBy] === "None",
+                Return[ graph /. STYLES[_] -> Automatic ]];
+                
+            (* otherwise...  *)
+            With[
+                (* prepare legend with unique labels *)
+                {legLabels = DeleteDuplicates @ Flatten @ Values @ edgeLabels},
+                {legStyles = If[
+                        OptionValue[DistinguishedStyles] === Automatic,
+                        ColorData["Rainbow"] /@ Range[0,1,1/(Length[legLabels]-1)],
+                        PadRight[OptionValue[DistinguishedStyles], Length[legLabels], OptionValue[DistinguishedStyles]]
+                ]},
+                {edgeStyles = Rule @@@ Transpose[{legLabels, legStyles}]},
+                
+                (* style each graph edge one by one *)
+                {graphic = graph /. STYLES[edge_] :> (edgeLabels[edge][[ edgeIndices[edge]++ ]] /. edgeStyles)},
+                
+                (* return the styled graph with a line legend *)
+                Legended[graphic,
+                    LineLegend[legStyles, StandardForm /@ legLabels, 
+                        Sequence @@ FilterRules[{opts}, Options[LineLegend]]]]
+            ]
+        ]
+                
         
         
         (*
@@ -991,9 +1452,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getAnalGateMatrix[Subscript[Y, _]] = PauliMatrix[2];
         getAnalGateMatrix[Subscript[Z, _]] = PauliMatrix[3];
         getAnalGateMatrix[Subscript[S, _]] = {{1,0},{0,I}};
-        getAnalGateMatrix[Subscript[T, _]] = {{1,0},{0,Exp[I \[Pi]/4]}};
+        getAnalGateMatrix[Subscript[T, _]] = {{1,0},{0,Exp[I Pi/4]}};
         getAnalGateMatrix[Subscript[SWAP, _,_]] = {{1,0,0,0},{0,0,1,0},{0,1,0,0},{0,0,0,1}};
         getAnalGateMatrix[Subscript[U, __][m_]] = m;
+        getAnalGateMatrix[Subscript[Ph, t__][a_]] = DiagonalMatrix[ Append[ConstantArray[1, 2^Length[{t}] - 1], Exp[I a]] ];
         getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
         getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]];
         getAnalGateMatrix[Subscript[Ry, _][a_]] = MatrixExp[-I a/2 PauliMatrix[2]];
@@ -1028,7 +1490,680 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         CalcCircuitMatrix[gates_List] :=
         	CalcCircuitMatrix[gates, 1 + Max @ Cases[gates, (Subscript[_, q__]|Subscript[_, q__][__]):> Max @ q, \[Infinity]]]
         CalcCircuitMatrix[___] := invalidArgError[CalcCircuitMatrix]
+        
+        
+        
+        (*
+         * Below are front-end functions for 
+         * modifying circuits to capture device
+         * constraints and noise
+         *)
+         
+        (* divide circ into columns, filling the left-most first *)
+        GetCircuitColumns[{}] := {}
+        GetCircuitColumns[circ_List] := With[{
+            numQb=getNumQubitsInCircuit[circ],
+            numGates=Length[circ]},
+            Module[{
+                gates=circ, column={}, index=1, nextIndex=Null,
+                available=ConstantArray[True,numQb], compactified={}, 
+                qb, i},
+                
+                (* continue until all gates have been grouped into a column *)
+                While[index <= numGates,
+                    
+                    (* visit each gate from start index or until column is full (no qubits available) *)
+                    For[i=index, (And[i <= numGates, Not[And @@ Not /@ available]]), i++,
+                    
+                        (* skip Null-marked gates (present in a previous column) *)
+                        If[gates[[i]] === Null, Continue[]];
+                        
+                        (* extract all target and control qubits of gate (indexed from 1) *)
+                        qb = 1 + Flatten @ getSymbCtrlsTargs[gates[[i]]][[{2,3}]];
+                        
+                        If[
+                            (* if all of the gate's qubits are so far untouched in this column... *)
+                            And @@ available[[qb]],
+                            
+                            ( (* then add the gate to the column *)
+                            available[[qb]] = False;
+                            AppendTo[column, gates[[i]]];
+                            gates[[i]] = Null;
+                            ),
+                            
+                            ( (* otherwise mark all the gate's qubits as unavailable (since they're blocked by this gate) *)
+                            available[[qb]] = False;
+                            (* and if this was the first not-in-column gate, mark for next start index *)
+                            If[nextIndex === Null, nextIndex=i];
+                            )
+                        ]
+                    ];
+                    
+                    (* nextIndex is unchanged if a gate occupies all qubits *)
+                    If[nextIndex === Null, nextIndex=index+1];
+                    
+                    (* finalize the new column; empty column can arise from a trailing iteration by above edge-case *)
+                    AppendTo[compactified, If[column =!= {}, column, Nothing]];
+                    column = {};
+                    available = ConstantArray[True,numQb];
+                    index = nextIndex;
+                    nextIndex = Null;
+                ];
+                
+                (* return new gate ordering, grouped into column sub-lists *)
+                compactified
+            ]
+        ]
+        
+        (* returns whether the circuit is supported by the device spec
+           (assumes that scheduled time does not influence gate validity) *)
+        isCompatibleGate[spec_][gate_] := With[
+            {qubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
+            And[
+                (* all gate's qubit indices are valid *)
+                AllTrue[qubits, LessThan[spec[NumAccessibleQubits]]],
+                (* the gate satisfies a gate pattern *)
+                MatchQ[gate, Alternatives @@ Keys @ spec[Gates]]]]
+        isCompatibleCirc[circOrCols_List, spec_] := 
+            AllTrue[ Flatten[circOrCols], isCompatibleGate[spec]]
+        isCompatibleCirc[_, spec_] :=
+            False
             
+        (* the symbolic conditions (list) under which times is monotonically increasing (and real, >0) *)
+        getMotonicTimesConditions[times_List] :=
+            Join[
+                MapThread[Less, {Most @ times, Rest @ times} ],
+                GreaterEqualThan[0] /@ times,
+                (Element[#,Reals]&) /@ times]
+            
+        areMonotonicTimes[times_List] := 
+            If[(* times must be real (else symbolic) to continue *)
+                AnyTrue[(Element[#, Reals]&) /@ times, (# === False &)],
+                False,
+                With[{conds = getMotonicTimesConditions[times]},
+                    And[
+                        (* adjacent numbers increase *)
+                        Not @ MemberQ[conds, False], 
+                        (* symbolic numbers MAY increase (it's not impossible for them to be monotonic) *)
+                        Not[False === Simplify[And @@ conds]]]]]
+                        
+        replaceTimeDurSymbols[expr_, spec_, timeVal_, durVal_:None] := (
+            expr /. If[
+                (* substitute dur value first, since it may become time dependent *)
+                KeyExistsQ[spec, DurationSymbol] && durVal =!= None,
+                spec[DurationSymbol] -> durVal, {}
+            ] /. If[
+                KeyExistsQ[spec, TimeSymbol],
+                spec[TimeSymbol] -> timeVal, {}]
+        )
+            
+        (* determines subcircuit duration, active noise and passive noise of 
+         * a sub-circuit, considering the circuit variables and updating them *)
+        getDurAndNoiseFromSubcirc[subcirc_, subcircTime_, spec_, forcedSubcircDur_:None] := Module[
+            {activeNoises={}, passiveNoises={}, gateDurs={}, subcircDur,
+             qubitActiveDurs = ConstantArray[0, spec[NumTotalQubits]], slowestGateDur},
+             (* note that the final #hidden qubits of qubitActiveDurs is never non-zero *)
+            
+            (* iterating gates in order of appearence in subcircuit... *)
+            Do[ 
+                With[
+                    {gateProps = Replace[gate, spec[Gates]]},
+                    (* work out gate duration (time and var dependent) *)
+                    {gateDur = replaceTimeDurSymbols[gateProps[GateDuration], spec, subcircTime]},    
+                    (* work out active noise (time, dur and var dependent) *)
+                    {gateActive = replaceTimeDurSymbols[gateProps[NoisyForm], spec, subcircTime, gateDur]},
+                    (* work out var-update function (time and dur dependent) *)
+                    {gateVarFunc = If[KeyExistsQ[gateProps, UpdateVariables],
+                        replaceTimeDurSymbols[gateProps[UpdateVariables], spec, subcircTime, gateDur],
+                        Function[None]]},
+                    
+                    (* collect gate info *) 
+                    AppendTo[activeNoises, gateActive];
+                    AppendTo[gateDurs, gateDur];
+                    
+                    (* update circuit variables (time, dur, var dependent, but not fixedSubcircDur dependent) *)
+                    gateVarFunc[];
+                    
+                    (* record how long the involved qubits were activated (to later infer passive dur) *)
+                    qubitActiveDurs[[ 1 + Flatten @ getSymbCtrlsTargs[gate][[{2,3}]] ]] = gateDur;
+                ],
+                {gate,subcirc}];
+                
+            (* infer the whole subcircuit duration (unless forced) *)
+            slowestGateDur = Max[gateDurs];
+            subcircDur = If[
+                forcedSubcircDur === None,
+                slowestGateDur,
+                forcedSubcircDur];
+            (* note slowestGateDur is returned even if overriden here, for schedule-checking functions *)
+                
+            (* iterate all qubits (including hidden) from index 0, upward *)
+            Do[
+                With[
+                    {qubitProps = Replace[qubit, spec[Qubits]]},
+                    (* continue only if qubit matches a rule in spec[Qubits] (don't noise unspecified qubits) *)
+                    If[
+                        qubitProps =!= qubit,
+                        With[
+                            (* work out start-time and duration of qubit's passive noise (pre-determined) *)
+                            {passiveTime = subcircTime + qubitActiveDurs[[ 1 + qubit ]]},
+                            {passiveDur = subcircDur - qubitActiveDurs[[ 1 + qubit ]]},
+                            (* work out passive noise (time, dur and var dependent *)
+                            {qubitPassive = replaceTimeDurSymbols[qubitProps[PassiveNoise], spec, passiveTime, passiveDur]},
+                            (* work out var-update function (time and dur dependent *)
+                            {qubitVarFunc = If[KeyExistsQ[qubitProps, UpdateVariables],
+                                replaceTimeDurSymbols[qubitProps[UpdateVariables], spec, passiveTime, passiveDur],
+                                Function[None]]},
+                                
+                            (* collect qubit info *) 
+                            AppendTo[passiveNoises, qubitPassive];
+                            
+                            (* update circuit variables (can be time, var, dur, and fixedSubcircDur dependent) *)
+                            qubitVarFunc[]]]
+                ],    
+                {qubit, 0, spec[NumTotalQubits]-1}];
+        
+            (* return. Note slowestGateDur is returned even when subcircDur overrides, 
+             * since that info is useful to schedule-check utilities *)
+            {slowestGateDur (* subcircDur *), activeNoises, passiveNoises}
+        ]
+        
+        getSchedAndNoiseFromSubcircs[subcircs_, spec_] := Module[
+            {subcircTimes={}, subcircActives={}, subcircPassives={},
+             curTime, curDur, curActive, curPassive},
+                
+            (* initialise circuit variables *)
+            curTime = 0;
+            If[KeyExistsQ[spec, InitVariables],
+                spec[InitVariables][]];
+            
+            Do[
+                (* get each subcirc's noise (updates circuit variables) *)
+                {curDur, curActive, curPassive} = getDurAndNoiseFromSubcirc[sub, curTime, spec];
+                    
+                (* losing info here (mering separate gate infos into subcirc-wide) *)
+                AppendTo[subcircTimes, curTime];
+                AppendTo[subcircActives, Flatten[curActive]];
+                AppendTo[subcircPassives, Flatten[curPassive]];
+                
+                (* keep track of the inferred schedule time *)
+                curTime += curDur,
+                {sub, subcircs}
+            ];
+            
+            (* return *)    
+            {subcircTimes, subcircActives, subcircPassives}
+        ]
+        
+        getNoiseFromSched[subcircs_, subcircTimes_, spec_] := Module[
+            {subcircActives={}, subcircPassives={}, subcircDurs=Differences[subcircTimes],
+             dummyDur, curActive, curPassive},
+             
+            (* initialise circuit variables *)
+            If[KeyExistsQ[spec, InitVariables],
+                spec[InitVariables][]];
+            
+            (* if the first subcirc isn't scheduled at time=0, start with passive noise round.
+             * the caller must determine this occurred (since the returned arrays are now one-item longer) *) 
+            If[ First[subcircTimes] =!= 0, 
+                {dummyDur, curActive, curPassive} = getDurAndNoiseFromSubcirc[{}, 0, spec, First[subcircTimes]];
+                AppendTo[subcircActives, Flatten[curActive]];
+                AppendTo[subcircPassives, Flatten[curPassive]];
+            ];
+            
+            Do[
+                (* get each subcirc's noise (updates circuit variables) *)
+                {dummyDur, curActive, curPassive} = getDurAndNoiseFromSubcirc[subcircs[[i]], subcircTimes[[i]], spec,
+                    (* force subcirc durations based on schedule, except for the final unconstrained subcirc *)
+                    If[i > Length[subcircDurs], None, subcircDurs[[i]]]];
+                
+                AppendTo[subcircActives, Flatten[curActive]];
+                AppendTo[subcircPassives, Flatten[curPassive]]; ,
+                {i, Length[subcircTimes]}
+            ];
+            
+            (* return *)    
+            {subcircActives, subcircPassives}
+        ]
+        
+        getCondsForValidSchedDurs[spec_, subcircs_, subcircTimes_] := Module[
+            {forcedSubcircDurs = Differences[subcircTimes], minSubcircDur,
+             dummyActive, dummyPassive},
+            
+            (* initialise circuit variables *)
+            If[KeyExistsQ[spec, InitVariables],
+                spec[InitVariables][]];
+            
+            (* for all but the final (irrelevant) subcircuit... *)
+            Table[
+                (* find the slowest gate (duration possibly dependent on time, 
+                 * previous passive durations and vars (which are updated) *)
+                {minSubcircDur, dummyActive, dummyPassive} = getDurAndNoiseFromSubcirc[
+                    subcircs[[i]], subcircTimes[[i]], spec, forcedSubcircDurs[[i]]];
+                (* and condition that its faster than the forced subcircuit duration *)
+                Function[{small, big},
+                    (* if both values are numerical... *)
+                    If[ NumberQ[small] && NumberQ[big],
+                        (* then we need to add wiggle room for precision *)
+                        Or[small <= big, Abs @ N[big-small] < 100 $MachineEpsilon],
+                        (* otherwise we make a symbolic inequality *)
+                        small <= big]
+                ][minSubcircDur, forcedSubcircDurs[[i]]],
+                {i, Length[forcedSubcircDurs]}
+            ]
+        ]
+            
+        CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] /; Not[isCompatibleCirc[sched[[All,2]], spec]] := (
+            Message[CheckCircuitSchedule::error, "The given schedule contains gates incompatible with the device specification. See ?GetUnsupportedGates"];
+            $Failed)
+        CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] /; Not[areMonotonicTimes[sched[[All,1]]]] := (
+            Message[CheckCircuitSchedule::error, "The given schedule times are not motonically increasing, nor can be for any assignment of symbols, or they are not real and positive."];
+            $Failed) 
+        (* this is currently naive, and assumes each sub-circuit is valid (contains simultaneous gates), and 
+         * that overlapping sub-circuits is invalid. A smarter function would
+         * check sub-circuits contain gates on unique qubits, and check whether 
+         * overlapping sub-circuits act on uniqe qubits (which would be ok).
+         *)
+        CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] := With[
+            {times = sched[[All,1]], subcircs = sched[[All,2]]},
+            (* list of (possibly symbolic) conditions of sufficiently long subcircuit durations *)
+            {conds = getCondsForValidSchedDurs[spec, subcircs, times]},
+            (* list of (possibly symbolic) assumptions implied by monotonicity of given schedule *)
+            {mono = getMotonicTimesConditions[times]},
+            (* combine the conditions with the monotonicty constraint *)
+            With[{valid=Simplify[conds, Assumptions -> mono]},
+                Which[
+                    (* if any condition is broken regardless of symbols, schedule is invalid *)
+                    MemberQ[valid, False], 
+                        False,
+                    (* if all conditions are satisfied despite symbol assignments, the schedule is valid *)
+                    AllTrue[valid, TrueQ],
+                        True,
+                    (* otherwise return the symbolic conditions under which the schedule is valid *)
+                    True,
+                        DeleteCases[valid, True]
+                ]
+            ]]
+        CheckCircuitSchedule[___] := invalidArgError[CheckCircuitSchedule]
+            
+        isCompatibleSched[sched:{{_, _List}..}, spec_] := 
+            And[
+                (* schedule contains only valid gates *)
+                isCompatibleCirc[ sched[[All,2]], spec ],
+                (* and that the schedule times are valid (to avoid Check* errors below) *)
+                areMonotonicTimes @ sched[[All,1]],
+                (* AND there (may) exist a symbol assignment for which the circuit is valid *)
+                CheckCircuitSchedule[sched, spec] =!= False
+            ]
+        
+        GetUnsupportedGates[sched:{{_, _List}..}, spec_Association] :=
+            GetUnsupportedGates[ sched[[All, 2]], spec ]
+        GetUnsupportedGates[cols:{_List ..}, spec_Association] :=
+            GetUnsupportedGates[#, spec]& /@ cols
+        GetUnsupportedGates[circ_List, spec_Association] :=
+    	   Select[circ, (Not[isCompatibleGate[spec][#]]&) ]
+        GetUnsupportedGates[___] := invalidArgError[GetUnsupportedGates]
+            
+        (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
+        (* note this is overriding alias rule -> with :> which should be fine *)
+        optionalReplaceAliases[False, spec_Association][in_] := in 
+        optionalReplaceAliases[True, spec_Association][in_] := in //. If[
+            KeyExistsQ[spec, Aliases], (#1 :> Sequence @@ #2 &) @@@ spec[Aliases], {}]
+        
+        (* declaring optional args to GetCircuitSchedule *)
+        Options[GetCircuitSchedule] = {
+            ReplaceAliases -> False
+        };
+            
+        (* assigns each of the given columns (unique-qubit subcircuits) a start-time *)
+        GetCircuitSchedule[cols:{{__}..}, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[cols,spec] := With[
+            {times = First @ getSchedAndNoiseFromSubcircs[cols,spec]},
+            Transpose[{times, cols}] // optionalReplaceAliases[OptionValue[ReplaceAliases], spec]
+        ]
+        GetCircuitSchedule[circ_List, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[circ,spec] :=
+            GetCircuitSchedule[GetCircuitColumns[circ], spec, opts]
+        GetCircuitSchedule[a_, spec_Association, opts:OptionsPattern[]] /; Not[isCompatibleCirc[a,spec]] := (
+            Message[GetCircuitSchedule::error, "The circuit(s) contains gates unsupported by the given device specification. See ?GetUnsupportedGates."];
+            $Failed)
+        GetCircuitSchedule[___] := invalidArgError[GetCircuitSchedule]
+        
+        (* declaring optional args to InsertCircuitNoise *)
+        Options[InsertCircuitNoise] = {
+            ReplaceAliases -> False
+        };
+
+        InsertCircuitNoise[schedule:{{_, _List}..}, spec_Association, opts:OptionsPattern[]] :=
+            If[isCompatibleSched[schedule, spec], 
+                (* if schedule is compatible *)
+                Module[
+                    {times, subcircs, actives, passives},
+                    {times, subcircs} = Transpose[schedule];
+                    {actives, passives} = getNoiseFromSched[subcircs, times, spec];
+                    
+                    (* pad times with initial passive noise *)
+                    If[ First[times] =!= 0, PrependTo[times, 0] ];
+                    (* return { {t1,subcirc1,active1,passive1}, ...} *)
+                    Transpose[{times, actives, passives}] // 
+                        optionalReplaceAliases[OptionValue[ReplaceAliases], spec]
+                ],
+                (* if schedule is incompatible, give error *)
+                (Message[InsertCircuitNoise::error, "The given schedule is either invalid, or incompatible with the device specification, either through unsupported gates, or by prescribing overlapping (in time) sub-circuits."];
+                $Failed)]
+        InsertCircuitNoise[subcircs:{{__}..}, spec_Association, opts:OptionsPattern[]] := 
+            If[isCompatibleCirc[subcircs, spec],
+                Transpose[getSchedAndNoiseFromSubcircs[subcircs,spec]] // 
+                    optionalReplaceAliases[OptionValue[ReplaceAliases], spec],
+                (Message[InsertCircuitNoise::error, "The given subcircuits contain gates not supported by the given device specification. See ?GetUnsupportedGates."];
+                $Failed)]    
+        InsertCircuitNoise[circ_List, spec_Association, opts:OptionsPattern[]] := 
+            If[isCompatibleCirc[circ, spec],
+                Transpose[getSchedAndNoiseFromSubcircs[GetCircuitColumns[circ],spec]] // 
+                    optionalReplaceAliases[OptionValue[ReplaceAliases], spec],
+                (Message[InsertCircuitNoise::error, "The given subcircuits contain gates not supported by the given device specification. See ?GetUnsupportedGates."];
+                $Failed)]    
+        InsertCircuitNoise[___] := invalidArgError[InsertCircuitNoise]
+            
+        ExtractCircuit[schedule:{{_, (_List ..)}..}] :=
+            Flatten @ schedule[[All,2;;]]
+        ExtractCircuit[subcircs:{_List..}] :=
+            Flatten @ subcircs
+        ExtractCircuit[circuit_List] :=
+            circuit
+        ExtractCircuit[___] := invalidArgError[ExtractCircuit]
+        
+        formatGateParamMatrices[circ_List] :=
+            circ /. m_?MatrixQ :> MatrixForm[m]
+            
+        ViewCircuitSchedule[sched:{{_, Repeated[_List,{1,2}]}..}, opts:OptionsPattern[]] := With[
+            {isPureCirc = Length @ First @ sched == 2},
+            {isActiveOnly = And[Not[isPureCirc], Flatten[ Transpose[sched][[3]] ] == {}],
+             isPassiveOnly = And[Not[isPureCirc], Flatten[ Transpose[sched][[2]] ] == {}]},
+            Grid[
+                Which[
+                    isPureCirc,
+                    Join[
+                        {{"time", "gates"}},
+                        Function[{t,g}, {t, Row[formatGateParamMatrices[g], Spacer[0]] }] @@@ sched],
+                    isActiveOnly,
+                    Join[
+                        {{"time", "active noise"}},
+                        Function[{t,a,p}, {t, Row[formatGateParamMatrices[a], Spacer[0]] }] @@@ sched],
+                    isPassiveOnly,
+                    Join[
+                        {{"time", "passive noise"}},
+                        Function[{t,a,p}, {t, Row[formatGateParamMatrices[p], Spacer[0]] }] @@@ sched],
+                    True,
+                    Join[
+                        {{"time", "active noise", "passive noise"}},
+                        Function[{t,a,p}, {t, 
+                            Row[formatGateParamMatrices[a], Spacer[0]], 
+                            Row[formatGateParamMatrices[p], Spacer[0]] }] @@@ sched]
+                ],    
+                opts,
+                Dividers -> All,
+                FrameStyle -> LightGray]]
+        ViewCircuitSchedule[___] := invalidArgError[ViewCircuitSchedule]
+                
+        (* removes suffixes $ or $123... (etc) from all symbols in expression.
+           these suffixes are expected to have appeared by Mathematica's automatic 
+           variable renaming in nested scoping structs (Module[ Function[]]) *)
+        tidySymbolNames[exp_] :=
+            exp /. s_Symbol :> RuleCondition @ Symbol @
+                StringReplace[ToString[HoldForm[s]], "$"~~Repeated[NumberString,{0,1}] -> ""]
+                
+        (* the gates in active noise can contain symbolic qubits that won't trigger 
+         * Circuit[] evaluation. This function forces Circuit[] to a list *)
+        frozenCircToList[Circuit[gs_Times]] := ReleaseHold[List @@@ Hold[gs]]
+        frozenCircToList[Circuit[g_]] := {g}
+        frozenCircToList[gs_List] := gs
+        frozenCircToList[else_] := else
+        
+        viewOperatorSeq[circ_] :=
+            Column[frozenCircToList[circ]]
+        
+        viewDevSpecFields[spec_, opts___] :=
+            Grid[{
+                {Style["Fields",Bold], SpanFromLeft},
+                {"Number of accessible qubits", spec[NumAccessibleQubits]},
+                {"Number of hidden qubits", spec[NumTotalQubits] - spec[NumAccessibleQubits]},
+                {"Number of qubits (total)", spec[NumTotalQubits]},
+                If[ KeyExistsQ[spec, TimeSymbol],
+                    {"Time symbol", spec[TimeSymbol]},
+                    Nothing],
+                If[ KeyExistsQ[spec, DurationSymbol],
+                    {"Duration symbol", spec[DurationSymbol]},
+                    Nothing],
+                If[KeyExistsQ[spec, InitVariables],
+                    {"Variable init", spec[InitVariables]},
+                    Nothing],
+                {"Description", spec[DeviceDescription]}
+                },
+                FilterRules[{opts}, Options[Grid]],
+                Dividers -> All,
+                FrameStyle -> LightGray
+            ] // tidySymbolNames
+            
+        viewDevSpecAliases[spec_, opts___] :=
+            Grid[{
+                {Style["Aliases",Bold], SpanFromLeft},
+                {"Operator", "Definition"}
+                } ~Join~ Table[
+                    {
+                        First[row], 
+                        (* attempt to render element as spaced list *)
+                        With[
+                            {attemptedList = frozenCircToList[Last[row]]},
+                            If[ Head[attemptedList] === List,
+                                Row[attemptedList /. m_?MatrixQ :> MatrixForm[m], Spacer[0]],
+                                HoldForm[attemptedList] /. m_?MatrixQ :> MatrixForm[m]
+                            ]
+                        ]
+                    },
+                    {row, List @@@ spec[Aliases]}],
+                FilterRules[{opts}, Options[Grid]],
+                Dividers -> All,
+                FrameStyle -> LightGray
+            ] // tidySymbolNames
+            
+        viewDevSpecActiveGates[spec_, opts___] := With[
+            {showConds = Not @ FreeQ[First /@ spec[Gates], _Condition]},
+            {showVars = Or @@ (KeyExistsQ[UpdateVariables] /@ Last /@ spec[Gates])},
+            Grid[{
+                {Style["Gates", Bold], SpanFromLeft},
+                {"Gate", If[showConds,"Conditions",Nothing], "Noisy form", 
+                    If[ KeyExistsQ[spec, DurationSymbol],
+                        "Duration (" <> ToString@tidySymbolNames@spec[DurationSymbol] <> ")",
+                        "Duration"],
+                    If[showVars, "Variable update", Nothing]
+                } 
+                } ~Join~ Table[
+                    With[
+                        {key=First[row], props=Last[row]},
+                        {gate=key //. c_Condition :> First[c]},
+                        {conds=Cases[key, Verbatim[Condition][_,con_] :> HoldForm[con], {0,Infinity}, Heads -> True]},
+                        {
+                            gate,
+                            If[showConds, Column@conds, Nothing], 
+                            viewOperatorSeq @ props[NoisyForm] /. m_?MatrixQ :> MatrixForm[m], 
+                            props[GateDuration], 
+                            If[showVars, If[KeyExistsQ[props,UpdateVariables],props[UpdateVariables],""], Nothing]
+                        }],
+                    {row, spec[Gates]}
+                ],
+                FilterRules[{opts}, Options[Grid]],
+                Dividers -> All,
+                FrameStyle -> LightGray    
+            ]  // tidySymbolNames
+        ]
+        
+        viewDevSpecPassiveQubits[spec_, opts___] := With[
+            {showVars = Or @@ (KeyExistsQ[UpdateVariables] /@ Last /@ spec[Qubits])},
+            Grid[{
+                {Style["Qubits", Bold], SpanFromLeft},
+                {"Qubit", "Passive noise", If[showVars, "Variable update", Nothing]}
+                } ~Join~ Table[
+                    With[
+                        {props = Replace[qubit, spec[Qubits]]},
+                        {row = If[props === qubit,
+                            (* show qubit with empty row for absent qubits *)
+                            {qubit, "", If[showVars, "", Nothing]},
+                            (* else, show its fields *)
+                            {qubit,
+                             viewOperatorSeq @ props[PassiveNoise] /. m_?MatrixQ :> MatrixForm[m], 
+                             If[showVars, If[KeyExistsQ[props,UpdateVariables],props[UpdateVariables],""], Nothing]}]},     
+                        (* insert labeled row at transition to hidden qubits *)
+                        ReleaseHold @ If[qubit === spec[NumAccessibleQubits],
+                            Hold[Sequence[{Style["Hidden qubits",Bold], SpanFromLeft}, row]],
+                            row
+                        ]
+                    ],
+                    {qubit, 0, spec[NumTotalQubits]-1}
+                ],
+                FilterRules[{opts}, Options[Grid]],
+                Dividers -> All,
+                FrameStyle -> LightGray 
+            ] // tidySymbolNames
+        ]
+            
+        ViewDeviceSpec[spec_Association, opts:OptionsPattern[{Grid,Column}]] :=
+            Column[{
+                viewDevSpecFields[spec, opts],
+                If[KeyExistsQ[spec, Aliases] && spec[Aliases] =!= {},
+                    viewDevSpecAliases[spec, opts], Nothing],
+                viewDevSpecActiveGates[spec, opts],
+                viewDevSpecPassiveQubits[spec, opts]
+                },
+                FilterRules[{opts}, Options[Column]],
+                Spacings -> {Automatic, 1}
+            ]
+        ViewDeviceSpec[___] := invalidArgError[ViewDeviceSpec]
+        
+        getDeviceSpecIssueString[spec_] := Catch[
+            
+            (* check top-level required keys *)
+            Do[
+                If[ Not @ KeyExistsQ[spec, key], 
+                    Throw["Specification is missing the required key: " <> SymbolName[key] <> "."]],
+                {key, {DeviceDescription, NumAccessibleQubits, NumTotalQubits, 
+                       Gates, Qubits}}];
+            
+            (* check number of qubits *)
+            Do[ 
+                If[ Not @ MatchQ[spec[key], n_Integer /; n > 0 ], 
+                    Throw["NumAccessibleQubits and NumTotalQubits must be positive integers."]],
+                {key, {NumAccessibleQubits, NumTotalQubits}}];
+
+            If[ spec[NumAccessibleQubits] > spec[NumTotalQubits],
+                Throw["NumAccessibleQubits cannot exceed NumTotalQubits."]];
+            
+            (* check symbols are indeed symbols *)
+            Do[
+                If[ KeyExistsQ[spec, key],
+                    If[ Not @ MatchQ[spec[key], _Symbol], 
+                        Throw["TimeSymbol and DurationSymbol must be symbols."] ]],
+                {key, {TimeSymbol, DurationSymbol}}];
+                
+            (* check  alias is a list of delayed rules to circuits *)
+            If[ KeyExistsQ[spec, Aliases], 
+                If[ Not @ MatchQ[ spec[Aliases], { (_ :>  (_Circuit | _List)) ... } ],
+                    Throw["Aliases must be a list of DelayedRule, each pointing to a Circuit (or a list of operators)."]]]
+                
+            (* check aliases do not contain symbols *)
+            If[ KeyExistsQ[spec, Aliases], 
+                Do[
+                    If[ KeyExistsQ[spec, key],
+                        If[ Not @ FreeQ[spec[Aliases], spec[key]], 
+                            Throw["Aliases (definitions or operators) must not feature TimeSymbol nor DurationSymbol; they can instead be passed as arguments to the alias operator."]]],
+                    {key, {TimeSymbol, DurationSymbol}}]];
+                    
+            (* check alias LHS don't include conditions *)
+            If[ KeyExistsQ[spec, Aliases], 
+                If[ Not @ FreeQ[First /@ spec[Aliases], Condition],
+                    Throw["Aliases must not include Condition in their operators (the left-hand side of RuleDelayed)."]]];
+                
+            (* check init-var is zero-arg function *)
+            If[ KeyExistsQ[spec, InitVariables],
+                If[ Not[
+                    MatchQ[ spec[InitVariables], _Function ] &&
+                    Quiet @ Check[ spec[InitVariables][]; True, False ] ], (* duck typed *)
+                    Throw["InitVariables must be a zero-argument Function (or excluded entirely), which initialises any variables needing later modification in UpdateVariables."]]];
+            
+            (* check Gates and Qubits are list of RuleDelayed, to an association *)
+            Do[
+                (* If[ (Not @ MatchQ[spec[key], _List]) || (Not @ AllTrue[spec[key], MatchQ[RuleDelayed[_, _Association]]]), *)
+                If[ Not @ MatchQ[spec[key], { (_ :>  _Association) ... }],
+                    Throw["Gates and Qubits must each be a list of RuleDelayed, each pointing to an Association."]],
+                {key, {Gates,Qubits}}];
+                
+            (* check every Gates association has required keys *)
+            Do[
+                If[ Not @ KeyExistsQ[assoc, key],
+                    Throw["An Association in Gates is missing required key " <> SymbolName[key] <> "."]],
+                {assoc, Last /@ spec[Gates]},
+                {key, {NoisyForm, GateDuration}}];
+                
+            (* check that Gates patterns do not refer to symbols *)
+            Do[
+                If[ KeyExistsQ[spec, key],
+                    If[ Not @ FreeQ[pattern, spec[key]],
+                        Throw["The operator patterns in Gates (left-hand side of the rules) must not include the TimeSymbol or the DurationSymbol (though the right-hand side may)."]]],
+                {pattern, First /@ spec[Gates]},
+                {key, {TimeSymbol, DurationSymbol}}];
+                
+            (* check every Gates' GateDuration doesn't contain the duration symbol (self-reference) *)
+            If[ KeyExistsQ[spec, DurationSymbol],  
+                Do[
+                    If[ Not @ FreeQ[dur, spec[DurationSymbol]],
+                        Throw["A GateDuration cannot refer to the DurationSymbol, since the DurationSymbol is substituted the value of the former."]],
+                    {dur, spec[Gates][[All, 2]][GateDuration] // Through}]];
+                
+            (* check every active noise is a list (or Circuit, not yet evaluating) *)
+            Do[
+                If[ Not @ MatchQ[active, _List|_Circuit],
+                    Throw["Each NoisyForm must be a Circuit[] or list of operators."]],
+                {active, spec[Gates][[All, 2]][NoisyForm] // Through}];
+                
+            (* check every Qubit assoc contains required keys *)
+            Do[
+                If[ Not @ KeyExistsQ[assoc, PassiveNoise],
+                    Throw["An association in Qubits is missing required key PassiveNoise."]],
+                {assoc, Last /@ spec[Qubits]}]
+                
+            (* check every passive noise is a list (or Circuit, not yet evaluating) *)
+            Do[
+                If[ Not @ MatchQ[passive, _List|_Circuit],
+                    Throw["Each PassiveNoise must be a Circuit[] or list of operators."]],
+                {passive, spec[Qubits][[All, 2]][PassiveNoise] // Through}];
+                
+            (* check every update-vars (in Gates and Qubits assoc) is a zero-arg function *)
+            Do[
+                If[ KeyExistsQ[assoc, UpdateVariables],
+                    If[ Not[
+                        MatchQ[ assoc[UpdateVariables], _Function ] &&
+                        Quiet @ Check[ assoc[UpdateVariables][]; True, False ] ], (* duck typed *)
+                        Throw["Each UpdateVariables must be a zero-argument Function (or excluded entirely)."]]],
+                {assoc, Join[spec[Gates][[All,2]], spec[Qubits][[All,2]]] }];
+                
+            (* no detected issues *)
+            None
+        ]
+        
+        CheckDeviceSpec[spec_Association] := With[
+            {issue = getDeviceSpecIssueString[spec]},
+            If[ issue === None, 
+                True,
+                Message[CheckDeviceSpec::error, issue]; False]]    
+        CheckDeviceSpec[___] := (
+            Message[CheckDeviceSpec::error, "Argument must be a single Association."];
+            $Failed)
+
     End[ ]
                                        
 EndPackage[]
+
+Needs["QuEST`Option`"]
+
+Needs["QuEST`Gate`"]
+
+Needs["QuEST`DeviceSpec`"]
+
