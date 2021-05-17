@@ -129,11 +129,11 @@ GetCircuitSchedule accepts optional argument ReplaceAliases.
 GetCircuitSchedule will take into consideration gates with durations dependent on their scheduled start time."
     GetCircuitSchedule::error = "`1`"
     
-    CheckCircuitSchedule::usage = "CheckCircuitSchedule[{{t1, circ1}, {t2, circ2}, ...}, spec] checks whether the given schedule of sub-circuits is compatible with the device specification, else if it prescribes overlapping sub-circuit execution (regardless of targeted qubits). Times and gate parameters can be symbolic. All gates in a sub-circuit are assumed applicable simultaneously, even if they target overlapping qubits.
+    CheckCircuitSchedule::usage = "CheckCircuitSchedule[{{t1, circ1}, {t2, circ2}, ...}, spec] checks whether the given schedule of sub-circuits is compatible with the device specification, can be made compatible, or else if it prescribes overlapping sub-circuit execution (regardless of targeted qubits). Times and gate parameters can be symbolic. All gates in a sub-circuit are assumed applicable simultaneously, even if they target overlapping qubits.
 CheckCircuitSchedule returns False if the (possibly symbolic) times cannot possibly be monotonic, nor admit a sufficient duration for any sub-circuit.
 CheckCircuitSchedule returns True if the schedule is valid for any assignment of the times and gate parameters.
 CheckCircuitSchedule returns a list of symbolic conditions which must be simultaneously satisfied for the schedule to be valid, if it cannot determine so absolutely. These conditions include constraints of both motonicity and duration.
-CheckCircuitSchedule will take into consideration gates with durations dependent on their scheduled start time."
+CheckCircuitSchedule will take into consideration gates with durations dependent on their scheduled start time, and circuit variables."
     CheckCircuitSchedule::error = "`1`"
     
     InsertCircuitNoise::usage = "InsertCircuitNoise[circuit, spec] divides the circuit into scheduled subcircuits, then replaces them with rounds of active and passive noise, according to the given device specification. Scheduling is performed by GetCircuitSchedule[]. The output format is {{t1, active, passive}, ...}, which can be given directly to DrawCircuit[], ViewCircuitSchedule[] or ExtractCircuit[].
@@ -1554,20 +1554,6 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 compactified
             ]
         ]
-        
-        (* returns whether the circuit is supported by the device spec
-           (assumes that scheduled time does not influence gate validity) *)
-        isCompatibleGate[spec_][gate_] := With[
-            {qubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
-            And[
-                (* all gate's qubit indices are valid *)
-                AllTrue[qubits, LessThan[spec[NumAccessibleQubits]]],
-                (* the gate satisfies a gate pattern *)
-                MatchQ[gate, Alternatives @@ Keys @ spec[Gates]]]]
-        isCompatibleCirc[circOrCols_List, spec_] := 
-            AllTrue[ Flatten[circOrCols], isCompatibleGate[spec]]
-        isCompatibleCirc[_, spec_] :=
-            False
             
         (* the symbolic conditions (list) under which times is monotonically increasing (and real, >0) *)
         getMotonicTimesConditions[times_List] :=
@@ -1607,7 +1593,29 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             (* iterating gates in order of appearence in subcircuit... *)
             Do[ 
                 With[
-                    {gateProps = Replace[gate, spec[Gates]]},
+                    (* determine target & control qubits *)
+                    {gateQubits = Flatten @ getSymbCtrlsTargs[gate][[{2,3}]]},
+                    (* attempt to match the gate against the dev spec *)
+                    {gateProps = With[
+                        {attemptProps = Replace[gate, spec[Gates]]},
+                        Which[
+                            (* if no match, throw top-level error *)
+                            attemptProps === gate,
+                            Throw[
+                                Message[InsertCircuitNoise::error, "Encountered gate " <> ToString@StandardForm@gate <> 
+                                    " which is not supported by the given device specification. Note this may be due to preceding gates," <> 
+                                    " if the spec contains constraints which depend on dynamic variables. See ?GetUnsupportedGates."];
+                                $Failed],
+                            (* if match, but targeted qubits don't exist, throw top-level error *)
+                            Not @ AllTrue[gateQubits, LessThan[spec[NumAccessibleQubits]]],
+                            Throw[
+                                Message[InsertCircuitNoise::error, "The gate " <> ToString@StandardForm@gate <> 
+                                    " involves qubits which do not exist in the given device specification. Note that hidden qubits cannot be targeted." <> 
+                                    " See ?GetUnsupportedGates."];
+                                $Failed],
+                            (* otherwise, gate is valid and supported by dev-spec *)
+                            True,
+                            attemptProps]]},
                     (* work out gate duration (time and var dependent) *)
                     {gateDur = replaceTimeDurSymbols[gateProps[GateDuration], spec, subcircTime]},    
                     (* work out active noise (time, dur and var dependent) *)
@@ -1625,7 +1633,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     gateVarFunc[];
                     
                     (* record how long the involved qubits were activated (to later infer passive dur) *)
-                    qubitActiveDurs[[ 1 + Flatten @ getSymbCtrlsTargs[gate][[{2,3}]] ]] = gateDur;
+                    qubitActiveDurs[[ 1 + gateQubits ]] = gateDur;
                 ],
                 {gate,subcirc}];
                 
@@ -1728,17 +1736,17 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         
         getCondsForValidSchedDurs[spec_, subcircs_, subcircTimes_] := Module[
             {forcedSubcircDurs = Differences[subcircTimes], minSubcircDur,
-             dummyActive, dummyPassive},
+             dummyActive, dummyPassive, conds},
             
             (* initialise circuit variables *)
             If[KeyExistsQ[spec, InitVariables],
                 spec[InitVariables][]];
             
             (* for all but the final (irrelevant) subcircuit... *)
-            Table[
+            conds = Table[
                 (* find the slowest gate (duration possibly dependent on time, 
                  * previous passive durations and vars (which are updated) *)
-                {minSubcircDur, dummyActive, dummyPassive} = getDurAndNoiseFromSubcirc[
+                {minSubcircDur, dummyActive, dummyPassive} = getDurAndNoiseFromSubcirc[ (* throws *)
                     subcircs[[i]], subcircTimes[[i]], spec, forcedSubcircDurs[[i]]];
                 (* and condition that its faster than the forced subcircuit duration *)
                 Function[{small, big},
@@ -1750,51 +1758,52 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         small <= big]
                 ][minSubcircDur, forcedSubcircDurs[[i]]],
                 {i, Length[forcedSubcircDurs]}
-            ]
+            ];
+            
+            (* by here, the validity of subcircTimes has been determined since 
+             * it does not depend at all on the final subcircuit (only the durations
+             * of the preceding subcircuits). However, we pass the final subcircuit 
+             * to getDurAndNoiseFromSubcirc[] so that it can be checked for its general 
+             * validity (gates, qubit indices, etc) and potentially throw an error. *)
+             getDurAndNoiseFromSubcirc[Last@subcircs, Last@subcircTimes, spec]; (* throws *)
+             
+             (* return the conds *)
+             conds
         ]
             
-        CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] /; Not[isCompatibleCirc[sched[[All,2]], spec]] := (
-            Message[CheckCircuitSchedule::error, "The given schedule contains gates incompatible with the device specification. See ?GetUnsupportedGates"];
-            $Failed)
         CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] /; Not[areMonotonicTimes[sched[[All,1]]]] := (
             Message[CheckCircuitSchedule::error, "The given schedule times are not motonically increasing, nor can be for any assignment of symbols, or they are not real and positive."];
             $Failed) 
         (* this is currently naive, and assumes each sub-circuit is valid (contains simultaneous gates), and 
          * that overlapping sub-circuits is invalid. A smarter function would
          * check sub-circuits contain gates on unique qubits, and check whether 
-         * overlapping sub-circuits act on uniqe qubits (which would be ok).
+         * overlapping sub-circuits act on unique qubits (which would be ok).
          *)
-        CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] := With[
-            {times = sched[[All,1]], subcircs = sched[[All,2]]},
-            (* list of (possibly symbolic) conditions of sufficiently long subcircuit durations *)
-            {conds = getCondsForValidSchedDurs[spec, subcircs, times]},
-            (* list of (possibly symbolic) assumptions implied by monotonicity of given schedule *)
-            {mono = getMotonicTimesConditions[times]},
-            (* combine the conditions with the monotonicty constraint *)
-            With[{valid=Simplify[conds, Assumptions -> mono]},
-                Which[
-                    (* if any condition is broken regardless of symbols, schedule is invalid *)
-                    MemberQ[valid, False], 
-                        False,
-                    (* if all conditions are satisfied despite symbol assignments, the schedule is valid *)
-                    AllTrue[valid, TrueQ],
-                        True,
-                    (* otherwise return the symbolic conditions under which the schedule is valid *)
-                    True,
-                        DeleteCases[valid, True]
+        CheckCircuitSchedule[sched:{{_, _List}..}, spec_Association] := 
+            Catch[
+                With[
+                    {times = sched[[All,1]], subcircs = sched[[All,2]]},
+                    (* list of (possibly symbolic) conditions of sufficiently long subcircuit durations *)
+                    {conds = getCondsForValidSchedDurs[spec, subcircs, times]}, (* throws *)
+                    (* list of (possibly symbolic) assumptions implied by monotonicity of given schedule *)
+                    {mono = getMotonicTimesConditions[times]},
+                    (* combine the conditions with the monotonicty constraint *)
+                    With[{valid=Simplify[conds, Assumptions -> mono]},
+                        Which[
+                            (* if any condition is broken regardless of symbols, schedule is invalid *)
+                            MemberQ[valid, False], 
+                                False,
+                            (* if all conditions are satisfied despite symbol assignments, the schedule is valid *)
+                            AllTrue[valid, TrueQ],
+                                True,
+                            (* otherwise return the symbolic conditions under which the schedule is valid *)
+                            True,
+                                DeleteCases[valid, True]
+                        ]
+                    ]
                 ]
-            ]]
-        CheckCircuitSchedule[___] := invalidArgError[CheckCircuitSchedule]
-            
-        isCompatibleSched[sched:{{_, _List}..}, spec_] := 
-            And[
-                (* schedule contains only valid gates *)
-                isCompatibleCirc[ sched[[All,2]], spec ],
-                (* and that the schedule times are valid (to avoid Check* errors below) *)
-                areMonotonicTimes @ sched[[All,1]],
-                (* AND there (may) exist a symbol assignment for which the circuit is valid *)
-                CheckCircuitSchedule[sched, spec] =!= False
             ]
+        CheckCircuitSchedule[___] := invalidArgError[CheckCircuitSchedule]
         
         GetUnsupportedGates[sched:{{_, _List}..}, spec_Association] :=
             GetUnsupportedGates[ sched[[All, 2]], spec ]
@@ -1816,15 +1825,13 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         };
             
         (* assigns each of the given columns (unique-qubit subcircuits) a start-time *)
-        GetCircuitSchedule[cols:{{__}..}, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[cols,spec] := With[
-            {times = First @ getSchedAndNoiseFromSubcircs[cols,spec]},
-            Transpose[{times, cols}] // optionalReplaceAliases[OptionValue[ReplaceAliases], spec]
-        ]
-        GetCircuitSchedule[circ_List, spec_Association, opts:OptionsPattern[]] /; isCompatibleCirc[circ,spec] :=
+        GetCircuitSchedule[cols:{{__}..}, spec_Association, opts:OptionsPattern[]] := 
+            Catch[
+                With[
+                    {times = First @ getSchedAndNoiseFromSubcircs[cols,spec]}, (* throws *)
+                    Transpose[{times, cols}] // optionalReplaceAliases[OptionValue[ReplaceAliases], spec]]]
+        GetCircuitSchedule[circ_List, spec_Association, opts:OptionsPattern[]] :=
             GetCircuitSchedule[GetCircuitColumns[circ], spec, opts]
-        GetCircuitSchedule[a_, spec_Association, opts:OptionsPattern[]] /; Not[isCompatibleCirc[a,spec]] := (
-            Message[GetCircuitSchedule::error, "The circuit(s) contains gates unsupported by the given device specification. See ?GetUnsupportedGates."];
-            $Failed)
         GetCircuitSchedule[___] := invalidArgError[GetCircuitSchedule]
         
         (* declaring optional args to InsertCircuitNoise *)
@@ -1833,34 +1840,32 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         };
 
         InsertCircuitNoise[schedule:{{_, _List}..}, spec_Association, opts:OptionsPattern[]] :=
-            If[isCompatibleSched[schedule, spec], 
-                (* if schedule is compatible *)
+            Catch[
+                (* check up-front that schedule times are monotonic *)
+                If[ Not @ areMonotonicTimes @ schedule[[All,1]],
+                    Throw[
+                        Message[InsertCircuitNoise::error, "The scheduled subcircuit times are not monotonic (and cannot be for any substitution of any symbolic times)."];
+                        $Failed]];
+                        
+                (* attempt to insert noise into circuit (may throw gate/circ compatibility issues) *)
                 Module[
                     {times, subcircs, actives, passives},
                     {times, subcircs} = Transpose[schedule];
-                    {actives, passives} = getNoiseFromSched[subcircs, times, spec];
+                    {actives, passives} = getNoiseFromSched[subcircs, times, spec]; (* throws *)
                     
                     (* pad times with initial passive noise *)
                     If[ First[times] =!= 0, PrependTo[times, 0] ];
                     (* return { {t1,subcirc1,active1,passive1}, ...} *)
                     Transpose[{times, actives, passives}] // 
-                        optionalReplaceAliases[OptionValue[ReplaceAliases], spec]
-                ],
-                (* if schedule is incompatible, give error *)
-                (Message[InsertCircuitNoise::error, "The given schedule is either invalid, or incompatible with the device specification, either through unsupported gates, or by prescribing overlapping (in time) sub-circuits."];
-                $Failed)]
+                        optionalReplaceAliases[OptionValue[ReplaceAliases], spec]]]
         InsertCircuitNoise[subcircs:{{__}..}, spec_Association, opts:OptionsPattern[]] := 
-            If[isCompatibleCirc[subcircs, spec],
-                Transpose[getSchedAndNoiseFromSubcircs[subcircs,spec]] // 
-                    optionalReplaceAliases[OptionValue[ReplaceAliases], spec],
-                (Message[InsertCircuitNoise::error, "The given subcircuits contain gates not supported by the given device specification. See ?GetUnsupportedGates."];
-                $Failed)]    
+            Catch[
+                Transpose[getSchedAndNoiseFromSubcircs[subcircs,spec]] (* throws *) // 
+                    optionalReplaceAliases[OptionValue[ReplaceAliases], spec]]   
         InsertCircuitNoise[circ_List, spec_Association, opts:OptionsPattern[]] := 
-            If[isCompatibleCirc[circ, spec],
-                Transpose[getSchedAndNoiseFromSubcircs[GetCircuitColumns[circ],spec]] // 
-                    optionalReplaceAliases[OptionValue[ReplaceAliases], spec],
-                (Message[InsertCircuitNoise::error, "The given subcircuits contain gates not supported by the given device specification. See ?GetUnsupportedGates."];
-                $Failed)]    
+            Catch[
+                Transpose[getSchedAndNoiseFromSubcircs[GetCircuitColumns[circ],spec] (*throws *) ] // 
+                    optionalReplaceAliases[OptionValue[ReplaceAliases], spec]]    
         InsertCircuitNoise[___] := invalidArgError[InsertCircuitNoise]
             
         ExtractCircuit[schedule:{{_, (_List ..)}..}] :=
@@ -1913,13 +1918,21 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 
         (* the gates in active noise can contain symbolic qubits that won't trigger 
          * Circuit[] evaluation. This function forces Circuit[] to a list *)
-        frozenCircToList[Circuit[gs_Times]] := ReleaseHold[List @@@ Hold[gs]]
-        frozenCircToList[Circuit[g_]] := {g}
-        frozenCircToList[gs_List] := gs
+        frozenCircToList[HoldForm[Circuit[gs_Times]]] := ReleaseHold[List @@@ Hold[gs]]
+        frozenCircToList[HoldForm[Circuit[g_]]] := {g}
+        frozenCircToList[HoldForm[gs_List]] := gs
         frozenCircToList[else_] := else
         
-        viewOperatorSeq[circ_] :=
-            Column[frozenCircToList[circ]]
+        (* attempt to display circuit as a column if it can be decomposed into a 
+         * list (despite e.g. symbolic indices), display as is *)
+        viewOperatorSeq[circ_] := With[
+            {attempt = frozenCircToList[circ]},
+            If[Head @ attempt === List,
+                Row[attempt /. m_?MatrixQ :> MatrixForm[m], Spacer[0]],
+                circ]]
+                
+        getHeldAssocVal[assoc_, key_] :=
+            Extract[assoc, {Key[key]}, HoldForm]
         
         viewDevSpecFields[spec_, opts___] :=
             Grid[{
@@ -1978,14 +1991,17 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 } 
                 } ~Join~ Table[
                     With[
-                        {key=First[row], props=Last[row]},
+                        (*  isolate gate pattern and association *)
+                        {key= First[row], props=Last[row]},
+                        (* isolate gate from potential constraint *)
                         {gate=key //. c_Condition :> First[c]},
+                        (* isolate potential constraints in held form *)
                         {conds=Cases[key, Verbatim[Condition][_,con_] :> HoldForm[con], {0,Infinity}, Heads -> True]},
                         {
                             gate,
                             If[showConds, Column@conds, Nothing], 
-                            viewOperatorSeq @ props[NoisyForm] /. m_?MatrixQ :> MatrixForm[m], 
-                            props[GateDuration], 
+                            viewOperatorSeq @ getHeldAssocVal[props, NoisyForm], 
+                            getHeldAssocVal[props, GateDuration], 
                             If[showVars, If[KeyExistsQ[props,UpdateVariables],props[UpdateVariables],""], Nothing]
                         }],
                     {row, spec[Gates]}
@@ -2025,17 +2041,24 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             ] // tidySymbolNames
         ]
             
-        ViewDeviceSpec[spec_Association, opts:OptionsPattern[{Grid,Column}]] :=
-            Column[{
-                viewDevSpecFields[spec, opts],
-                If[KeyExistsQ[spec, Aliases] && spec[Aliases] =!= {},
-                    viewDevSpecAliases[spec, opts], Nothing],
-                viewDevSpecActiveGates[spec, opts],
-                viewDevSpecPassiveQubits[spec, opts]
-                },
-                FilterRules[{opts}, Options[Column]],
-                Spacings -> {Automatic, 1}
-            ]
+        ViewDeviceSpec[spec_Association, opts:OptionsPattern[{Grid,Column}]] := 
+            Module[{view},
+                Check[
+                    (* get dev spec *)
+                    view = Column[{
+                        viewDevSpecFields[spec, opts],
+                        If[KeyExistsQ[spec, Aliases] && spec[Aliases] =!= {},
+                            viewDevSpecAliases[spec, opts], Nothing],
+                        viewDevSpecActiveGates[spec, opts],
+                        viewDevSpecPassiveQubits[spec, opts]
+                        },
+                        FilterRules[{opts}, Options[Column]],
+                        Spacings -> {Automatic, 1}],
+                    (* if errors, give warning about potential illegitimacy, and return dev spec *)
+                    Echo["Note that the above errors may be illegitimate, due to premature evaluation of dynamic gate properties in the device specification. Have no fear! Device spec authors may fix this by replacing \[Rule] with \[RuleDelayed] in NoisyForm and GateDuration of Gates which feature variables.", "ViewDeviceSpec: "];
+                    view
+                ]
+            ]    
         ViewDeviceSpec[___] := invalidArgError[ViewDeviceSpec]
         
         getDeviceSpecIssueString[spec_] := Catch[
@@ -2116,13 +2139,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     If[ Not @ FreeQ[dur, spec[DurationSymbol]],
                         Throw["A GateDuration cannot refer to the DurationSymbol, since the DurationSymbol is substituted the value of the former."]],
                     {dur, spec[Gates][[All, 2]][GateDuration] // Through}]];
-                
-            (* check every active noise is a list (or Circuit, not yet evaluating) *)
-            Do[
-                If[ Not @ MatchQ[active, _List|_Circuit],
-                    Throw["Each NoisyForm must be a Circuit[] or list of operators."]],
-                {active, spec[Gates][[All, 2]][NoisyForm] // Through}];
-                
+            
             (* check every Qubit assoc contains required keys *)
             Do[
                 If[ Not @ KeyExistsQ[assoc, PassiveNoise],
@@ -2140,7 +2157,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 If[ KeyExistsQ[assoc, UpdateVariables],
                     If[ Not[
                         MatchQ[ assoc[UpdateVariables], _Function ] &&
-                        Quiet @ Check[ assoc[UpdateVariables][]; True, False ] ], (* duck typed *)
+                        (* calling UpdateVariables[] may generate other errors, but we care only about zero-args *)
+                        Quiet @ Check[ assoc[UpdateVariables][]; True, False, Function::fpct ] ], (* duck typed *)
                         Throw["Each UpdateVariables must be a zero-argument Function (or excluded entirely)."]]],
                 {assoc, Join[spec[Gates][[All,2]], spec[Qubits][[All,2]]] }];
                 
@@ -2149,7 +2167,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         ]
         
         CheckDeviceSpec[spec_Association] := With[
-            {issue = getDeviceSpecIssueString[spec]},
+            {issue = Quiet @ getDeviceSpecIssueString[spec]},
             If[ issue === None, 
                 True,
                 Message[CheckDeviceSpec::error, issue]; False]]    
