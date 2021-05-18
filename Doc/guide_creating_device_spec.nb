@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[    320582,       7197]
-NotebookOptionsPosition[    303376,       6930]
-NotebookOutlinePosition[    304930,       6978]
-CellTagsIndexPosition[    304698,       6967]
+NotebookDataLength[    321870,       7232]
+NotebookOptionsPosition[    304569,       6964]
+NotebookOutlinePosition[    306121,       7012]
+CellTagsIndexPosition[    305889,       7001]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -5120,7 +5120,8 @@ independent of other gates in the circuit, ",
   FontSlant->"Italic"],
  " through their influence on the circuit schedule. We now introduce circuit \
 variables, which are variables updated through the processing of a circuit. \
-These variables can track of anything, and determine noise and gate durations."
+These variables can keep track of anything, and determine noise and gate \
+durations."
 }], "Text",
  CellChangeTimes->{{3.82301608939045*^9, 3.823016092783393*^9}, {
    3.823016521546129*^9, 3.823016576182461*^9}, {3.82301813092262*^9, 
@@ -5137,7 +5138,7 @@ These variables can track of anything, and determine noise and gate durations."
    3.823174751104012*^9, 3.8231747955419397`*^9}, {3.823174835448166*^9, 
    3.823174902134239*^9}, {3.82317522265633*^9, 3.823175256070766*^9}, {
    3.8231762476642027`*^9, 3.823176299550061*^9}, {3.823238922390909*^9, 
-   3.8232389472206907`*^9}},
+   3.8232389472206907`*^9}, {3.829110375066086*^9, 3.829110376821705*^9}},
  Background->RGBColor[
   0.88, 1, 0.88],ExpressionUUID->"03d05e1c-a1a5-4c44-813f-290239829cf5"],
 
@@ -5189,7 +5190,10 @@ Cell[BoxData[
 f08d9edf5e75"],
 
 Cell[TextData[{
- "Every NoisyForm, ",
+ "Every ",
+ StyleBox["NoisyForm",
+  FontWeight->"Bold"],
+ ", ",
  StyleBox["PassiveNoise",
   FontWeight->"Bold"],
  " and ",
@@ -5214,20 +5218,44 @@ during the circuit processing."
    3.823174902134239*^9}, {3.82317522265633*^9, 3.823175256070766*^9}, {
    3.8231762476642027`*^9, 3.823176299550061*^9}, {3.823177017624461*^9, 
    3.823177174111223*^9}, {3.8231773226853647`*^9, 3.823177370134059*^9}, 
-   3.825778405248804*^9},
+   3.825778405248804*^9, {3.8296501732662783`*^9, 3.8296502418076067`*^9}, 
+   3.82965027493932*^9},
  Background->RGBColor[
   0.88, 1, 0.88],ExpressionUUID->"190d8128-2fe2-4d63-8da1-21c3ab34d171"],
 
 Cell[BoxData[
  RowBox[{"\t", 
-  RowBox[{"NoisyForm", " ", "\[Rule]", " ", 
+  RowBox[{"NoisyForm", " ", "\[RuleDelayed]", " ", 
    RowBox[{"Circuit", "[", " ", 
     RowBox[{
      SubscriptBox["Deph", "0"], "[", " ", "i", " ", "]"}], " ", 
     "]"}]}]}]], "Input",
  CellChangeTimes->{{3.823177440907062*^9, 3.823177459325901*^9}, 
-   3.82577840624149*^9},ExpressionUUID->"60210cca-4339-47ab-a40a-\
+   3.82577840624149*^9, {3.8296502390284863`*^9, 
+   3.829650240355887*^9}},ExpressionUUID->"60210cca-4339-47ab-a40a-\
 d92104d16673"],
+
+Cell[TextData[{
+ " One should use a ",
+ StyleBox["RuleDelayed[]",
+  FontWeight->"Bold"],
+ " \[RuleDelayed]",
+ StyleBox[" ",
+  FontWeight->"Bold"],
+ "instead of a ",
+ StyleBox["Rule \[Rule] ",
+  FontWeight->"Bold"],
+ "for Association elements with depend on dynamic variables. This is so that \
+functions which may attempt to evaluate the element before all symbols are \
+given values, like ",
+ StyleBox["ViewDeviceSpec[]",
+  FontWeight->"Bold"],
+ ", don\[CloseCurlyQuote]t throw misleading error messages."
+}], "Text",
+ CellChangeTimes->{{3.829650278992219*^9, 3.829650350553301*^9}, {
+  3.830252187684997*^9, 3.830252194544977*^9}},
+ Background->RGBColor[
+  1, 1, 0.85],ExpressionUUID->"4c6ae21c-96b8-4df2-a75c-6582ea3ba1ef"],
 
 Cell[TextData[{
  "The variables can be updated strictly after each processed gate, or passive \
@@ -5387,7 +5415,7 @@ subsequent Rx gates.\>\""}], ",", "\n", "\t",
                RowBox[{"via", " ", "some", " ", "function", " ", "f"}]}], " ",
                "*)"}], "\n", "\t\t\t", 
              RowBox[{
-              RowBox[{"NoisyForm", " ", "\[Rule]", " ", 
+              RowBox[{"NoisyForm", " ", "\[RuleDelayed]", " ", 
                RowBox[{"Circuit", "[", " ", 
                 RowBox[{
                  SubscriptBox["T", "q"], " ", 
@@ -5402,7 +5430,7 @@ subsequent Rx gates.\>\""}], ",", "\n", "\t",
                "update", " ", "the", " ", "T", " ", "gate", " ", "count", " ",
                  "after", " ", "processing", " ", "this", " ", "one"}], " ", 
                "*)"}], "\n", "\t\t\t", 
-              RowBox[{"UpdateVariables", " ", "\[Rule]", " ", 
+              RowBox[{"UpdateVariables", " ", "\[RuleDelayed]", " ", 
                RowBox[{"Function", "[", " ", 
                 RowBox[{"numT", "++"}], " ", "]"}]}]}], "\n", "\t\t", 
              "|>"}]}], ",", "\n", "\t\t", "\n", "\t\t", 
@@ -5430,7 +5458,7 @@ subsequent Rx gates.\>\""}], ",", "\n", "\t",
                    "subcircuit"}], ",", " ", 
                   RowBox[{"as", " ", "processed", " ", "so", " ", "far"}]}], 
                  ")"}]}], " ", "*)"}], "\n", "\t\t\t", 
-              RowBox[{"GateDuration", " ", "\[Rule]", " ", 
+              RowBox[{"GateDuration", " ", "\[RuleDelayed]", " ", 
                RowBox[{"g", "[", "numT", "]"}]}]}], "\n", "\t\t", "|>"}]}]}], 
           "\n", "\t", "}"}]}], ",", "\n", "\t", "\n", "\t", 
         RowBox[{"(*", " ", 
@@ -5478,8 +5506,9 @@ subsequent Rx gates.\>\""}], ",", "\n", "\t",
    3.823175910922353*^9, 3.823176191826209*^9}, {3.823176317111952*^9, 
    3.8231766660552673`*^9}, {3.823176739134863*^9, 3.823176740670651*^9}, {
    3.8231777295373917`*^9, 3.8231777309911957`*^9}, 3.823244017471311*^9, {
-   3.825778407092705*^9, 3.825778407715498*^9}, 
-   3.825778799868861*^9},ExpressionUUID->"1023991d-4c0c-4f94-8004-\
+   3.825778407092705*^9, 3.825778407715498*^9}, 3.825778799868861*^9, {
+   3.82965025017424*^9, 
+   3.829650267461862*^9}},ExpressionUUID->"1023991d-4c0c-4f94-8004-\
 4d75593e0584"],
 
 Cell[CellGroupData[{
@@ -5602,8 +5631,10 @@ example, a per-qubit list of properties).\nFurthermore, ",
  StyleBox["DurationSymbol",
   FontWeight->"Bold"],
  ", which will be substituted with their values at the time the gate or \
-channel is processed (like NoisyForm). \nHere is a sophisticated example of a \
-very strangely behaving device:"
+channel is processed (like ",
+ StyleBox["NoisyForm",
+  FontWeight->"Bold"],
+ "). \nHere is a sophisticated example of a very strangely behaving device:"
 }], "Text",
  CellChangeTimes->{{3.82301608939045*^9, 3.823016092783393*^9}, {
    3.823016521546129*^9, 3.823016576182461*^9}, {3.82301813092262*^9, 
@@ -5667,7 +5698,7 @@ gates, and gates ruin idle qubits.\>\""}], ",", "\n", "\t",
               "of", " ", "all", " ", "qubits", " ", "so", " ", "far"}], " ", 
              "*)"}], "\n", "\t\t\t", 
             RowBox[{
-             RowBox[{"NoisyForm", " ", "\[Rule]", " ", 
+             RowBox[{"NoisyForm", " ", "\[RuleDelayed]", " ", 
               RowBox[{"Circuit", "[", " ", 
                RowBox[{
                 SubscriptBox["T", "q"], " ", 
@@ -5676,7 +5707,7 @@ gates, and gates ruin idle qubits.\>\""}], ",", "\n", "\t",
                " ", "]"}]}], ",", "\n", "\t\t\t", 
              RowBox[{"GateDuration", " ", "\[Rule]", " ", "1"}], ",", "\n", 
              "\t\t\t", 
-             RowBox[{"UpdateVariables", " ", "\[Rule]", " ", 
+             RowBox[{"UpdateVariables", " ", "\[RuleDelayed]", " ", 
               RowBox[{"Function", "[", " ", 
                RowBox[{
                 RowBox[{"numGatesOnQubit", "\[LeftDoubleBracket]", 
@@ -5700,7 +5731,7 @@ gates, and gates ruin idle qubits.\>\""}], ",", "\n", "\t",
               ",", "\n", "\t\t\t", 
              RowBox[{"GateDuration", " ", "\[Rule]", " ", "totalRotation"}], 
              ",", "\n", "\t\t\t", 
-             RowBox[{"UpdateVariables", " ", "\[Rule]", " ", 
+             RowBox[{"UpdateVariables", " ", "\[RuleDelayed]", " ", 
               RowBox[{"Function", "[", "\n", "\t\t\t\t", 
                RowBox[{
                 RowBox[{"totalRotation", " ", "+=", " ", 
@@ -5724,14 +5755,14 @@ gates, and gates ruin idle qubits.\>\""}], ",", "\n", "\t",
              " ", "to", " ", "it", " ", "so", " ", "far"}], " ", "*)"}], "\n",
             "\t\t\t", 
            RowBox[{
-            RowBox[{"PassiveNoise", " ", "\[Rule]", " ", 
+            RowBox[{"PassiveNoise", " ", "\[RuleDelayed]", " ", 
              RowBox[{"Circuit", "[", " ", 
               RowBox[{
                SubscriptBox["Deph", "q"], "[", " ", 
                RowBox[{"numGatesOnQubit", "\[LeftDoubleBracket]", 
                 RowBox[{"q", "+", "1"}], "\[RightDoubleBracket]"}], " ", 
                "]"}], " ", "]"}]}], ",", "\n", "\t\t\t", 
-            RowBox[{"UpdateVariables", " ", "\[Rule]", " ", 
+            RowBox[{"UpdateVariables", " ", "\[RuleDelayed]", " ", 
              RowBox[{"Function", "[", "\n", "\t\t\t\t", 
               RowBox[{"totalIdleTime", " ", "+=", " ", "\[CapitalDelta]t"}], 
               "\n", "\t\t\t", "]"}]}]}], "\n", "\t\t", "|>"}]}], "\n", "\t", 
@@ -5778,8 +5809,8 @@ gates, and gates ruin idle qubits.\>\""}], ",", "\n", "\t",
    3.823178524122057*^9, 3.823178732855361*^9}, {3.823178826697459*^9, 
    3.82317887916781*^9}, {3.823178953522019*^9, 3.823179237072638*^9}, {
    3.823179284501905*^9, 3.82317936206398*^9}, {3.8257784096615953`*^9, 
-   3.825778410788612*^9}, 
-   3.8257788004311247`*^9},ExpressionUUID->"d0f4b654-97f0-4ea4-bd34-\
+   3.825778410788612*^9}, 3.8257788004311247`*^9, {3.8296503665492764`*^9, 
+   3.829650386757111*^9}},ExpressionUUID->"d0f4b654-97f0-4ea4-bd34-\
 f60aa9acd51e"],
 
 Cell[CellGroupData[{
@@ -6025,7 +6056,10 @@ non-overlapping gates (via ",
  StyleBox["InitVariables[]",
   FontWeight->"Bold"],
  "\n\[Bullet] for each sub-circuit:\n\t\[Bullet] for each gate in \
-sub-circuit:\n\t\t\[Bullet] determine the NoisyForm and ",
+sub-circuit:\n\t\t\[Bullet] determine the ",
+ StyleBox["NoisyForm",
+  FontWeight->"Bold"],
+ " and ",
  StyleBox["GateDuration",
   FontWeight->"Bold"],
  " via the current variables\n\t\t\[Bullet]  invoke the \
@@ -6928,8 +6962,8 @@ Cell[BoxData["$Failed"], "Output",
 }, Open  ]]
 }, Open  ]]
 },
-WindowSize->{963, 716},
-WindowMargins->{{238, Automatic}, {1, Automatic}},
+WindowSize->{960, 855},
+WindowMargins->{{Automatic, 0}, {Automatic, 0}},
 PrintingCopies->1,
 PrintingPageRange->{1, Automatic},
 FrontEndVersion->"11.2 for Mac OS X x86 (32-bit, 64-bit Kernel) (September \
@@ -6960,19 +6994,19 @@ CellTagsIndex->{
   Cell[216845, 5109, 276, 4, 67, "Section",ExpressionUUID->"12976f12-d54f-43eb-b124-76461930fa14",
    CellTags->"variables"]},
  "hidden"->{
-  Cell[262778, 6066, 277, 4, 67, "Section",ExpressionUUID->"f34f7422-db9b-4a54-b030-44b6987ae46c",
+  Cell[263971, 6100, 277, 4, 67, "Section",ExpressionUUID->"f34f7422-db9b-4a54-b030-44b6987ae46c",
    CellTags->"hidden"]}
  }
 *)
 (*CellTagsIndex
 CellTagsIndex->{
- {"mwe", 303734, 6943},
- {"gates", 303864, 6946},
- {"passive", 303999, 6949},
- {"time", 304134, 6952},
- {"aliases", 304270, 6955},
- {"variables", 304411, 6958},
- {"hidden", 304551, 6961}
+ {"mwe", 304925, 6977},
+ {"gates", 305055, 6980},
+ {"passive", 305190, 6983},
+ {"time", 305325, 6986},
+ {"aliases", 305461, 6989},
+ {"variables", 305602, 6992},
+ {"hidden", 305742, 6995}
  }
 *)
 (*NotebookFileOutline
@@ -7144,58 +7178,59 @@ Cell[214520, 5050, 2288, 54, 235, "Text",ExpressionUUID->"b73171e9-5267-4ded-a82
 Cell[CellGroupData[{
 Cell[216845, 5109, 276, 4, 67, "Section",ExpressionUUID->"12976f12-d54f-43eb-b124-76461930fa14",
  CellTags->"variables"],
-Cell[217124, 5115, 1653, 26, 97, "Text",ExpressionUUID->"03d05e1c-a1a5-4c44-813f-290239829cf5"],
-Cell[218780, 5143, 1862, 35, 97, "Text",ExpressionUUID->"a4b74ae8-519a-463b-9ac7-762acf61aba6"],
-Cell[220645, 5180, 346, 8, 30, "Input",ExpressionUUID->"49b15695-d012-44ed-bff2-f08d9edf5e75"],
-Cell[220994, 5190, 1563, 28, 74, "Text",ExpressionUUID->"190d8128-2fe2-4d63-8da1-21c3ab34d171"],
-Cell[222560, 5220, 358, 9, 32, "Input",ExpressionUUID->"60210cca-4339-47ab-a40a-d92104d16673"],
-Cell[222921, 5231, 1540, 25, 74, "Text",ExpressionUUID->"f14b8920-917d-47ae-a5a8-bf17b0178b77"],
-Cell[224464, 5258, 539, 11, 73, "Input",ExpressionUUID->"cffdeff2-8197-4ebb-95b2-36c32649c988"],
-Cell[225006, 5271, 1626, 26, 74, "Text",ExpressionUUID->"2650cbf9-59ca-43cd-aff6-f1f74b37c820"],
-Cell[226635, 5299, 650, 15, 75, "Input",ExpressionUUID->"cae831a9-dea2-45e9-a3c6-febc94a54fce"],
-Cell[227288, 5316, 1669, 25, 74, "Text",ExpressionUUID->"827dce20-78a8-47bf-9868-9b36b0c0a5f7"],
-Cell[228960, 5343, 7440, 139, 629, "Code",ExpressionUUID->"1023991d-4c0c-4f94-8004-4d75593e0584"],
+Cell[217124, 5115, 1706, 27, 97, "Text",ExpressionUUID->"03d05e1c-a1a5-4c44-813f-290239829cf5"],
+Cell[218833, 5144, 1862, 35, 97, "Text",ExpressionUUID->"a4b74ae8-519a-463b-9ac7-762acf61aba6"],
+Cell[220698, 5181, 346, 8, 30, "Input",ExpressionUUID->"49b15695-d012-44ed-bff2-f08d9edf5e75"],
+Cell[221047, 5191, 1680, 32, 74, "Text",ExpressionUUID->"190d8128-2fe2-4d63-8da1-21c3ab34d171"],
+Cell[222730, 5225, 417, 10, 32, "Input",ExpressionUUID->"60210cca-4339-47ab-a40a-d92104d16673"],
+Cell[223150, 5237, 726, 20, 97, "Text",ExpressionUUID->"4c6ae21c-96b8-4df2-a75c-6582ea3ba1ef"],
+Cell[223879, 5259, 1540, 25, 74, "Text",ExpressionUUID->"f14b8920-917d-47ae-a5a8-bf17b0178b77"],
+Cell[225422, 5286, 539, 11, 73, "Input",ExpressionUUID->"cffdeff2-8197-4ebb-95b2-36c32649c988"],
+Cell[225964, 5299, 1626, 26, 74, "Text",ExpressionUUID->"2650cbf9-59ca-43cd-aff6-f1f74b37c820"],
+Cell[227593, 5327, 650, 15, 75, "Input",ExpressionUUID->"cae831a9-dea2-45e9-a3c6-febc94a54fce"],
+Cell[228246, 5344, 1669, 25, 74, "Text",ExpressionUUID->"827dce20-78a8-47bf-9868-9b36b0c0a5f7"],
+Cell[229918, 5371, 7510, 140, 629, "Code",ExpressionUUID->"1023991d-4c0c-4f94-8004-4d75593e0584"],
 Cell[CellGroupData[{
-Cell[236425, 5486, 1075, 29, 52, "Input",ExpressionUUID->"b061ec57-fdee-4a5a-9b77-eed34f3980fe"],
-Cell[237503, 5517, 3154, 72, 141, "Output",ExpressionUUID->"4a1264b2-3d39-4c3f-adc1-64363984ee13"]
+Cell[237453, 5515, 1075, 29, 52, "Input",ExpressionUUID->"b061ec57-fdee-4a5a-9b77-eed34f3980fe"],
+Cell[238531, 5546, 3154, 72, 141, "Output",ExpressionUUID->"4a1264b2-3d39-4c3f-adc1-64363984ee13"]
 }, Open  ]],
-Cell[240672, 5592, 1835, 33, 120, "Text",ExpressionUUID->"985ff55c-bd95-482f-96f5-68e90e6a42d9"],
-Cell[242510, 5627, 8505, 155, 885, "Code",ExpressionUUID->"d0f4b654-97f0-4ea4-bd34-f60aa9acd51e"],
+Cell[241700, 5621, 1875, 35, 120, "Text",ExpressionUUID->"985ff55c-bd95-482f-96f5-68e90e6a42d9"],
+Cell[243578, 5658, 8588, 155, 885, "Code",ExpressionUUID->"d0f4b654-97f0-4ea4-bd34-f60aa9acd51e"],
 Cell[CellGroupData[{
-Cell[251040, 5786, 978, 28, 52, "Input",ExpressionUUID->"428056a8-4e31-432a-825e-ec12e6a45b39"],
-Cell[252021, 5816, 6962, 160, 429, "Output",ExpressionUUID->"1dabf521-ebb6-4230-b122-b1dc6af4bf10"]
+Cell[252191, 5817, 978, 28, 52, "Input",ExpressionUUID->"428056a8-4e31-432a-825e-ec12e6a45b39"],
+Cell[253172, 5847, 6962, 160, 409, "Output",ExpressionUUID->"1dabf521-ebb6-4230-b122-b1dc6af4bf10"]
 }, Open  ]],
-Cell[258998, 5979, 1608, 29, 51, "Text",ExpressionUUID->"9fe1113a-ec58-41de-9fb2-f82fccfff3c6"],
-Cell[260609, 6010, 2132, 51, 396, "Text",ExpressionUUID->"5927328a-0a05-45c5-85a2-e68a5c4a1719"]
+Cell[260149, 6010, 1608, 29, 51, "Text",ExpressionUUID->"9fe1113a-ec58-41de-9fb2-f82fccfff3c6"],
+Cell[261760, 6041, 2174, 54, 396, "Text",ExpressionUUID->"5927328a-0a05-45c5-85a2-e68a5c4a1719"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[262778, 6066, 277, 4, 67, "Section",ExpressionUUID->"f34f7422-db9b-4a54-b030-44b6987ae46c",
+Cell[263971, 6100, 277, 4, 67, "Section",ExpressionUUID->"f34f7422-db9b-4a54-b030-44b6987ae46c",
  CellTags->"hidden"],
-Cell[263058, 6072, 1897, 29, 74, "Text",ExpressionUUID->"36fb5dbb-0128-46a7-9509-0c0c45472837"],
-Cell[264958, 6103, 1603, 22, 51, "Text",ExpressionUUID->"16dafc50-6af1-4a1a-9d66-81d7094ff43b"],
-Cell[266564, 6127, 255, 5, 30, "Input",ExpressionUUID->"e65497b4-dc8e-4ac5-a68a-e8c3467b30a8"],
-Cell[266822, 6134, 1764, 30, 51, "Text",ExpressionUUID->"de62d751-ef51-409b-b669-7377e1d0d37e"],
-Cell[268589, 6166, 226, 5, 30, "Input",ExpressionUUID->"a7ca7c12-8bcb-4b53-aef5-04c214cc7e14"],
-Cell[268818, 6173, 2330, 44, 97, "Text",ExpressionUUID->"e03879ea-c6c9-4874-bdb9-f55646b0d6e1"],
-Cell[271151, 6219, 7136, 136, 520, "Code",ExpressionUUID->"7cecba67-aad1-4d46-aa48-71000e90a03f"],
+Cell[264251, 6106, 1897, 29, 74, "Text",ExpressionUUID->"36fb5dbb-0128-46a7-9509-0c0c45472837"],
+Cell[266151, 6137, 1603, 22, 51, "Text",ExpressionUUID->"16dafc50-6af1-4a1a-9d66-81d7094ff43b"],
+Cell[267757, 6161, 255, 5, 30, "Input",ExpressionUUID->"e65497b4-dc8e-4ac5-a68a-e8c3467b30a8"],
+Cell[268015, 6168, 1764, 30, 51, "Text",ExpressionUUID->"de62d751-ef51-409b-b669-7377e1d0d37e"],
+Cell[269782, 6200, 226, 5, 30, "Input",ExpressionUUID->"a7ca7c12-8bcb-4b53-aef5-04c214cc7e14"],
+Cell[270011, 6207, 2330, 44, 97, "Text",ExpressionUUID->"e03879ea-c6c9-4874-bdb9-f55646b0d6e1"],
+Cell[272344, 6253, 7136, 136, 520, "Code",ExpressionUUID->"7cecba67-aad1-4d46-aa48-71000e90a03f"],
 Cell[CellGroupData[{
-Cell[278312, 6359, 299, 5, 30, "Input",ExpressionUUID->"103f6934-f14a-484e-ac30-be652fd11de0"],
-Cell[278614, 6366, 5860, 173, 481, "Output",ExpressionUUID->"615473aa-b4cf-4eb4-a375-55e15727b189"]
+Cell[279505, 6393, 299, 5, 30, "Input",ExpressionUUID->"103f6934-f14a-484e-ac30-be652fd11de0"],
+Cell[279807, 6400, 5860, 173, 481, "Output",ExpressionUUID->"615473aa-b4cf-4eb4-a375-55e15727b189"]
 }, Open  ]],
-Cell[284489, 6542, 1832, 27, 74, "Text",ExpressionUUID->"cf3e95bc-c429-409f-babd-13efa012a8e2"],
+Cell[285682, 6576, 1832, 27, 74, "Text",ExpressionUUID->"cf3e95bc-c429-409f-babd-13efa012a8e2"],
 Cell[CellGroupData[{
-Cell[286346, 6573, 782, 22, 52, "Input",ExpressionUUID->"f0bfc5a4-2d8f-4a0d-b438-7397da9e484d"],
-Cell[287131, 6597, 1623, 33, 230, "Output",ExpressionUUID->"dbaa5900-fc29-4463-8b35-1195d779c80e"]
+Cell[287539, 6607, 782, 22, 52, "Input",ExpressionUUID->"f0bfc5a4-2d8f-4a0d-b438-7397da9e484d"],
+Cell[288324, 6631, 1623, 33, 230, "Output",ExpressionUUID->"dbaa5900-fc29-4463-8b35-1195d779c80e"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[288791, 6635, 209, 4, 30, "Input",ExpressionUUID->"13635d0e-1f37-44e2-9743-f84be66461a8"],
-Cell[289003, 6641, 11317, 219, 231, "Output",ExpressionUUID->"15008eb9-0e9a-4e3e-ae41-c17015631f31"]
+Cell[289984, 6669, 209, 4, 30, "Input",ExpressionUUID->"13635d0e-1f37-44e2-9743-f84be66461a8"],
+Cell[290196, 6675, 11317, 219, 231, "Output",ExpressionUUID->"15008eb9-0e9a-4e3e-ae41-c17015631f31"]
 }, Open  ]],
-Cell[300335, 6863, 1795, 29, 51, "Text",ExpressionUUID->"170ba9b2-f9bd-444f-8c0a-9b92c832908b"],
+Cell[301528, 6897, 1795, 29, 51, "Text",ExpressionUUID->"170ba9b2-f9bd-444f-8c0a-9b92c832908b"],
 Cell[CellGroupData[{
-Cell[302155, 6896, 305, 8, 30, "Input",ExpressionUUID->"7b83769c-0a07-4b50-a0d3-3a2b87bced84"],
-Cell[302463, 6906, 592, 12, 24, "Message",ExpressionUUID->"8e8db4d5-7d63-458b-b32e-5c1e73638bae"],
-Cell[303058, 6920, 278, 5, 34, "Output",ExpressionUUID->"f967c6fa-bd08-4fa4-b3b7-1afe04b75b98"]
+Cell[303348, 6930, 305, 8, 30, "Input",ExpressionUUID->"7b83769c-0a07-4b50-a0d3-3a2b87bced84"],
+Cell[303656, 6940, 592, 12, 24, "Message",ExpressionUUID->"8e8db4d5-7d63-458b-b32e-5c1e73638bae"],
+Cell[304251, 6954, 278, 5, 34, "Output",ExpressionUUID->"f967c6fa-bd08-4fa4-b3b7-1afe04b75b98"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
