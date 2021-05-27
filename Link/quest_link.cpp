@@ -2021,6 +2021,45 @@ void internal_applyPauliSum(int inId, int outId) {
     }
 }
 
+void internal_applyArbitraryPhase(int quregId, int* qubits, long numQubits) {
+    
+    // fetch args into dynamic memory
+    qreal* coeffs;
+    qreal* exponents;
+    int numTerms;
+    long long int* overrideInds;
+    wsint64* ws_overrideInds;
+    qreal* overridePhases;
+    int numOverrides;
+    WSGetReal64List(stdlink, &coeffs, &numTerms);
+    WSGetReal64List(stdlink, &exponents, &numTerms);
+    WSGetInteger64List(stdlink, &ws_overrideInds, &numOverrides);
+    WSGetReal64List(stdlink, &overridePhases, &numOverrides);
+    
+    // cast Wolfram 'wsint' into QuEST 'long long int'
+    overrideInds = (long long int*) malloc(numOverrides * sizeof(long long int));
+    for (int i=0; i<numOverrides; i++)
+        overrideInds[i] = (long long int) ws_overrideInds[i];
+    
+    try {
+        local_throwExcepIfQuregNotCreated(quregId); // throws
+        Qureg qureg = quregs[quregId];
+        
+        applyArbitraryPhaseOverrides(qureg, qubits, numQubits, coeffs, exponents, numTerms, overrideInds, overridePhases, numOverrides); // throws
+        WSPutInteger(stdlink, quregId);
+        
+    } catch (QuESTException& err) {
+        local_sendErrorAndFail("ApplyArbitraryPhase", err.message);
+    }
+    
+    // clean-up (even if error)
+    WSReleaseReal64List(stdlink, coeffs, numTerms);
+    WSReleaseReal64List(stdlink, exponents, numTerms);
+    WSReleaseInteger64List(stdlink, ws_overrideInds, numOverrides);
+    WSReleaseReal64List(stdlink, overridePhases, numOverrides);
+    free(overrideInds);
+}
+
 
 
 

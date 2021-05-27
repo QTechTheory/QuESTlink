@@ -153,6 +153,15 @@
     QuEST`IsDensityMatrix[___] := QuEST`Private`invalidArgError[IsDensityMatrix];
 
 
+:Begin:
+:Function:       internal_applyArbitraryPhase
+:Pattern:        QuEST`Private`ApplyArbitraryPhaseInternal[quregId_Integer, qubits_List, coeffs_List, exponents_List, overrideInds_List, overridePhases_List]
+:Arguments:      { quregId, qubits, coeffs, exponents, overrideInds, overridePhases }
+:ArgumentTypes:  { Integer, IntegerList, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`Private`ApplyArbitraryPhaseInternal::usage = "ApplyArbitraryPhaseInternal[quregId, qubits, coeffs, exponents, overrideInds, overridePhases] applies a diagonal unitary operator upon the qureg, with elements informed by the exponential-polynomial encoded in {coeffs}, {exponents}, applied to the state index informed by {qubits}.";
 
 
 :Begin:
