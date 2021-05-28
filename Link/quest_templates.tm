@@ -173,6 +173,16 @@
 :Evaluate: 
     QuEST`Private`ApplyMultiArbitraryPhaseInternal::usage = "ApplyMultiArbitraryPhaseInternal[quregId, qubits, numQubitsPerReg, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases] applies a diagonal unitary operator upon the qureg, with elements informed by the multi-variable exponential-polynomial encoded in {coeffs}, {exponents}, applied to the state indices informed by {qubits}.";
 
+:Begin:
+:Function:       internal_applyNamedPhaseFunc
+:Pattern:        QuEST`Private`ApplyNamedPhaseFuncInternal[quregId_Integer, qubits_List, numQubitsPerReg_List, phaseFuncName_Integer, overrideInds_List, overridePhases_List]
+:Arguments:      { quregId, qubits, numQubitsPerReg, phaseFuncName, overrideInds, overridePhases }
+:ArgumentTypes:  { Integer, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`Private`ApplyNamedPhaseFuncInternal::usage = "ApplyNamedPhaseFuncInternal[quregId, qubits, numQubitsPerReg, phaseFuncName, overrideInds, overridePhases] applies a diagonal unitary operator upon the qureg, with elements informed by the multi-variable function implied by phaseFuncName, applied to the state indices informed by {qubits}.";
+
 
 :Begin:
 :Function:       wrapper_mixDepolarising

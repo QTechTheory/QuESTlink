@@ -2152,6 +2152,74 @@ void internal_applyMultiArbitraryPhase(int quregId) {
     WSReleaseReal64List(stdlink, overridePhases, numOverrides);
 }
 
+void internal_applyNamedPhaseFunc(int quregId) {
+    // 86% of this function is restructuring arguments... despicable
+    
+    // fetch flat-packed args
+    int* flat_qubits;
+    int* numQubitsPerReg;
+    int numRegs;
+    int funcNameCode;
+    wsint64* flat_overrideInds;
+    qreal* overridePhases;
+    int numOverrides;
+    int dummy_totalQubits; // (irrelevant flattened list lengths)
+    WSGetInteger32List(stdlink, &flat_qubits, &dummy_totalQubits);
+    WSGetInteger32List(stdlink, &numQubitsPerReg, &numRegs);
+    WSGetInteger32(stdlink, &funcNameCode);
+    WSGetInteger64List(stdlink, &flat_overrideInds, &numOverrides);
+    WSGetReal64List(stdlink, &overridePhases, &numOverrides);
+    
+    int r,v,q;
+
+    // create nested lists needed for API call
+    int** qubits = (int**) malloc(numRegs * sizeof *qubits);
+    for (r=0; r<numRegs; r++)
+        qubits[r] = (int*) malloc(numQubitsPerReg[r] * sizeof *(qubits[r]));
+    long long int** overrideInds = (long long int**) malloc(numOverrides * sizeof *overrideInds);
+    for (v=0; v<numOverrides; v++)
+        overrideInds[v] = (long long int*) malloc(numRegs * sizeof *(overrideInds[v]));
+        
+    // populate nested lists with flat-packed args
+    int qInd = 0;
+    for (r=0; r<numRegs; r++) {
+        for (q=0; q<numQubitsPerReg[r]; q++)
+            qubits[r][q] = flat_qubits[qInd++];
+    }
+    int vInd = 0;
+    for (v=0; v<numOverrides; v++)
+        for (r=0; r<numRegs; r++)
+            overrideInds[v][r] = (long long int) flat_overrideInds[vInd++];
+            
+    try {
+        local_throwExcepIfQuregNotCreated(quregId); // throws
+        Qureg qureg = quregs[quregId];
+        
+        applyNamedPhaseFunctionOverrides(qureg, qubits, numQubitsPerReg, numRegs, (enum phaseFunc) funcNameCode, overrideInds, overridePhases, numOverrides);
+        
+        WSPutInteger(stdlink, quregId);
+        
+    } catch (QuESTException& err) {
+        
+        // execution will proceed to clean-up even if error
+        local_sendErrorAndFail("ApplyArbitraryPhase", err.message);
+    }
+    
+    // free nested arrs
+    for (r=0; r<numRegs; r++)
+        free(qubits[r]);
+    for (v=0; v<numOverrides; v++)
+        free(overrideInds[v]);
+    free(qubits);
+    free(overrideInds);
+    
+    // free flat-packed args
+    WSReleaseInteger32List(stdlink, flat_qubits, dummy_totalQubits);
+    WSReleaseInteger32List(stdlink, numQubitsPerReg, numRegs);
+    WSReleaseInteger64List(stdlink, flat_overrideInds, numOverrides);
+    WSReleaseReal64List(stdlink, overridePhases, numOverrides);
+}
+
 
 
 
