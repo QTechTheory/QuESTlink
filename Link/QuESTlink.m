@@ -49,9 +49,16 @@ CalcDensityInnerProducts[rhoId, omegaIds] returns a real vector with i-th elemen
     
     ApplyArbitraryPhase::usage = "ApplyArbitraryPhase[qureg, qubits, f[r], r] multiplies a phase factor e^(i f[r]) onto each amplitude in qureg, where r is substituted with the index of each basis state as informed by the list of qubits (ordered least to most significant).
 ApplyArbitraryPhase[qureg, qubits, f[r], r, overrides] first consults whether a basis state's index is included in the list of rules in overrides {index -> phase}, and if present, uses the prescribed phase in lieu of evaluating f[index].
-\[Bullet] qubits is a list of which qubits to include in the determination of the index r for each basis state. qubits={0,1,2} implies the canonical indexing of basis states in a 3-qubit register.
-\[Bullet] f[r] must be an exponential polynomial of r, of the form sum_i a_j r^(p_j) where a_j and p_j can be any real number (including negative and fractional).
-\[Bullet] f[r] must evaluate to a real number for every basis state index informed by qubits, unless overriden."
+    \[Bullet] qubits is a list of which qubits to include in the determination of the index r for each basis state. qubits={0,1,2} implies the canonical indexing of basis states in a 3-qubit register.
+    \[Bullet] f[r] must be an exponential polynomial of r, of the form sum_i a_j r^(p_j) where a_j and p_j can be any real number (including negative and fractional).
+    \[Bullet] f[r] must evaluate to a real number for every basis state index informed by qubits, unless overriden.
+ApplyArbitraryPhase[qureg, {qubits, ...}, f[x,y,...], {x,y,...}] evaluates a multi-variable exponential-polynomial phase function, where each variable corresponds to a sub-register of qubits.
+ApplyArbitraryPhase[qureg, {qubits, ...}, f[x,y,...], {x,y,...}, overrides] first consults whether tuple of sub-register indices already exists in the list of phase overrides.
+    \[Bullet] each element of overrides must have format {x0,y0,...} -> phase0.
+ApplyArbitraryPhase[qureg, {qubits, ...}, FuncName] evaluates a specific named multi-variable function to determine the phase. These are:
+    \[Bullet] \"Norm\" evaluates Sqrt[x^2 + y^2 + ...]
+    \[Bullet] \"InverseNorm\" evaluates 1/Sqrt[x^2 + y^2 + ...]. This requires overriding the phase of index {0,0...} to avoid divergence.
+ApplyArbitraryPhase[qureg, {qubits, ...}, FuncName, overrides] first consults the overrides."
     ApplyArbitraryPhase::error = "`1`"
 
     CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the matrix form of the given weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target."
