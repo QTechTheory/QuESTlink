@@ -702,7 +702,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         GetAmp[qureg_Integer, row_Integer, col_Integer] := GetAmpInternal[qureg, row, col]
         GetAmp[___] := invalidArgError[GetAmp]
         
-        
+        (* for extracting {coeffs}, {exponents} from a 1D exponential-polynomial *)
         extractCoeffExpo[s_Symbol][c_?NumericQ] := {c,0}
         extractCoeffExpo[s_Symbol][s_Symbol] := {1,1}
         extractCoeffExpo[s_Symbol][Verbatim[Times][c_?NumericQ, s_Symbol]] := {c,1}
@@ -714,14 +714,61 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         extractExpPolyTerms[term_, s_Symbol] :=
         	{extractCoeffExpo[s] @ term}
             
-        ApplyArbitraryPhase[qureg_Integer, qubits_List, phaseFunc_, phaseIndSymb_Symbol, phaseOverrides:{(_Integer -> _) ...}:{}] := 
+        (* for extracting {coeffs}, {exponents} from an n-D exponential-polynomial *)
+        extractMultiExpPolyTerms[terms_List, symbs:{_Symbol ..}] := 
+        	Module[{coeffs,powers, cp, badterms},
+        		coeffs = Association @@ Table[s->{},{s,symbs}];
+        		powers = Association @@ Table[s->{},{s,symbs}];
+        		badterms = {};
+        		(* for each term... *)
+        		Do[
+        			(* attempting extraction of term via each symbol *)
+        			Do[
+        				cp = extractCoeffExpo[s][term];
+        				If[ First[cp] =!= $Failed,
+        					AppendTo[coeffs[s], cp[[1]]];
+        					AppendTo[powers[s], cp[[2]]];
+        					Break[]],
+        				{s, symbs}];
+        			(* if no symbol choice admitted a recognised term, record term *)
+        			If[ First[cp] === $Failed,
+        				AppendTo[badterms, cp]];
+        			(* otherwise, proceed through all terms *)
+        			, {term, terms}];
+        		(* return bad terms if encountered, else term info *)
+        		If[badterms === {}, 
+        			{Values @ coeffs, Values @ powers},
+        			badterms]]
+        extractMultiExpPolyTerms[poly_Plus, symbs:{_Symbol ..}] := 
+            extractMultiExpPolyTerms[List @@ poly, symbs]
+        extractMultiExpPolyTerms[term_, symbs:{_Symbol ..}] := 
+            extractMultiExpPolyTerms[{term}, symbs]
+            
+        ApplyArbitraryPhase[qureg_Integer, qubits:{_Integer..}, phaseFunc_, phaseIndSymb_Symbol, phaseOverrides:{(_Integer -> _) ...}:{}] := 
             With[
                 {terms = extractExpPolyTerms[N @ phaseFunc,phaseIndSymb]},
                 {badterms = Cases[terms, {$Failed, bad_} :> bad]},
                 If[ Length[badterms] === 0,
-                    ApplyArbitraryPhaseInternal[qureg, qubits, terms[[All,1]], terms[[All,2]], phaseOverrides[[All,1]], phaseOverrides[[All,2]]],
-                    (Message[ApplyArbitraryPhase::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms]; 
+                    ApplyArbitraryPhaseInternal[qureg, qubits, terms[[All,1]], terms[[All,2]], phaseOverrides[[All,1]], N @ phaseOverrides[[All,2]]],
+                    (Message[ApplyArbitraryPhase::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
                      $Failed)]]
+        
+        ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _) ...}:{}] /; (
+            Not @ DuplicateFreeQ @ phaseIndSymbs || Length @ regs =!= Length @ phaseIndSymbs) :=
+                Message[ApplyArbitraryPhase::error, "Each delimited group of qubits must correspond to a unique symbol in the phase function."]
+        ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _) ..}] /; (
+            Not[Equal @@ Length /@ phaseOverrides[[All,1]]] || Length[phaseIndSymbs] =!= Length @ phaseOverrides[[1,1]]) :=
+                Message[ApplyArbitraryPhase::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups / symbols."]
+        ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _) ...}:{}] :=
+            With[
+                {terms = extractMultiExpPolyTerms[N @ phaseFunc, phaseIndSymbs]},
+                {badterms = Cases[terms, {$Failed, bad_} :> bad]},
+                {coeffs = First[terms], exponents=Last[terms]},
+                If[ Length[badterms] === 0,
+                    ApplyMultiArbitraryPhaseInternal[qureg, Flatten[regs], Length/@regs, Flatten[coeffs], Flatten[exponents], Length/@coeffs, Flatten[phaseOverrides[[All,1]]], N @ phaseOverrides[[All,2]]],
+                    (Message[ApplyArbitraryPhase::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
+                     $Failed)]]
+        
         ApplyArbitraryPhase[___] := invalidArgError[ApplyArbitraryPhase]
         
         
