@@ -205,7 +205,7 @@ typedef struct QuESTEnv
 
 
 /*
- * Added for Mathematica front-end 
+ * Added directly to QuESTlink
  */
 
 /** exposed for MMA get-deriv-of-circuits (deriv of controlled gates) */
@@ -214,6 +214,12 @@ void projectToOne(Qureg qureg, const int measureQubit);
 /** exposed for MMA get-deriv-of-circuits (deriv of general unitary gates) */
 void applyOneQubitMatrix(Qureg qureg, int targetQubit,  ComplexMatrix2 u);
 void applyTwoQubitMatrix(Qureg qureg, int targetQubit1, int targetQubit2, ComplexMatrix4 u);
+
+// added prematurely since urgent & QuEST backend isn't ready to pull to QuESTlink
+enum phaseFunc {NORM=0, INVERSE_NORM=1};
+void applyArbitraryPhaseOverrides(Qureg qureg, int* qubits, int numQubits, qreal* coeffs, qreal* exponents, int numTerms, long long int* overrideInds, qreal* overridePhases, int numOverrides);
+void applyMultiArbitraryPhaseOverrides(Qureg qureg, int** qubits, int* numQubitsPerReg, int numRegs, qreal** coeffs, qreal** exponents, int* numTermsPerReg, long long int** overrideInds, qreal* overridePhases, int numOverrides);
+void applyNamedPhaseFunctionOverrides(Qureg qureg, int** qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int** overrideInds, qreal* overridePhases, int numOverrides);
 
 
 /*

@@ -16,6 +16,10 @@
 # define QUEST_PRECISION_H
 
 
+// added directly to QuESTlink
+// the maximum number of qubit registers which can be passed to functions like applyMultiArbitraryPhaseOverrides()
+#define MAX_NUM_REGS_APPLY_ARBITRARY_PHASE 100
+
 // set default double precision if not set during compilation
 # ifndef QuEST_PREC
 # define QuEST_PREC 2

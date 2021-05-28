@@ -18,6 +18,18 @@
 extern "C" {
 # endif
 
+
+/*
+ * added directly to QuESTlink
+ */
+void statevec_applyArbitraryPhaseOverrides(Qureg qureg, int* qubits, int numQubits, qreal* coeffs, qreal* exponents, int numTerms, long long int* overrideInds, qreal* overridePhases, int numOverrides);
+
+void statevec_applyMultiArbitraryPhaseOverrides(Qureg qureg, int** qubits, int* numQubitsPerReg, int numRegs, qreal** coeffs, qreal** exponents, int* numTermsPerReg, long long int** overrideInds, qreal* overridePhases, int numOverrides);
+
+void statevec_applyNamedPhaseFunctionOverrides(Qureg qureg, int** qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int** overrideInds, qreal* overridePhases, int numOverrides);
+
+
+
 /*
  * general functions
  */

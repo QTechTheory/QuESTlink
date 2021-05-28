@@ -28,7 +28,7 @@ extern "C" {
 
 
 /*
- * Added for Mathematica front-end 
+ * Added directly to QuESTlink:
  */
  
 void projectToOne(Qureg qureg, const int measureQubit) {
@@ -56,6 +56,53 @@ void applyTwoQubitMatrix(Qureg qureg, int targetQubit1, int targetQubit2, Comple
     validateMultiTargets(qureg, (int []) {targetQubit1, targetQubit2}, 2, __func__);
     statevec_twoQubitUnitary(qureg, targetQubit1, targetQubit2, u);
     qasm_recordComment(qureg, "Here, an undisclosed 2-qubit matrix was pre-multiplied.");
+}
+
+void applyArbitraryPhaseOverrides(Qureg qureg, int* qubits, int numQubits, qreal* coeffs, qreal* exponents, int numTerms, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+    
+    // validation:
+    //      qureg is state vector 
+    //      each qubits[i] is valid (0 < qubits[i] < qureg.numQubits)
+    //      0 < numQubits <= qureg.numQubits
+    //      numTerms > 0
+    //      numOverrides >= 0
+    
+    // backend calls
+    statevec_applyArbitraryPhaseOverrides(qureg, qubits, numQubits, coeffs, exponents, numTerms, overrideInds, overridePhases, numOverrides);
+    
+    // QASM
+}
+
+void applyMultiArbitraryPhaseOverrides(Qureg qureg, int** qubits, int* numQubitsPerReg, int numRegs, qreal** coeffs, qreal** exponents, int* numTermsPerReg, long long int** overrideInds, qreal* overridePhases, int numOverrides) {
+    
+    // validation:
+    //      qureg is a state-vector
+    //      each qubits[j][i] is valid (0 < qubits[j][i] < qureg.numQubits)
+    //      each numQubitsPerReg is valid (0 < numQubitsPerReg[i] < qureg.numQubits). They can overlap fine 
+    //      numRegs is valid (0 < numRegs < MAX_NUM_REGS_APPLY_ARBITRARY_PHASE)
+    //      each numTermsPerReg[i] is valid (> 0)
+    //      numOverrides is valid (>= 0)
+    
+    // backend calls
+    statevec_applyMultiArbitraryPhaseOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
+    
+    // QASM
+}
+
+void applyNamedPhaseFunctionOverrides(Qureg qureg, int** qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int** overrideInds, qreal* overridePhases, int numOverrides) {
+    
+    // validation:
+    //      qureg is a state-vector
+    //      each qubits[j][i] is valid (0 < qubits[j][i] < qureg.numQubits)
+    //      each numQubitsPerReg is valid (0 < numQubitsPerReg[i] < qureg.numQubits). They can overlap fine 
+    //      numRegs is valid (0 < numRegs < MAX_NUM_REGS_APPLY_ARBITRARY_PHASE)
+    //      functionNameCode is a valid enum value {0, 1}
+    //      numOverrides is valid (>= 0)
+    
+    // backend calls
+    statevec_applyNamedPhaseFunctionOverrides(qureg, qubits, numQubitsPerReg, numRegs, functionNameCode, overrideInds, overridePhases, numOverrides);
+    
+    // QASM
 }
 
 
