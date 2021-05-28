@@ -73,7 +73,12 @@ void applyArbitraryPhaseOverrides(Qureg qureg, int* qubits, int numQubits, qreal
     // QASM
 }
 
-void applyMultiArbitraryPhaseOverrides(Qureg qureg, int** qubits, int* numQubitsPerReg, int numRegs, qreal** coeffs, qreal** exponents, int* numTermsPerReg, long long int** overrideInds, qreal* overridePhases, int numOverrides) {
+void applyMultiArbitraryPhaseOverrides(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+    
+    // currently:
+    //      applyMultiArbitraryPhaseOverrides(qureg, {{1,2}, {3,4,5}}, {2,3}, 2, {{1}, {.5,-1}}, {{1}, {2,3}}, {1,2}, { {0,0,0} }, { PI }, 1);
+    // to become: 
+    //      applyMultiArbitraryPhaseOverrides(qureg, {1,2, 3,4,5}, {2,3}, 2, {1, .5,-1}, {1, 2,3}, {1,2}, { 0,0,0 }, { PI }, 1);
     
     // validation:
     //      qureg is a state-vector
@@ -89,7 +94,7 @@ void applyMultiArbitraryPhaseOverrides(Qureg qureg, int** qubits, int* numQubits
     // QASM
 }
 
-void applyNamedPhaseFunctionOverrides(Qureg qureg, int** qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int** overrideInds, qreal* overridePhases, int numOverrides) {
+void applyNamedPhaseFunctionOverrides(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
     
     // validation:
     //      qureg is a state-vector

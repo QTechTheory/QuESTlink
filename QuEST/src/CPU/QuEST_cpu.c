@@ -104,11 +104,13 @@ void statevec_applyArbitraryPhaseOverrides(
 }
 
 void statevec_applyMultiArbitraryPhaseOverrides(
-    Qureg qureg, int** qubits, int* numQubitsPerReg, int numRegs, 
-    qreal** coeffs, qreal** exponents, int* numTermsPerReg, 
-    long long int** overrideInds, qreal* overridePhases, int numOverrides) 
+    Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
+    qreal* coeffs, qreal* exponents, int* numTermsPerReg, 
+    long long int* overrideInds, qreal* overridePhases, int numOverrides) 
 {
     // each node/chunk modifies only local values in an embarrassingly parallel way 
+    
+    // note partitions of qubits, coeffs, exponents and overrideInds are stored flat
     
     // thread-shared vaes
     int chunkId = qureg.chunkId;
@@ -118,7 +120,7 @@ void statevec_applyMultiArbitraryPhaseOverrides(
     
     // thread-private vars
     long long int index, globalAmpInd;
-    int r, q, i, t, found;
+    int r, q, i, t, found, flatInd;
     qreal phase, c, s, re, im;
     
     // each thread has a private static array of length >= numRegs (private var-length is illegal)
@@ -128,7 +130,7 @@ void statevec_applyMultiArbitraryPhaseOverrides(
 # pragma omp parallel \
     default  (none) \
     shared   (chunkId,numAmps, stateRe,stateIm, qubits,numQubitsPerReg,numRegs, coeffs,exponents,numTermsPerReg, overrideInds,overridePhases,numOverrides) \
-    private  (index,globalAmpInd, r,q,i,t, found, phaseInds,phase, c,s,re,im) 
+    private  (index,globalAmpInd, r,q,i,t,flatInd, found, phaseInds,phase, c,s,re,im) 
 # endif
     {
 # ifdef _OPENMP
@@ -140,17 +142,18 @@ void statevec_applyMultiArbitraryPhaseOverrides(
             globalAmpInd = chunkId * numAmps + index;
             
             // determine phase indices
+            flatInd = 0;
             for (r=0; r<numRegs; r++) {
                 phaseInds[r] = 0LL;
                 for (q=0; q<numQubitsPerReg[r]; q++)
-                    phaseInds[r] += (1LL << q) * extractBit(qubits[r][q], globalAmpInd);
+                    phaseInds[r] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);   // qubits[flatInd] ~ qubits[r][q]
             }
             
             // determine if this phase index has an overriden value (i < numOverrides)
             for (i=0; i<numOverrides; i++) {
                 found = 1;
                 for (r=0; r<numRegs; r++) {
-                    if (phaseInds[r] != overrideInds[i][r]) {
+                    if (phaseInds[r] != overrideInds[i*numRegs+r]) {
                         found = 0;
                         break;
                     }
@@ -163,10 +166,15 @@ void statevec_applyMultiArbitraryPhaseOverrides(
             phase = 0;
             if (i < numOverrides)
                 phase = overridePhases[i];
-            else
-                for (r=0; r<numRegs; r++)
-                    for (t=0; t<numTermsPerReg[r]; t++)
-                        phase += coeffs[r][t] * pow(phaseInds[r], exponents[r][t]);
+            else {
+                flatInd = 0;
+                for (r=0; r<numRegs; r++) {
+                    for (t=0; t<numTermsPerReg[r]; t++) {
+                        phase += coeffs[flatInd] * pow(phaseInds[r], exponents[flatInd]);
+                        flatInd++;
+                    }
+                }
+            }
             
             // modify amp to amp * exp(i phase) 
             c = cos(phase);
@@ -182,11 +190,13 @@ void statevec_applyMultiArbitraryPhaseOverrides(
 }
 
 void statevec_applyNamedPhaseFunctionOverrides(
-    Qureg qureg, int** qubits, int* numQubitsPerReg, int numRegs, 
+    Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
     enum phaseFunc phaseFuncName,
-    long long int** overrideInds, qreal* overridePhases, int numOverrides) 
+    long long int* overrideInds, qreal* overridePhases, int numOverrides) 
 {
         // each node/chunk modifies only local values in an embarrassingly parallel way 
+        
+        // note partitions of qubits, overrideInds are stored flat
         
         // thread-shared vaes
         int chunkId = qureg.chunkId;
@@ -196,7 +206,7 @@ void statevec_applyNamedPhaseFunctionOverrides(
         
         // thread-private vars
         long long int index, globalAmpInd;
-        int r, q, i, found;
+        int r, q, i, found, flatInd;
         qreal phase, norm, c, s, re, im;
         
         // each thread has a private static array of length >= numRegs (private var-length is illegal)
@@ -206,7 +216,7 @@ void statevec_applyNamedPhaseFunctionOverrides(
     # pragma omp parallel \
         default  (none) \
         shared   (chunkId,numAmps, stateRe,stateIm, qubits,numQubitsPerReg,numRegs, phaseFuncName, overrideInds,overridePhases,numOverrides) \
-        private  (index,globalAmpInd, r,q,i, found, phaseInds,phase,norm, c,s,re,im) 
+        private  (index,globalAmpInd, r,q,i,flatInd, found, phaseInds,phase,norm, c,s,re,im) 
     # endif
         {
     # ifdef _OPENMP
@@ -218,17 +228,18 @@ void statevec_applyNamedPhaseFunctionOverrides(
                 globalAmpInd = chunkId * numAmps + index;
                 
                 // determine phase indices
+                flatInd = 0;
                 for (r=0; r<numRegs; r++) {
                     phaseInds[r] = 0LL;
                     for (q=0; q<numQubitsPerReg[r]; q++)
-                        phaseInds[r] += (1LL << q) * extractBit(qubits[r][q], globalAmpInd);
+                        phaseInds[r] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);   // qubits[flatInd] ~ qubits[r][q]
                 }
                 
                 // determine if this phase index has an overriden value (i < numOverrides)
                 for (i=0; i<numOverrides; i++) {
                     found = 1;
                     for (r=0; r<numRegs; r++) {
-                        if (phaseInds[r] != overrideInds[i][r]) {
+                        if (phaseInds[r] != overrideInds[i*numRegs+r]) {
                             found = 0;
                             break;
                         }

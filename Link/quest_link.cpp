@@ -2064,57 +2064,32 @@ void internal_applyMultiArbitraryPhase(int quregId) {
     // 86% of this function is restructuring arguments... despicable
     
     // fetch flat-packed args
-    int* flat_qubits;
+    int* qubits;
     int* numQubitsPerReg;
     int numRegs;
-    qreal* flat_coeffs;
-    qreal* flat_exponents;
+    qreal* coeffs;
+    qreal* exponents;
     int* numTermsPerReg;
-    wsint64* flat_overrideInds;
+    wsint64* ws_overrideInds;
     qreal* overridePhases;
     int numOverrides;
     // (irrelevant flattened list lengths)
     int dummy_totalQubits;
     int dummy_totalTerms;
-    WSGetInteger32List(stdlink, &flat_qubits, &dummy_totalQubits);
+    int dummy_totalInds;
+    WSGetInteger32List(stdlink, &qubits, &dummy_totalQubits);
     WSGetInteger32List(stdlink, &numQubitsPerReg, &numRegs);
-    WSGetReal64List(stdlink, &flat_coeffs, &dummy_totalTerms);
-    WSGetReal64List(stdlink, &flat_exponents, &dummy_totalTerms);
+    WSGetReal64List(stdlink, &coeffs, &dummy_totalTerms);
+    WSGetReal64List(stdlink, &exponents, &dummy_totalTerms);
     WSGetInteger32List(stdlink, &numTermsPerReg, &numRegs);
-    WSGetInteger64List(stdlink, &flat_overrideInds, &numOverrides);
+    WSGetInteger64List(stdlink, &ws_overrideInds, &dummy_totalInds);
     WSGetReal64List(stdlink, &overridePhases, &numOverrides);
     
-    int r,v,q,t;
+    // convert wsint64 arr to long long int 
+    long long int* overrideInds = (long long int*) malloc(numOverrides * numRegs * sizeof *overrideInds);
+    for (int i=0; i<numOverrides*numRegs; i++)
+        overrideInds[i] = (long long int) ws_overrideInds[i];
 
-    // create nested lists needed for API call
-    int** qubits = (int**) malloc(numRegs * sizeof *qubits);
-    qreal** coeffs = (qreal**) malloc(numRegs * sizeof *coeffs);
-    qreal** exponents = (qreal**) malloc(numRegs * sizeof *exponents);
-    for (r=0; r<numRegs; r++) {
-        qubits[r] = (int*) malloc(numQubitsPerReg[r] * sizeof *(qubits[r]));
-        coeffs[r] = (qreal*) malloc(numTermsPerReg[r] * sizeof *(coeffs[r]));
-        exponents[r] = (qreal*) malloc(numTermsPerReg[r] * sizeof *(exponents[r]));
-    }
-    long long int** overrideInds = (long long int**) malloc(numOverrides * sizeof *overrideInds);
-    for (v=0; v<numOverrides; v++)
-        overrideInds[v] = (long long int*) malloc(numRegs * sizeof *(overrideInds[v]));
-        
-    // populate nested lists with flat-packed args
-    int qInd = 0;
-    int tInd = 0;
-    for (r=0; r<numRegs; r++) {
-        for (q=0; q<numQubitsPerReg[r]; q++)
-            qubits[r][q] = flat_qubits[qInd++];
-        for (t=0; t<numTermsPerReg[r]; t++) {
-            coeffs[r][t] = flat_coeffs[tInd];
-            exponents[r][t] = flat_exponents[tInd++];
-        }
-    }
-    int vInd = 0;
-    for (v=0; v<numOverrides; v++)
-        for (r=0; r<numRegs; r++)
-            overrideInds[v][r] = (long long int) flat_overrideInds[vInd++];
-            
     try {
         local_throwExcepIfQuregNotCreated(quregId); // throws
         Qureg qureg = quregs[quregId];
@@ -2129,26 +2104,14 @@ void internal_applyMultiArbitraryPhase(int quregId) {
         local_sendErrorAndFail("ApplyArbitraryPhase", err.message);
     }
     
-    // free nested arrs
-    for (r=0; r<numRegs; r++) {
-        free(qubits[r]);
-        free(coeffs[r]);
-        free(exponents[r]);
-    }
-    for (v=0; v<numOverrides; v++)
-        free(overrideInds[v]);
-    free(qubits);
-    free(coeffs);
-    free(exponents);
+    // free args
     free(overrideInds);
-    
-    // free flat-packed args
-    WSReleaseInteger32List(stdlink, flat_qubits, dummy_totalQubits);
+    WSReleaseInteger32List(stdlink, qubits, dummy_totalQubits);
     WSReleaseInteger32List(stdlink, numQubitsPerReg, numRegs);
-    WSReleaseReal64List(stdlink, flat_coeffs, dummy_totalTerms);
-    WSReleaseReal64List(stdlink, flat_exponents, dummy_totalTerms);
+    WSReleaseReal64List(stdlink, coeffs, dummy_totalTerms);
+    WSReleaseReal64List(stdlink, exponents, dummy_totalTerms);
     WSReleaseInteger32List(stdlink, numTermsPerReg, numRegs);
-    WSReleaseInteger64List(stdlink, flat_overrideInds, numOverrides);
+    WSReleaseInteger64List(stdlink, ws_overrideInds, dummy_totalInds);
     WSReleaseReal64List(stdlink, overridePhases, numOverrides);
 }
 
@@ -2156,40 +2119,25 @@ void internal_applyNamedPhaseFunc(int quregId) {
     // 86% of this function is restructuring arguments... despicable
     
     // fetch flat-packed args
-    int* flat_qubits;
+    int* qubits;
     int* numQubitsPerReg;
     int numRegs;
     int funcNameCode;
-    wsint64* flat_overrideInds;
+    wsint64* ws_overrideInds;
     qreal* overridePhases;
     int numOverrides;
     int dummy_totalQubits; // (irrelevant flattened list lengths)
-    WSGetInteger32List(stdlink, &flat_qubits, &dummy_totalQubits);
+    int dummy_totalInds; // (irrelevant flattened list lengths)
+    WSGetInteger32List(stdlink, &qubits, &dummy_totalQubits);
     WSGetInteger32List(stdlink, &numQubitsPerReg, &numRegs);
     WSGetInteger32(stdlink, &funcNameCode);
-    WSGetInteger64List(stdlink, &flat_overrideInds, &numOverrides);
+    WSGetInteger64List(stdlink, &ws_overrideInds, &dummy_totalInds);
     WSGetReal64List(stdlink, &overridePhases, &numOverrides);
-    
-    int r,v,q;
 
-    // create nested lists needed for API call
-    int** qubits = (int**) malloc(numRegs * sizeof *qubits);
-    for (r=0; r<numRegs; r++)
-        qubits[r] = (int*) malloc(numQubitsPerReg[r] * sizeof *(qubits[r]));
-    long long int** overrideInds = (long long int**) malloc(numOverrides * sizeof *overrideInds);
-    for (v=0; v<numOverrides; v++)
-        overrideInds[v] = (long long int*) malloc(numRegs * sizeof *(overrideInds[v]));
-        
-    // populate nested lists with flat-packed args
-    int qInd = 0;
-    for (r=0; r<numRegs; r++) {
-        for (q=0; q<numQubitsPerReg[r]; q++)
-            qubits[r][q] = flat_qubits[qInd++];
-    }
-    int vInd = 0;
-    for (v=0; v<numOverrides; v++)
-        for (r=0; r<numRegs; r++)
-            overrideInds[v][r] = (long long int) flat_overrideInds[vInd++];
+    // convert wsint64 arr to long long int 
+    long long int* overrideInds = (long long int*) malloc(numOverrides * numRegs * sizeof *overrideInds);
+    for (int i=0; i<numOverrides*numRegs; i++)
+        overrideInds[i] = (long long int) ws_overrideInds[i];
             
     try {
         local_throwExcepIfQuregNotCreated(quregId); // throws
@@ -2205,18 +2153,12 @@ void internal_applyNamedPhaseFunc(int quregId) {
         local_sendErrorAndFail("ApplyArbitraryPhase", err.message);
     }
     
-    // free nested arrs
-    for (r=0; r<numRegs; r++)
-        free(qubits[r]);
-    for (v=0; v<numOverrides; v++)
-        free(overrideInds[v]);
-    free(qubits);
     free(overrideInds);
     
     // free flat-packed args
-    WSReleaseInteger32List(stdlink, flat_qubits, dummy_totalQubits);
+    WSReleaseInteger32List(stdlink, qubits, dummy_totalQubits);
     WSReleaseInteger32List(stdlink, numQubitsPerReg, numRegs);
-    WSReleaseInteger64List(stdlink, flat_overrideInds, numOverrides);
+    WSReleaseInteger64List(stdlink, ws_overrideInds, dummy_totalInds);
     WSReleaseReal64List(stdlink, overridePhases, numOverrides);
 }
 
