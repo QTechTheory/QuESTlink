@@ -58,6 +58,17 @@ void applyTwoQubitMatrix(Qureg qureg, int targetQubit1, int targetQubit2, Comple
     qasm_recordComment(qureg, "Here, an undisclosed 2-qubit matrix was pre-multiplied.");
 }
 
+
+void applyPhaseFunc(Qureg qureg, int* qubits, int numQubits, qreal* coeffs, qreal* exponents, int numTerms) {
+    validateStateVecQureg(qureg, __func__);
+    validateMultiQubits(qureg, qubits, numQubits, __func__);
+    validateNumPhaseFuncTerms(numTerms, __func__);
+    
+    statevec_applyPhaseFuncOverrides(qureg, qubits, numQubits, coeffs, exponents, numTerms, NULL, NULL, 0);
+    
+    qasm_recordPhaseFunc(qureg, qubits, numQubits,coeffs, exponents, numTerms, NULL, NULL, 0);
+}
+
 void applyPhaseFuncOverrides(Qureg qureg, int* qubits, int numQubits, qreal* coeffs, qreal* exponents, int numTerms, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
     validateStateVecQureg(qureg, __func__);
     validateMultiQubits(qureg, qubits, numQubits, __func__);
@@ -69,6 +80,16 @@ void applyPhaseFuncOverrides(Qureg qureg, int* qubits, int numQubits, qreal* coe
     qasm_recordPhaseFunc(qureg, qubits, numQubits,coeffs, exponents, numTerms, overrideInds, overridePhases, numOverrides);
 }
 
+void applyMultiVarPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg) {
+    validateStateVecQureg(qureg, __func__);
+    validateQubitSubregs(qureg, qubits, numQubitsPerReg, numRegs, __func__);
+    validateNumMultiVarPhaseFuncTerms(numTermsPerReg, numRegs, __func__);
+
+    statevec_applyMultiVarPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, NULL, NULL, 0);
+    
+    qasm_recordMultiVarPhaseFunc(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, NULL, NULL, 0);
+}
+
 void applyMultiVarPhaseFuncOverrides(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
     validateStateVecQureg(qureg, __func__);
     validateQubitSubregs(qureg, qubits, numQubitsPerReg, numRegs, __func__);
@@ -78,6 +99,16 @@ void applyMultiVarPhaseFuncOverrides(Qureg qureg, int* qubits, int* numQubitsPer
     statevec_applyMultiVarPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
     
     qasm_recordMultiVarPhaseFunc(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
+}
+
+void applyNamedPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode) {
+    validateStateVecQureg(qureg, __func__);
+    validateQubitSubregs(qureg, qubits, numQubitsPerReg, numRegs, __func__);
+    validatePhaseFuncName(functionNameCode, __func__);
+
+    statevec_applyNamedPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, functionNameCode, NULL, NULL, 0);
+    
+    qasm_recordNamedPhaseFunc(qureg, qubits, numQubitsPerReg, numRegs, functionNameCode, NULL, NULL, 0);
 }
 
 void applyNamedPhaseFuncOverrides(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
