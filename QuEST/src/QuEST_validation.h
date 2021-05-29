@@ -99,6 +99,14 @@ void validateMultiQubitKrausMap(Qureg qureg, int numTargs, ComplexMatrixN* ops, 
 
 void validateOneQubitDampingProb(qreal prob, const char* caller);
 
+void validateQubitSubregs(Qureg qureg, int* qubits, int* numQubitsPerReg, const int numReg, const char* caller);
+
+void validateNumPhaseFuncTerms(const int numTerms, const char* caller);
+
+void validateNumMultiVariPhaseFuncNum(int* numTermsPerReg, const int numRegs, const char* caller);
+
+void validatePhaseFuncName(enum phaseFunc functionNameCode, const char* caller);
+
 # ifdef __cplusplus
 }
 # endif

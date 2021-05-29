@@ -73,7 +73,11 @@ typedef enum {
     E_INVALID_NUM_TWO_QUBIT_KRAUS_OPS,
     E_INVALID_NUM_N_QUBIT_KRAUS_OPS,
     E_INVALID_KRAUS_OPS,
-    E_MISMATCHING_NUM_TARGS_KRAUS_SIZE
+    E_MISMATCHING_NUM_TARGS_KRAUS_SIZE,
+    E_INVALID_NUM_SUBREGISTERS,
+    E_INVALID_NUM_PHASE_FUNC_TERMS,
+    E_INVALID_NUM_PHASE_FUNC_OVERRIDES,
+    E_INVALID_PHASE_FUNC_NAME
 } ErrorCode;
 
 static const char* errorMessages[] = {
@@ -123,7 +127,11 @@ static const char* errorMessages[] = {
     [E_INVALID_NUM_TWO_QUBIT_KRAUS_OPS] = "At least 1 and at most 16 two-qubit Kraus operators may be specified.",
     [E_INVALID_NUM_N_QUBIT_KRAUS_OPS] = "At least 1 and at most 4*N^2 of N-qubit Kraus operators may be specified.",
     [E_INVALID_KRAUS_OPS] = "The specified Kraus map is not a completely positive, trace preserving map.",
-    [E_MISMATCHING_NUM_TARGS_KRAUS_SIZE] = "Every Kraus operator must be of the same number of qubits as the number of targets."
+    [E_MISMATCHING_NUM_TARGS_KRAUS_SIZE] = "Every Kraus operator must be of the same number of qubits as the number of targets.",
+    [E_INVALID_NUM_SUBREGISTERS] = "Invalid number of qubit subregisters, which must be >0 and <=100.",
+    [E_INVALID_NUM_PHASE_FUNC_TERMS] = "Invalid number of terms in the phase function specified. Must be >0.",
+    [E_INVALID_NUM_PHASE_FUNC_OVERRIDES] = "Invalid number of phase function overrides specified. Must be >0.",
+    [E_INVALID_PHASE_FUNC_NAME] = "Invalid named phase function, which must be one of {NORM, INVERSE_NORM}."
 };
 
 /* QuESTlink defines invalidQuESTInputError, so it doesn't need to be weakly 
@@ -505,6 +513,39 @@ void validateMultiQubitKrausMap(Qureg qureg, int numTargs, ComplexMatrixN* ops, 
     
     int isPos = isCompletelyPositiveMapN(ops, numOps);
     QuESTAssert(isPos, E_INVALID_KRAUS_OPS, caller);
+}
+
+void validateQubitSubregs(Qureg qureg, int* qubits, int* numQubitsPerReg, const int numReg, const char* caller) {
+    QuESTAssert(numReg>0 && numReg<=MAX_NUM_REGS_APPLY_ARBITRARY_PHASE, E_INVALID_NUM_SUBREGISTERS, caller);
+    
+    // allows registers to overlap, both within and between
+    int i=0;
+    for (int r=0; r<numRegs; r++) {
+        QuESTAssert(numQubitsPerReg[r]>0 && numQubitsPerReg[r]<=qureg.numQubitsRepresented, E_INVALID_NUM_QUBITS, caller);
+        
+        for (int q=0; q < numQubitsPerReg[r]; q++) {
+            QuESTAssert(qubits[i]>=0 && qubits[i]<qureg.numQubitsRepresented, E_INVALID_QUBIT_INDEX, caller);
+            i++;
+        }
+    }
+}
+
+void validateNumPhaseFuncTerms(const int numTerms, const char* caller) {
+    QuESTAssert(numTerms>0, E_INVALID_NUM_PHASE_FUNC_TERMS, caller);
+}
+
+void validateNumMultiVariPhaseFuncNum(int* numTermsPerReg, const int numRegs, const char* caller) {
+    QuESTAssert(numReg>0 && numReg<=MAX_NUM_REGS_APPLY_ARBITRARY_PHASE, E_INVALID_NUM_SUBREGISTERS, caller);
+    for (int r=0; r<numRegs; r++)
+        QuESTAssert(numTermsPerReg[r]>0, E_INVALID_NUM_PHASE_FUNC_TERMS, caller);
+}
+
+void validateNumPhaseFuncOverrides(const int numOverrides, const char* caller) {
+    QuESTAssert(numOverrides>0, E_INVALID_NUM_PHASE_FUNC_OVERRIDES, caller);
+}
+
+void validatePhaseFuncName(enum phaseFunc funcCode, const char* caller) {
+    QuESTAssert(funcCode == NORM || funcCode == INVERSE_NORM, E_INVALID_PHASE_FUNC_NAME, caller);
 }
 
 #ifdef __cplusplus
