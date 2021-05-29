@@ -69,13 +69,13 @@ void applyPhaseFuncOverrides(Qureg qureg, int* qubits, int numQubits, qreal* coe
     qasm_recordPhaseFunc(qureg, qubits, numQubits,coeffs, exponents, numTerms, overrideInds, overridePhases, numOverrides);
 }
 
-void applyMultiVariPhaseFuncOverrides(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+void applyMultiVarPhaseFuncOverrides(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
     validateStateVecQureg(qureg, __func__);
     validateQubitSubregs(qureg, qubits, numQubitsPerReg, numRegs, __func__);
-    validateNumMultiVariPhaseFuncTerms(numTermsPerReg, numRegs, __func__);
+    validateNumMultiVarPhaseFuncTerms(numTermsPerReg, numRegs, __func__);
     validateNumPhaseFuncOverrides(numOverrides, __func__);
 
-    statevec_applyMultiVariPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
+    statevec_applyMultiVarPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
     
     qasm_recordMultiVarPhaseFunc(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
 }

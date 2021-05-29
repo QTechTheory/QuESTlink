@@ -794,7 +794,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {badterms = Cases[terms, {$Failed, bad_} :> bad]},
                 {coeffs = First[terms], exponents=Last[terms]},
                 If[ Length[badterms] === 0,
-                    ApplyMultiVariPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, Flatten[coeffs], Flatten[exponents], Length/@coeffs, Flatten[phaseOverrides[[All,1]]], N @ phaseOverrides[[All,2]]],
+                    ApplyMultiVarPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, Flatten[coeffs], Flatten[exponents], Length/@coeffs, Flatten[phaseOverrides[[All,1]]], N @ phaseOverrides[[All,2]]],
                     (Message[ApplyArbitraryPhase::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
                      $Failed)]]
         

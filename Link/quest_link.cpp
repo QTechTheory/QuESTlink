@@ -2115,7 +2115,7 @@ void internal_applyPhaseFunc(int quregId, int* qubits, long numQubits) {
     free(overrideInds);
 }
 
-void internal_applyMultiVariPhaseFunc(int quregId) {
+void internal_applyMultiVarPhaseFunc(int quregId) {
     // 86% of this function is restructuring arguments... despicable
     
     // fetch flat-packed args
@@ -2149,7 +2149,7 @@ void internal_applyMultiVariPhaseFunc(int quregId) {
         local_throwExcepIfQuregNotCreated(quregId); // throws
         Qureg qureg = quregs[quregId];
         
-        applyMultiVariPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
+        applyMultiVarPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
         
         WSPutInteger(stdlink, quregId);
         

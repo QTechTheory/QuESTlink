@@ -215,14 +215,14 @@
     QuEST`Private`ApplyPhaseFuncInternal::usage = "ApplyPhaseFuncInternal[quregId, qubits, coeffs, exponents, overrideInds, overridePhases] applies a diagonal unitary operator upon the qureg, with elements informed by the exponential-polynomial encoded in {coeffs}, {exponents}, applied to the state index informed by {qubits}.";
 
 :Begin:
-:Function:       internal_applyMultiVariPhaseFunc
-:Pattern:        QuEST`Private`ApplyMultiVariPhaseFuncInternal[quregId_Integer, qubits_List, numQubitsPerReg_List, coeffs_List, exponents_List, numTermsPerReg_List, overrideInds_List, overridePhases_List]
+:Function:       internal_applyMultiVarPhaseFunc
+:Pattern:        QuEST`Private`ApplyMultiVarPhaseFuncInternal[quregId_Integer, qubits_List, numQubitsPerReg_List, coeffs_List, exponents_List, numTermsPerReg_List, overrideInds_List, overridePhases_List]
 :Arguments:      { quregId, qubits, numQubitsPerReg, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases }
 :ArgumentTypes:  { Integer, Manual }
 :ReturnType:     Manual
 :End:
 :Evaluate: 
-    QuEST`Private`ApplyMultiVariPhaseFuncInternal::usage = "ApplyMultiVariPhaseFuncInternal[quregId, qubits, numQubitsPerReg, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases] applies a diagonal unitary operator upon the qureg, with elements informed by the multi-variable exponential-polynomial encoded in {coeffs}, {exponents}, applied to the state indices informed by {qubits}.";
+    QuEST`Private`ApplyMultiVarPhaseFuncInternal::usage = "ApplyMultiVarPhaseFuncInternal[quregId, qubits, numQubitsPerReg, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases] applies a diagonal unitary operator upon the qureg, with elements informed by the multi-variable exponential-polynomial encoded in {coeffs}, {exponents}, applied to the state indices informed by {qubits}.";
 
 :Begin:
 :Function:       internal_applyNamedPhaseFunc

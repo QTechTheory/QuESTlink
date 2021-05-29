@@ -103,7 +103,7 @@ void statevec_applyPhaseFuncOverrides(
     }
 }
 
-void statevec_applyMultiVariPhaseFuncOverrides(
+void statevec_applyMultiVarPhaseFuncOverrides(
     Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
     qreal* coeffs, qreal* exponents, int* numTermsPerReg, 
     long long int* overrideInds, qreal* overridePhases, int numOverrides) 

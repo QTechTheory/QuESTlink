@@ -103,7 +103,7 @@ void validateQubitSubregs(Qureg qureg, int* qubits, int* numQubitsPerReg, const 
 
 void validateNumPhaseFuncTerms(const int numTerms, const char* caller);
 
-void validateNumMultiVariPhaseFuncTerms(int* numTermsPerReg, const int numRegs, const char* caller);
+void validateNumMultiVarPhaseFuncTerms(int* numTermsPerReg, const int numRegs, const char* caller);
 
 void validateNumPhaseFuncOverrides(const int numOverrides, const char* caller);
 
