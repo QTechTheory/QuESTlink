@@ -2076,7 +2076,7 @@ void internal_applyPauliSum(int inId, int outId) {
     }
 }
 
-void internal_applyArbitraryPhase(int quregId, int* qubits, long numQubits) {
+void internal_applyPhaseFunc(int quregId, int* qubits, long numQubits) {
     
     // fetch args into dynamic memory
     qreal* coeffs;
@@ -2100,7 +2100,7 @@ void internal_applyArbitraryPhase(int quregId, int* qubits, long numQubits) {
         local_throwExcepIfQuregNotCreated(quregId); // throws
         Qureg qureg = quregs[quregId];
         
-        applyArbitraryPhaseOverrides(qureg, qubits, numQubits, coeffs, exponents, numTerms, overrideInds, overridePhases, numOverrides); // throws
+        applyPhaseFuncOverrides(qureg, qubits, numQubits, coeffs, exponents, numTerms, overrideInds, overridePhases, numOverrides); // throws
         WSPutInteger(stdlink, quregId);
         
     } catch (QuESTException& err) {
@@ -2115,7 +2115,7 @@ void internal_applyArbitraryPhase(int quregId, int* qubits, long numQubits) {
     free(overrideInds);
 }
 
-void internal_applyMultiArbitraryPhase(int quregId) {
+void internal_applyMultiVariPhaseFunc(int quregId) {
     // 86% of this function is restructuring arguments... despicable
     
     // fetch flat-packed args
@@ -2149,7 +2149,7 @@ void internal_applyMultiArbitraryPhase(int quregId) {
         local_throwExcepIfQuregNotCreated(quregId); // throws
         Qureg qureg = quregs[quregId];
         
-        applyMultiArbitraryPhaseOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
+        applyMultiVariPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
         
         WSPutInteger(stdlink, quregId);
         
@@ -2198,7 +2198,7 @@ void internal_applyNamedPhaseFunc(int quregId) {
         local_throwExcepIfQuregNotCreated(quregId); // throws
         Qureg qureg = quregs[quregId];
         
-        applyNamedPhaseFunctionOverrides(qureg, qubits, numQubitsPerReg, numRegs, (enum phaseFunc) funcNameCode, overrideInds, overridePhases, numOverrides);
+        applyNamedPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, (enum phaseFunc) funcNameCode, overrideInds, overridePhases, numOverrides);
         
         WSPutInteger(stdlink, quregId);
         

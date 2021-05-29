@@ -154,7 +154,7 @@ extern "C" {
  * added directly to QuESTlink 
  */
  
-__global__ void statevec_applyArbitraryPhaseOverridesKernel(
+__global__ void statevec_applyPhaseFuncOverridesKernel(
     Qureg qureg, int* qubits, int numQubits, 
     qreal* coeffs, qreal* exponents, int numTerms, 
     long long int* overrideInds, qreal* overridePhases, int numOverrides)
@@ -195,7 +195,7 @@ __global__ void statevec_applyArbitraryPhaseOverridesKernel(
     qureg.deviceStateVec.imag[index] = re*s + im*c;
 }
 
- void statevec_applyArbitraryPhaseOverrides(
+ void statevec_applyPhaseFuncOverrides(
      Qureg qureg, int* qubits, int numQubits, 
      qreal* coeffs, qreal* exponents, int numTerms, 
      long long int* overrideInds, qreal* overridePhases, int numOverrides)
@@ -215,7 +215,7 @@ __global__ void statevec_applyArbitraryPhaseOverridesKernel(
     // call kernel
     int threadsPerCUDABlock = 128;
     int CUDABlocks = ceil((qreal) qureg.numAmpsPerChunk / threadsPerCUDABlock);
-    statevec_applyArbitraryPhaseOverridesKernel<<<CUDABlocks,threadsPerCUDABlock>>>(
+    statevec_applyPhaseFuncOverridesKernel<<<CUDABlocks,threadsPerCUDABlock>>>(
         qureg, d_qubits, numQubits, d_coeffs, d_exponents, numTerms, 
         d_overrideInds, d_overridePhases, numOverrides);
     
@@ -227,7 +227,7 @@ __global__ void statevec_applyArbitraryPhaseOverridesKernel(
     cudaFree(d_overridePhases);
 }
 
-__global__ void statevec_applyMultiArbitraryPhaseOverridesKernel(
+__global__ void statevec_applyMultiVariPhaseFuncOverridesKernel(
     Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
     qreal* coeffs, qreal* exponents, int* numTermsPerReg, 
     long long int* overrideInds, qreal* overridePhases, int numOverrides,
@@ -294,7 +294,7 @@ __global__ void statevec_applyMultiArbitraryPhaseOverridesKernel(
     qureg.deviceStateVec.imag[index] = re*s + im*c;
 }
 
-void statevec_applyMultiArbitraryPhaseOverrides(
+void statevec_applyMultiVariPhaseFuncOverrides(
     Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
     qreal* coeffs, qreal* exponents, int* numTermsPerReg, 
     long long int* overrideInds, qreal* overridePhases, int numOverrides) 
@@ -340,7 +340,7 @@ void statevec_applyMultiArbitraryPhaseOverrides(
     cudaMalloc(&d_phaseInds, numRegs*gridSize * sizeof *d_phaseInds);
     
     // call kernel
-    statevec_applyMultiArbitraryPhaseOverridesKernel<<<CUDABlocks,threadsPerCUDABlock>>>(
+    statevec_applyMultiVariPhaseFuncOverridesKernel<<<CUDABlocks,threadsPerCUDABlock>>>(
         qureg, d_qubits, d_numQubitsPerReg, numRegs, 
         d_coeffs, d_exponents, d_numTermsPerReg, 
         d_overrideInds, d_overridePhases, numOverrides,
@@ -357,7 +357,7 @@ void statevec_applyMultiArbitraryPhaseOverrides(
     cudaFree(d_phaseInds);
 }
 
-__global__ void statevec_applyNamedPhaseFunctionOverridesKernel(
+__global__ void statevec_applyNamedPhaseFuncOverridesKernel(
     Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
     enum phaseFunc phaseFuncName,
     long long int* overrideInds, qreal* overridePhases, int numOverrides,
@@ -428,7 +428,7 @@ __global__ void statevec_applyNamedPhaseFunctionOverridesKernel(
     qureg.deviceStateVec.imag[index] = re*s + im*c;
 }
 
-void statevec_applyNamedPhaseFunctionOverrides(
+void statevec_applyNamedPhaseFuncOverrides(
     Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
     enum phaseFunc phaseFuncName,
     long long int* overrideInds, qreal* overridePhases, int numOverrides) 
@@ -462,7 +462,7 @@ void statevec_applyNamedPhaseFunctionOverrides(
     cudaMalloc(&d_phaseInds, numRegs*gridSize * sizeof *d_phaseInds);
     
     // call kernel
-    statevec_applyNamedPhaseFunctionOverridesKernel<<<CUDABlocks,threadsPerCUDABlock>>>(
+    statevec_applyNamedPhaseFuncOverridesKernel<<<CUDABlocks,threadsPerCUDABlock>>>(
         qureg, d_qubits, d_numQubitsPerReg, numRegs, 
         phaseFuncName,
         d_overrideInds, d_overridePhases, numOverrides,

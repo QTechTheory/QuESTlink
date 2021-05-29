@@ -39,7 +39,7 @@
  * added directly to QuESTlink
  */
  
-void statevec_applyArbitraryPhaseOverrides(
+void statevec_applyPhaseFuncOverrides(
     Qureg qureg, int* qubits, int numQubits, 
     qreal* coeffs, qreal* exponents, int numTerms, 
     long long int* overrideInds, qreal* overridePhases, int numOverrides)
@@ -103,7 +103,7 @@ void statevec_applyArbitraryPhaseOverrides(
     }
 }
 
-void statevec_applyMultiArbitraryPhaseOverrides(
+void statevec_applyMultiVariPhaseFuncOverrides(
     Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
     qreal* coeffs, qreal* exponents, int* numTermsPerReg, 
     long long int* overrideInds, qreal* overridePhases, int numOverrides) 
@@ -189,7 +189,7 @@ void statevec_applyMultiArbitraryPhaseOverrides(
     }
 }
 
-void statevec_applyNamedPhaseFunctionOverrides(
+void statevec_applyNamedPhaseFuncOverrides(
     Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
     enum phaseFunc phaseFuncName,
     long long int* overrideInds, qreal* overridePhases, int numOverrides) 

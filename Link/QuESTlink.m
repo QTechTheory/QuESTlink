@@ -757,7 +757,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {terms = extractExpPolyTerms[N @ phaseFunc,phaseIndSymb]},
                 {badterms = Cases[terms, {$Failed, bad_} :> bad]},
                 If[ Length[badterms] === 0,
-                    ApplyArbitraryPhaseInternal[qureg, qubits, terms[[All,1]], terms[[All,2]], phaseOverrides[[All,1]], N @ phaseOverrides[[All,2]]],
+                    ApplyPhaseFuncInternal[qureg, qubits, terms[[All,1]], terms[[All,2]], phaseOverrides[[All,1]], N @ phaseOverrides[[All,2]]],
                     (Message[ApplyArbitraryPhase::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
                      $Failed)]]
         
@@ -794,7 +794,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {badterms = Cases[terms, {$Failed, bad_} :> bad]},
                 {coeffs = First[terms], exponents=Last[terms]},
                 If[ Length[badterms] === 0,
-                    ApplyMultiArbitraryPhaseInternal[qureg, Flatten[regs], Length/@regs, Flatten[coeffs], Flatten[exponents], Length/@coeffs, Flatten[phaseOverrides[[All,1]]], N @ phaseOverrides[[All,2]]],
+                    ApplyMultiVariPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, Flatten[coeffs], Flatten[exponents], Length/@coeffs, Flatten[phaseOverrides[[All,1]]], N @ phaseOverrides[[All,2]]],
                     (Message[ApplyArbitraryPhase::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
                      $Failed)]]
         

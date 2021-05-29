@@ -103,9 +103,11 @@ void validateQubitSubregs(Qureg qureg, int* qubits, int* numQubitsPerReg, const 
 
 void validateNumPhaseFuncTerms(const int numTerms, const char* caller);
 
-void validateNumMultiVariPhaseFuncNum(int* numTermsPerReg, const int numRegs, const char* caller);
+void validateNumMultiVariPhaseFuncTerms(int* numTermsPerReg, const int numRegs, const char* caller);
 
-void validatePhaseFuncName(enum phaseFunc functionNameCode, const char* caller);
+void validateNumPhaseFuncOverrides(const int numOverrides, const char* caller);
+
+void validatePhaseFuncName(enum phaseFunc funcCode, const char* caller);
 
 # ifdef __cplusplus
 }

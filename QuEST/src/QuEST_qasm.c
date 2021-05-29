@@ -476,9 +476,9 @@ void qasm_recordInitClassical(Qureg qureg, long long int stateInd) {
             qasm_recordGate(qureg, GATE_SIGMA_X, q);
 }
 
-void qasm_recordPhaseFunction(Qureg qureg, int* qubits, int numQubits, qreal* coeffs, qreal* exponents, int numTerms, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+void qasm_recordPhaseFunc(Qureg qureg, int* qubits, int numQubits, qreal* coeffs, qreal* exponents, int numTerms, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
     
-    qasm_recordComment(qureg, "Here, applyPhaseFunction() multiplied a complex scalar of the form");
+    qasm_recordComment(qureg, "Here, applyPhaseFunc() multiplied a complex scalar of the form");
     
     // record like: 
     //     exp(i (-.5 x^2 + .5 x^(-1.5) - 1.3 x^4 ))
@@ -595,9 +595,9 @@ void addMultiVarOverridesToQASM(Qureg qureg, int numRegs, long long int* overrid
     }
 }
 
-void qasm_recordMultiVarPhaseFunction(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+void qasm_recordMultiVarPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
     
-    qasm_recordComment(qureg, "Here, applyMultiVarPhaseFunction() multiplied a complex scalar of the form");
+    qasm_recordComment(qureg, "Here, applyMultiVarPhaseFunc() multiplied a complex scalar of the form");
     
     // Here, applyMultiVarPhaseFunction() multiplied a complex scalar of the form 
     //     exp(i (
@@ -646,9 +646,9 @@ void qasm_recordMultiVarPhaseFunction(Qureg qureg, int* qubits, int* numQubitsPe
         addMultiVarOverridesToQASM(qureg, numRegs, overrideInds, overridePhases, numOverrides);
 }
 
-void qasm_recordNamedPhaseFunction(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+void qasm_recordNamedPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
     
-    qasm_recordComment(qureg, "Here, applyNamedPhaseFunction() multiplied a complex scalar of form");
+    qasm_recordComment(qureg, "Here, applyNamedPhaseFunc() multiplied a complex scalar of form");
     char line[MAX_LINE_LEN+1];
     
     // record like

@@ -515,8 +515,8 @@ void validateMultiQubitKrausMap(Qureg qureg, int numTargs, ComplexMatrixN* ops, 
     QuESTAssert(isPos, E_INVALID_KRAUS_OPS, caller);
 }
 
-void validateQubitSubregs(Qureg qureg, int* qubits, int* numQubitsPerReg, const int numReg, const char* caller) {
-    QuESTAssert(numReg>0 && numReg<=MAX_NUM_REGS_APPLY_ARBITRARY_PHASE, E_INVALID_NUM_SUBREGISTERS, caller);
+void validateQubitSubregs(Qureg qureg, int* qubits, int* numQubitsPerReg, const int numRegs, const char* caller) {
+    QuESTAssert(numRegs>0 && numRegs<=MAX_NUM_REGS_APPLY_ARBITRARY_PHASE, E_INVALID_NUM_SUBREGISTERS, caller);
     
     // allows registers to overlap, both within and between
     int i=0;
@@ -534,8 +534,8 @@ void validateNumPhaseFuncTerms(const int numTerms, const char* caller) {
     QuESTAssert(numTerms>0, E_INVALID_NUM_PHASE_FUNC_TERMS, caller);
 }
 
-void validateNumMultiVariPhaseFuncNum(int* numTermsPerReg, const int numRegs, const char* caller) {
-    QuESTAssert(numReg>0 && numReg<=MAX_NUM_REGS_APPLY_ARBITRARY_PHASE, E_INVALID_NUM_SUBREGISTERS, caller);
+void validateNumMultiVariPhaseFuncTerms(int* numTermsPerReg, const int numRegs, const char* caller) {
+    QuESTAssert(numRegs>0 && numRegs<=MAX_NUM_REGS_APPLY_ARBITRARY_PHASE, E_INVALID_NUM_SUBREGISTERS, caller);
     for (int r=0; r<numRegs; r++)
         QuESTAssert(numTermsPerReg[r]>0, E_INVALID_NUM_PHASE_FUNC_TERMS, caller);
 }
