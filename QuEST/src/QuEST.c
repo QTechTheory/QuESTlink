@@ -67,10 +67,9 @@ void applyArbitraryPhaseOverrides(Qureg qureg, int* qubits, int numQubits, qreal
     //      numTerms > 0
     //      numOverrides >= 0
     
-    // backend calls
     statevec_applyArbitraryPhaseOverrides(qureg, qubits, numQubits, coeffs, exponents, numTerms, overrideInds, overridePhases, numOverrides);
     
-    // QASM
+    qasm_recordPhaseFunction(qureg, qubits, numQubits,coeffs, exponents, numTerms, overrideInds, overridePhases, numOverrides);
 }
 
 void applyMultiArbitraryPhaseOverrides(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
@@ -88,10 +87,9 @@ void applyMultiArbitraryPhaseOverrides(Qureg qureg, int* qubits, int* numQubitsP
     //      each numTermsPerReg[i] is valid (> 0)
     //      numOverrides is valid (>= 0)
     
-    // backend calls
     statevec_applyMultiArbitraryPhaseOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
     
-    // QASM
+    qasm_recordMultiVarPhaseFunction(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
 }
 
 void applyNamedPhaseFunctionOverrides(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
@@ -104,10 +102,9 @@ void applyNamedPhaseFunctionOverrides(Qureg qureg, int* qubits, int* numQubitsPe
     //      functionNameCode is a valid enum value {0, 1}
     //      numOverrides is valid (>= 0)
     
-    // backend calls
     statevec_applyNamedPhaseFunctionOverrides(qureg, qubits, numQubitsPerReg, numRegs, functionNameCode, overrideInds, overridePhases, numOverrides);
     
-    // QASM
+    qasm_recordNamedPhaseFunction(qureg, qubits, numQubitsPerReg, numRegs, functionNameCode, overrideInds, overridePhases, numOverrides);
 }
 
 
