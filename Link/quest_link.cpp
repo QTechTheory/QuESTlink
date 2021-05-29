@@ -298,7 +298,62 @@ void callable_createDensityQuregs(int numQubits, int numQuregs) {
     // clean-up (control flow WILL return here after local_sendErrorAndFail)
     if (ids != NULL)
         free(ids);
-} 
+}
+
+
+
+
+/*
+ * QASM
+ */
+
+void callable_startRecordingQASM(int id) {
+    try { 
+        local_throwExcepIfQuregNotCreated(id); // throws
+        Qureg qureg = quregs[id];
+        startRecordingQASM(qureg);
+        WSPutInteger(stdlink, id);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("StartRecordingQASM", err.message);
+    }
+}
+
+void callable_stopRecordingQASM(int id) {
+    try { 
+        local_throwExcepIfQuregNotCreated(id); // throws
+        Qureg qureg = quregs[id];
+        stopRecordingQASM(qureg);
+        WSPutInteger(stdlink, id);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("StopRecordingQASM", err.message);
+    }
+}
+
+void callable_clearRecordedQASM(int id) {
+    try { 
+        local_throwExcepIfQuregNotCreated(id); // throws
+        Qureg qureg = quregs[id];
+        clearRecordedQASM(qureg);
+        WSPutInteger(stdlink, id);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("ClearRecordedQASM", err.message);
+    }
+}
+
+void callable_getRecordedQASM(int id) {
+    try { 
+        local_throwExcepIfQuregNotCreated(id); // throws
+        Qureg qureg = quregs[id];
+        char* buf =  qureg.qasmLog->buffer;
+        WSPutString(stdlink, buf);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("GetRecordedQASM", err.message);
+    }
+}
 
 
 
