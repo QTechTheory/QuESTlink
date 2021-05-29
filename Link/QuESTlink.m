@@ -764,16 +764,22 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* n-D errors *)
         ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _) ...}:{}] /; (
             Not @ DuplicateFreeQ @ phaseIndSymbs || Length @ regs =!= Length @ phaseIndSymbs) :=
-                Message[ApplyArbitraryPhase::error, "Each delimited group of qubits must correspond to a unique symbol in the phase function."]
+                (Message[ApplyArbitraryPhase::error, "Each delimited group of qubits must correspond to a unique symbol in the phase function."];
+                 $Failed)
         ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _) ..}] /; (
             Not[Equal @@ Length /@ phaseOverrides[[All,1]]] || Length[phaseIndSymbs] =!= Length @ phaseOverrides[[1,1]]) :=
-                Message[ApplyArbitraryPhase::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups / symbols."]
+                (Message[ApplyArbitraryPhase::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups / symbols."];
+                 $Failed)
         
         (* n-D named *)
         phaseFuncCodes = {    (* these must match the values of the enum phaseFunc in QuEST.h *)
             "Norm" -> 0,
             "InverseNorm" -> 1
         };
+        ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_String, phaseOverrides:{({_Integer..} -> _) ..}] /; (
+            Not[Equal @@ Length /@ phaseOverrides[[All,1]]] || Length[regs] =!= Length @ phaseOverrides[[1,1]]) :=
+                (Message[ApplyArbitraryPhase::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups."];
+                 $Failed)
         ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_String, phaseOverrides:{({_Integer..} -> _) ...}:{}] := 
             If[
                 MemberQ[ phaseFuncCodes[[All,1]], phaseFunc],
