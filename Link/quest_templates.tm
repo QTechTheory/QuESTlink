@@ -60,6 +60,57 @@
 
 
 :Begin:
+:Function:       callable_startRecordingQASM
+:Pattern:        QuEST`StartRecordingQASM[qureg_Integer]
+:Arguments:      { qureg }
+:ArgumentTypes:  { Integer }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`StartRecordingQASM::usage = "StartRecordingQASM[qureg] initiates QASM recording of subsequent gates applied to qureg.";
+    QuEST`StartRecordingQASM::error = "`1`";
+    QuEST`StartRecordingQASM[___] := QuEST`Private`invalidArgError[StartRecordingQASM];
+
+:Begin:
+:Function:       callable_stopRecordingQASM
+:Pattern:        QuEST`StopRecordingQASM[qureg_Integer]
+:Arguments:      { qureg }
+:ArgumentTypes:  { Integer }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`StopRecordingQASM::usage = "StopRecordingQASM[qureg] stops QASM recording of subsequent gates to qureg. This does not affect the QASM recorded so far.";
+    QuEST`StopRecordingQASM::error = "`1`";
+    QuEST`StopRecordingQASM[___] := QuEST`Private`invalidArgError[StopRecordingQASM];
+
+:Begin:
+:Function:       callable_clearRecordedQASM
+:Pattern:        QuEST`ClearRecordedQASM[qureg_Integer]
+:Arguments:      { qureg }
+:ArgumentTypes:  { Integer }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`ClearRecordedQASM::usage = "ClearRecordedQASM[qureg] clears all QASM recorded for the given qureg so far, but does not stop recording of subsequent gates.";
+    QuEST`ClearRecordedQASM::error = "`1`";
+    QuEST`ClearRecordedQASM[___] := QuEST`Private`invalidArgError[ClearRecordedQASM];
+    
+:Begin:
+:Function:       callable_getRecordedQASM
+:Pattern:        QuEST`GetRecordedQASM[qureg_Integer]
+:Arguments:      { qureg }
+:ArgumentTypes:  { Integer }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`GetRecordedQASM::usage = "GetRecordedQASM[qureg] returns the QASM recorded on qureg as a string.";
+    QuEST`GetRecordedQASM::error = "`1`";
+    QuEST`GetRecordedQASM[___] := QuEST`Private`invalidArgError[GetRecordedQASM];
+
+
+
+
+:Begin:
 :Function:       wrapper_initZeroState
 :Pattern:        QuEST`InitZeroState[qureg_Integer]
 :Arguments:      { qureg }
@@ -153,6 +204,35 @@
     QuEST`IsDensityMatrix[___] := QuEST`Private`invalidArgError[IsDensityMatrix];
 
 
+:Begin:
+:Function:       internal_applyPhaseFunc
+:Pattern:        QuEST`Private`ApplyPhaseFuncInternal[quregId_Integer, qubits_List, coeffs_List, exponents_List, overrideInds_List, overridePhases_List]
+:Arguments:      { quregId, qubits, coeffs, exponents, overrideInds, overridePhases }
+:ArgumentTypes:  { Integer, IntegerList, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`Private`ApplyPhaseFuncInternal::usage = "ApplyPhaseFuncInternal[quregId, qubits, coeffs, exponents, overrideInds, overridePhases] applies a diagonal unitary operator upon the qureg, with elements informed by the exponential-polynomial encoded in {coeffs}, {exponents}, applied to the state index informed by {qubits}.";
+
+:Begin:
+:Function:       internal_applyMultiVarPhaseFunc
+:Pattern:        QuEST`Private`ApplyMultiVarPhaseFuncInternal[quregId_Integer, qubits_List, numQubitsPerReg_List, coeffs_List, exponents_List, numTermsPerReg_List, overrideInds_List, overridePhases_List]
+:Arguments:      { quregId, qubits, numQubitsPerReg, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases }
+:ArgumentTypes:  { Integer, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`Private`ApplyMultiVarPhaseFuncInternal::usage = "ApplyMultiVarPhaseFuncInternal[quregId, qubits, numQubitsPerReg, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases] applies a diagonal unitary operator upon the qureg, with elements informed by the multi-variable exponential-polynomial encoded in {coeffs}, {exponents}, applied to the state indices informed by {qubits}.";
+
+:Begin:
+:Function:       internal_applyNamedPhaseFunc
+:Pattern:        QuEST`Private`ApplyNamedPhaseFuncInternal[quregId_Integer, qubits_List, numQubitsPerReg_List, phaseFuncName_Integer, overrideInds_List, overridePhases_List]
+:Arguments:      { quregId, qubits, numQubitsPerReg, phaseFuncName, overrideInds, overridePhases }
+:ArgumentTypes:  { Integer, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`Private`ApplyNamedPhaseFuncInternal::usage = "ApplyNamedPhaseFuncInternal[quregId, qubits, numQubitsPerReg, phaseFuncName, overrideInds, overridePhases] applies a diagonal unitary operator upon the qureg, with elements informed by the multi-variable function implied by phaseFuncName, applied to the state indices informed by {qubits}.";
 
 
 :Begin:
