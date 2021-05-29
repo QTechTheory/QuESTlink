@@ -130,7 +130,7 @@ static const char* errorMessages[] = {
     [E_MISMATCHING_NUM_TARGS_KRAUS_SIZE] = "Every Kraus operator must be of the same number of qubits as the number of targets.",
     [E_INVALID_NUM_SUBREGISTERS] = "Invalid number of qubit subregisters, which must be >0 and <=100.",
     [E_INVALID_NUM_PHASE_FUNC_TERMS] = "Invalid number of terms in the phase function specified. Must be >0.",
-    [E_INVALID_NUM_PHASE_FUNC_OVERRIDES] = "Invalid number of phase function overrides specified. Must be >0.",
+    [E_INVALID_NUM_PHASE_FUNC_OVERRIDES] = "Invalid number of phase function overrides specified. Must be >=0.",
     [E_INVALID_PHASE_FUNC_NAME] = "Invalid named phase function, which must be one of {NORM, INVERSE_NORM}."
 };
 
@@ -541,7 +541,7 @@ void validateNumMultiVariPhaseFuncTerms(int* numTermsPerReg, const int numRegs, 
 }
 
 void validateNumPhaseFuncOverrides(const int numOverrides, const char* caller) {
-    QuESTAssert(numOverrides>0, E_INVALID_NUM_PHASE_FUNC_OVERRIDES, caller);
+    QuESTAssert(numOverrides>=0, E_INVALID_NUM_PHASE_FUNC_OVERRIDES, caller);
 }
 
 void validatePhaseFuncName(enum phaseFunc funcCode, const char* caller) {
