@@ -47,19 +47,19 @@ CalcDensityInnerProducts[rhoId, omegaIds] returns a real vector with i-th elemen
     ApplyPauliSum::usage = "ApplyPauliSum[inQureg, pauliSum, outQureg] modifies outQureg to be the result of applying the weighted sum of Paulis to inQureg."
     ApplyPauliSum::error = "`1`"
     
-    ApplyArbitraryPhase::usage = "ApplyArbitraryPhase[qureg, qubits, f[r], r] multiplies a phase factor e^(i f[r]) onto each amplitude in qureg, where r is substituted with the index of each basis state as informed by the list of qubits (ordered least to most significant).
-ApplyArbitraryPhase[qureg, qubits, f[r], r, overrides] first consults whether a basis state's index is included in the list of rules in overrides {index -> phase}, and if present, uses the prescribed phase in lieu of evaluating f[index].
+    ApplyPhaseFunc::usage = "ApplyPhaseFunc[qureg, qubits, f[r], r] multiplies a phase factor e^(i f[r]) onto each amplitude in qureg, where r is substituted with the index of each basis state as informed by the list of qubits (ordered least to most significant).
+ApplyPhaseFunc[qureg, qubits, f[r], r, overrides] first consults whether a basis state's index is included in the list of rules in overrides {index -> phase}, and if present, uses the prescribed phase in lieu of evaluating f[index].
     \[Bullet] qubits is a list of which qubits to include in the determination of the index r for each basis state. qubits={0,1,2} implies the canonical indexing of basis states in a 3-qubit register.
     \[Bullet] f[r] must be an exponential polynomial of r, of the form sum_i a_j r^(p_j) where a_j and p_j can be any real number (including negative and fractional).
     \[Bullet] f[r] must evaluate to a real number for every basis state index informed by qubits, unless overriden.
-ApplyArbitraryPhase[qureg, {qubits, ...}, f[x,y,...], {x,y,...}] evaluates a multi-variable exponential-polynomial phase function, where each variable corresponds to a sub-register of qubits.
-ApplyArbitraryPhase[qureg, {qubits, ...}, f[x,y,...], {x,y,...}, overrides] first consults whether tuple of sub-register indices already exists in the list of phase overrides.
+ApplyPhaseFunc[qureg, {qubits, ...}, f[x,y,...], {x,y,...}] evaluates a multi-variable exponential-polynomial phase function, where each variable corresponds to a sub-register of qubits.
+ApplyPhaseFunc[qureg, {qubits, ...}, f[x,y,...], {x,y,...}, overrides] first consults whether tuple of sub-register indices already exists in the list of phase overrides.
     \[Bullet] each element of overrides must have format {x0,y0,...} -> phase0.
-ApplyArbitraryPhase[qureg, {qubits, ...}, FuncName] evaluates a specific named multi-variable function to determine the phase. These are:
+ApplyPhaseFunc[qureg, {qubits, ...}, FuncName] evaluates a specific named multi-variable function to determine the phase. These are:
     \[Bullet] \"Norm\" evaluates Sqrt[x^2 + y^2 + ...]
     \[Bullet] \"InverseNorm\" evaluates 1/Sqrt[x^2 + y^2 + ...]. This requires overriding the phase of index {0,0...} to avoid divergence.
-ApplyArbitraryPhase[qureg, {qubits, ...}, FuncName, overrides] first consults the overrides."
-    ApplyArbitraryPhase::error = "`1`"
+ApplyPhaseFunc[qureg, {qubits, ...}, FuncName, overrides] first consults the overrides."
+    ApplyPhaseFunc::error = "`1`"
 
     CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the matrix form of the given weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target."
     CalcPauliSumMatrix::error = "`1`"
@@ -752,23 +752,23 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             extractMultiExpPolyTerms[{term}, symbs]
             
         (* 1D exp-poly *)
-        ApplyArbitraryPhase[qureg_Integer, qubits:{_Integer..}, phaseFunc_, phaseIndSymb_Symbol, phaseOverrides:{(_Integer -> _) ...}:{}] := 
+        ApplyPhaseFunc[qureg_Integer, qubits:{_Integer..}, phaseFunc_, phaseIndSymb_Symbol, phaseOverrides:{(_Integer -> _?Internal`RealValuedNumericQ) ...}:{}] := 
             With[
                 {terms = extractExpPolyTerms[N @ phaseFunc,phaseIndSymb]},
                 {badterms = Cases[terms, {$Failed, bad_} :> bad]},
                 If[ Length[badterms] === 0,
                     ApplyPhaseFuncInternal[qureg, qubits, terms[[All,1]], terms[[All,2]], phaseOverrides[[All,1]], N @ phaseOverrides[[All,2]]],
-                    (Message[ApplyArbitraryPhase::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
+                    (Message[ApplyPhaseFunc::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
                      $Failed)]]
         
         (* n-D errors *)
-        ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _) ...}:{}] /; (
+        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ...}:{}] /; (
             Not @ DuplicateFreeQ @ phaseIndSymbs || Length @ regs =!= Length @ phaseIndSymbs) :=
-                (Message[ApplyArbitraryPhase::error, "Each delimited group of qubits must correspond to a unique symbol in the phase function."];
+                (Message[ApplyPhaseFunc::error, "Each delimited group of qubits must correspond to a unique symbol in the phase function."];
                  $Failed)
-        ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _) ..}] /; (
+        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ..}] /; (
             Not[Equal @@ Length /@ phaseOverrides[[All,1]]] || Length[phaseIndSymbs] =!= Length @ phaseOverrides[[1,1]]) :=
-                (Message[ApplyArbitraryPhase::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups / symbols."];
+                (Message[ApplyPhaseFunc::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups / symbols."];
                  $Failed)
         
         (* n-D named *)
@@ -776,29 +776,29 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             "Norm" -> 0,
             "InverseNorm" -> 1
         };
-        ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_String, phaseOverrides:{({_Integer..} -> _) ..}] /; (
+        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_String, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ..}] /; (
             Not[Equal @@ Length /@ phaseOverrides[[All,1]]] || Length[regs] =!= Length @ phaseOverrides[[1,1]]) :=
-                (Message[ApplyArbitraryPhase::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups."];
+                (Message[ApplyPhaseFunc::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups."];
                  $Failed)
-        ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_String, phaseOverrides:{({_Integer..} -> _) ...}:{}] := 
+        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_String, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ...}:{}] := 
             If[
                 MemberQ[ phaseFuncCodes[[All,1]], phaseFunc],
                 ApplyNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, phaseFunc /. phaseFuncCodes, Flatten[phaseOverrides[[All,1]]], N @ phaseOverrides[[All,2]]],
-                (Message[ApplyArbitraryPhase::error, "The phase function name must be one of " <> ToString[phaseFuncCodes[[All,1]]]]; 
+                (Message[ApplyPhaseFunc::error, "The phase function name must be one of " <> ToString[phaseFuncCodes[[All,1]]]]; 
                  $Failed)]
         
         (* n-D exp-poly *)
-        ApplyArbitraryPhase[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _) ...}:{}] :=
+        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ...}:{}] :=
             With[
                 {terms = extractMultiExpPolyTerms[N @ phaseFunc, phaseIndSymbs]},
                 {badterms = Cases[terms, {$Failed, bad_} :> bad]},
                 {coeffs = First[terms], exponents=Last[terms]},
                 If[ Length[badterms] === 0,
                     ApplyMultiVarPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, Flatten[coeffs], Flatten[exponents], Length/@coeffs, Flatten[phaseOverrides[[All,1]]], N @ phaseOverrides[[All,2]]],
-                    (Message[ApplyArbitraryPhase::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
+                    (Message[ApplyPhaseFunc::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
                      $Failed)]]
         
-        ApplyArbitraryPhase[___] := invalidArgError[ApplyArbitraryPhase]
+        ApplyPhaseFunc[___] := invalidArgError[ApplyPhaseFunc]
         
         
         (* 

@@ -2104,7 +2104,7 @@ void internal_applyPhaseFunc(int quregId, int* qubits, long numQubits) {
         WSPutInteger(stdlink, quregId);
         
     } catch (QuESTException& err) {
-        local_sendErrorAndFail("ApplyArbitraryPhase", err.message);
+        local_sendErrorAndFail("ApplyPhaseFunc", err.message);
     }
     
     // clean-up (even if error)
@@ -2156,7 +2156,7 @@ void internal_applyMultiVarPhaseFunc(int quregId) {
     } catch (QuESTException& err) {
         
         // execution will proceed to clean-up even if error
-        local_sendErrorAndFail("ApplyArbitraryPhase", err.message);
+        local_sendErrorAndFail("ApplyPhaseFunc", err.message);
     }
     
     // free args
@@ -2205,7 +2205,7 @@ void internal_applyNamedPhaseFunc(int quregId) {
     } catch (QuESTException& err) {
         
         // execution will proceed to clean-up even if error
-        local_sendErrorAndFail("ApplyArbitraryPhase", err.message);
+        local_sendErrorAndFail("ApplyPhaseFunc", err.message);
     }
     
     free(overrideInds);
