@@ -298,7 +298,62 @@ void callable_createDensityQuregs(int numQubits, int numQuregs) {
     // clean-up (control flow WILL return here after local_sendErrorAndFail)
     if (ids != NULL)
         free(ids);
-} 
+}
+
+
+
+
+/*
+ * QASM
+ */
+
+void callable_startRecordingQASM(int id) {
+    try { 
+        local_throwExcepIfQuregNotCreated(id); // throws
+        Qureg qureg = quregs[id];
+        startRecordingQASM(qureg);
+        WSPutInteger(stdlink, id);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("StartRecordingQASM", err.message);
+    }
+}
+
+void callable_stopRecordingQASM(int id) {
+    try { 
+        local_throwExcepIfQuregNotCreated(id); // throws
+        Qureg qureg = quregs[id];
+        stopRecordingQASM(qureg);
+        WSPutInteger(stdlink, id);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("StopRecordingQASM", err.message);
+    }
+}
+
+void callable_clearRecordedQASM(int id) {
+    try { 
+        local_throwExcepIfQuregNotCreated(id); // throws
+        Qureg qureg = quregs[id];
+        clearRecordedQASM(qureg);
+        WSPutInteger(stdlink, id);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("ClearRecordedQASM", err.message);
+    }
+}
+
+void callable_getRecordedQASM(int id) {
+    try { 
+        local_throwExcepIfQuregNotCreated(id); // throws
+        Qureg qureg = quregs[id];
+        char* buf =  qureg.qasmLog->buffer;
+        WSPutString(stdlink, buf);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("GetRecordedQASM", err.message);
+    }
+}
 
 
 
@@ -2019,6 +2074,147 @@ void internal_applyPauliSum(int inId, int outId) {
         // and report error
         local_sendErrorAndFail("ApplyPauliSum", err.message);
     }
+}
+
+void internal_applyPhaseFunc(int quregId, int* qubits, long numQubits) {
+    
+    // fetch args into dynamic memory
+    qreal* coeffs;
+    qreal* exponents;
+    int numTerms;
+    long long int* overrideInds;
+    wsint64* ws_overrideInds;
+    qreal* overridePhases;
+    int numOverrides;
+    WSGetReal64List(stdlink, &coeffs, &numTerms);
+    WSGetReal64List(stdlink, &exponents, &numTerms);
+    WSGetInteger64List(stdlink, &ws_overrideInds, &numOverrides);
+    WSGetReal64List(stdlink, &overridePhases, &numOverrides);
+    
+    // cast Wolfram 'wsint' into QuEST 'long long int'
+    overrideInds = (long long int*) malloc(numOverrides * sizeof(long long int));
+    for (int i=0; i<numOverrides; i++)
+        overrideInds[i] = (long long int) ws_overrideInds[i];
+    
+    try {
+        local_throwExcepIfQuregNotCreated(quregId); // throws
+        Qureg qureg = quregs[quregId];
+        
+        applyPhaseFuncOverrides(qureg, qubits, numQubits, coeffs, exponents, numTerms, overrideInds, overridePhases, numOverrides); // throws
+        WSPutInteger(stdlink, quregId);
+        
+    } catch (QuESTException& err) {
+        local_sendErrorAndFail("ApplyPhaseFunc", err.message);
+    }
+    
+    // clean-up (even if error)
+    WSReleaseReal64List(stdlink, coeffs, numTerms);
+    WSReleaseReal64List(stdlink, exponents, numTerms);
+    WSReleaseInteger64List(stdlink, ws_overrideInds, numOverrides);
+    WSReleaseReal64List(stdlink, overridePhases, numOverrides);
+    free(overrideInds);
+}
+
+void internal_applyMultiVarPhaseFunc(int quregId) {
+    // 86% of this function is restructuring arguments... despicable
+    
+    // fetch flat-packed args
+    int* qubits;
+    int* numQubitsPerReg;
+    int numRegs;
+    qreal* coeffs;
+    qreal* exponents;
+    int* numTermsPerReg;
+    wsint64* ws_overrideInds;
+    qreal* overridePhases;
+    int numOverrides;
+    // (irrelevant flattened list lengths)
+    int dummy_totalQubits;
+    int dummy_totalTerms;
+    int dummy_totalInds;
+    WSGetInteger32List(stdlink, &qubits, &dummy_totalQubits);
+    WSGetInteger32List(stdlink, &numQubitsPerReg, &numRegs);
+    WSGetReal64List(stdlink, &coeffs, &dummy_totalTerms);
+    WSGetReal64List(stdlink, &exponents, &dummy_totalTerms);
+    WSGetInteger32List(stdlink, &numTermsPerReg, &numRegs);
+    WSGetInteger64List(stdlink, &ws_overrideInds, &dummy_totalInds);
+    WSGetReal64List(stdlink, &overridePhases, &numOverrides);
+    
+    // convert wsint64 arr to long long int 
+    long long int* overrideInds = (long long int*) malloc(numOverrides * numRegs * sizeof *overrideInds);
+    for (int i=0; i<numOverrides*numRegs; i++)
+        overrideInds[i] = (long long int) ws_overrideInds[i];
+
+    try {
+        local_throwExcepIfQuregNotCreated(quregId); // throws
+        Qureg qureg = quregs[quregId];
+        
+        applyMultiVarPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
+        
+        WSPutInteger(stdlink, quregId);
+        
+    } catch (QuESTException& err) {
+        
+        // execution will proceed to clean-up even if error
+        local_sendErrorAndFail("ApplyPhaseFunc", err.message);
+    }
+    
+    // free args
+    free(overrideInds);
+    WSReleaseInteger32List(stdlink, qubits, dummy_totalQubits);
+    WSReleaseInteger32List(stdlink, numQubitsPerReg, numRegs);
+    WSReleaseReal64List(stdlink, coeffs, dummy_totalTerms);
+    WSReleaseReal64List(stdlink, exponents, dummy_totalTerms);
+    WSReleaseInteger32List(stdlink, numTermsPerReg, numRegs);
+    WSReleaseInteger64List(stdlink, ws_overrideInds, dummy_totalInds);
+    WSReleaseReal64List(stdlink, overridePhases, numOverrides);
+}
+
+void internal_applyNamedPhaseFunc(int quregId) {
+    // 86% of this function is restructuring arguments... despicable
+    
+    // fetch flat-packed args
+    int* qubits;
+    int* numQubitsPerReg;
+    int numRegs;
+    int funcNameCode;
+    wsint64* ws_overrideInds;
+    qreal* overridePhases;
+    int numOverrides;
+    int dummy_totalQubits; // (irrelevant flattened list lengths)
+    int dummy_totalInds; // (irrelevant flattened list lengths)
+    WSGetInteger32List(stdlink, &qubits, &dummy_totalQubits);
+    WSGetInteger32List(stdlink, &numQubitsPerReg, &numRegs);
+    WSGetInteger32(stdlink, &funcNameCode);
+    WSGetInteger64List(stdlink, &ws_overrideInds, &dummy_totalInds);
+    WSGetReal64List(stdlink, &overridePhases, &numOverrides);
+
+    // convert wsint64 arr to long long int 
+    long long int* overrideInds = (long long int*) malloc(numOverrides * numRegs * sizeof *overrideInds);
+    for (int i=0; i<numOverrides*numRegs; i++)
+        overrideInds[i] = (long long int) ws_overrideInds[i];
+            
+    try {
+        local_throwExcepIfQuregNotCreated(quregId); // throws
+        Qureg qureg = quregs[quregId];
+        
+        applyNamedPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, (enum phaseFunc) funcNameCode, overrideInds, overridePhases, numOverrides);
+        
+        WSPutInteger(stdlink, quregId);
+        
+    } catch (QuESTException& err) {
+        
+        // execution will proceed to clean-up even if error
+        local_sendErrorAndFail("ApplyPhaseFunc", err.message);
+    }
+    
+    free(overrideInds);
+    
+    // free flat-packed args
+    WSReleaseInteger32List(stdlink, qubits, dummy_totalQubits);
+    WSReleaseInteger32List(stdlink, numQubitsPerReg, numRegs);
+    WSReleaseInteger64List(stdlink, ws_overrideInds, dummy_totalInds);
+    WSReleaseReal64List(stdlink, overridePhases, numOverrides);
 }
 
 
