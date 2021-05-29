@@ -799,6 +799,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                      $Failed)]]
         
         ApplyPhaseFunc[___] := invalidArgError[ApplyPhaseFunc]
+        SyntaxInformation[ApplyPhaseFunc] = {"LocalVariables" -> {"Solve", {4, 4}}};
         
         
         (* 
