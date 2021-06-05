@@ -257,8 +257,8 @@ __global__ void statevec_applyMultiVarPhaseFuncOverridesKernel(
     size_t offset = blockIdx.x*blockDim.x + threadIdx.x;
     
     // determine phase indices
+    int flatInd = 0;
     if (encoding == UNSIGNED) {
-        int flatInd = 0;
         for (int r=0; r<numRegs; r++) {
             phaseInds[r*stride+offset] = 0LL;
             for (int q=0; q<numQubitsPerReg[r]; q++)
@@ -266,13 +266,12 @@ __global__ void statevec_applyMultiVarPhaseFuncOverridesKernel(
         }
     }
     else if  (encoding == TWOS_COMPLEMENT) {
-        int flatInd = 0;
         for (int r=0; r<numRegs; r++) {
             for (int q=0; q<numQubitsPerReg[r]-1; q++)  
-                phaseInds[r] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);
+                phaseInds[r*stride+offset] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);
             // use final qubit to indicate sign
             if (extractBit(qubits[flatInd++], globalAmpInd) == 1)
-                phaseInds[r] -= (1LL << (numQubitsPerReg[r]-1));
+                phaseInds[r*stride+offset] -= (1LL << (numQubitsPerReg[r]-1));
         }
     }
     
@@ -411,10 +410,10 @@ __global__ void statevec_applyParamNamedPhaseFuncOverridesKernel(
         int flatInd = 0;
         for (int r=0; r<numRegs; r++) {
             for (int q=0; q<numQubitsPerReg[r]-1; q++)  
-                phaseInds[r] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);
+                phaseInds[r*stride+offset] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);
             // use final qubit to indicate sign
             if (extractBit(qubits[flatInd++], globalAmpInd) == 1)
-                phaseInds[r] -= (1LL << (numQubitsPerReg[r]-1));
+                phaseInds[r*stride+offset] -= (1LL << (numQubitsPerReg[r]-1));
         }
     }
     
@@ -458,7 +457,7 @@ __global__ void statevec_applyParamNamedPhaseFuncOverridesKernel(
         else if (phaseFuncName == SCALED_PRODUCT) {
             phase = params[0];
             for (int r=0; r<numRegs; r++)
-                phase *= phaseInds[r];
+                phase *= phaseInds[r*stride+offset];
         }
     }
     
