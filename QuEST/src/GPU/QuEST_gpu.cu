@@ -357,9 +357,9 @@ void statevec_applyMultiVarPhaseFuncOverrides(
     cudaFree(d_phaseInds);
 }
 
-__global__ void statevec_applyNamedPhaseFuncOverridesKernel(
+__global__ void statevec_applyParamNamedPhaseFuncOverridesKernel(
     Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
-    enum phaseFunc phaseFuncName,
+    enum phaseFunc phaseFuncName, qreal* params, int numParams,
     long long int* overrideInds, qreal* overridePhases, int numOverrides,
     long long int* phaseInds) 
 {
@@ -404,7 +404,9 @@ __global__ void statevec_applyNamedPhaseFuncOverridesKernel(
     if (i < numOverrides)
         phase = overridePhases[i];
     else {
-        if (phaseFuncName == NORM || phaseFuncName == INVERSE_NORM) {
+        // commented out for optimisation, since no other functions exist presently
+        // if (phaseFuncName == NORM || phaseFuncName == INVERSE_NORM ||
+        // phaseFuncName == SCALED_NORM || phaseFuncName == SCALED_INVERSE_NORM) {
             qreal norm = 0;
             for (int r=0; r<numRegs; r++)
                 norm += phaseInds[r*stride+offset]*phaseInds[r*stride+offset];
@@ -412,9 +414,13 @@ __global__ void statevec_applyNamedPhaseFuncOverridesKernel(
             
             if (phaseFuncName == NORM)
                 phase = norm;
-            if (phaseFuncName == INVERSE_NORM)
+            else if (phaseFuncName == INVERSE_NORM)
                 phase = 1/norm;
-        }
+            else if (phaseFuncName == SCALED_NORM)  // no need to actually consult the number of parameters
+                phase = params[0] * norm;
+            else if (phaseFuncName == SCALED_INVERSE_NORM)
+                phase = params[0] / norm;
+        //}
     }
     
     // modify amp to amp * exp(i phase) 
@@ -428,15 +434,16 @@ __global__ void statevec_applyNamedPhaseFuncOverridesKernel(
     qureg.deviceStateVec.imag[index] = re*s + im*c;
 }
 
-void statevec_applyNamedPhaseFuncOverrides(
+void statevec_applyParamNamedPhaseFuncOverrides(
     Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
-    enum phaseFunc phaseFuncName,
+    enum phaseFunc phaseFuncName, qreal* params, int numParams,
     long long int* overrideInds, qreal* overridePhases, int numOverrides) 
 {
     // determine size of arrays, for cloning into GPU memory
     size_t mem_numQubitsPerReg = numRegs * sizeof *numQubitsPerReg;
     size_t mem_overridePhases = numOverrides * sizeof *overridePhases;
     size_t mem_overrideInds = numOverrides * numRegs * sizeof *overrideInds;
+    size_t mem_params = numParams * sizeof *params;
     size_t mem_qubits = 0;
     for (int r=0; r<numRegs; r++)
         mem_qubits += numQubitsPerReg[r] * sizeof *qubits;
@@ -446,12 +453,15 @@ void statevec_applyNamedPhaseFuncOverrides(
     int* d_numQubitsPerReg;         cudaMalloc(&d_numQubitsPerReg,  mem_numQubitsPerReg);
     long long int* d_overrideInds;  cudaMalloc(&d_overrideInds,     mem_overrideInds);
     qreal* d_overridePhases;        cudaMalloc(&d_overridePhases,   mem_overridePhases);
+    qreal* d_params = NULL;         if (numParams > 0) cudaMalloc(&d_params, mem_params);
     
     // copy function args into GPU memory
     cudaMemcpy(d_qubits, qubits,                    mem_qubits,             cudaMemcpyHostToDevice);
     cudaMemcpy(d_numQubitsPerReg, numQubitsPerReg,  mem_numQubitsPerReg,    cudaMemcpyHostToDevice);
     cudaMemcpy(d_overrideInds, overrideInds,        mem_overrideInds,       cudaMemcpyHostToDevice);
     cudaMemcpy(d_overridePhases, overridePhases,    mem_overridePhases,     cudaMemcpyHostToDevice);
+    if (numParams > 0)
+        cudaMemcpy(d_params, params, mem_params, cudaMemcpyHostToDevice);
     
     int threadsPerCUDABlock = 128;
     int CUDABlocks = ceil((qreal) qureg.numAmpsPerChunk / threadsPerCUDABlock);
@@ -462,9 +472,9 @@ void statevec_applyNamedPhaseFuncOverrides(
     cudaMalloc(&d_phaseInds, numRegs*gridSize * sizeof *d_phaseInds);
     
     // call kernel
-    statevec_applyNamedPhaseFuncOverridesKernel<<<CUDABlocks,threadsPerCUDABlock>>>(
+    statevec_applyParamNamedPhaseFuncOverridesKernel<<<CUDABlocks,threadsPerCUDABlock>>>(
         qureg, d_qubits, d_numQubitsPerReg, numRegs, 
-        phaseFuncName,
+        phaseFuncName, d_params, numParams,
         d_overrideInds, d_overridePhases, numOverrides,
         d_phaseInds);
     
@@ -474,6 +484,8 @@ void statevec_applyNamedPhaseFuncOverrides(
     cudaFree(d_overrideInds);
     cudaFree(d_overridePhases);
     cudaFree(d_phaseInds);
+    if (numParams > 0)
+        cudaFree(d_params);
 }
 
 

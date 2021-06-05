@@ -2217,6 +2217,57 @@ void internal_applyNamedPhaseFunc(int quregId) {
     WSReleaseReal64List(stdlink, overridePhases, numOverrides);
 }
 
+void internal_applyParamNamedPhaseFunc(int quregId) {
+    // 86% of this function is restructuring arguments... despicable
+    
+    // fetch flat-packed args
+    int* qubits;
+    int* numQubitsPerReg;
+    int numRegs;
+    int funcNameCode;
+    qreal* params;
+    int numParams;
+    wsint64* ws_overrideInds;
+    qreal* overridePhases;
+    int numOverrides;
+    int dummy_totalQubits; // (irrelevant flattened list lengths)
+    int dummy_totalInds; // (irrelevant flattened list lengths)
+    WSGetInteger32List(stdlink, &qubits, &dummy_totalQubits);
+    WSGetInteger32List(stdlink, &numQubitsPerReg, &numRegs);
+    WSGetInteger32(stdlink, &funcNameCode);
+    WSGetReal64List(stdlink, &params, &numParams);
+    WSGetInteger64List(stdlink, &ws_overrideInds, &dummy_totalInds);
+    WSGetReal64List(stdlink, &overridePhases, &numOverrides);
+
+    // convert wsint64 arr to long long int 
+    long long int* overrideInds = (long long int*) malloc(numOverrides * numRegs * sizeof *overrideInds);
+    for (int i=0; i<numOverrides*numRegs; i++)
+        overrideInds[i] = (long long int) ws_overrideInds[i];
+            
+    try {
+        local_throwExcepIfQuregNotCreated(quregId); // throws
+        Qureg qureg = quregs[quregId];
+        
+        applyParamNamedPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, (enum phaseFunc) funcNameCode, params, numParams, overrideInds, overridePhases, numOverrides);
+        
+        WSPutInteger(stdlink, quregId);
+        
+    } catch (QuESTException& err) {
+        
+        // execution will proceed to clean-up even if error
+        local_sendErrorAndFail("ApplyPhaseFunc", err.message);
+    }
+    
+    free(overrideInds);
+    
+    // free flat-packed args
+    WSReleaseInteger32List(stdlink, qubits, dummy_totalQubits);
+    WSReleaseInteger32List(stdlink, numQubitsPerReg, numRegs);
+    WSReleaseReal64List(stdlink, params, numParams);
+    WSReleaseInteger64List(stdlink, ws_overrideInds, dummy_totalInds);
+    WSReleaseReal64List(stdlink, overridePhases, numOverrides);
+}
+
 
 
 

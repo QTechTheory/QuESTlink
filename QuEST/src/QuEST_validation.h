@@ -109,9 +109,7 @@ void validateNumPhaseFuncTerms(const int numTerms, const char* caller);
 
 void validateNumMultiVarPhaseFuncTerms(int* numTermsPerReg, const int numRegs, const char* caller);
 
-
-
-void validatePhaseFuncName(enum phaseFunc funcCode, const char* caller);
+void validatePhaseFuncName(enum phaseFunc funcCode, int numParams, const char* caller);
 
 # ifdef __cplusplus
 }

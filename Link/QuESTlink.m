@@ -58,6 +58,8 @@ ApplyPhaseFunc[qureg, {qubits, ...}, f[x,y,...], {x,y,...}, overrides] first con
 ApplyPhaseFunc[qureg, {qubits, ...}, FuncName] evaluates a specific named multi-variable function to determine the phase. These are:
     \[Bullet] \"Norm\" evaluates Sqrt[x^2 + y^2 + ...]
     \[Bullet] \"InverseNorm\" evaluates 1/Sqrt[x^2 + y^2 + ...]. This requires overriding the phase of index {0,0...} to avoid divergence.
+    \[Bullet] {\"ScaledNorm\", coeff} evaluates coeff Sqrt[x^2 + y^2 + ...]
+    \[Bullet] {\"ScaledInverseNorm\", coeff} evaluates coeff/Sqrt[x^2 + y^2 + ...]
 ApplyPhaseFunc[qureg, {qubits, ...}, FuncName, overrides] first consults the overrides."
     ApplyPhaseFunc::error = "`1`"
 
@@ -770,13 +772,21 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Not[Equal @@ Length /@ phaseOverrides[[All,1]]] || Length[phaseIndSymbs] =!= Length @ phaseOverrides[[1,1]]) :=
                 (Message[ApplyPhaseFunc::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups / symbols."];
                  $Failed)
+        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{(_Integer -> _?Internal`RealValuedNumericQ) ..}] :=
+            (Message[ApplyPhaseFunc::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups / symbols."];
+             $Failed)
+        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseOverrides:{(_Integer -> _?Internal`RealValuedNumericQ) ..}] :=
+            (Message[ApplyPhaseFunc::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups / symbols."];
+            $Failed)
         
         (* n-D named *)
         phaseFuncCodes = {    (* these must match the values of the enum phaseFunc in QuEST.h *)
             "Norm" -> 0,
-            "InverseNorm" -> 1
+            "InverseNorm" -> 1,
+            "ScaledNorm" -> 2,
+            "ScaledInverseNorm" -> 3
         };
-        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_String, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ..}] /; (
+        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, (_String|{_String, (_?Internal`RealValuedNumericQ...)}), phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ..}] /; (
             Not[Equal @@ Length /@ phaseOverrides[[All,1]]] || Length[regs] =!= Length @ phaseOverrides[[1,1]]) :=
                 (Message[ApplyPhaseFunc::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups."];
                  $Failed)
@@ -784,6 +794,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             If[
                 MemberQ[ phaseFuncCodes[[All,1]], phaseFunc],
                 ApplyNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, phaseFunc /. phaseFuncCodes, Flatten[phaseOverrides[[All,1]]], N @ phaseOverrides[[All,2]]],
+                (Message[ApplyPhaseFunc::error, "The phase function name must be one of " <> ToString[phaseFuncCodes[[All,1]]]]; 
+                 $Failed)]
+        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, {phaseFunc_String, params:(_?Internal`RealValuedNumericQ...)}, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ...}:{}] := 
+            If[
+                MemberQ[ phaseFuncCodes[[All,1]], phaseFunc],
+                ApplyParamNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, phaseFunc /. phaseFuncCodes, {params}, Flatten[phaseOverrides[[All,1]]], N @ phaseOverrides[[All,2]]],
                 (Message[ApplyPhaseFunc::error, "The phase function name must be one of " <> ToString[phaseFuncCodes[[All,1]]]]; 
                  $Failed)]
         

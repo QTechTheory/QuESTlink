@@ -189,9 +189,10 @@ void statevec_applyMultiVarPhaseFuncOverrides(
     }
 }
 
-void statevec_applyNamedPhaseFuncOverrides(
+void statevec_applyParamNamedPhaseFuncOverrides(
     Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
     enum phaseFunc phaseFuncName,
+    qreal* params, int numParams,
     long long int* overrideInds, qreal* overridePhases, int numOverrides) 
 {
     // each node/chunk modifies only local values in an embarrassingly parallel way 
@@ -215,7 +216,7 @@ void statevec_applyNamedPhaseFuncOverrides(
 # ifdef _OPENMP
 # pragma omp parallel \
     default  (none) \
-    shared   (chunkId,numAmps, stateRe,stateIm, qubits,numQubitsPerReg,numRegs, phaseFuncName, overrideInds,overridePhases,numOverrides) \
+    shared   (chunkId,numAmps, stateRe,stateIm, qubits,numQubitsPerReg,numRegs, phaseFuncName,params,numParams, overrideInds,overridePhases,numOverrides) \
     private  (index,globalAmpInd, r,q,i,flatInd, found, phaseInds,phase,norm, c,s,re,im) 
 # endif
     {
@@ -253,7 +254,9 @@ void statevec_applyNamedPhaseFuncOverrides(
             if (i < numOverrides)
                 phase = overridePhases[i];
             else {
-                if (phaseFuncName == NORM || phaseFuncName == INVERSE_NORM) {
+                // commented out for optimisation, since no other functions exist presently
+                // if (phaseFuncName == NORM || phaseFuncName == INVERSE_NORM ||
+                //    phaseFuncName == SCALED_NORM || phaseFuncName == SCALED_INVERSE_NORM) {
                     norm = 0;
                     for (r=0; r<numRegs; r++)
                         norm += phaseInds[r]*phaseInds[r];
@@ -261,9 +264,13 @@ void statevec_applyNamedPhaseFuncOverrides(
                     
                     if (phaseFuncName == NORM)
                         phase = norm;
-                    if (phaseFuncName == INVERSE_NORM)
+                    else if (phaseFuncName == INVERSE_NORM)
                         phase = 1/norm;
-                }
+                    else if (phaseFuncName == SCALED_NORM)  // no need to actually consult the number of parameters
+                        phase = params[0] * norm;
+                    else if (phaseFuncName == SCALED_INVERSE_NORM)
+                        phase = params[0] / norm;
+                //}
             }
             
             // modify amp to amp * exp(i phase) 

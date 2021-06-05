@@ -78,7 +78,8 @@ typedef enum {
     E_INVALID_NUM_PHASE_FUNC_TERMS,
     E_INVALID_NUM_PHASE_FUNC_OVERRIDES,
     E_INVALID_PHASE_FUNC_OVERRIDE_INDEX,
-    E_INVALID_PHASE_FUNC_NAME
+    E_INVALID_PHASE_FUNC_NAME,
+    E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS
 } ErrorCode;
 
 static const char* errorMessages[] = {
@@ -133,7 +134,8 @@ static const char* errorMessages[] = {
     [E_INVALID_NUM_PHASE_FUNC_TERMS] = "Invalid number of terms in the phase function specified. Must be >0.",
     [E_INVALID_NUM_PHASE_FUNC_OVERRIDES] = "Invalid number of phase function overrides specified. Must be >=0.",
     [E_INVALID_PHASE_FUNC_OVERRIDE_INDEX] = "Invalid phase function override index. Must be >=0, and <= the maximum index possible of the corresponding qubit subregister (2^numQubits-1).",
-    [E_INVALID_PHASE_FUNC_NAME] = "Invalid named phase function, which must be one of {NORM, INVERSE_NORM}."
+    [E_INVALID_PHASE_FUNC_NAME] = "Invalid named phase function, which must be one of {NORM, INVERSE_NORM, SCALED_NORM, SCALED_INVERSE_NORM}.",
+    [E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS] = "Invalid number of parameters passed for the give named phase function. NORM and INVERSE_NORM accept 0 parameters, while SCALED_NORM and SCALED_INVERSE_NORM accept 1 parameter."
 };
 
 /* QuESTlink defines invalidQuESTInputError, so it doesn't need to be weakly 
@@ -564,8 +566,20 @@ void validateMultiVarPhaseFuncOverrides(int* numQubitsPerReg, const int numRegs,
     }
 }
 
-void validatePhaseFuncName(enum phaseFunc funcCode, const char* caller) {
-    QuESTAssert(funcCode == NORM || funcCode == INVERSE_NORM, E_INVALID_PHASE_FUNC_NAME, caller);
+void validatePhaseFuncName(enum phaseFunc funcCode, int numParams, const char* caller) {
+    QuESTAssert(
+            funcCode == NORM || 
+            funcCode == INVERSE_NORM ||
+            funcCode == SCALED_NORM ||
+            funcCode == SCALED_INVERSE_NORM,
+             E_INVALID_PHASE_FUNC_NAME, caller);
+    
+    if (funcCode == NORM || funcCode == INVERSE_NORM)
+        QuESTAssert(numParams == 0, E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS, caller);
+    if (funcCode == SCALED_NORM || funcCode == SCALED_INVERSE_NORM)
+        QuESTAssert(numParams == 1, E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS, caller);
+    
+    
 }
 
 #ifdef __cplusplus

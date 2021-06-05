@@ -73,7 +73,7 @@ void qasm_recordPhaseFunc(Qureg qureg, int* qubits, int numQubits, qreal* coeffs
 
 void qasm_recordMultiVarPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides);
 
-void qasm_recordNamedPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int* overrideInds, qreal* overridePhases, int numOverrides);
+void qasm_recordNamedPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, qreal* params, int numParams, long long int* overrideInds, qreal* overridePhases, int numOverrides);
 
 /* not actually used. D'oh!
 void qasm_recordMultiControlledAxisRotation(Qureg qureg, qreal angle, Vector axis, int* controlQubits, const int numControlQubits, const int targetQubit);\

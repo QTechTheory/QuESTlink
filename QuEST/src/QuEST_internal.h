@@ -26,7 +26,7 @@ void statevec_applyPhaseFuncOverrides(Qureg qureg, int* qubits, int numQubits, q
 
 void statevec_applyMultiVarPhaseFuncOverrides(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides);
 
-void statevec_applyNamedPhaseFuncOverrides(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int* overrideInds, qreal* overridePhases, int numOverrides);
+void statevec_applyParamNamedPhaseFuncOverrides(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, qreal* params, int numParams, long long int* overrideInds, qreal* overridePhases, int numOverrides);
 
 
 
