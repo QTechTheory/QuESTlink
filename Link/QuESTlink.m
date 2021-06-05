@@ -60,6 +60,7 @@ ApplyPhaseFunc[qureg, {qubits, ...}, FuncName] evaluates a specific named multi-
     \[Bullet] \"InverseNorm\" evaluates 1/Sqrt[x^2 + y^2 + ...]. This requires overriding the phase of index {0,0...} to avoid divergence.
     \[Bullet] {\"ScaledNorm\", coeff} evaluates coeff Sqrt[x^2 + y^2 + ...]
     \[Bullet] {\"ScaledInverseNorm\", coeff} evaluates coeff/Sqrt[x^2 + y^2 + ...]
+    \[Bullet] {\"ScaledProduct\", coeff} evaluates coeff * x * y * ...
 ApplyPhaseFunc[qureg, {qubits, ...}, FuncName, overrides] first consults the overrides."
     ApplyPhaseFunc::error = "`1`"
 
@@ -784,7 +785,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             "Norm" -> 0,
             "InverseNorm" -> 1,
             "ScaledNorm" -> 2,
-            "ScaledInverseNorm" -> 3
+            "ScaledInverseNorm" -> 3,
+            "ScaledProduct" -> 4
         };
         ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, (_String|{_String, (_?Internal`RealValuedNumericQ...)}), phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ..}] /; (
             Not[Equal @@ Length /@ phaseOverrides[[All,1]]] || Length[regs] =!= Length @ phaseOverrides[[1,1]]) :=

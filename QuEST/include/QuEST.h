@@ -216,7 +216,7 @@ void applyOneQubitMatrix(Qureg qureg, int targetQubit,  ComplexMatrix2 u);
 void applyTwoQubitMatrix(Qureg qureg, int targetQubit1, int targetQubit2, ComplexMatrix4 u);
 
 // added prematurely since urgent & QuEST backend isn't ready to pull to QuESTlink
-enum phaseFunc {NORM=0, INVERSE_NORM=1, SCALED_NORM=2, SCALED_INVERSE_NORM=3};
+enum phaseFunc {NORM=0, INVERSE_NORM=1, SCALED_NORM=2, SCALED_INVERSE_NORM=3, SCALED_PRODUCT=4};
 void applyPhaseFunc(Qureg qureg, int* qubits, int numQubits, qreal* coeffs, qreal* exponents, int numTerms);
 void applyPhaseFuncOverrides(Qureg qureg, int* qubits, int numQubits, qreal* coeffs, qreal* exponents, int numTerms, long long int* overrideInds, qreal* overridePhases, int numOverrides);
 void applyMultiVarPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg);

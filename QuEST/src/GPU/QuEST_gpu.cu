@@ -404,9 +404,9 @@ __global__ void statevec_applyParamNamedPhaseFuncOverridesKernel(
     if (i < numOverrides)
         phase = overridePhases[i];
     else {
-        // commented out for optimisation, since no other functions exist presently
-        // if (phaseFuncName == NORM || phaseFuncName == INVERSE_NORM ||
-        // phaseFuncName == SCALED_NORM || phaseFuncName == SCALED_INVERSE_NORM) {
+        // norm-based phases
+        if (phaseFuncName == NORM || phaseFuncName == INVERSE_NORM ||
+            phaseFuncName == SCALED_NORM || phaseFuncName == SCALED_INVERSE_NORM) {
             qreal norm = 0;
             for (int r=0; r<numRegs; r++)
                 norm += phaseInds[r*stride+offset]*phaseInds[r*stride+offset];
@@ -420,7 +420,13 @@ __global__ void statevec_applyParamNamedPhaseFuncOverridesKernel(
                 phase = params[0] * norm;
             else if (phaseFuncName == SCALED_INVERSE_NORM)
                 phase = params[0] / norm;
-        //}
+        }
+        // algebraic phases
+        else if (phaseFuncName == SCALED_PRODUCT) {
+            phase = params[0];
+            for (int r=0; r<numRegs; r++)
+                phase *= phaseInds[r];
+        }
     }
     
     // modify amp to amp * exp(i phase) 
