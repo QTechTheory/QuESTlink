@@ -2076,7 +2076,7 @@ void internal_applyPauliSum(int inId, int outId) {
     }
 }
 
-void internal_applyPhaseFunc(int quregId, int* qubits, long numQubits) {
+void internal_applyPhaseFunc(int quregId, int* qubits, long numQubits, int encoding) {
     
     // fetch args into dynamic memory
     qreal* coeffs;
@@ -2100,7 +2100,8 @@ void internal_applyPhaseFunc(int quregId, int* qubits, long numQubits) {
         local_throwExcepIfQuregNotCreated(quregId); // throws
         Qureg qureg = quregs[quregId];
         
-        applyPhaseFuncOverrides(qureg, qubits, numQubits, coeffs, exponents, numTerms, overrideInds, overridePhases, numOverrides); // throws
+        applyPhaseFuncOverrides(qureg, qubits, numQubits, (enum bitEncoding) encoding, coeffs, exponents, numTerms, overrideInds, overridePhases, numOverrides); // throws
+        
         WSPutInteger(stdlink, quregId);
         
     } catch (QuESTException& err) {
@@ -2122,6 +2123,7 @@ void internal_applyMultiVarPhaseFunc(int quregId) {
     int* qubits;
     int* numQubitsPerReg;
     int numRegs;
+    int encoding;
     qreal* coeffs;
     qreal* exponents;
     int* numTermsPerReg;
@@ -2134,6 +2136,7 @@ void internal_applyMultiVarPhaseFunc(int quregId) {
     int dummy_totalInds;
     WSGetInteger32List(stdlink, &qubits, &dummy_totalQubits);
     WSGetInteger32List(stdlink, &numQubitsPerReg, &numRegs);
+    WSGetInteger32(stdlink, &encoding);
     WSGetReal64List(stdlink, &coeffs, &dummy_totalTerms);
     WSGetReal64List(stdlink, &exponents, &dummy_totalTerms);
     WSGetInteger32List(stdlink, &numTermsPerReg, &numRegs);
@@ -2149,7 +2152,7 @@ void internal_applyMultiVarPhaseFunc(int quregId) {
         local_throwExcepIfQuregNotCreated(quregId); // throws
         Qureg qureg = quregs[quregId];
         
-        applyMultiVarPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
+        applyMultiVarPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, (enum bitEncoding) encoding, coeffs, exponents, numTermsPerReg, overrideInds, overridePhases, numOverrides);
         
         WSPutInteger(stdlink, quregId);
         
@@ -2177,6 +2180,7 @@ void internal_applyNamedPhaseFunc(int quregId) {
     int* qubits;
     int* numQubitsPerReg;
     int numRegs;
+    int encoding;
     int funcNameCode;
     wsint64* ws_overrideInds;
     qreal* overridePhases;
@@ -2185,6 +2189,7 @@ void internal_applyNamedPhaseFunc(int quregId) {
     int dummy_totalInds; // (irrelevant flattened list lengths)
     WSGetInteger32List(stdlink, &qubits, &dummy_totalQubits);
     WSGetInteger32List(stdlink, &numQubitsPerReg, &numRegs);
+    WSGetInteger32(stdlink, &encoding);
     WSGetInteger32(stdlink, &funcNameCode);
     WSGetInteger64List(stdlink, &ws_overrideInds, &dummy_totalInds);
     WSGetReal64List(stdlink, &overridePhases, &numOverrides);
@@ -2198,7 +2203,7 @@ void internal_applyNamedPhaseFunc(int quregId) {
         local_throwExcepIfQuregNotCreated(quregId); // throws
         Qureg qureg = quregs[quregId];
         
-        applyNamedPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, (enum phaseFunc) funcNameCode, overrideInds, overridePhases, numOverrides);
+        applyNamedPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, (enum bitEncoding) encoding, (enum phaseFunc) funcNameCode, overrideInds, overridePhases, numOverrides);
         
         WSPutInteger(stdlink, quregId);
         
@@ -2224,6 +2229,7 @@ void internal_applyParamNamedPhaseFunc(int quregId) {
     int* qubits;
     int* numQubitsPerReg;
     int numRegs;
+    int encoding;
     int funcNameCode;
     qreal* params;
     int numParams;
@@ -2234,6 +2240,7 @@ void internal_applyParamNamedPhaseFunc(int quregId) {
     int dummy_totalInds; // (irrelevant flattened list lengths)
     WSGetInteger32List(stdlink, &qubits, &dummy_totalQubits);
     WSGetInteger32List(stdlink, &numQubitsPerReg, &numRegs);
+    WSGetInteger32(stdlink, &encoding);
     WSGetInteger32(stdlink, &funcNameCode);
     WSGetReal64List(stdlink, &params, &numParams);
     WSGetInteger64List(stdlink, &ws_overrideInds, &dummy_totalInds);
@@ -2248,7 +2255,7 @@ void internal_applyParamNamedPhaseFunc(int quregId) {
         local_throwExcepIfQuregNotCreated(quregId); // throws
         Qureg qureg = quregs[quregId];
         
-        applyParamNamedPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, (enum phaseFunc) funcNameCode, params, numParams, overrideInds, overridePhases, numOverrides);
+        applyParamNamedPhaseFuncOverrides(qureg, qubits, numQubitsPerReg, numRegs, (enum bitEncoding) encoding, (enum phaseFunc) funcNameCode, params, numParams, overrideInds, overridePhases, numOverrides);
         
         WSPutInteger(stdlink, quregId);
         

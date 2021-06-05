@@ -77,9 +77,12 @@ typedef enum {
     E_INVALID_NUM_SUBREGISTERS,
     E_INVALID_NUM_PHASE_FUNC_TERMS,
     E_INVALID_NUM_PHASE_FUNC_OVERRIDES,
-    E_INVALID_PHASE_FUNC_OVERRIDE_INDEX,
+    E_INVALID_PHASE_FUNC_OVERRIDE_UNSIGNED_INDEX,
+    E_INVALID_PHASE_FUNC_OVERRIDE_TWOS_COMPLEMENT_INDEX,
     E_INVALID_PHASE_FUNC_NAME,
-    E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS
+    E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS,
+    E_INVALID_BIT_ENCODING,
+    E_INVALID_NUM_QUBITS_TWOS_COMPLEMENT
 } ErrorCode;
 
 static const char* errorMessages[] = {
@@ -133,9 +136,12 @@ static const char* errorMessages[] = {
     [E_INVALID_NUM_SUBREGISTERS] = "Invalid number of qubit subregisters, which must be >0 and <=100.",
     [E_INVALID_NUM_PHASE_FUNC_TERMS] = "Invalid number of terms in the phase function specified. Must be >0.",
     [E_INVALID_NUM_PHASE_FUNC_OVERRIDES] = "Invalid number of phase function overrides specified. Must be >=0.",
-    [E_INVALID_PHASE_FUNC_OVERRIDE_INDEX] = "Invalid phase function override index. Must be >=0, and <= the maximum index possible of the corresponding qubit subregister (2^numQubits-1).",
+    [E_INVALID_PHASE_FUNC_OVERRIDE_UNSIGNED_INDEX] = "Invalid phase function override index, in the UNSIGNED encoding. Must be >=0, and <= the maximum index possible of the corresponding qubit subregister (2^numQubits-1).",
+    [E_INVALID_PHASE_FUNC_OVERRIDE_TWOS_COMPLEMENT_INDEX] = "Invalid phase function override index, in the TWOS_COMPLEMENT encoding. Must be between (inclusive) -2^(N-1) and +2^(N-1)-1, where N is the number of qubits (including the sign qubit).",
     [E_INVALID_PHASE_FUNC_NAME] = "Invalid named phase function, which must be one of {NORM, INVERSE_NORM, SCALED_NORM, SCALED_INVERSE_NORM, SCALED_PRODUCT}.",
-    [E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS] = "Invalid number of parameters passed for the give named phase function. NORM and INVERSE_NORM accept 0 parameters, while SCALED_NORM, SCALED_INVERSE_NORM and SCALED_PRODUCT accept 1 parameter."
+    [E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS] = "Invalid number of parameters passed for the give named phase function. NORM and INVERSE_NORM accept 0 parameters, while SCALED_NORM, SCALED_INVERSE_NORM and SCALED_PRODUCT accept 1 parameter.",
+    [E_INVALID_BIT_ENCODING] = "Invalid bit encoding. Must be one of {UNSIGNED, TWOS_COMPLEMENT}.",
+    [E_INVALID_NUM_QUBITS_TWOS_COMPLEMENT] = "A sub-register contained too few qubits to employ TWOS_COMPLEMENT encoding. Must use >1 qubits (allocating one for the sign)."
 };
 
 /* QuESTlink defines invalidQuESTInputError, so it doesn't need to be weakly 
@@ -545,23 +551,52 @@ void validateNumMultiVarPhaseFuncTerms(int* numTermsPerReg, const int numRegs, c
         QuESTAssert(numTermsPerReg[r]>0, E_INVALID_NUM_PHASE_FUNC_TERMS, caller);
 }
 
-void validatePhaseFuncOverrides(const int numQubits, long long int* overrideInds, int numOverrides, const char* caller) {
+void validatePhaseFuncOverrides(const int numQubits, enum bitEncoding encoding, long long int* overrideInds, int numOverrides, const char* caller) {
     QuESTAssert(numOverrides>=0, E_INVALID_NUM_PHASE_FUNC_OVERRIDES, caller);
     
-    long long int maxInd = (1LL << numQubits) - 1;
-    for (int v=0; v<numOverrides; v++)
-        QuESTAssert(overrideInds[v]>=0 && overrideInds[v]<=maxInd, E_INVALID_PHASE_FUNC_OVERRIDE_INDEX, caller);
+    long long int maxInd;
+    long long int minInd;
+    
+    if (encoding == UNSIGNED) {
+        minInd = 0;
+        maxInd = (1LL << numQubits) - 1;
+        for (int v=0; v<numOverrides; v++)
+            QuESTAssert(overrideInds[v]>=minInd && overrideInds[v]<=maxInd, E_INVALID_PHASE_FUNC_OVERRIDE_UNSIGNED_INDEX, caller);
+    }
+    
+    if (encoding == TWOS_COMPLEMENT) {
+        int numValQubits = numQubits - 1; // removing sign bit
+        minInd = - (1LL << numValQubits);
+        maxInd = (1LL << numValQubits) - 1;
+        for (int v=0; v<numOverrides; v++)
+            QuESTAssert(overrideInds[v]>=minInd && overrideInds[v]<=maxInd, E_INVALID_PHASE_FUNC_OVERRIDE_TWOS_COMPLEMENT_INDEX, caller);
+    }
+
 }
 
-void validateMultiVarPhaseFuncOverrides(int* numQubitsPerReg, const int numRegs, long long int* overrideInds, int numOverrides, const char* caller) {
+void validateMultiVarPhaseFuncOverrides(int* numQubitsPerReg, const int numRegs, enum bitEncoding encoding, long long int* overrideInds, int numOverrides, const char* caller) {
     QuESTAssert(numOverrides>=0, E_INVALID_NUM_PHASE_FUNC_OVERRIDES, caller);
     
-    int i=0;
-    for (int v=0; v<numOverrides; v++) {
-        for (int r=0; r<numRegs; r++) {
-            long long int maxInd = (1LL << numQubitsPerReg[r]) - 1;
-            QuESTAssert(overrideInds[i]>=0 && overrideInds[i]<=maxInd, E_INVALID_PHASE_FUNC_OVERRIDE_INDEX, caller);
-            i++;
+    if (encoding == UNSIGNED) {
+        int i=0;
+        for (int v=0; v<numOverrides; v++) {
+            for (int r=0; r<numRegs; r++) {
+                long long int maxInd = (1LL << numQubitsPerReg[r]) - 1;
+                QuESTAssert(overrideInds[i]>=0 && overrideInds[i]<=maxInd, E_INVALID_PHASE_FUNC_OVERRIDE_UNSIGNED_INDEX, caller);
+                i++;
+            }
+        }
+    }
+    else if (encoding == TWOS_COMPLEMENT) {
+        int i=0;
+        for (int v=0; v<numOverrides; v++) {
+            for (int r=0; r<numRegs; r++) {
+                int numValQubits = numQubitsPerReg[r] - 1; // removing sign bit
+                long long int minInd = - (1LL << numValQubits);
+                long long int maxInd = (1LL << numValQubits) - 1;
+                QuESTAssert(overrideInds[i]>=minInd && overrideInds[i]<=maxInd, E_INVALID_PHASE_FUNC_OVERRIDE_TWOS_COMPLEMENT_INDEX, caller);
+                i++;
+            }
         }
     }
 }
@@ -573,12 +608,33 @@ void validatePhaseFuncName(enum phaseFunc funcCode, int numParams, const char* c
             funcCode == SCALED_NORM ||
             funcCode == SCALED_INVERSE_NORM ||
             funcCode == SCALED_PRODUCT,
-             E_INVALID_PHASE_FUNC_NAME, caller);
+                E_INVALID_PHASE_FUNC_NAME, caller);
     
     if (funcCode == NORM || funcCode == INVERSE_NORM)
         QuESTAssert(numParams == 0, E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS, caller);
     if (funcCode == SCALED_NORM || funcCode == SCALED_INVERSE_NORM || funcCode == SCALED_PRODUCT)
         QuESTAssert(numParams == 1, E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS, caller);
+}
+
+void validateBitEncoding(int numQubits, enum bitEncoding encoding, const char* caller) {
+    QuESTAssert(
+        encoding == UNSIGNED ||
+        encoding == TWOS_COMPLEMENT,
+            E_INVALID_BIT_ENCODING, caller);
+    
+    if (encoding == TWOS_COMPLEMENT)
+        QuESTAssert(numQubits > 1, E_INVALID_NUM_QUBITS_TWOS_COMPLEMENT, caller);
+}
+
+void validateMultiRegBitEncoding(int* numQubitsPerReg, int numRegs, enum bitEncoding encoding, const char* caller) {
+    QuESTAssert(
+        encoding == UNSIGNED ||
+        encoding == TWOS_COMPLEMENT,
+            E_INVALID_BIT_ENCODING, caller);
+    
+    if (encoding == TWOS_COMPLEMENT)
+        for (int r=0; r<numRegs; r++)
+            QuESTAssert(numQubitsPerReg[r] > 1, E_INVALID_NUM_QUBITS_TWOS_COMPLEMENT, caller);
 }
 
 #ifdef __cplusplus

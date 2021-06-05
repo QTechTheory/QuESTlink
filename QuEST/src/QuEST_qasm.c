@@ -476,7 +476,7 @@ void qasm_recordInitClassical(Qureg qureg, long long int stateInd) {
             qasm_recordGate(qureg, GATE_SIGMA_X, q);
 }
 
-void qasm_recordPhaseFunc(Qureg qureg, int* qubits, int numQubits, qreal* coeffs, qreal* exponents, int numTerms, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+void qasm_recordPhaseFunc(Qureg qureg, int* qubits, int numQubits, enum bitEncoding encoding, qreal* coeffs, qreal* exponents, int numTerms, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
     
     if (!qureg.qasmLog->isLogging)
         return;
@@ -498,7 +498,10 @@ void qasm_recordPhaseFunc(Qureg qureg, int* qubits, int numQubits, qreal* coeffs
         bufferOverflow();
     addStringToQASM(qureg, line, len);
     
-    qasm_recordComment(qureg, "  upon every substate |x>, informed by qubits");
+    char encBuf[MAX_LINE_LEN];
+    if (encoding == UNSIGNED)           sprintf(encBuf, "an unsigned");
+    if (encoding == TWOS_COMPLEMENT)    sprintf(encBuf, "a two's complement");
+    qasm_recordComment(qureg, "  upon every substate |x>, informed by qubits (under %s binary encoding)", encBuf);
     
     // record like:
     //     {0, 3, 2}
@@ -544,9 +547,12 @@ char getPhaseFuncSymbol(int numSymbs, int ind) {
     return 'x';
 }
 
-void addMultiVarRegsToQASM(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs) {
+void addMultiVarRegsToQASM(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum bitEncoding encoding) {
     
-    qasm_recordComment(qureg, "  upon substates informed by qubits");
+    char encBuf[MAX_LINE_LEN];
+    if (encoding == UNSIGNED)           sprintf(encBuf, "an unsigned");
+    if (encoding == TWOS_COMPLEMENT)    sprintf(encBuf, "a two's complement");
+    qasm_recordComment(qureg, "  upon substates informed by qubits (under %s binary encoding)", encBuf);
     
     char line[MAX_LINE_LEN+1];
     int len = 0;
@@ -598,7 +604,8 @@ void addMultiVarOverridesToQASM(Qureg qureg, int numRegs, long long int* overrid
     }
 }
 
-void qasm_recordMultiVarPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+                                                                                            // TODO: parse encoding
+void qasm_recordMultiVarPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum bitEncoding encoding, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
     
     if (!qureg.qasmLog->isLogging)
         return;
@@ -646,13 +653,14 @@ void qasm_recordMultiVarPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg
         addStringToQASM(qureg, line, len);
     }
     
-    addMultiVarRegsToQASM(qureg, qubits, numQubitsPerReg, numRegs);
+    addMultiVarRegsToQASM(qureg, qubits, numQubitsPerReg, numRegs, encoding);
     
     if (numOverrides > 0)
         addMultiVarOverridesToQASM(qureg, numRegs, overrideInds, overridePhases, numOverrides);
 }
 
-void qasm_recordNamedPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc funcName, qreal* params, int numParams, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+                                                                                           // TODO: parse encoding
+void qasm_recordNamedPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum bitEncoding encoding, enum phaseFunc funcName, qreal* params, int numParams, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
     
     if (!qureg.qasmLog->isLogging)
         return;
@@ -685,7 +693,7 @@ void qasm_recordNamedPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, i
         bufferOverflow();
     addStringToQASM(qureg, line, len);
     
-    addMultiVarRegsToQASM(qureg, qubits, numQubitsPerReg, numRegs);
+    addMultiVarRegsToQASM(qureg, qubits, numQubitsPerReg, numRegs, encoding);
     
     if (numOverrides > 0)
         addMultiVarOverridesToQASM(qureg, numRegs, overrideInds,overridePhases, numOverrides);
