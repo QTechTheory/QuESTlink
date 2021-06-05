@@ -70,8 +70,8 @@ ApplyPhaseFunc[qureg, {qubits, ...}, FuncName, overrides] first consults the ove
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID. If qureg is a Symbol, it will additionally be cleared."
     DestroyQureg::error = "`1`"
     
-    GetAmp::usage = "GetAmp[qureg, index] returns the complex amplitude of the state-vector qureg at the given index.
-GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qureg at index [row, col]."
+    GetAmp::usage = "GetAmp[qureg, index] returns the complex amplitude of the state-vector qureg at the given index, indexing from 0.
+GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qureg at index [row, col], indexing from [0,0]."
     GetAmp::error = "`1`"
     
     GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
