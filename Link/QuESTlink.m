@@ -47,18 +47,24 @@ CalcDensityInnerProducts[rhoId, omegaIds] returns a real vector with i-th elemen
     ApplyPauliSum::usage = "ApplyPauliSum[inQureg, pauliSum, outQureg] modifies outQureg to be the result of applying the weighted sum of Paulis to inQureg."
     ApplyPauliSum::error = "`1`"
     
-    ApplyPhaseFunc::usage = "ApplyPhaseFunc[qureg, qubits, f[r], r] multiplies a phase factor e^(i f[r]) onto each amplitude in qureg, where r is substituted with the index of each basis state as informed by the list of qubits (ordered least to most significant).
-ApplyPhaseFunc[qureg, qubits, f[r], r, overrides] first consults whether a basis state's index is included in the list of rules in overrides {index -> phase}, and if present, uses the prescribed phase in lieu of evaluating f[index].
-    \[Bullet] qubits is a list of which qubits to include in the determination of the index r for each basis state. qubits={0,1,2} implies the canonical indexing of basis states in a 3-qubit register.
-    \[Bullet] f[r] must be an exponential polynomial of r, of the form sum_i a_j r^(p_j) where a_j and p_j can be any real number (including negative and fractional).
-    \[Bullet] f[r] must evaluate to a real number for every basis state index informed by qubits, unless overriden.
+    ApplyPhaseFunc::usage = "ApplyPhaseFunc[qureg, qubits, f[r], r] multiplies a phase factor e^(i f[r]) onto each amplitude in qureg, where r is substituted with the index of each basis state as informed by the list of qubits (ordered least to most significant), and optional argument BitEncoding.
+\[Bullet] qubits is a list of which qubits to include in the determination of the index r for each basis state. For example, qubits={0,1,2} implies the canonical indexing of basis states in a 3-qubit register.
+\[Bullet] f[r] must be an exponential polynomial of r, of the form sum_i a_j r^(p_j) where a_j and p_j can be any real number (including negative and fractional).
+\[Bullet] f[r] must evaluate to a real number for every basis state index informed by qubits, unless overriden via optional argument PhaseOverrides.
 ApplyPhaseFunc[qureg, {qubits, ...}, f[x,y,...], {x,y,...}] evaluates a multi-variable exponential-polynomial phase function, where each variable corresponds to a sub-register of qubits.
-ApplyPhaseFunc[qureg, {qubits, ...}, f[x,y,...], {x,y,...}, overrides] first consults whether tuple of sub-register indices already exists in the list of phase overrides.
-    \[Bullet] each element of overrides must have format {x0,y0,...} -> phase0.
 ApplyPhaseFunc[qureg, {qubits, ...}, FuncName] evaluates a specific named multi-variable function to determine the phase. These are:
     \[Bullet] \"Norm\" evaluates Sqrt[x^2 + y^2 + ...]
-    \[Bullet] \"InverseNorm\" evaluates 1/Sqrt[x^2 + y^2 + ...]. This requires overriding the phase of index {0,0...} to avoid divergence.
-ApplyPhaseFunc[qureg, {qubits, ...}, FuncName, overrides] first consults the overrides."
+    \[Bullet] \"InverseNorm\" evaluates 1/Sqrt[x^2 + y^2 + ...]. 
+        This requires overriding the phase of index {0,0...} to avoid divergence.
+    \[Bullet] {\"ScaledNorm\", coeff} evaluates coeff Sqrt[x^2 + y^2 + ...]
+    \[Bullet] {\"ScaledInverseNorm\", coeff} evaluates coeff/Sqrt[x^2 + y^2 + ...]
+    \[Bullet] {\"ScaledProduct\", coeff} evaluates coeff * x * y * ...
+ApplyPhaseFunc accepts optional arguments BitEncoding and PhaseOverrides.
+ApplyPhaseFunc[... PhaseOverrides -> rules] first consults whether a basis state's index is included in the list of rules {index -> phase}, and if present, uses the prescribed phase in lieu of evaluating f[index].
+    For multi-variable functions, each index must be a tuple.
+ApplyPhaseFunc[..., BitEncoding -> \"Unsigned\"] interprets each sub-register state as an unsigned binary integer, in {0, ..., 2^numQubits-1}
+ApplyPhaseFunc[..., BitEncoding -> \"TwosComplement\"] interprets each sub-register state as a two's complement signed integer in {-2^(N-1), ..., +2^(N-1)-1}, where N is the number of qubits (including the sign qubit).
+See ?BitEncoding and ?PhaseOverrides."
     ApplyPhaseFunc::error = "`1`"
 
     CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the matrix form of the given weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target."
@@ -67,8 +73,8 @@ ApplyPhaseFunc[qureg, {qubits, ...}, FuncName, overrides] first consults the ove
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID. If qureg is a Symbol, it will additionally be cleared."
     DestroyQureg::error = "`1`"
     
-    GetAmp::usage = "GetAmp[qureg, index] returns the complex amplitude of the state-vector qureg at the given index.
-GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qureg at index [row, col]."
+    GetAmp::usage = "GetAmp[qureg, index] returns the complex amplitude of the state-vector qureg at the given index, indexing from 0.
+GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qureg at index [row, col], indexing from [0,0]."
     GetAmp::error = "`1`"
     
     GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
@@ -212,6 +218,15 @@ DistinguishedStyles -> Automatic will colour the groups by sampling ColorData[\"
     ReplaceAliases::usage = "Optional argument to GetCircuitSchedule and InsertCircuitNoise, specifying (True or False) whether to substitute the device specification's alias operators in the output (including in gates and active/passive noise). 
 This is False by default, but must be True to pass the output circuits to (for example) ApplyCircuit which don't recognise the alias.
 Note if ReplaceAliases -> True, then the output of GetCircuitSchedule might not be compatible as an input to InsertCircuitNoise."
+
+    PhaseOverrides::usage = "Optional argument to ApplyPhaseFunc, specifying overriding values of the phase function for specific sub-register basis states. This can be used to avoid divergences in the phase function.
+For a single-variable phase function, like ApplyPhaseFunc[..., x^2, x], the option must have form PhaseOverrides -> {integer -> real, ...}, where 'integer' is the basis state index of which to override the phase.
+For a multi-variable phase function, like ApplyPhaseFunc[..., x^2+y^2, {x,y}], the option must have form PhaseOverrides -> {{integer, integer} -> real, ...}, where the basis state indices are specified as a tuple {x,y}.
+Note under BitEncoding -> \"TwosComplement\", basis state indices can be negative."
+    
+    BitEncoding::usage = "Optional argument to ApplyPhaseFunc, specifying how the values of sub-register basis states are encoded in (qu)bits.
+BitEncoding -> \"Unsigned\" (default) interprets basis states as natural numbers {0, ..., 2^numQubits-1}.
+BitEncoding -> \"TwosComplement\" interprets basis states as two's complement signed numbers, {0, ... 2^(numQubits-1)-1} and {-1, -2, ... -2^(numQubits-1)}. The last qubit in a sub-register list is assumed the sign bit."
     
     EndPackage[]
     
@@ -722,7 +737,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	{extractCoeffExpo[s] @ term}
             
         (* for extracting {coeffs}, {exponents} from an n-D exponential-polynomial *)
-        extractMultiExpPolyTerms[terms_List, symbs:{_Symbol ..}] := 
+        extractMultiExpPolyTerms[terms_List, symbs:{__Symbol}] := 
         	Module[{coeffs,powers, cp, badterms},
         		coeffs = Association @@ Table[s->{},{s,symbs}];
         		powers = Association @@ Table[s->{},{s,symbs}];
@@ -746,58 +761,99 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		If[badterms === {}, 
         			{Values @ coeffs, Values @ powers},
         			badterms]]
-        extractMultiExpPolyTerms[poly_Plus, symbs:{_Symbol ..}] := 
+        extractMultiExpPolyTerms[poly_Plus, symbs:{__Symbol}] := 
             extractMultiExpPolyTerms[List @@ poly, symbs]
-        extractMultiExpPolyTerms[term_, symbs:{_Symbol ..}] := 
+        extractMultiExpPolyTerms[term_, symbs:{__Symbol}] := 
             extractMultiExpPolyTerms[{term}, symbs]
             
-        (* 1D exp-poly *)
-        ApplyPhaseFunc[qureg_Integer, qubits:{_Integer..}, phaseFunc_, phaseIndSymb_Symbol, phaseOverrides:{(_Integer -> _?Internal`RealValuedNumericQ) ...}:{}] := 
-            With[
-                {terms = extractExpPolyTerms[N @ phaseFunc,phaseIndSymb]},
-                {badterms = Cases[terms, {$Failed, bad_} :> bad]},
-                If[ Length[badterms] === 0,
-                    ApplyPhaseFuncInternal[qureg, qubits, terms[[All,1]], terms[[All,2]], phaseOverrides[[All,1]], N @ phaseOverrides[[All,2]]],
-                    (Message[ApplyPhaseFunc::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
-                     $Failed)]]
-        
-        (* n-D errors *)
-        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ...}:{}] /; (
-            Not @ DuplicateFreeQ @ phaseIndSymbs || Length @ regs =!= Length @ phaseIndSymbs) :=
-                (Message[ApplyPhaseFunc::error, "Each delimited group of qubits must correspond to a unique symbol in the phase function."];
-                 $Failed)
-        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ..}] /; (
-            Not[Equal @@ Length /@ phaseOverrides[[All,1]]] || Length[phaseIndSymbs] =!= Length @ phaseOverrides[[1,1]]) :=
-                (Message[ApplyPhaseFunc::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups / symbols."];
-                 $Failed)
-        
-        (* n-D named *)
-        phaseFuncCodes = {    (* these must match the values of the enum phaseFunc in QuEST.h *)
-            "Norm" -> 0,
-            "InverseNorm" -> 1
+        bitEncodingFlags = {  (* these must match the values of the enum bitEncoding in QuEST.h *)
+            "Unsigned" -> 0,
+            "TwosComplement" -> 1
         };
-        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_String, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ..}] /; (
-            Not[Equal @@ Length /@ phaseOverrides[[All,1]]] || Length[regs] =!= Length @ phaseOverrides[[1,1]]) :=
-                (Message[ApplyPhaseFunc::error, "Each overriden phase index must be specified as an n-tuple, where n is the number of qubit groups."];
-                 $Failed)
-        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_String, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ...}:{}] := 
-            If[
-                MemberQ[ phaseFuncCodes[[All,1]], phaseFunc],
-                ApplyNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, phaseFunc /. phaseFuncCodes, Flatten[phaseOverrides[[All,1]]], N @ phaseOverrides[[All,2]]],
-                (Message[ApplyPhaseFunc::error, "The phase function name must be one of " <> ToString[phaseFuncCodes[[All,1]]]]; 
-                 $Failed)]
+        phaseFuncFlags = {    (* these must match the values of the enum phaseFunc in QuEST.h *)
+            "Norm" -> 0,
+            "InverseNorm" -> 1,
+            "ScaledNorm" -> 2,
+            "ScaledInverseNorm" -> 3,
+            "ScaledProduct" -> 4
+        };
+        Options[ApplyPhaseFunc] = {
+            BitEncoding -> "Unsigned",
+            PhaseOverrides -> {}
+        };
         
-        (* n-D exp-poly *)
-        ApplyPhaseFunc[qureg_Integer, regs:{{_Integer..}..}, phaseFunc_, phaseIndSymbs:{_Symbol..}, phaseOverrides:{({_Integer..} -> _?Internal`RealValuedNumericQ) ...}:{}] :=
-            With[
-                {terms = extractMultiExpPolyTerms[N @ phaseFunc, phaseIndSymbs]},
-                {badterms = Cases[terms, {$Failed, bad_} :> bad]},
-                {coeffs = First[terms], exponents=Last[terms]},
-                If[ Length[badterms] === 0,
-                    ApplyMultiVarPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, Flatten[coeffs], Flatten[exponents], Length/@coeffs, Flatten[phaseOverrides[[All,1]]], N @ phaseOverrides[[All,2]]],
+        (* single-variable exponential polynomial func *)
+        ApplyPhaseFunc[qureg_Integer, reg:{__Integer}, func_, symb_Symbol, OptionsPattern[]] := With[
+            {terms = extractExpPolyTerms[N @ func, symb]},
+            {badterms = Cases[terms, {$Failed, bad_} :> bad]},
+            {overs = OptionValue[PhaseOverrides]},
+            Which[
+                Length[badterms] > 0,
                     (Message[ApplyPhaseFunc::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
-                     $Failed)]]
+                    $Failed),
+                Not @ MemberQ[bitEncodingFlags[[All,1]], OptionValue[BitEncoding]],
+                    (Message[ApplyPhaseFunc::error, "Invalid option for BitEncoding. Must be one of " <> ToString@bitEncodingFlags[[All, 1]] <> "."]; 
+                    $Failed),
+                Not @ MatchQ[overs, {(_Integer -> _?Internal`RealValuedNumericQ) ...}],
+                    (Message[ApplyPhaseFunc::error, "Invalid one-dimensional PhaseOverrides, which must be of the form {integer -> real, ...}"]; 
+                    $Failed),
+                True,
+                    ApplyPhaseFuncInternal[qureg, reg, OptionValue[BitEncoding] /. bitEncodingFlags, terms[[All,1]], terms[[All,2]], overs[[All,1]], N @ overs[[All,2]]]]]
+            
+        (* multi-variable exponential polynomial func *)
+        ApplyPhaseFunc[qureg_Integer, regs:{{__Integer}..}, func_, symbs:{__Symbol}, OptionsPattern[]] := With[
+            {terms = extractMultiExpPolyTerms[N @ func, symbs]},
+            {badterms = Cases[terms, {$Failed, bad_} :> bad]},
+            {coeffs = First[terms], exponents=Last[terms]},
+            {overs = OptionValue[PhaseOverrides]},
+            Which[
+                Not @ DuplicateFreeQ @ symbs,
+                    (Message[ApplyPhaseFunc::error, "The list of phase function symbols must be unique."];
+                    $Failed),
+                Length[regs] =!= Length[symbs],
+                    (Message[ApplyPhaseFunc::error, "Each delimited sub-register of qubits must correspond to a unique symbol in the phase function."];
+                    $Failed),
+                Length[badterms] > 0,
+                    (Message[ApplyPhaseFunc::error, "The phase function, which must be an exponential-polynomial, contained an unrecognised term of the form " <> ToString@StandardForm@First@badterms <> "."]; 
+                     $Failed),
+                Not @ MemberQ[bitEncodingFlags[[All,1]], OptionValue[BitEncoding]],
+                    (Message[ApplyPhaseFunc::error, "Invalid option for BitEncoding. Must be one of " <> ToString@bitEncodingFlags[[All, 1]] <> "."]; 
+                    $Failed),
+                Not[ (overs === {}) || And[
+                        MatchQ[overs, {({__Integer} -> _?Internal`RealValuedNumericQ) ..}],
+                        Equal @@ Length /@ overs[[All,1]], 
+                        Length[regs] === Length@overs[[1,1]] ] ],
+                    (Message[ApplyPhaseFunc::error, "Invalid PhaseOverrides. Each overriden phase index must be specified as an n-tuple, where n is the number of sub-registers and symbols, pointing to a real number. For example, ApplyPhaseFunc[..., {x,y}, PhaseOverrides -> { {0,0} -> PI, ... }]."];
+                     $Failed),
+                True,
+                    ApplyMultiVarPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, OptionValue[BitEncoding] /. bitEncodingFlags, Flatten[coeffs], Flatten[exponents], Length/@coeffs, Flatten[overs[[All,1]]], N @ overs[[All,2]]]]]
+
+        (* parameterised named func (multi-variable) *)
+        ApplyPhaseFunc[qureg_Integer, regs:{{__Integer}..}, {func_String, params___?Internal`RealValuedNumericQ}, OptionsPattern[]] := With[
+            {overs = OptionValue[PhaseOverrides]},
+            Which[
+                Not @ MemberQ[phaseFuncFlags[[All,1]], func],
+                    (Message[ApplyPhaseFunc::error, "The named phase function must be one of " <> ToString[phaseFuncFlags[[All,1]]]]; 
+                     $Failed),
+                Not @ MemberQ[bitEncodingFlags[[All,1]], OptionValue[BitEncoding]],
+                    (Message[ApplyPhaseFunc::error, "Invalid option for BitEncoding. Must be one of " <> ToString@bitEncodingFlags[[All, 1]] <> "."]; 
+                    $Failed),
+                Not[ (overs === {}) || And[
+                        MatchQ[overs, {({__Integer} -> _?Internal`RealValuedNumericQ) ..}],
+                        Equal @@ Length /@ overs[[All,1]], 
+                        Length[regs] === Length@overs[[1,1]] ] ],
+                    (Message[ApplyPhaseFunc::error, "Invalid PhaseOverrides. Each overriden phase index must be specified as an n-tuple, where n is the number of sub-registers, pointing to a real number. For example, ApplyPhaseFunc[..., {{1},{2}}, ..., PhaseOverrides -> { {0,0} -> PI, ... }]."];
+                     $Failed),
+                Length[{params}] === 0,
+                    ApplyNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, OptionValue[BitEncoding] /. bitEncodingFlags, func /. phaseFuncFlags, Flatten[overs[[All,1]]], N @ overs[[All,2]]],
+                Length[{params}] > 0,
+                    ApplyParamNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, OptionValue[BitEncoding] /. bitEncodingFlags, func /. phaseFuncFlags, N @ {params}, Flatten[overs[[All,1]]], N @ overs[[All,2]]]]]
         
+        (* non-parameterised named func (multi-variable) *)
+        ApplyPhaseFunc[qureg_Integer, regs:{{__Integer}..}, func_String, opts:OptionsPattern[]] := 
+            ApplyPhaseFunc[qureg, regs, {func}, opts]
+        
+        (* invalid args and symbol syntax highlighting *)
         ApplyPhaseFunc[___] := invalidArgError[ApplyPhaseFunc]
         SyntaxInformation[ApplyPhaseFunc] = {"LocalVariables" -> {"Solve", {4, 4}}};
         

@@ -476,7 +476,10 @@ void qasm_recordInitClassical(Qureg qureg, long long int stateInd) {
             qasm_recordGate(qureg, GATE_SIGMA_X, q);
 }
 
-void qasm_recordPhaseFunc(Qureg qureg, int* qubits, int numQubits, qreal* coeffs, qreal* exponents, int numTerms, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+void qasm_recordPhaseFunc(Qureg qureg, int* qubits, int numQubits, enum bitEncoding encoding, qreal* coeffs, qreal* exponents, int numTerms, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+    
+    if (!qureg.qasmLog->isLogging)
+        return;
     
     qasm_recordComment(qureg, "Here, applyPhaseFunc() multiplied a complex scalar of the form");
     
@@ -495,7 +498,10 @@ void qasm_recordPhaseFunc(Qureg qureg, int* qubits, int numQubits, qreal* coeffs
         bufferOverflow();
     addStringToQASM(qureg, line, len);
     
-    qasm_recordComment(qureg, "  upon every substate |x>, informed by qubits");
+    char encBuf[MAX_LINE_LEN];
+    if (encoding == UNSIGNED)           sprintf(encBuf, "an unsigned");
+    if (encoding == TWOS_COMPLEMENT)    sprintf(encBuf, "a two's complement");
+    qasm_recordComment(qureg, "  upon every substate |x>, informed by qubits (under %s binary encoding)", encBuf);
     
     // record like:
     //     {0, 3, 2}
@@ -541,9 +547,12 @@ char getPhaseFuncSymbol(int numSymbs, int ind) {
     return 'x';
 }
 
-void addMultiVarRegsToQASM(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs) {
+void addMultiVarRegsToQASM(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum bitEncoding encoding) {
     
-    qasm_recordComment(qureg, "  upon substates informed by qubits");
+    char encBuf[MAX_LINE_LEN];
+    if (encoding == UNSIGNED)           sprintf(encBuf, "an unsigned");
+    if (encoding == TWOS_COMPLEMENT)    sprintf(encBuf, "a two's complement");
+    qasm_recordComment(qureg, "  upon substates informed by qubits (under %s binary encoding)", encBuf);
     
     char line[MAX_LINE_LEN+1];
     int len = 0;
@@ -595,7 +604,11 @@ void addMultiVarOverridesToQASM(Qureg qureg, int numRegs, long long int* overrid
     }
 }
 
-void qasm_recordMultiVarPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+                                                                                            // TODO: parse encoding
+void qasm_recordMultiVarPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum bitEncoding encoding, qreal* coeffs, qreal* exponents, int* numTermsPerReg, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+    
+    if (!qureg.qasmLog->isLogging)
+        return;
     
     qasm_recordComment(qureg, "Here, applyMultiVarPhaseFunc() multiplied a complex scalar of the form");
     
@@ -640,13 +653,17 @@ void qasm_recordMultiVarPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg
         addStringToQASM(qureg, line, len);
     }
     
-    addMultiVarRegsToQASM(qureg, qubits, numQubitsPerReg, numRegs);
+    addMultiVarRegsToQASM(qureg, qubits, numQubitsPerReg, numRegs, encoding);
     
     if (numOverrides > 0)
         addMultiVarOverridesToQASM(qureg, numRegs, overrideInds, overridePhases, numOverrides);
 }
 
-void qasm_recordNamedPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum phaseFunc functionNameCode, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+                                                                                           // TODO: parse encoding
+void qasm_recordNamedPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum bitEncoding encoding, enum phaseFunc funcName, qreal* params, int numParams, long long int* overrideInds, qreal* overridePhases, int numOverrides) {
+    
+    if (!qureg.qasmLog->isLogging)
+        return;
     
     qasm_recordComment(qureg, "Here, applyNamedPhaseFunc() multiplied a complex scalar of form");
     char line[MAX_LINE_LEN+1];
@@ -654,11 +671,17 @@ void qasm_recordNamedPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, i
     // record like
     //      exp(i sqrt(x^2 + y^2 + z^2)) or exp(i sqrt(x0^2 + x1^2 + ...))
     int len = snprintf(line, MAX_LINE_LEN, "//     exp(i ");
-    if (functionNameCode == NORM)
-        len += snprintf(line+len, MAX_LINE_LEN-len, "sqrt(");
-    else if (functionNameCode == INVERSE_NORM)
-        len += snprintf(line+len, MAX_LINE_LEN-len, "1/sqrt(");
-    if (functionNameCode == NORM || functionNameCode == INVERSE_NORM) {
+    
+    // record norm-based function
+    if (funcName == NORM || funcName == SCALED_NORM || 
+        funcName == INVERSE_NORM || funcName == SCALED_INVERSE_NORM)
+    {
+        if (funcName == SCALED_NORM || funcName == SCALED_INVERSE_NORM)
+            len += snprintf(line+len, MAX_LINE_LEN-len, (params[0]>0)? "%g ":"(%g) ", params[0]);
+        if (funcName == NORM || funcName == SCALED_NORM)
+            len += snprintf(line+len, MAX_LINE_LEN-len, "sqrt(");
+        else if (funcName == INVERSE_NORM || funcName == SCALED_INVERSE_NORM)
+            len += snprintf(line+len, MAX_LINE_LEN-len, "1/sqrt(");
         if (numRegs <= MAX_REG_SYMBS)
             for (int r=0; r<numRegs; r++)
                 len += snprintf(line+len, MAX_LINE_LEN-len, (r < numRegs - 1)? "%c^2 + ":"%c^2))\n", getPhaseFuncSymbol(numRegs,r));
@@ -670,7 +693,7 @@ void qasm_recordNamedPhaseFunc(Qureg qureg, int* qubits, int* numQubitsPerReg, i
         bufferOverflow();
     addStringToQASM(qureg, line, len);
     
-    addMultiVarRegsToQASM(qureg, qubits, numQubitsPerReg, numRegs);
+    addMultiVarRegsToQASM(qureg, qubits, numQubitsPerReg, numRegs, encoding);
     
     if (numOverrides > 0)
         addMultiVarOverridesToQASM(qureg, numRegs, overrideInds,overridePhases, numOverrides);

@@ -40,7 +40,7 @@
  */
  
 void statevec_applyPhaseFuncOverrides(
-    Qureg qureg, int* qubits, int numQubits, 
+    Qureg qureg, int* qubits, int numQubits, enum bitEncoding encoding,
     qreal* coeffs, qreal* exponents, int numTerms, 
     long long int* overrideInds, qreal* overridePhases, int numOverrides)
 {
@@ -60,7 +60,7 @@ void statevec_applyPhaseFuncOverrides(
 # ifdef _OPENMP
 # pragma omp parallel \
     default  (none) \
-    shared   (chunkId,numAmps, stateRe,stateIm, qubits,numQubits, coeffs,exponents,numTerms, overrideInds,overridePhases,numOverrides) \
+    shared   (chunkId,numAmps, stateRe,stateIm, qubits,numQubits,encoding, coeffs,exponents,numTerms, overrideInds,overridePhases,numOverrides) \
     private  (index, globalAmpInd, phaseInd, i,t,q, phase, c,s,re,im) 
 # endif
     {
@@ -74,8 +74,16 @@ void statevec_applyPhaseFuncOverrides(
             
             // determine phase index of {qubits}
             phaseInd = 0LL;
-            for (q=0; q<numQubits; q++)
-                phaseInd += (1LL << q) * extractBit(qubits[q], globalAmpInd);
+            if (encoding == UNSIGNED) {
+                for (q=0; q<numQubits; q++) // use significance order specified by {qubits}
+                    phaseInd += (1LL << q) * extractBit(qubits[q], globalAmpInd);
+            } 
+            else if (encoding == TWOS_COMPLEMENT) {
+                for (q=0; q<numQubits-1; q++) // use final qubit to indicate sign 
+                    phaseInd += (1LL << q) * extractBit(qubits[q], globalAmpInd);
+                if (extractBit(qubits[numQubits-1], globalAmpInd) == 1)
+                    phaseInd -= (1LL << (numQubits-1));
+            }
             
             // determine if this phase index has an overriden value (i < numOverrides)
             for (i=0; i<numOverrides; i++)
@@ -104,7 +112,7 @@ void statevec_applyPhaseFuncOverrides(
 }
 
 void statevec_applyMultiVarPhaseFuncOverrides(
-    Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
+    Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum bitEncoding encoding,
     qreal* coeffs, qreal* exponents, int* numTermsPerReg, 
     long long int* overrideInds, qreal* overridePhases, int numOverrides) 
 {
@@ -129,7 +137,7 @@ void statevec_applyMultiVarPhaseFuncOverrides(
 # ifdef _OPENMP
 # pragma omp parallel \
     default  (none) \
-    shared   (chunkId,numAmps, stateRe,stateIm, qubits,numQubitsPerReg,numRegs, coeffs,exponents,numTermsPerReg, overrideInds,overridePhases,numOverrides) \
+    shared   (chunkId,numAmps, stateRe,stateIm, qubits,numQubitsPerReg,numRegs,encoding, coeffs,exponents,numTermsPerReg, overrideInds,overridePhases,numOverrides) \
     private  (index,globalAmpInd, r,q,i,t,flatInd, found, phaseInds,phase, c,s,re,im) 
 # endif
     {
@@ -145,8 +153,18 @@ void statevec_applyMultiVarPhaseFuncOverrides(
             flatInd = 0;
             for (r=0; r<numRegs; r++) {
                 phaseInds[r] = 0LL;
-                for (q=0; q<numQubitsPerReg[r]; q++)
-                    phaseInds[r] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);   // qubits[flatInd] ~ qubits[r][q]
+                
+                if (encoding == UNSIGNED) {
+                    for (q=0; q<numQubitsPerReg[r]; q++)
+                        phaseInds[r] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);   // qubits[flatInd] ~ qubits[r][q]
+                }
+                else if (encoding == TWOS_COMPLEMENT) {
+                    for (q=0; q<numQubitsPerReg[r]-1; q++)  
+                        phaseInds[r] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);
+                    // use final qubit to indicate sign
+                    if (extractBit(qubits[flatInd++], globalAmpInd) == 1)
+                        phaseInds[r] -= (1LL << (numQubitsPerReg[r]-1));
+                }
             }
             
             // determine if this phase index has an overriden value (i < numOverrides)
@@ -189,9 +207,10 @@ void statevec_applyMultiVarPhaseFuncOverrides(
     }
 }
 
-void statevec_applyNamedPhaseFuncOverrides(
-    Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, 
+void statevec_applyParamNamedPhaseFuncOverrides(
+    Qureg qureg, int* qubits, int* numQubitsPerReg, int numRegs, enum bitEncoding encoding,
     enum phaseFunc phaseFuncName,
+    qreal* params, int numParams,
     long long int* overrideInds, qreal* overridePhases, int numOverrides) 
 {
     // each node/chunk modifies only local values in an embarrassingly parallel way 
@@ -215,7 +234,7 @@ void statevec_applyNamedPhaseFuncOverrides(
 # ifdef _OPENMP
 # pragma omp parallel \
     default  (none) \
-    shared   (chunkId,numAmps, stateRe,stateIm, qubits,numQubitsPerReg,numRegs, phaseFuncName, overrideInds,overridePhases,numOverrides) \
+    shared   (chunkId,numAmps, stateRe,stateIm, qubits,numQubitsPerReg,numRegs,encoding, phaseFuncName,params,numParams, overrideInds,overridePhases,numOverrides) \
     private  (index,globalAmpInd, r,q,i,flatInd, found, phaseInds,phase,norm, c,s,re,im) 
 # endif
     {
@@ -231,8 +250,18 @@ void statevec_applyNamedPhaseFuncOverrides(
             flatInd = 0;
             for (r=0; r<numRegs; r++) {
                 phaseInds[r] = 0LL;
-                for (q=0; q<numQubitsPerReg[r]; q++)
-                    phaseInds[r] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);   // qubits[flatInd] ~ qubits[r][q]
+                
+                if (encoding == UNSIGNED) {
+                    for (q=0; q<numQubitsPerReg[r]; q++)
+                        phaseInds[r] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);   // qubits[flatInd] ~ qubits[r][q]
+                }
+                else if (encoding == TWOS_COMPLEMENT) {
+                    for (q=0; q<numQubitsPerReg[r]-1; q++)  
+                        phaseInds[r] += (1LL << q) * extractBit(qubits[flatInd++], globalAmpInd);
+                    // use final qubit to indicate sign
+                    if (extractBit(qubits[flatInd++], globalAmpInd) == 1)
+                        phaseInds[r] -= (1LL << (numQubitsPerReg[r]-1));
+                }
             }
             
             // determine if this phase index has an overriden value (i < numOverrides)
@@ -253,7 +282,10 @@ void statevec_applyNamedPhaseFuncOverrides(
             if (i < numOverrides)
                 phase = overridePhases[i];
             else {
-                if (phaseFuncName == NORM || phaseFuncName == INVERSE_NORM) {
+                // compute norm-related phases
+                if (phaseFuncName == NORM || phaseFuncName == INVERSE_NORM ||
+                    phaseFuncName == SCALED_NORM || phaseFuncName == SCALED_INVERSE_NORM) {
+                        
                     norm = 0;
                     for (r=0; r<numRegs; r++)
                         norm += phaseInds[r]*phaseInds[r];
@@ -261,8 +293,18 @@ void statevec_applyNamedPhaseFuncOverrides(
                     
                     if (phaseFuncName == NORM)
                         phase = norm;
-                    if (phaseFuncName == INVERSE_NORM)
+                    else if (phaseFuncName == INVERSE_NORM)
                         phase = 1/norm;
+                    else if (phaseFuncName == SCALED_NORM)  // no need to actually consult the number of parameters
+                        phase = params[0] * norm;
+                    else if (phaseFuncName == SCALED_INVERSE_NORM)
+                        phase = params[0] / norm;
+                }
+                // compute algebraic phases
+                else if (phaseFuncName == SCALED_PRODUCT) {
+                    phase = params[0];
+                    for (r=0; r<numRegs; r++)
+                        phase *= phaseInds[r];
                 }
             }
             
