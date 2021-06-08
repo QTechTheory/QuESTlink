@@ -475,8 +475,8 @@ __global__ void statevec_applyParamNamedPhaseFuncOverridesKernel(
                  phaseFuncName == SCALED_DISTANCE || phaseFuncName == SCALED_INVERSE_DISTANCE) {
             
             qreal dist = 0;
-            for (r=0; r<numRegs; r+=2) {
-                qreal dif = (phaseInds[1 + r*stride+offset] - phaseInds[r*stride+offset]);
+            for (int r=0; r<numRegs; r+=2) {
+                qreal dif = (phaseInds[(r+1)*stride+offset] - phaseInds[r*stride+offset]);
                 dist += dif*dif;
             }
             dist = sqrt(dist);
