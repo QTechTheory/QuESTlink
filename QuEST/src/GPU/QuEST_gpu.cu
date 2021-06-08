@@ -436,7 +436,7 @@ __global__ void statevec_applyParamNamedPhaseFuncOverridesKernel(
     if (i < numOverrides)
         phase = overridePhases[i];
     else {
-        // norm-based phases
+        // compute norm related phases
         if (phaseFuncName == NORM || phaseFuncName == INVERSE_NORM ||
             phaseFuncName == SCALED_NORM || phaseFuncName == SCALED_INVERSE_NORM) {
             qreal norm = 0;
@@ -453,11 +453,42 @@ __global__ void statevec_applyParamNamedPhaseFuncOverridesKernel(
             else if (phaseFuncName == SCALED_INVERSE_NORM)
                 phase = params[0] / norm;
         }
-        // algebraic phases
-        else if (phaseFuncName == SCALED_PRODUCT) {
-            phase = params[0];
+        // compute product related phases
+        else if (phaseFuncName == PRODUCT || phaseFuncName == INVERSE_PRODUCT ||
+                 phaseFuncName == SCALED_PRODUCT || phaseFuncName == SCALED_INVERSE_PRODUCT) {
+                     
+            qreal prod = 1;
             for (int r=0; r<numRegs; r++)
-                phase *= phaseInds[r*stride+offset];
+                prod *= phaseInds[r*stride+offset];
+            
+            if (phaseFuncName == PRODUCT)
+                phase = prod;
+            else if (phaseFuncName == INVERSE_PRODUCT)
+                phase = 1/prod;
+            else if (phaseFuncName == SCALED_PRODUCT)
+                phase = params[0] * prod;
+            else if (phaseFuncName == SCALED_INVERSE_PRODUCT)
+                phase = params[0] / prod;
+        }
+        // compute Euclidean distance related phases 
+        else if (phaseFuncName == DISTANCE || phaseFuncName == INVERSE_DISTANCE ||
+                 phaseFuncName == SCALED_DISTANCE || phaseFuncName == SCALED_INVERSE_DISTANCE) {
+            
+            qreal dist = 0;
+            for (int r=0; r<numRegs; r+=2) {
+                qreal dif = (phaseInds[(r+1)*stride+offset] - phaseInds[r*stride+offset]);
+                dist += dif*dif;
+            }
+            dist = sqrt(dist);
+            
+            if (phaseFuncName == DISTANCE)
+                phase = dist;
+            else if (phaseFuncName == INVERSE_DISTANCE)
+                phase = 1/dist;
+            else if (phaseFuncName == SCALED_DISTANCE)
+                phase = params[0] * dist;
+            else if (phaseFuncName == SCALED_INVERSE_DISTANCE)
+                phase = params[0] / dist;
         }
     }
     

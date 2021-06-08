@@ -226,7 +226,7 @@ void statevec_applyParamNamedPhaseFuncOverrides(
     // thread-private vars
     long long int index, globalAmpInd;
     int r, q, i, found, flatInd;
-    qreal phase, norm, c, s, re, im;
+    qreal phase, norm, prod, dist, c, s, re, im;
     
     // each thread has a private static array of length >= numRegs (private var-length is illegal)
     long long int phaseInds[MAX_NUM_REGS_APPLY_ARBITRARY_PHASE];
@@ -235,7 +235,7 @@ void statevec_applyParamNamedPhaseFuncOverrides(
 # pragma omp parallel \
     default  (none) \
     shared   (chunkId,numAmps, stateRe,stateIm, qubits,numQubitsPerReg,numRegs,encoding, phaseFuncName,params,numParams, overrideInds,overridePhases,numOverrides) \
-    private  (index,globalAmpInd, r,q,i,flatInd, found, phaseInds,phase,norm, c,s,re,im) 
+    private  (index,globalAmpInd, r,q,i,flatInd, found, phaseInds,phase,norm,prod,dist, c,s,re,im) 
 # endif
     {
 # ifdef _OPENMP
@@ -282,7 +282,7 @@ void statevec_applyParamNamedPhaseFuncOverrides(
             if (i < numOverrides)
                 phase = overridePhases[i];
             else {
-                // compute norm-related phases
+                // compute norm related phases
                 if (phaseFuncName == NORM || phaseFuncName == INVERSE_NORM ||
                     phaseFuncName == SCALED_NORM || phaseFuncName == SCALED_INVERSE_NORM) {
                         
@@ -300,11 +300,40 @@ void statevec_applyParamNamedPhaseFuncOverrides(
                     else if (phaseFuncName == SCALED_INVERSE_NORM)
                         phase = params[0] / norm;
                 }
-                // compute algebraic phases
-                else if (phaseFuncName == SCALED_PRODUCT) {
-                    phase = params[0];
+                // compute product related phases
+                else if (phaseFuncName == PRODUCT || phaseFuncName == INVERSE_PRODUCT ||
+                         phaseFuncName == SCALED_PRODUCT || phaseFuncName == SCALED_INVERSE_PRODUCT) {
+                             
+                    prod = 1;
                     for (r=0; r<numRegs; r++)
-                        phase *= phaseInds[r];
+                        prod *= phaseInds[r];
+                    
+                    if (phaseFuncName == PRODUCT)
+                        phase = prod;
+                    else if (phaseFuncName == INVERSE_PRODUCT)
+                        phase = 1/prod;
+                    else if (phaseFuncName == SCALED_PRODUCT)
+                        phase = params[0] * prod;
+                    else if (phaseFuncName == SCALED_INVERSE_PRODUCT)
+                        phase = params[0] / prod;
+                }
+                // compute Euclidean distance related phases 
+                else if (phaseFuncName == DISTANCE || phaseFuncName == INVERSE_DISTANCE ||
+                         phaseFuncName == SCALED_DISTANCE || phaseFuncName == SCALED_INVERSE_DISTANCE) {
+                    
+                    dist = 0;
+                    for (r=0; r<numRegs; r+=2)
+                        dist += (phaseInds[r+1] - phaseInds[r])*(phaseInds[r+1] - phaseInds[r]);
+                    dist = sqrt(dist);
+                    
+                    if (phaseFuncName == DISTANCE)
+                        phase = dist;
+                    else if (phaseFuncName == INVERSE_DISTANCE)
+                        phase = 1/dist;
+                    else if (phaseFuncName == SCALED_DISTANCE)
+                        phase = params[0] * dist;
+                    else if (phaseFuncName == SCALED_INVERSE_DISTANCE)
+                        phase = params[0] / dist;
                 }
             }
             
