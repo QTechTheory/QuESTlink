@@ -56,9 +56,16 @@ ApplyPhaseFunc[qureg, {qubits, ...}, FuncName] evaluates a specific named multi-
     \[Bullet] \"Norm\" evaluates Sqrt[x^2 + y^2 + ...]
     \[Bullet] \"InverseNorm\" evaluates 1/Sqrt[x^2 + y^2 + ...]. 
         This requires overriding the phase of index {0,0...} to avoid divergence.
-    \[Bullet] {\"ScaledNorm\", coeff} evaluates coeff Sqrt[x^2 + y^2 + ...]
+    \[Bullet] {\"ScaledNorm\", coeff} evaluates coeff*Sqrt[x^2 + y^2 + ...]
     \[Bullet] {\"ScaledInverseNorm\", coeff} evaluates coeff/Sqrt[x^2 + y^2 + ...]
-    \[Bullet] {\"ScaledProduct\", coeff} evaluates coeff * x * y * ...
+    \[Bullet] \"Product\" evaluates x*y*...
+    \[Bullet] \"InverseProduct\" evaluates 1/(x*y*...)
+    \[Bullet] {\"ScaledProduct\", coeff} evaluates coeff*x*y* ...
+    \[Bullet] {\"ScaledInverseProduct\", coeff} evaluates coeff/(x*y* ...)
+    \[Bullet] \"Distance\" evaluates Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...], where sub-registers in {qubits} are assumed to be in order of {x1, x2, y1, y2, ...}
+    \[Bullet] \"InverseDistance\" evaluates 1/Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...]
+    \[Bullet] {\"ScaledDistance\", coeff} evaluates coeff*Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...]
+    \[Bullet] {\"ScaledInverseDistance\", coeff} evaluates coeff/Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...]
 ApplyPhaseFunc accepts optional arguments BitEncoding and PhaseOverrides.
 ApplyPhaseFunc[... PhaseOverrides -> rules] first consults whether a basis state's index is included in the list of rules {index -> phase}, and if present, uses the prescribed phase in lieu of evaluating f[index].
     For multi-variable functions, each index must be a tuple.
@@ -772,10 +779,19 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         };
         phaseFuncFlags = {    (* these must match the values of the enum phaseFunc in QuEST.h *)
             "Norm" -> 0,
-            "InverseNorm" -> 1,
-            "ScaledNorm" -> 2,
+            "ScaledNorm" -> 1,
+            "InverseNorm" -> 2,
             "ScaledInverseNorm" -> 3,
-            "ScaledProduct" -> 4
+            
+            "Product" -> 4,
+            "ScaledProduct" -> 5,
+            "InverseProduct" -> 6,
+            "ScaledInverseProduct" -> 7,
+            
+            "Distance" -> 8,
+            "ScaledDistance" -> 9,
+            "InverseDistance" -> 10,
+            "ScaledInverseDistance" -> 11
         };
         Options[ApplyPhaseFunc] = {
             BitEncoding -> "Unsigned",
@@ -844,6 +860,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         Length[regs] === Length@overs[[1,1]] ] ],
                     (Message[ApplyPhaseFunc::error, "Invalid PhaseOverrides. Each overriden phase index must be specified as an n-tuple, where n is the number of sub-registers, pointing to a real number. For example, ApplyPhaseFunc[..., {{1},{2}}, ..., PhaseOverrides -> { {0,0} -> PI, ... }]."];
                      $Failed),
+                StringEndsQ[func, "Distance"] && OddQ @ Length @ regs,
+                    (Message[ApplyPhaseFunc::error, "'Distance' based phase functions require a strictly even number of subregisters, since every pair is assumed to represent the same coordinate."]; 
+                    $Failed),
                 Length[{params}] === 0,
                     ApplyNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, OptionValue[BitEncoding] /. bitEncodingFlags, func /. phaseFuncFlags, Flatten[overs[[All,1]]], N @ overs[[All,2]]],
                 Length[{params}] > 0,

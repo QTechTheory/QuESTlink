@@ -138,8 +138,8 @@ static const char* errorMessages[] = {
     [E_INVALID_NUM_PHASE_FUNC_OVERRIDES] = "Invalid number of phase function overrides specified. Must be >=0.",
     [E_INVALID_PHASE_FUNC_OVERRIDE_UNSIGNED_INDEX] = "Invalid phase function override index, in the UNSIGNED encoding. Must be >=0, and <= the maximum index possible of the corresponding qubit subregister (2^numQubits-1).",
     [E_INVALID_PHASE_FUNC_OVERRIDE_TWOS_COMPLEMENT_INDEX] = "Invalid phase function override index, in the TWOS_COMPLEMENT encoding. Must be between (inclusive) -2^(N-1) and +2^(N-1)-1, where N is the number of qubits (including the sign qubit).",
-    [E_INVALID_PHASE_FUNC_NAME] = "Invalid named phase function, which must be one of {NORM, INVERSE_NORM, SCALED_NORM, SCALED_INVERSE_NORM, SCALED_PRODUCT}.",
-    [E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS] = "Invalid number of parameters passed for the give named phase function. NORM and INVERSE_NORM accept 0 parameters, while SCALED_NORM, SCALED_INVERSE_NORM and SCALED_PRODUCT accept 1 parameter.",
+    [E_INVALID_PHASE_FUNC_NAME] = "Invalid named phase function, which must be one of {NORM, SCALED_NORM, INVERSE_NORM, SCALED_INVERSE_NORM, PRODUCT, SCALED_PRODUCT, INVERSE_PRODUCT, SCALED_INVERSE_PRODUCT, DISTANCE, SCALED_DISTANCE, INVERSE_DISTANCE, SCALED_INVERSE_DISTANCE}.",
+    [E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS] = "Invalid number of parameters passed for the give named phase function. {NORM, INVERSE_NORM, PRODUCT, INVERSE_PRODUCT, DISTANCE, INVERSE_DISTANCE} accept 0 parameters, while {SCALED_NORM, SCALED_INVERSE_NORM, SCALED_PRODUCT, SCALED_INVERSE_PRODUCT, SCALED_DISTANCE, SCALED_INVERSE_DISTANCE} accept 1 parameter.",
     [E_INVALID_BIT_ENCODING] = "Invalid bit encoding. Must be one of {UNSIGNED, TWOS_COMPLEMENT}.",
     [E_INVALID_NUM_QUBITS_TWOS_COMPLEMENT] = "A sub-register contained too few qubits to employ TWOS_COMPLEMENT encoding. Must use >1 qubits (allocating one for the sign)."
 };
@@ -602,18 +602,37 @@ void validateMultiVarPhaseFuncOverrides(int* numQubitsPerReg, const int numRegs,
 }
 
 void validatePhaseFuncName(enum phaseFunc funcCode, int numParams, const char* caller) {
-    QuESTAssert(
-            funcCode == NORM || 
-            funcCode == INVERSE_NORM ||
-            funcCode == SCALED_NORM ||
-            funcCode == SCALED_INVERSE_NORM ||
-            funcCode == SCALED_PRODUCT,
-                E_INVALID_PHASE_FUNC_NAME, caller);
     
-    if (funcCode == NORM || funcCode == INVERSE_NORM)
-        QuESTAssert(numParams == 0, E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS, caller);
-    if (funcCode == SCALED_NORM || funcCode == SCALED_INVERSE_NORM || funcCode == SCALED_PRODUCT)
-        QuESTAssert(numParams == 1, E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS, caller);
+    QuESTAssert(
+        funcCode == NORM || 
+        funcCode == INVERSE_NORM ||
+        funcCode == SCALED_NORM ||
+        funcCode == SCALED_INVERSE_NORM ||
+        funcCode == PRODUCT ||
+        funcCode == INVERSE_PRODUCT ||
+        funcCode == SCALED_PRODUCT ||
+        funcCode == SCALED_INVERSE_PRODUCT ||
+        funcCode == DISTANCE ||
+        funcCode == INVERSE_DISTANCE ||
+        funcCode == SCALED_DISTANCE ||
+        funcCode == SCALED_INVERSE_DISTANCE,
+            E_INVALID_PHASE_FUNC_NAME, caller);
+                
+    if (funcCode == NORM || 
+        funcCode == INVERSE_NORM ||
+        funcCode == PRODUCT ||
+        funcCode == INVERSE_PRODUCT ||
+        funcCode == DISTANCE ||
+        funcCode == INVERSE_DISTANCE)
+            QuESTAssert(numParams == 0, E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS, caller);
+        
+    if (funcCode == SCALED_NORM ||
+        funcCode == SCALED_INVERSE_NORM ||
+        funcCode == SCALED_PRODUCT ||
+        funcCode == SCALED_INVERSE_PRODUCT ||
+        funcCode == SCALED_DISTANCE ||
+        funcCode == SCALED_INVERSE_DISTANCE)
+            QuESTAssert(numParams == 1, E_INVALID_NUM_NAMED_PHASE_FUNC_PARAMS, caller);
 }
 
 void validateBitEncoding(int numQubits, enum bitEncoding encoding, const char* caller) {
