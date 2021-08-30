@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Install dependencies
         run: | 
           sudo apt-get update 
@@ -33,6 +35,8 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - name: Build QuESTlink
         run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG EXE=macos_quest_link
       - name: Prepare to upload binary
@@ -49,6 +53,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Build QuESTlink
         shell: cmd
