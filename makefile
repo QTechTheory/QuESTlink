@@ -50,7 +50,7 @@ EXE = quest_link
 SOURCES = quest_link quest_templates.tm
 
 # path to QuEST library from root directory
-QUEST_DIR = QuEST
+QUEST_DIR = QuEST/QuEST
 
 # path to WSTP libs from root directory 
 WSTP_DIR = WSTP
