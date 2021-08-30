@@ -1681,11 +1681,11 @@ void local_getDerivativeQuregs(
                 if (numTargs == 1) {
                     ComplexMatrix2 u2 = local_getMatrix2FromFlatList(&unitaryDerivs[unitaryDerivInd]);
                     unitaryDerivInd += 2*2*2;
-                    applyOneQubitMatrix(qureg, targs[finalTargInd], u2); // throws
+                    applyMatrix2(qureg, targs[finalTargInd], u2); // throws
                 } else if (numTargs == 2) {
                     ComplexMatrix4 u4 = local_getMatrix4FromFlatList(&unitaryDerivs[unitaryDerivInd]);
                     unitaryDerivInd += 2*4*4;
-                    applyTwoQubitMatrix(qureg, targs[finalTargInd], targs[finalTargInd+1], u4); // throws
+                    applyMatrix4(qureg, targs[finalTargInd], targs[finalTargInd+1], u4); // throws
                 }
                 else {
                     // TODO: create a non-dynamic ComplexMatrixN instance 
@@ -1700,7 +1700,7 @@ void local_getDerivativeQuregs(
         
         // differentiate control qubits by forcing them to 1, without renormalising
         for (int c=0; c<numCtrls; c++)
-            projectToOne(qureg, ctrls[finalCtrlInd]); // throws
+            applyProjector(qureg, ctrls[finalCtrlInd], 1); // throws
         
         // adjust normalisation
         setWeightedQureg(zero, qureg, zero, qureg, normFac, qureg); // cannot throw
