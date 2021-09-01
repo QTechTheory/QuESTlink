@@ -54,20 +54,23 @@ CalcDensityInnerProducts[rhoId, omegaIds] returns a real vector with i-th elemen
 ApplyPhaseFunc[qureg, {qubits, ...}, f[x,y,...], {x,y,...}] evaluates a multi-variable exponential-polynomial phase function, where each variable corresponds to a sub-register of qubits.
 ApplyPhaseFunc[qureg, {qubits, ...}, FuncName] evaluates a specific named multi-variable function to determine the phase. These are:
     \[Bullet] \"Norm\" evaluates Sqrt[x^2 + y^2 + ...]
-    \[Bullet] \"InverseNorm\" evaluates 1/Sqrt[x^2 + y^2 + ...]. 
-        This requires overriding the phase of index {0,0...} to avoid divergence.
+    \[Bullet] {\"InverseNorm\", div} evaluates 1/Sqrt[x^2 + y^2 + ...], replaced by div at divergence (when x=y=...=0).    
     \[Bullet] {\"ScaledNorm\", coeff} evaluates coeff*Sqrt[x^2 + y^2 + ...]
-    \[Bullet] {\"ScaledInverseNorm\", coeff} evaluates coeff/Sqrt[x^2 + y^2 + ...]
+    \[Bullet] {\"ScaledInverseNorm\", coeff, div} evaluates coeff/Sqrt[x^2 + y^2 + ...], replaced by div at divergence (when x=y=...=0). 
+    \[Bullet] {\"ScaledInverseShiftedNorm\", coeff, div, \[CapitalDelta]x, \[CapitalDelta]y, ...} evaluates coeff/Sqrt[(x-\[CapitalDelta]x)^2 + (y-\[CapitalDelta]y)^2 + ...], replaced by div at numerical divergence (when the denominator is within machine epsilon to zero). 
     \[Bullet] \"Product\" evaluates x*y*...
-    \[Bullet] \"InverseProduct\" evaluates 1/(x*y*...)
+    \[Bullet] {\"InverseProduct\", div} evaluates 1/(x*y*...), replaced by div at divergence (when any of x, y, ... = 0).
     \[Bullet] {\"ScaledProduct\", coeff} evaluates coeff*x*y* ...
-    \[Bullet] {\"ScaledInverseProduct\", coeff} evaluates coeff/(x*y* ...)
+    \[Bullet] {\"ScaledInverseProduct\", coeff, div} evaluates coeff/(x*y* ...),, replaced by div at divergence (when any of x, y, ... = 0).
     \[Bullet] \"Distance\" evaluates Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...], where sub-registers in {qubits} are assumed to be in order of {x1, x2, y1, y2, ...}
-    \[Bullet] \"InverseDistance\" evaluates 1/Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...]
+    \[Bullet] {\"InverseDistance\", div} evaluates 1/Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...], replaced by div at divergence (when x1=x2, y1=y2, ...).   
     \[Bullet] {\"ScaledDistance\", coeff} evaluates coeff*Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...]
-    \[Bullet] {\"ScaledInverseDistance\", coeff} evaluates coeff/Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...]
+    \[Bullet] {\"ScaledInverseDistance\", coeff, div} evaluates coeff/Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...], replaced by div at divergence (when x1=x2, y1=y2, ...). 
+    \[Bullet] {\"ScaledInverseShiftedDistance\", coeff, div, \[CapitalDelta]x, \[CapitalDelta]y, ...} evaluates coeff/Sqrt[(x1-x2-\[CapitalDelta]x)^2 + (y1-y2-\[CapitalDelta]y)^2 + ...], replaced by div at numerical divergence (when the denominator is within machine epsilon to zero).   
+    Notice the order of parameters matches the ordering of the words in the FuncName.
 ApplyPhaseFunc accepts optional arguments BitEncoding and PhaseOverrides.
 ApplyPhaseFunc[... PhaseOverrides -> rules] first consults whether a basis state's index is included in the list of rules {index -> phase}, and if present, uses the prescribed phase in lieu of evaluating f[index].
+    PhaseOverrides which correspond to divergences of named phase functions will be used, in lieu of the divergence parameter.
     For multi-variable functions, each index must be a tuple.
 ApplyPhaseFunc[..., BitEncoding -> \"Unsigned\"] interprets each sub-register state as an unsigned binary integer, in {0, ..., 2^numQubits-1}
 ApplyPhaseFunc[..., BitEncoding -> \"TwosComplement\"] interprets each sub-register state as a two's complement signed integer in {-2^(N-1), ..., +2^(N-1)-1}, where N is the number of qubits (including the sign qubit).
@@ -782,16 +785,18 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             "ScaledNorm" -> 1,
             "InverseNorm" -> 2,
             "ScaledInverseNorm" -> 3,
+            "ScaledInverseShiftedNorm" -> 4,
             
-            "Product" -> 4,
-            "ScaledProduct" -> 5,
-            "InverseProduct" -> 6,
-            "ScaledInverseProduct" -> 7,
+            "Product" -> 5,
+            "ScaledProduct" -> 6,
+            "InverseProduct" -> 7,
+            "ScaledInverseProduct" -> 8,
             
-            "Distance" -> 8,
-            "ScaledDistance" -> 9,
-            "InverseDistance" -> 10,
-            "ScaledInverseDistance" -> 11
+            "Distance" -> 9,
+            "ScaledDistance" -> 10,
+            "InverseDistance" -> 11,
+            "ScaledInverseDistance" -> 12,
+            "ScaledInverseShiftedDistance" -> 13
         };
         Options[ApplyPhaseFunc] = {
             BitEncoding -> "Unsigned",
@@ -860,13 +865,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         Length[regs] === Length@overs[[1,1]] ] ],
                     (Message[ApplyPhaseFunc::error, "Invalid PhaseOverrides. Each overriden phase index must be specified as an n-tuple, where n is the number of sub-registers, pointing to a real number. For example, ApplyPhaseFunc[..., {{1},{2}}, ..., PhaseOverrides -> { {0,0} -> PI, ... }]."];
                      $Failed),
-                StringEndsQ[func, "Distance"] && OddQ @ Length @ regs,
-                    (Message[ApplyPhaseFunc::error, "'Distance' based phase functions require a strictly even number of subregisters, since every pair is assumed to represent the same coordinate."]; 
-                    $Failed),
                 Length[{params}] === 0,
                     ApplyNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, OptionValue[BitEncoding] /. bitEncodingFlags, func /. phaseFuncFlags, Flatten[overs[[All,1]]], N @ overs[[All,2]]],
                 Length[{params}] > 0,
-                    ApplyParamNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, OptionValue[BitEncoding] /. bitEncodingFlags, func /. phaseFuncFlags, N @ {params}, Flatten[overs[[All,1]]], N @ overs[[All,2]]]]]
+                    ApplyParamNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, OptionValue[BitEncoding] /. bitEncodingFlags, func /. phaseFuncFlags, N @ {params} // Echo, Flatten[overs[[All,1]]], N @ overs[[All,2]]]]]
         
         (* non-parameterised named func (multi-variable) *)
         ApplyPhaseFunc[qureg_Integer, regs:{{__Integer}..}, func_String, opts:OptionsPattern[]] := 
