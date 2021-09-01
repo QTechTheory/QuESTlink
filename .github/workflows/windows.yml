@@ -12,6 +12,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
       - uses: ilammy/msvc-dev-cmd@v1
       - name: Build QuESTlink
         shell: cmd
