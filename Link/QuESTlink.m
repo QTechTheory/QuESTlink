@@ -865,6 +865,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                         Length[regs] === Length@overs[[1,1]] ] ],
                     (Message[ApplyPhaseFunc::error, "Invalid PhaseOverrides. Each overriden phase index must be specified as an n-tuple, where n is the number of sub-registers, pointing to a real number. For example, ApplyPhaseFunc[..., {{1},{2}}, ..., PhaseOverrides -> { {0,0} -> PI, ... }]."];
                      $Failed),
+                StringEndsQ[func, "Distance"] && OddQ @ Length @ regs,
+                    (Message[ApplyPhaseFunc::error, "'Distance' based phase functions require a strictly even number of subregisters, since every pair is assumed to represent the same coordinate."]; 
+                    $Failed),
                 Length[{params}] === 0,
                     ApplyNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, OptionValue[BitEncoding] /. bitEncodingFlags, func /. phaseFuncFlags, Flatten[overs[[All,1]]], N @ overs[[All,2]]],
                 Length[{params}] > 0,

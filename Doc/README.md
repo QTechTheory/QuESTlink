@@ -35,26 +35,29 @@ Multithreaded and GPU-accelerated modes require compiling QuESTlink from source,
 
 > See [here](WINDOWS.md) for complete guide on compiling on **Windows**, including how to obtain the necessary compilers.
 
+> Note **Linux** users should first run `sudo apt-get install uuid-dev` before compiling. If this fails (and/or compiling says `cannot find -luuid`, also try to install `uuid`, `uuid-devel` and `libuuid-devel`.
+
 Edit [makefile](../makefile) and set:
 
 - `OS` to your operating system (`LINUX`, `MACOS` or `WINDOWS`)
 
 - `COMPILER` to your C++11 compiler command. 
->If in doubt, leave this as `g++`
+  > If in doubt, leave this as `g++`
 - `COMPILER_TYPE` to the type of your compiler (`GNU`, `INTEL`, `CLANG` or `MSVC`).
->If in doubt, run `g++ --version` in terminal for a clue. Otherwise, `COMPILER_TYPE` will likely match your `OS`, as: `LINUX` & `GNU`, `MACOS` & `CLANG`, `WINDOWS` & `MSVC`.
+  > If in doubt, run `g++ --version` in terminal for a clue. Otherwise, `COMPILER_TYPE` will likely match your `OS`, as: `LINUX` & `GNU`, `MACOS` & `CLANG`, `WINDOWS` & `MSVC`.
 - `MULTITHREADED = 1` to compile in multithreaded mode
-> After compiling, and before calling `CreateLocalQuESTEnv[]`, you should set (in terminal)
-> ```bash 
-> export OMP_NUM_THREADS=<nthreads>
-> ```
-> replacing `<nthreads>` with the number of CPU cores of your machine, minus a few (sparing them for the Mathematica kernel itself).
->
-> **Note** `MULTITHREADED` mode requires an [OpenMP](https://scc.ustc.edu.cn/zlsc/sugon/intel/compiler_f/main_for/optaps/common/optaps_par_openmp_multiple_compilers.htm)-compatible compiler. MacOS users should thus avoid `clang`, and download/use a GNU compiler (e.g. [`gcc@8`](https://formulae.brew.sh/formula/gcc@8)).
+  > After compiling, and before calling `CreateLocalQuESTEnv[]`, you should set (in terminal)
+  > ```bash 
+  > export OMP_NUM_THREADS=<nthreads>
+  > ```
+  > replacing `<nthreads>` with the number of CPU cores of your machine, minus a few (sparing them for the Mathematica kernel itself).
+  >
+  > **Note** `MULTITHREADED` mode requires an [OpenMP](https://scc.ustc.edu.cn/zlsc/sugon/intel/compiler_f/main_for/optaps/common/optaps_par_openmp_multiple_compilers.htm)-compatible compiler. MacOS users should thus avoid `clang`, and download/use a GNU compiler (e.g. [`gcc@8`](https://formulae.brew.sh/formula/gcc@8)).
 - `GPUACCELERATED = 1` to use an NVIDIA GPU.
-> This requires an [`nvcc`](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html) compiler compatible with your chosen `COMPILER`. The `nvcc` compiler command can be changed by overwriting `CUDA_COMPILER` in the makefile.
->
-> **Note** you must also set `GPU_COMPUTE_CAPABILITY` in the makefile to the CC corresponding to your GPU. You can look this up [here](https://developer.nvidia.com/cuda-gpus).
+  > This requires an [`nvcc`](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html) compiler compatible with your chosen `COMPILER`. The `nvcc` compiler command can be changed by overwriting `CUDA_COMPILER` in the makefile.
+  > An `nvcc` compiler can be obtained on Linux with `sudo apt install nvidia-cuda-toolkit`
+  >
+  > **Note** you must also set `GPU_COMPUTE_CAPABILITY` in the makefile to the CC corresponding to your GPU. You can look this up [here](https://developer.nvidia.com/cuda-gpus).
 
 
 With these settings set, QuESTlink is compiled from terminal, in the root directory [`QuESTlink/`](../), via

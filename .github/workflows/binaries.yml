@@ -23,12 +23,12 @@ jobs:
         run: make OS=LINUX compiler=g++ COMPILER_TYPE=GNU EXE=linux_quest_link
       - name: Prepare to upload binary
         run: |
-          mkdir -p Binaries
-          mv linux_quest_link Binaries/.
+          mkdir -p Binaries/linux
+          mv linux_quest_link Binaries/linux/.
       - uses: actions/upload-artifact@v1
         with:
           name: linux_quest_link
-          path: Binaries
+          path: Binaries/linux
           
   cpu_macos_build:
     name: MacOS
@@ -41,12 +41,12 @@ jobs:
         run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG EXE=macos_quest_link
       - name: Prepare to upload binary
         run: |
-          mkdir -p Binaries
-          mv macos_quest_link Binaries/.
+          mkdir -p Binaries/macos
+          mv macos_quest_link Binaries/macos/.
       - uses: actions/upload-artifact@v1
         with:
           name: macos_quest_link
-          path: Binaries
+          path: Binaries/macos
 
   cpu_windows_build:
     name: Windows
@@ -63,11 +63,12 @@ jobs:
         shell: cmd
         run: |
           if not exist Binaries mkdir Binaries
-          move windows_quest_link.exe Binaries
+          if not exist Binaries\windows mkdir Binaries\windows
+          move windows_quest_link.exe Binaries\windows
       - uses: actions/upload-artifact@v1
         with:
           name: windows_quest_link
-          path: Binaries
+          path: Binaries/windows
 
   publish_binaries:
     name: Publish binaries
