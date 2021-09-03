@@ -256,13 +256,13 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
     
     Z::usage = "Z is the Pauli Z gate."
     
-    Rx::usage = "Rx[theta] is a rotation of theta around the x-axis of the Bloch sphere."        
+    Rx::usage = "Rx[\[Theta]] is a rotation of \[Theta] around the x-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 X \[CircleTimes] X \[CircleTimes]...]."        
     
-    Ry::usage = "Ry[theta] is a rotation of theta around the y-axis of the Bloch sphere." 
+    Ry::usage = "Ry[\[Theta]] is a rotation of \[Theta] around the y-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 Y \[CircleTimes] Y \[CircleTimes]...]." 
     
-    Rz::usage = "Rz[theta] is a rotation of theta around the z-axis of the Bloch sphere. Multiple targets enacts Exp[-i \[Theta]/2 Za ... Zc]." 
+    Rz::usage = "Rz[\[Theta]] is a rotation of \[Theta] around the z-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 Z \[CircleTimes] Z \[CircleTimes]...]." 
     
-    R::usage = "R[theta, paulis] is the unitary Exp[-i \[Theta]/2 paulis]."   
+    R::usage = "R[\[Theta], paulis] is the unitary Exp[-\[ImaginaryI] \[Theta]/2 \[CircleTimes] paulis]."   
     
     S::usage = "S is the S gate, a.k.a. PI/2 gate."
     
@@ -285,7 +285,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
     
-    G::usage = "G[phi] applies a global phase rotation of phi, by premultiplying Exp[i phi]."
+    G::usage = "G[\[Theta]] applies a global phase rotation of phi, by premultiplying Exp[\[ImaginaryI] \[Theta]]."
     
     Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit, or as an alternative to removing gates in ApplyCircuit."
  
