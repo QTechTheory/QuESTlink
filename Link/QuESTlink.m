@@ -1645,6 +1645,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* map gate symbols to matrices *)
         getAnalGateMatrix[Subscript[H, _]] = {{1,1},{1,-1}}/Sqrt[2];
         getAnalGateMatrix[Subscript[X, _]] = PauliMatrix[1];
+        getAnalGateMatrix[Subscript[X, t__]] := KroneckerProduct @@ ConstantArray[PauliMatrix[1],Length[{t}]];
         getAnalGateMatrix[Subscript[Y, _]] = PauliMatrix[2];
         getAnalGateMatrix[Subscript[Z, _]] = PauliMatrix[3];
         getAnalGateMatrix[Subscript[S, _]] = {{1,0},{0,I}};
@@ -1653,9 +1654,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getAnalGateMatrix[Subscript[U, __][m_]] = m;
         getAnalGateMatrix[Subscript[Ph, t__][a_]] = DiagonalMatrix[ Append[ConstantArray[1, 2^Length[{t}] - 1], Exp[I a]] ];
         getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
-        getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]];
+        getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]]; (* KroneckerProduct doesn't have a one-arg identity overload?? Bah *)
         getAnalGateMatrix[Subscript[Ry, _][a_]] = MatrixExp[-I a/2 PauliMatrix[2]];
         getAnalGateMatrix[Subscript[Rz, _][a_]] = MatrixExp[-I a/2 PauliMatrix[3]];
+        getAnalGateMatrix[Subscript[Rx, t__][a_]] := MatrixExp[-I a/2 KroneckerProduct @@ ConstantArray[PauliMatrix[1],Length[{t}]]];
+        getAnalGateMatrix[Subscript[Ry, t__][a_]] := MatrixExp[-I a/2 KroneckerProduct @@ ConstantArray[PauliMatrix[2],Length[{t}]]];
+        getAnalGateMatrix[Subscript[Rz, t__][a_]] := MatrixExp[-I a/2 KroneckerProduct @@ ConstantArray[PauliMatrix[3],Length[{t}]]];
         getAnalGateMatrix[R[a_, pauli_]] := MatrixExp[-I a/2 getAnalGateMatrix @ pauli];
         getAnalGateMatrix[R[a_, paulis_Times]] := MatrixExp[-I a/2 * KroneckerProduct @@ (getAnalGateMatrix /@ List @@ paulis)]
         getAnalGateMatrix[Subscript[C, __][g_]] := getAnalGateMatrix[g]
