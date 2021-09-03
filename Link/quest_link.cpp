@@ -2290,6 +2290,29 @@ void internal_applyParamNamedPhaseFunc(int quregId) {
     WSReleaseReal64List(stdlink, overridePhases, numOverrides);
 }
 
+void wrapper_applyQFT(int id, int* qubits, long numQubits) {
+    
+    try {
+        local_throwExcepIfQuregNotCreated(id); // throws
+        applyQFT(quregs[id], qubits, numQubits); // throws
+        WSPutInteger(stdlink, id);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("ApplyQFT", err.message);
+    }
+}
+void wrapper_applyFullQFT(int id) {
+    
+    try {
+        local_throwExcepIfQuregNotCreated(id); // throws
+        applyFullQFT(quregs[id]);
+        WSPutInteger(stdlink, id);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("ApplyQFT", err.message);
+    }
+}
+
 
 
 
