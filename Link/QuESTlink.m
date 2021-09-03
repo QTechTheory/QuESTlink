@@ -16,8 +16,8 @@ BeginPackage["QuEST`"]
       * public API 
       *)
     
-    ApplyCircuit::usage = "ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
-ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg.
+    ApplyCircuit::usage = "ApplyCircuit[qureg, circuit] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
+ApplyCircuit[inQureg, circuit, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg.
 Accepts optional arguments WithBackup and ShowProgress."
     ApplyCircuit::error = "`1`"
     
@@ -421,9 +421,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 ApplyCircuitInternal[qureg, withBackup, showProgress, circCodes],
                 ProgressIndicator[circuitProgressVar]
             ]
-        ApplyCircuit[{}, qureg_Integer, OptionsPattern[ApplyCircuit]] :=
+        ApplyCircuit[qureg_Integer, {}, OptionsPattern[ApplyCircuit]] :=
             {}
-        ApplyCircuit[circuit_?isCircuitFormat, qureg_Integer, OptionsPattern[ApplyCircuit]] :=
+        ApplyCircuit[qureg_Integer, circuit_?isCircuitFormat, OptionsPattern[ApplyCircuit]] :=
         	With[
         		{codes = codifyCircuit[circuit]},
         		Which[
@@ -443,11 +443,22 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		]
         	]
         (* apply a circuit to get an output state without changing input state. CloneQureg provided by WSTP *)
-        ApplyCircuit[circuit_?isCircuitFormat, inQureg_Integer, outQureg_Integer, opts:OptionsPattern[ApplyCircuit]] :=
+        ApplyCircuit[inQureg_Integer, circuit_?isCircuitFormat, outQureg_Integer, opts:OptionsPattern[ApplyCircuit]] :=
         	Block[{},
         		QuEST`CloneQureg[outQureg, inQureg];
-        		ApplyCircuit[circuit, outQureg, opts]
+        		ApplyCircuit[outQureg, circuit, opts]
         	]
+        ApplyCircuit[inQureg_Integer, {}, outQureg_Integer, opts:OptionsPattern[ApplyCircuit]] := (
+            CloneQureg[outQureg, inQureg];
+            {}
+        )
+        (* warnings for old syntax *)
+        ApplyCircuit[((_?isCircuitFormat) | {}), _Integer, OptionsPattern[ApplyCircuit]] := (
+            Message[ApplyCircuit::error, "As of v0.8, the arguments have swapped order for consistency. Please now use ApplyCircuit[qureg, circuit]."]; 
+            $Failed)
+        ApplyCircuit[((_?isCircuitFormat) | {}), _Integer, _Integer, OptionsPattern[ApplyCircuit]] := (
+            Message[ApplyCircuit::error, "As of v0.8, the arguments have changed order for consistency. Please now use ApplyCircuit[inQureg, circuit, outQureg]."]; 
+            $Failed)
         (* error for bad args *)
         ApplyCircuit[___] := invalidArgError[ApplyCircuit]
         
