@@ -871,7 +871,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 Length[{params}] === 0,
                     ApplyNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, OptionValue[BitEncoding] /. bitEncodingFlags, func /. phaseFuncFlags, Flatten[overs[[All,1]]], N @ overs[[All,2]]],
                 Length[{params}] > 0,
-                    ApplyParamNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, OptionValue[BitEncoding] /. bitEncodingFlags, func /. phaseFuncFlags, N @ {params} // Echo, Flatten[overs[[All,1]]], N @ overs[[All,2]]]]]
+                    ApplyParamNamedPhaseFuncInternal[qureg, Flatten[regs], Length/@regs, OptionValue[BitEncoding] /. bitEncodingFlags, func /. phaseFuncFlags, N @ {params}, Flatten[overs[[All,1]]], N @ overs[[All,2]]]]]
         
         (* non-parameterised named func (multi-variable) *)
         ApplyPhaseFunc[qureg_Integer, regs:{{__Integer}..}, func_String, opts:OptionsPattern[]] := 
