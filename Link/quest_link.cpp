@@ -658,6 +658,25 @@ void wrapper_calcProbOfOutcome(int id, int qb, int outcome) {
     }
 }
 
+void wrapper_calcProbOfAllOutcomes(int id, int* qubits, long numQubits) {
+    
+    long long int numProbs = (1LL << numQubits);
+    qreal* probs = (numQubits > 0)? (qreal*) malloc(numProbs * sizeof* probs) : NULL;
+    
+    try {
+        local_throwExcepIfQuregNotCreated(id); // throws
+        calcProbOfAllOutcomes(probs, quregs[id], qubits, numQubits); // throws
+        
+        WSPutReal64List(stdlink, probs, numProbs);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("CalcProbOfAllOutcomes", err.message);
+    }
+    
+    if (numQubits > 0)
+        free(probs);
+}
+
 void wrapper_calcFidelity(int id1, int id2) {
     try {
         local_throwExcepIfQuregNotCreated(id1); // throws

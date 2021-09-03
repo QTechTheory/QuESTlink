@@ -319,6 +319,18 @@
     QuEST`CalcProbOfOutcome::usage = "CalcProbOfOutcome[qureg, qubit, outcome] returns the probability of measuring qubit in the given outcome.";
     QuEST`CalcProbOfOutcome::error = "`1`";
     QuEST`CalcProbOfOutcome[___] := QuEST`Private`invalidArgError[CalcProbOfOutcome];
+    
+:Begin:
+:Function:       wrapper_calcProbOfAllOutcomes
+:Pattern:        QuEST`CalcProbOfAllOutcomes[qureg_Integer, qubits_List]
+:Arguments:      { qureg, qubits }
+:ArgumentTypes:  { Integer, IntegerList }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`CalcProbOfAllOutcomes::usage = "CalcProbOfAllOutcomes[qureg, qubits] returns the probabilities of every classical substate of the given list of qubits. The probabilities are ordered by their corresponding classical value (increasing), assuming qubits is given least to most significant.";
+    QuEST`CalcProbOfAllOutcomes::error = "`1`";
+    QuEST`CalcProbOfAllOutcomes[___] := QuEST`Private`invalidArgError[CalcProbOfAllOutcomes];
 
 :Begin:
 :Function:       wrapper_calcFidelity
