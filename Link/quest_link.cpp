@@ -1124,27 +1124,37 @@ void local_applyGates(
             case OPCODE_Rx :
                 if (numParams != 1)
                     throw local_wrongNumGateParamsExcep("Rx", numParams, 1); // throws
-                if (numTargs != 1)
-                    throw local_wrongNumGateTargsExcep("Rx", numTargs, "1 target"); // throws
-                if (numCtrls == 0)
+                if (numCtrls == 0 && numTargs == 1)
                     rotateX(qureg, targs[targInd], params[paramInd]); // throws
-                else if (numCtrls == 1)
+                else if (numCtrls == 1 && numTargs == 1)
                     controlledRotateX(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]); // throws
-                else
-                    throw local_gateUnsupportedExcep("multi-controlled Rotate X"); // throws
+                else {
+                    enum pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
+                    for (int i=0; i<numTargs; i++)
+                        paulis[i] = PAULI_X;
+                    if (numCtrls == 0)
+                        multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                    else
+                        multiControlledMultiRotatePauli(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                }
                 break;
                 
             case OPCODE_Ry :
                 if (numParams != 1)
                     throw local_wrongNumGateParamsExcep("Ry", numParams, 1); // throws
-                if (numTargs != 1)
-                    throw local_wrongNumGateTargsExcep("Ry", numTargs, "1 target"); // throws
-                if (numCtrls == 0)
+                if (numCtrls == 0 && numTargs == 1)
                     rotateY(qureg, targs[targInd], params[paramInd]); // throws
-                else if (numCtrls == 1)
+                else if (numCtrls == 1 && numTargs == 1)
                     controlledRotateY(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]); // throws
-                else
-                    throw local_gateUnsupportedExcep("multi-controlled Rotate Y"); // throws
+                else {
+                    enum pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
+                    for (int i=0; i<numTargs; i++)
+                        paulis[i] = PAULI_Y;
+                    if (numCtrls == 0)
+                        multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                    else
+                        multiControlledMultiRotatePauli(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                }
                 break;
                 
             case OPCODE_Rz :
