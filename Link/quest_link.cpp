@@ -1083,20 +1083,14 @@ void local_applyGates(
             case OPCODE_X : {
                 if (numParams != 0)
                     throw local_wrongNumGateParamsExcep("X", numParams, 0); // throws
-                if (numTargs != 1)
-                    throw local_wrongNumGateTargsExcep("X", numTargs, "1 target"); // throws
-                if (numCtrls == 0)
+                if (numCtrls == 0 && numTargs == 1)
                     pauliX(qureg, targs[targInd]); // throws
-                else if (numCtrls == 1)
+                else if (numCtrls == 1 && numTargs == 1)
                     controlledNot(qureg, ctrls[ctrlInd], targs[targInd]); // throws
-                else {
-                    ComplexMatrix2 u;
-                    u.real[0][0] = 0; u.real[0][1] = 1; // verbose for old MSVC
-                    u.real[1][0] = 1; u.real[1][1] = 0;
-                    u.imag[0][0] = 0; u.imag[0][1] = 0;
-                    u.imag[1][0] = 0; u.imag[1][1] = 0;
-                    multiControlledUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], u); // throws
-                }
+                else if (numCtrls == 0 && numTargs > 1)
+                    multiQubitNot(qureg, &targs[targInd], numTargs); // throws
+                else
+                    multiControlledMultiQubitNot(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], numTargs); // throws
             }
                 break;
                 
