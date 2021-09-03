@@ -16,8 +16,8 @@ BeginPackage["QuEST`"]
       * public API 
       *)
     
-    ApplyCircuit::usage = "ApplyCircuit[circuit, qureg] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
-ApplyCircuit[circuit, inQureg, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg.
+    ApplyCircuit::usage = "ApplyCircuit[qureg, circuit] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
+ApplyCircuit[inQureg, circuit, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg.
 Accepts optional arguments WithBackup and ShowProgress."
     ApplyCircuit::error = "`1`"
     
@@ -256,13 +256,13 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
     
     Z::usage = "Z is the Pauli Z gate."
     
-    Rx::usage = "Rx[theta] is a rotation of theta around the x-axis of the Bloch sphere."        
+    Rx::usage = "Rx[\[Theta]] is a rotation of \[Theta] around the x-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 X \[CircleTimes] X \[CircleTimes]...]."        
     
-    Ry::usage = "Ry[theta] is a rotation of theta around the y-axis of the Bloch sphere." 
+    Ry::usage = "Ry[\[Theta]] is a rotation of \[Theta] around the y-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 Y \[CircleTimes] Y \[CircleTimes]...]." 
     
-    Rz::usage = "Rz[theta] is a rotation of theta around the z-axis of the Bloch sphere. Multiple targets enacts Exp[-i \[Theta]/2 Za ... Zc]." 
+    Rz::usage = "Rz[\[Theta]] is a rotation of \[Theta] around the z-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 Z \[CircleTimes] Z \[CircleTimes]...]." 
     
-    R::usage = "R[theta, paulis] is the unitary Exp[-i \[Theta]/2 paulis]."   
+    R::usage = "R[\[Theta], paulis] is the unitary Exp[-\[ImaginaryI] \[Theta]/2 \[CircleTimes] paulis]."   
     
     S::usage = "S is the S gate, a.k.a. PI/2 gate."
     
@@ -285,7 +285,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
     
-    G::usage = "G[phi] applies a global phase rotation of phi, by premultiplying Exp[i phi]."
+    G::usage = "G[\[Theta]] applies a global phase rotation of phi, by premultiplying Exp[\[ImaginaryI] \[Theta]]."
     
     Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit, or as an alternative to removing gates in ApplyCircuit."
  
@@ -421,9 +421,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 ApplyCircuitInternal[qureg, withBackup, showProgress, circCodes],
                 ProgressIndicator[circuitProgressVar]
             ]
-        ApplyCircuit[{}, qureg_Integer, OptionsPattern[ApplyCircuit]] :=
+        ApplyCircuit[qureg_Integer, {}, OptionsPattern[ApplyCircuit]] :=
             {}
-        ApplyCircuit[circuit_?isCircuitFormat, qureg_Integer, OptionsPattern[ApplyCircuit]] :=
+        ApplyCircuit[qureg_Integer, circuit_?isCircuitFormat, OptionsPattern[ApplyCircuit]] :=
         	With[
         		{codes = codifyCircuit[circuit]},
         		Which[
@@ -443,11 +443,22 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		]
         	]
         (* apply a circuit to get an output state without changing input state. CloneQureg provided by WSTP *)
-        ApplyCircuit[circuit_?isCircuitFormat, inQureg_Integer, outQureg_Integer, opts:OptionsPattern[ApplyCircuit]] :=
+        ApplyCircuit[inQureg_Integer, circuit_?isCircuitFormat, outQureg_Integer, opts:OptionsPattern[ApplyCircuit]] :=
         	Block[{},
         		QuEST`CloneQureg[outQureg, inQureg];
-        		ApplyCircuit[circuit, outQureg, opts]
+        		ApplyCircuit[outQureg, circuit, opts]
         	]
+        ApplyCircuit[inQureg_Integer, {}, outQureg_Integer, opts:OptionsPattern[ApplyCircuit]] := (
+            CloneQureg[outQureg, inQureg];
+            {}
+        )
+        (* warnings for old syntax *)
+        ApplyCircuit[((_?isCircuitFormat) | {}), _Integer, OptionsPattern[ApplyCircuit]] := (
+            Message[ApplyCircuit::error, "As of v0.8, the arguments have swapped order for consistency. Please now use ApplyCircuit[qureg, circuit]."]; 
+            $Failed)
+        ApplyCircuit[((_?isCircuitFormat) | {}), _Integer, _Integer, OptionsPattern[ApplyCircuit]] := (
+            Message[ApplyCircuit::error, "As of v0.8, the arguments have changed order for consistency. Please now use ApplyCircuit[inQureg, circuit, outQureg]."]; 
+            $Failed)
         (* error for bad args *)
         ApplyCircuit[___] := invalidArgError[ApplyCircuit]
         
@@ -1634,6 +1645,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* map gate symbols to matrices *)
         getAnalGateMatrix[Subscript[H, _]] = {{1,1},{1,-1}}/Sqrt[2];
         getAnalGateMatrix[Subscript[X, _]] = PauliMatrix[1];
+        getAnalGateMatrix[Subscript[X, t__]] := KroneckerProduct @@ ConstantArray[PauliMatrix[1],Length[{t}]];
         getAnalGateMatrix[Subscript[Y, _]] = PauliMatrix[2];
         getAnalGateMatrix[Subscript[Z, _]] = PauliMatrix[3];
         getAnalGateMatrix[Subscript[S, _]] = {{1,0},{0,I}};
@@ -1642,9 +1654,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getAnalGateMatrix[Subscript[U, __][m_]] = m;
         getAnalGateMatrix[Subscript[Ph, t__][a_]] = DiagonalMatrix[ Append[ConstantArray[1, 2^Length[{t}] - 1], Exp[I a]] ];
         getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
-        getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]];
+        getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]]; (* KroneckerProduct doesn't have a one-arg identity overload?? Bah *)
         getAnalGateMatrix[Subscript[Ry, _][a_]] = MatrixExp[-I a/2 PauliMatrix[2]];
         getAnalGateMatrix[Subscript[Rz, _][a_]] = MatrixExp[-I a/2 PauliMatrix[3]];
+        getAnalGateMatrix[Subscript[Rx, t__][a_]] := MatrixExp[-I a/2 KroneckerProduct @@ ConstantArray[PauliMatrix[1],Length[{t}]]];
+        getAnalGateMatrix[Subscript[Ry, t__][a_]] := MatrixExp[-I a/2 KroneckerProduct @@ ConstantArray[PauliMatrix[2],Length[{t}]]];
+        getAnalGateMatrix[Subscript[Rz, t__][a_]] := MatrixExp[-I a/2 KroneckerProduct @@ ConstantArray[PauliMatrix[3],Length[{t}]]];
         getAnalGateMatrix[R[a_, pauli_]] := MatrixExp[-I a/2 getAnalGateMatrix @ pauli];
         getAnalGateMatrix[R[a_, paulis_Times]] := MatrixExp[-I a/2 * KroneckerProduct @@ (getAnalGateMatrix /@ List @@ paulis)]
         getAnalGateMatrix[Subscript[C, __][g_]] := getAnalGateMatrix[g]

@@ -658,6 +658,25 @@ void wrapper_calcProbOfOutcome(int id, int qb, int outcome) {
     }
 }
 
+void wrapper_calcProbOfAllOutcomes(int id, int* qubits, long numQubits) {
+    
+    long long int numProbs = (1LL << numQubits);
+    qreal* probs = (numQubits > 0)? (qreal*) malloc(numProbs * sizeof* probs) : NULL;
+    
+    try {
+        local_throwExcepIfQuregNotCreated(id); // throws
+        calcProbOfAllOutcomes(probs, quregs[id], qubits, numQubits); // throws
+        
+        WSPutReal64List(stdlink, probs, numProbs);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("CalcProbOfAllOutcomes", err.message);
+    }
+    
+    if (numQubits > 0)
+        free(probs);
+}
+
 void wrapper_calcFidelity(int id1, int id2) {
     try {
         local_throwExcepIfQuregNotCreated(id1); // throws
@@ -1064,20 +1083,14 @@ void local_applyGates(
             case OPCODE_X : {
                 if (numParams != 0)
                     throw local_wrongNumGateParamsExcep("X", numParams, 0); // throws
-                if (numTargs != 1)
-                    throw local_wrongNumGateTargsExcep("X", numTargs, "1 target"); // throws
-                if (numCtrls == 0)
+                if (numCtrls == 0 && numTargs == 1)
                     pauliX(qureg, targs[targInd]); // throws
-                else if (numCtrls == 1)
+                else if (numCtrls == 1 && numTargs == 1)
                     controlledNot(qureg, ctrls[ctrlInd], targs[targInd]); // throws
-                else {
-                    ComplexMatrix2 u;
-                    u.real[0][0] = 0; u.real[0][1] = 1; // verbose for old MSVC
-                    u.real[1][0] = 1; u.real[1][1] = 0;
-                    u.imag[0][0] = 0; u.imag[0][1] = 0;
-                    u.imag[1][0] = 0; u.imag[1][1] = 0;
-                    multiControlledUnitary(qureg, &ctrls[ctrlInd], numCtrls, targs[targInd], u); // throws
-                }
+                else if (numCtrls == 0 && numTargs > 1)
+                    multiQubitNot(qureg, &targs[targInd], numTargs); // throws
+                else
+                    multiControlledMultiQubitNot(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], numTargs); // throws
             }
                 break;
                 
@@ -1111,50 +1124,53 @@ void local_applyGates(
             case OPCODE_Rx :
                 if (numParams != 1)
                     throw local_wrongNumGateParamsExcep("Rx", numParams, 1); // throws
-                if (numTargs != 1)
-                    throw local_wrongNumGateTargsExcep("Rx", numTargs, "1 target"); // throws
-                if (numCtrls == 0)
+                if (numCtrls == 0 && numTargs == 1)
                     rotateX(qureg, targs[targInd], params[paramInd]); // throws
-                else if (numCtrls == 1)
+                else if (numCtrls == 1 && numTargs == 1)
                     controlledRotateX(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]); // throws
-                else
-                    throw local_gateUnsupportedExcep("multi-controlled Rotate X"); // throws
+                else {
+                    enum pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
+                    for (int i=0; i<numTargs; i++)
+                        paulis[i] = PAULI_X;
+                    if (numCtrls == 0)
+                        multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                    else
+                        multiControlledMultiRotatePauli(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                }
                 break;
                 
             case OPCODE_Ry :
                 if (numParams != 1)
                     throw local_wrongNumGateParamsExcep("Ry", numParams, 1); // throws
-                if (numTargs != 1)
-                    throw local_wrongNumGateTargsExcep("Ry", numTargs, "1 target"); // throws
-                if (numCtrls == 0)
+                if (numCtrls == 0 && numTargs == 1)
                     rotateY(qureg, targs[targInd], params[paramInd]); // throws
-                else if (numCtrls == 1)
+                else if (numCtrls == 1 && numTargs == 1)
                     controlledRotateY(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]); // throws
-                else
-                    throw local_gateUnsupportedExcep("multi-controlled Rotate Y"); // throws
+                else {
+                    enum pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
+                    for (int i=0; i<numTargs; i++)
+                        paulis[i] = PAULI_Y;
+                    if (numCtrls == 0)
+                        multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                    else
+                        multiControlledMultiRotatePauli(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                }
                 break;
                 
             case OPCODE_Rz :
                 if (numParams != 1)
                     throw local_wrongNumGateParamsExcep("Rz", numParams, 1); // throws
-                if (numCtrls > 1 && numTargs == 1)
-                    throw local_gateUnsupportedExcep("multi-controlled Rotate Z"); // throws
-                if (numCtrls > 1 && numTargs > 1)
-                    throw local_gateUnsupportedExcep("multi-controlled multi-rotate Z"); // throws
-                if (numCtrls == 1 && numTargs > 1)
-                    throw local_gateUnsupportedExcep("controlled multi-rotate Z"); // throws
-                if (numTargs == 1) {
-                    if (numCtrls == 0)
-                        rotateZ(qureg, targs[targInd], params[paramInd]); // throws
-                    if (numCtrls == 1)
-                        controlledRotateZ(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]); // throws
-                } else
+                if (numCtrls == 0 && numTargs == 1)
+                    rotateZ(qureg, targs[targInd], params[paramInd]); // throws
+                else if (numCtrls == 1 && numTargs == 1)
+                    controlledRotateZ(qureg, ctrls[ctrlInd], targs[targInd], params[paramInd]); // throws
+                else if (numCtrls == 0 && numTargs > 1)
                     multiRotateZ(qureg, &targs[targInd], numTargs, params[paramInd]); // throws
+                else
+                    multiControlledMultiRotateZ(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], numTargs, params[paramInd]); // throws
                 break;
                 
             case OPCODE_R: {
-                if (numCtrls != 0)
-                    throw local_gateUnsupportedExcep("controlled multi-rotate-Pauli"); // throws
                 if (numTargs != numParams-1) {
                     throw QuESTException("", 
                         std::string("An internel error in R occured! ") +
@@ -1165,7 +1181,10 @@ void local_applyGates(
                 enum pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
                 for (int p=0; p < numTargs; p++)
                     paulis[p] = (pauliOpType) ((int) params[paramInd+1+p]);
-                multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                if (numCtrls == 0)
+                    multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                else
+                    multiControlledMultiRotatePauli(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
             }
                 break;
             
@@ -2273,6 +2292,29 @@ void internal_applyParamNamedPhaseFunc(int quregId) {
     WSReleaseReal64List(stdlink, params, numParams);
     WSReleaseInteger64List(stdlink, ws_overrideInds, dummy_totalInds);
     WSReleaseReal64List(stdlink, overridePhases, numOverrides);
+}
+
+void wrapper_applyQFT(int id, int* qubits, long numQubits) {
+    
+    try {
+        local_throwExcepIfQuregNotCreated(id); // throws
+        applyQFT(quregs[id], qubits, numQubits); // throws
+        WSPutInteger(stdlink, id);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("ApplyQFT", err.message);
+    }
+}
+void wrapper_applyFullQFT(int id) {
+    
+    try {
+        local_throwExcepIfQuregNotCreated(id); // throws
+        applyFullQFT(quregs[id]);
+        WSPutInteger(stdlink, id);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("ApplyQFT", err.message);
+    }
 }
 
 

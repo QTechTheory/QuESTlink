@@ -319,6 +319,18 @@
     QuEST`CalcProbOfOutcome::usage = "CalcProbOfOutcome[qureg, qubit, outcome] returns the probability of measuring qubit in the given outcome.";
     QuEST`CalcProbOfOutcome::error = "`1`";
     QuEST`CalcProbOfOutcome[___] := QuEST`Private`invalidArgError[CalcProbOfOutcome];
+    
+:Begin:
+:Function:       wrapper_calcProbOfAllOutcomes
+:Pattern:        QuEST`CalcProbOfAllOutcomes[qureg_Integer, qubits_List]
+:Arguments:      { qureg, qubits }
+:ArgumentTypes:  { Integer, IntegerList }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`CalcProbOfAllOutcomes::usage = "CalcProbOfAllOutcomes[qureg, qubits] returns the probabilities of every classical substate of the given list of qubits. The probabilities are ordered by their corresponding classical value (increasing), assuming qubits is given least to most significant.";
+    QuEST`CalcProbOfAllOutcomes::error = "`1`";
+    QuEST`CalcProbOfAllOutcomes[___] := QuEST`Private`invalidArgError[CalcProbOfAllOutcomes];
 
 :Begin:
 :Function:       wrapper_calcFidelity
@@ -513,7 +525,27 @@
     QuEST`CollapseToOutcome::usage = "CollapseToOutcome[qureg, qubit, outcome] forces the target qubit to collapse to the given outcome.";
     QuEST`CollapseToOutcome::error = "`1`";
     QuEST`CollapseToOutcome[___] := QuEST`Private`invalidArgError[CollapseToOutcome];
+    
 
+
+:Begin:
+:Function:       wrapper_applyFullQFT
+:Pattern:        QuEST`ApplyQFT[qureg_Integer]
+:Arguments:      { qureg }
+:ArgumentTypes:  { Integer }
+:ReturnType:     Manual
+:End:
+:Begin:
+:Function:       wrapper_applyQFT
+:Pattern:        QuEST`ApplyQFT[qureg_Integer, qubits_List]
+:Arguments:      { qureg, qubits }
+:ArgumentTypes:  { Integer, IntegerList }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`ApplyQFT::usage = "ApplyQFT[qureg] applies the quantum Fourier transform circuit to the entire register.\nApplyQFT[qureg, qubits] applies the quantum Fourier transform circuit to the given qubits, assuming least-significant first.";
+    QuEST`ApplyQFT::error = "`1`";
+    QuEST`ApplyQFT[___] := QuEST`Private`invalidArgError[ApplyQFT];
 
 
 
