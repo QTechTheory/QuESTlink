@@ -1172,8 +1172,6 @@ void local_applyGates(
                 break;
                 
             case OPCODE_R: {
-                if (numCtrls != 0)
-                    throw local_gateUnsupportedExcep("controlled multi-rotate-Pauli"); // throws
                 if (numTargs != numParams-1) {
                     throw QuESTException("", 
                         std::string("An internel error in R occured! ") +
@@ -1184,7 +1182,10 @@ void local_applyGates(
                 enum pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
                 for (int p=0; p < numTargs; p++)
                     paulis[p] = (pauliOpType) ((int) params[paramInd+1+p]);
-                multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                if (numCtrls == 0)
+                    multiRotatePauli(qureg, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
+                else
+                    multiControlledMultiRotatePauli(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], paulis, numTargs, params[paramInd]); // throws
             }
                 break;
             
