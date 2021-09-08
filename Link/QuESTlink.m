@@ -531,14 +531,17 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* convert an operator into a circuit spec without commuting gates *)
         SetAttributes[Circuit, HoldAll]
         SetAttributes[Operator, HoldAll]
-        Circuit[gate_?isGateFormat] := 
-            {gate}
-        Circuit[op_?isOperatorFormat] := 
-            ReleaseHold[List @@@ Hold[op]]
-        Operator[op_?isGateFormat] :=
-            {gate}
-        Operator[op_?isOperatorFormat] :=
-            Reverse @ Circuit @ op
+        Circuit[ops_Times] := 
+            Flatten @ ReleaseHold[List @@@ Hold[ops]] // subscriptify
+        Circuit[ops_List] := 
+            Flatten @ ops // subscriptify
+        Circuit[gate_] := 
+            Flatten @ {gate} // subscriptify
+        Operator[ops_] :=
+            Reverse @ Circuit @ ops
+        (* additional support for gate[qubit] notation, as used in Wolfram cloud *)
+        subscriptify[list_List] := 
+            list /. Except[G, g_Symbol][{q__Integer} | q__Integer] :> Subscript[g, q]
 
         (* destroying a qureg, and clearing the local symbol if recognised *)
         SetAttributes[DestroyQureg, HoldAll];
