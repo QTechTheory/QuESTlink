@@ -192,6 +192,16 @@
 :Evaluate: QuEST`Private`GetAmpInternal::usage = "GetAmpInternal[qureg, row, col] returns complex amplitude with index [row] in a statevector qureg, or index [row][col] of a density matrix."
 
 :Begin:
+:Function:       internal_setAmp
+:Pattern:        QuEST`Private`SetAmpInternal[qureg_Integer, ampRe_Real, ampIm_Real, row_Integer, col_Integer]
+:Arguments:      { qureg, ampRe, ampIm, row, col}
+:ArgumentTypes:  { Integer, Real, Real, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`SetAmpInternal::usage = "SetAmpInternal[qureg, ampRe, ampIm, row, col] modifies the amplitude with index [row] in a statevector qureg, or index [row][col] of a density matrix, to amplitude (ampRe + i*ampIm)."
+
+
+:Begin:
 :Function:       callable_isDensityMatrix
 :Pattern:        QuEST`IsDensityMatrix[qureg_Integer]
 :Arguments:      { qureg }

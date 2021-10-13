@@ -578,6 +578,41 @@ void internal_setWeightedQureg(
     }
 }
 
+void internal_setAmp(int quregID, double ampRe, double ampIm) {
+    
+    // get args from MMA (must do this before possible early-exit)
+    wsint64 rawRow, rawCol;
+    WSGetInteger64(stdlink, &rawRow);
+    WSGetInteger64(stdlink, &rawCol); // -1 for state-vecs
+    
+    // explicitly cast from wsint64 type, which resolves to a different C++ primitive 
+    // depending compiler (MSVC: long long int, GNU: long int)
+    long long int row = (long long int) rawRow;
+    long long int col = (long long int) rawCol;
+    
+    try { 
+        local_throwExcepIfQuregNotCreated(quregID); // throws
+        
+        // ensure user supplied the correct number of args for the qureg type
+        Qureg qureg = quregs[quregID];
+        if (qureg.isDensityMatrix && col==-1)
+            throw QuESTException("", "Called on a density matrix without supplying both row and column."); // throws
+        if (!qureg.isDensityMatrix && col!=-1)
+            throw QuESTException("", "Called on a state-vector, yet a meaningless column index was supplied."); // throws
+        
+        // fetch amp (can throw internal QuEST errors)
+        if (qureg.isDensityMatrix)
+            setDensityAmps(qureg, row, col, &ampRe, &ampIm, 1);
+        else
+            setAmps(qureg, row, &ampRe, &ampIm, 1);
+
+        WSPutInteger(stdlink, quregID);
+        
+    } catch( QuESTException& err) {
+        local_sendErrorAndFail("SetAmp", err.message);
+    }
+}
+
 
 
 
