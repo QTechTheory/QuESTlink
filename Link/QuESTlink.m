@@ -87,6 +87,10 @@ See ?BitEncoding and ?PhaseOverrides."
 GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qureg at index [row, col], indexing from [0,0]."
     GetAmp::error = "`1`"
     
+    SetAmp::usage = "SetAmp[qureg, index, amp] modifies the indexed amplitude of the state-vector qureg to complex number amp.
+SetAmp[qureg, row, col, amp] modifies the indexed (row, col) amplitude of the density-matrix qureg to complex number amp"
+    SetAmp::error = "`1`"
+    
     GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
     GetQuregMatrix::error = "`1`"
     
@@ -744,6 +748,10 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         GetAmp[qureg_Integer, index_Integer] := GetAmpInternal[qureg, index, -1]
         GetAmp[qureg_Integer, row_Integer, col_Integer] := GetAmpInternal[qureg, row, col]
         GetAmp[___] := invalidArgError[GetAmp]
+        
+        SetAmp[qureg_Integer, index_Integer, amp_?NumericQ] := SetAmpInternal[qureg, N@Re@N@amp, N@Im@N@amp, index, -1]
+        SetAmp[qureg_Integer, row_Integer, col_Integer, amp_?NumericQ] := SetAmpInternal[qureg, N@Re@N@amp, N@Im@N@amp, row, col]
+        SetAmp[___] := invalidArgError[SetAmp]
         
         (* for extracting {coeffs}, {exponents} from a 1D exponential-polynomial *)
         extractCoeffExpo[s_Symbol][c_?NumericQ] := {c,0}
