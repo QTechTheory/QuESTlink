@@ -289,6 +289,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
     
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
     
+    KrausNonTP::usage = "Kraus[ops] applies a one or two-qubit non-trace-preserving Kraus map (given as a list of matrix operators) to a density matrix."
+    
     G::usage = "G[\[Theta]] applies a global phase rotation of phi, by premultiplying Exp[\[ImaginaryI] \[Theta]]."
     
     Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit, or as an alternative to removing gates in ApplyCircuit."
@@ -348,7 +350,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,_->-1}
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
         codifyMatrix[matr_] :=
@@ -377,6 +379,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {getOpCode[U], {}, {targs}, codifyMatrix[matr]},
             Subscript[Kraus, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
                 {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
+            Subscript[KrausNonTP, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
+                {getOpCode[KrausNonTP], {}, {targs}, codifyMatrices[matrs]},
             Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__] :> 
                 {getOpCode[gate], {}, {targs}, {args}},
         	Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}] :> 
@@ -1183,6 +1187,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             EdgeForm[Dashed], drawGate[\[Gamma], {}, {targ}, col]}
         drawGate[Kraus, {}, {targ_}, col_] := {
             EdgeForm[Dashed], drawGate[\[Kappa], {}, {targ}, col]}
+        drawGate[KrausNonTP, {}, {targ_}, col_] := {
+            EdgeForm[Dashed], drawGate[\[Kappa]NTP, {}, {targ}, col]}
         drawGate[X, {}, {targ_}, col_] := {
             Circle[{col+.5,targ+.5},.25],
             Line[{{col+.5,targ+.5-.25},{col+.5,targ+.5+.25}}]
@@ -1209,6 +1215,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[Kraus, {}, {targ1_,targ2_}, col_] := {
         	EdgeForm[Dashed],
         	drawGate[\[Kappa], {}, {targ1,targ2}, col]}
+        drawGate[KrausNonTP, {}, {targ1_,targ2_}, col_] := {
+        	EdgeForm[Dashed],
+        	drawGate[\[Kappa]NTP, {}, {targ1,targ2}, col]}
         drawGate[label_Symbol, {}, {targ1_,targ2_}/;Abs[targ2-targ1]===1, col_] := {
         	drawDoubleBox[Min[targ1,targ2], col],
         	Text[SymbolName@label, {col+.5,Min[targ1,targ2]+.5+.5}]}

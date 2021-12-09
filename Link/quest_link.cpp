@@ -69,6 +69,7 @@
 #define OPCODE_G 18
 #define OPCODE_Id 19
 #define OPCODE_Ph 20
+#define OPCODE_KrausNonTP 21
 
 /*
  * Codes for dynamically updating kernel variables, to indicate progress 
@@ -1396,6 +1397,42 @@ void local_applyGates(
                     for (int n=0; n < numKrausOps; n++)
                         krausOps[n] = local_getMatrix4FromFlatList(&params[opElemInd + 2*4*4*n]);
                     mixTwoQubitKrausMap(qureg, targs[targInd], targs[targInd+1], krausOps, numKrausOps); // throws
+                }
+            }
+                break;
+                
+            case OPCODE_KrausNonTP: {
+                ; // empty post-label statement, courtesy of weird C99 standard
+                int numKrausOps = (int) params[paramInd];
+                if (numCtrls != 0)
+                    throw local_gateUnsupportedExcep("controlled non-trace-preserving Kraus map"); // throws
+                if (numTargs != 1 && numTargs != 2)
+                    throw local_wrongNumGateTargsExcep("non-trace-preserving Kraus map", numTargs, "1 or 2 targets"); // throws
+                if ((numKrausOps < 1) ||
+                    (numTargs == 1 && numKrausOps > 4 ) ||
+                    (numTargs == 2 && numKrausOps > 16))
+                    throw QuESTException("", 
+                        std::to_string(numKrausOps) + " operators were passed to " +
+                        std::to_string(numTargs) +  "-qubit KrausNonTP[ops], which accepts only >0 and <=" + 
+                        std::to_string((numTargs==1)? 4:16) + " operators!"); // throws
+                if (numTargs == 1 && (numParams-1) != 2*2*2*numKrausOps)
+                    throw QuESTException("", "one-qubit non-trace-preserving Kraus expects 2-by-2 matrices!"); // throws
+                if (numTargs == 2 && (numParams-1) != 4*4*2*numKrausOps)
+                    throw QuESTException("", "two-qubit non-trace-preserving Kraus expects 4-by-4 matrices!"); // throws
+
+                if (numTargs == 1) {
+                    ComplexMatrix2 krausOps[4];
+                    int opElemInd = 1 + paramInd;
+                    for (int n=0; n < numKrausOps; n++)
+                        krausOps[n] = local_getMatrix2FromFlatList(&params[opElemInd + 2*2*2*n]);
+                    mixNonTPKrausMap(qureg, targs[targInd], krausOps, numKrausOps); // throws
+                } 
+                else if (numTargs == 2) {
+                    ComplexMatrix4 krausOps[16];
+                    int opElemInd = 1 + paramInd;
+                    for (int n=0; n < numKrausOps; n++)
+                        krausOps[n] = local_getMatrix4FromFlatList(&params[opElemInd + 2*4*4*n]);
+                    mixNonTPTwoQubitKrausMap(qureg, targs[targInd], targs[targInd+1], krausOps, numKrausOps); // throws
                 }
             }
                 break;
