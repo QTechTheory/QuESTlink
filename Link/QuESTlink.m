@@ -2033,8 +2033,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
         (* note this is overriding alias rule -> with :> which should be fine *)
         optionalReplaceAliases[False, spec_Association][in_] := in 
-        optionalReplaceAliases[True, spec_Association][in_] := in //. If[
-            KeyExistsQ[spec, Aliases], (#1 :> Sequence @@ #2 &) @@@ spec[Aliases], {}]
+        (* alas, it was NOT fine; it triggered premature evaluation of the RHS of an alias rule! *)
+            (*
+            optionalReplaceAliases[True, spec_Association][in_] := in //. If[
+                KeyExistsQ[spec, Aliases], (#1 :> Sequence @@ #2 &) @@@ spec[Aliases], {}]
+            *)
+        (* we will have to instead trust the user to use :> when necessary *)
+        optionalReplaceAliases[True, spec_Association][in_] := in //. spec[Aliases]
+        
         
         (* declaring optional args to GetCircuitSchedule *)
         Options[GetCircuitSchedule] = {
