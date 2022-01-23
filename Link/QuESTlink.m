@@ -1128,8 +1128,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getNumQubitsInCircuit[circ_List] :=
         	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], \[Infinity]],    
         		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], \[Infinity]]]
-        needsSpecialSwap[(SWAP|M|Rz|Ph|X), _List] := False
-        needsSpecialSwap[{R, (X|Y|Z)..}, _List] := False
+        isContiguousBlockGate[(SWAP|M|Rz|Ph|X|R|{R, (X|Y|Z)..})] := False
+        isContiguousBlockGate[_] := True
+        needsSpecialSwap[label_, _List] /; Not[isContiguousBlockGate[label]] := False
         needsSpecialSwap[label_Symbol, targs_List] :=
         	And[Length[targs] === 2, Abs[targs[[1]] - targs[[2]]] > 1]
         getFixedThenBotTopSwappedQubits[{targ1_,targ2_}] :=
@@ -1148,6 +1149,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+1-.1}]
         drawDoubleBox[targ_, col_] :=
         	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+2-.1}]
+        drawMultiBox[minTarg_, numTargs_, col_] :=
+            Rectangle[{col+.1,minTarg+.1}, {col+1-.1,minTarg+numTargs-.1}]
         drawQubitLines[qubits_List, col_, width_:1] :=
         	Table[Line[{{col,qb+.5},{col+width,qb+.5}}], {qb,qubits}]
         drawSpecialSwapLine[targ1_, targ2_, col_] := {
@@ -1167,9 +1170,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Line[{{col+.5,.5+Min@ctrls},{col+.5,.5+Max@ctrls}}]}
         drawGate[Ph, {ctrls___}, {targs__}, col_] := {
             drawControls[{ctrls,targs},{},col],
-            Text["\[Theta]", {col+.75,Min[{ctrls,targs}]+.75}]
-        }
-        	
+            Text["\[Theta]", {col+.75,Min[{ctrls,targs}]+.75}]}
+        drawGate[label:(Kraus|KrausNonTP|Damp|Deph|Depol), {}, targs_List, col_] := {
+            EdgeForm[Dashed],
+            drawGate[label /. {
+                    Kraus -> \[Kappa], KrausNonTP -> \[Kappa]NTP, Damp -> \[Gamma], 
+                    Deph -> \[Phi], Depol -> \[CapitalDelta]},
+                {}, targs, col]}
+
         (* single qubit gate graphics *)
         drawGate[Id, {}, {targs___}, col_] :=
             {}
@@ -1179,20 +1187,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		Circle[{col+.5,targ+.5-.4}, .4, {.7,\[Pi]-.7}],
         		Line[{{col+.5,targ+.5-.25}, {col+.5+.2,targ+.5+.3}}]
         		}, {targ, {targs}}]
-        drawGate[Deph, {}, {targ_}, col_] := {
-        	EdgeForm[Dashed], drawGate[\[Phi], {}, {targ}, col]}
+
         drawGate[Depol, {}, {targ_}, col_] := {
             EdgeForm[Dashed], drawGate[\[CapitalDelta], {}, {targ}, col]}
-        drawGate[Damp, {}, {targ_}, col_] := {
-            EdgeForm[Dashed], drawGate[\[Gamma], {}, {targ}, col]}
-        drawGate[Kraus, {}, {targ_}, col_] := {
-            EdgeForm[Dashed], drawGate[\[Kappa], {}, {targ}, col]}
-        drawGate[KrausNonTP, {}, {targ_}, col_] := {
-            EdgeForm[Dashed], drawGate[\[Kappa]NTP, {}, {targ}, col]}
         drawGate[X, {}, {targ_}, col_] := {
             Circle[{col+.5,targ+.5},.25],
-            Line[{{col+.5,targ+.5-.25},{col+.5,targ+.5+.25}}]
-        }
+            Line[{{col+.5,targ+.5-.25},{col+.5,targ+.5+.25}}]}
         drawGate[label_Symbol, {}, {targ_}, col_] := {
         	drawSingleBox[targ, col],
         	Text[SymbolName@label, {col+.5,targ+.5}]}
@@ -1204,20 +1204,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[{R, rots:(X|Y|Z)..}, {}, targs_List, col_] := {
             Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
             Sequence @@ MapThread[drawGate[#1/.{X->Rx,Y->Ry,Z->Rz}, {}, {#2}, col]&, {{rots}, targs}]}
+        drawGate[label_Symbol, {}, targs_List, col_] /; (isContiguousBlockGate[label] && Union@Differences@Sort@targs=={1}) := {
+            drawMultiBox[Min[targs], Length[targs], col],
+            Text[SymbolName@label, {col+.5,Mean[targs]+.5}]}
         drawGate[label_Symbol, {}, targs_List, col_] := {
             Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
             Sequence @@ (drawGate[label, {}, {#1}, col]& /@ targs)}
                 
         (* two-qubit gate graphics *)
-        drawGate[symb:(Deph|Depol), {}, {targ1_,targ2_}, col_] := {
-        	EdgeForm[Dashed],
-        	drawGate[If[symb===Deph,\[Phi],\[CapitalDelta]], {}, {targ1,targ2}, col]}
-        drawGate[Kraus, {}, {targ1_,targ2_}, col_] := {
-        	EdgeForm[Dashed],
-        	drawGate[\[Kappa], {}, {targ1,targ2}, col]}
-        drawGate[KrausNonTP, {}, {targ1_,targ2_}, col_] := {
-        	EdgeForm[Dashed],
-        	drawGate[\[Kappa]NTP, {}, {targ1,targ2}, col]}
         drawGate[X, {}, targs:{targ1_,targ2_}, col_] := {
             Line[{{col+.5,targ1+.5},{col+.5,targ2+.5}}],
             Sequence @@ (drawGate[X, {}, {#1}, col]& /@ targs)}
