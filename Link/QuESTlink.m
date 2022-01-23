@@ -1128,7 +1128,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getNumQubitsInCircuit[circ_List] :=
         	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], \[Infinity]],    
         		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], \[Infinity]]]
-        needsSpecialSwap[(SWAP|M|Rz|Ph), _List] := False
+        needsSpecialSwap[(SWAP|M|Rz|Ph|X), _List] := False
         needsSpecialSwap[{R, (X|Y|Z)..}, _List] := False
         needsSpecialSwap[label_Symbol, targs_List] :=
         	And[Length[targs] === 2, Abs[targs[[1]] - targs[[2]]] > 1]
@@ -1218,6 +1218,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[KrausNonTP, {}, {targ1_,targ2_}, col_] := {
         	EdgeForm[Dashed],
         	drawGate[\[Kappa]NTP, {}, {targ1,targ2}, col]}
+        drawGate[X, {}, targs:{targ1_,targ2_}, col_] := {
+            Line[{{col+.5,targ1+.5},{col+.5,targ2+.5}}],
+            Sequence @@ (drawGate[X, {}, {#1}, col]& /@ targs)}
         drawGate[label_Symbol, {}, {targ1_,targ2_}/;Abs[targ2-targ1]===1, col_] := {
         	drawDoubleBox[Min[targ1,targ2], col],
         	Text[SymbolName@label, {col+.5,Min[targ1,targ2]+.5+.5}]}
