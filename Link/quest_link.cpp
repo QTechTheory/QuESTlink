@@ -1027,7 +1027,7 @@ void local_updateCircuitProgress(qreal progress) {
     // a new packet is now expected; caller MUST send something else
 }
 
-/* @param mesOutcomeCache may be NULL
+/* @param observablesCache may be NULL
  * @param finalCtrlInd, finalTargInd and finalParamInd are modified to point to 
  *  the final values of ctrlInd, targInd and paramInd, after the #numOps operation 
  *  has been applied. If #numOps isn't smaller than the actual length of the 
@@ -1043,7 +1043,7 @@ void local_applyGates(
     int* ctrls, int* numCtrlsPerOp, 
     int* targs, int* numTargsPerOp, 
     qreal* params, int* numParamsPerOp,
-    int* mesOutcomeCache,
+    qreal* observablesCache,
     int* finalCtrlInd, int* finalTargInd, int* finalParamInd,
     int showProgress
     ) {
@@ -1051,7 +1051,7 @@ void local_applyGates(
     int ctrlInd = 0;
     int targInd = 0;
     int paramInd = 0;
-    int mesInd = 0;
+    int obvsInd = 0;
     
     // attempt to apply each gate
     for (int opInd=0; opInd < numOps; opInd++) {
@@ -1335,8 +1335,8 @@ void local_applyGates(
                     throw local_gateUnsupportedExcep("controlled measurement"); // throws
                 for (int q=0; q < numTargs; q++) {
                     int outcomeVal = measure(qureg, targs[targInd+q]); // throws // throws
-                    if (mesOutcomeCache != NULL)
-                        mesOutcomeCache[mesInd++] = outcomeVal;
+                    if (observablesCache != NULL)
+                        observablesCache[obvsInd++] = outcomeVal;
                 }
             }
                 break;
@@ -1349,9 +1349,13 @@ void local_applyGates(
                         "(" + std::to_string(numTargs) + ")!"); // throws
                 if (numCtrls != 0)
                     throw local_gateUnsupportedExcep("controlled projector"); // throws
-                if (numParams > 1)
+                if (numParams > 1) {
+                    qreal prob = 1;
                     for (int q=0; q < numParams; q++)
-                        collapseToOutcome(qureg, targs[targInd+q], (int) params[paramInd+q]); // throws
+                        prob *= collapseToOutcome(qureg, targs[targInd+q], (int) params[paramInd+q]); // throws
+                    if (observablesCache != NULL)
+                        observablesCache[obvsInd++] = prob;
+                }
                 else {
                     // check value isn't impossibly high
                     if (params[paramInd] >= (1LL << numTargs))
@@ -1360,8 +1364,11 @@ void local_applyGates(
                             std::to_string(numTargs) + " qubits and exceeds their maximum represented " +
                             "value of " + std::to_string(1LL << numTargs) + "."); // throws
                     // work out each bit outcome and apply; right most (least significant) bit acts on right-most target
+                    qreal prob = 1;
                     for (int q=0; q < numTargs; q++)
-                        collapseToOutcome(qureg, targs[targInd+numTargs-q-1], (((int) params[paramInd]) >> q) & 1); // throws
+                        prob *= collapseToOutcome(qureg, targs[targInd+numTargs-q-1], (((int) params[paramInd]) >> q) & 1); // throws
+                    if (observablesCache != NULL)
+                        observablesCache[obvsInd++] = prob;
                 }
                 break;
                 
@@ -1583,17 +1590,18 @@ void internal_applyCircuit(int id, int storeBackup, int showProgress) {
         backup = createCloneQureg(qureg, env); // must clean-up
     
     // count the total number of measurements performed in a circuit
-    int totalNumMesGates = 0;
-    int totalNumMeasurements = 0;
-    for (int opInd=0; opInd < numOps; opInd++)
-        if (opcodes[opInd] == OPCODE_M) {
-            totalNumMesGates++;
-            totalNumMeasurements += numTargsPerOp[opInd];
+    int totalNumObvsGates = 0;
+    int totalNumObvs = 0;
+    for (int opInd=0; opInd < numOps; opInd++) {
+        if (opcodes[opInd] == OPCODE_M || opcodes[opInd] == OPCODE_P) {
+            totalNumObvsGates++;
+            totalNumObvs += (opcodes[opInd] == OPCODE_P)? 1 : numTargsPerOp[opInd];
         }
+    }
         
     // prepare records of measurement outcomes
-    int* mesOutcomeCache = (int*) malloc(totalNumMeasurements * sizeof(int)); // must clean-up
-    int mesInd = 0;
+    qreal* observablesCache = (qreal*) malloc(totalNumObvs * sizeof(qreal)); // must clean-up
+    int obsInd = 0;
 
     // attempt to apply the circuit
     try {
@@ -1603,25 +1611,30 @@ void internal_applyCircuit(int id, int storeBackup, int showProgress) {
         local_applyGates(
             qureg, numOps, opcodes, ctrls, numCtrlsPerOp, 
             targs, numTargsPerOp, params, numParamsPerOp,
-            mesOutcomeCache,
+            observablesCache,
             &finalCtrlInd, &finalTargInd, &finalParamInd,
             showProgress); // throws
             
         // return lists of measurement outcomes
-        mesInd = 0;
-        WSPutFunction(stdlink, "List", totalNumMesGates);
+        obsInd = 0;
+        WSPutFunction(stdlink, "List", totalNumObvsGates);
         for (int opInd=0; opInd < numOps; opInd++) {
             if (opcodes[opInd] == OPCODE_M) {
+                // M_0,1,2 -> {0, 1, 1}, M_0 -> {1}
                 WSPutFunction(stdlink, "List", numTargsPerOp[opInd]);
                 for (int i=0; i < numTargsPerOp[opInd]; i++)
-                    WSPutInteger(stdlink, mesOutcomeCache[mesInd++]);
+                    WSPutInteger(stdlink, (int) observablesCache[obsInd++]);
+            }
+            if (opcodes[opInd] == OPCODE_P) {
+                // P_0 -> .1
+                WSPutReal64(stdlink, observablesCache[obsInd++]);
             }
         }
         
         // clean-up
         if (storeBackup)
             destroyQureg(backup, env);
-        free(mesOutcomeCache);
+        free(observablesCache);
         local_freeCircuit(
             opcodes, ctrls, numCtrlsPerOp, targs, 
             numTargsPerOp, params, numParamsPerOp,
@@ -1636,7 +1649,7 @@ void internal_applyCircuit(int id, int storeBackup, int showProgress) {
         }
                 
         // all objs need cleaning
-        free(mesOutcomeCache);
+        free(observablesCache);
         local_freeCircuit(
             opcodes, ctrls, numCtrlsPerOp, targs, 
             numTargsPerOp, params, numParamsPerOp,
@@ -1682,8 +1695,8 @@ void local_getDerivativeQuregs(
     // index of the first (real) element of the next unitary derivative
     int unitaryDerivInd = 0;
 
-    // don't record measurement outcomes
-    int* mesOutcomes = NULL;
+    // don't record observables
+    qreal* observables = NULL;
     
     // don't dynamically update frontend with progress
     int dontShowProgress = 0;
@@ -1716,7 +1729,7 @@ void local_getDerivativeQuregs(
         local_applyGates(
             qureg, (diffGateWasApplied)? varOp+1 : varOp, opcodes, 
             ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp,
-            mesOutcomes, &finalCtrlInd, &finalTargInd, &finalParamInd, 
+            observables, &finalCtrlInd, &finalTargInd, &finalParamInd, 
             dontShowProgress); // throws 
 
         // details of (possibly already applied) to-be-differentiated gate
@@ -1807,7 +1820,7 @@ void local_getDerivativeQuregs(
             &ctrls[  finalCtrlInd], &numCtrlsPerOp[varOp+1], 
             &targs[  finalTargInd], &numTargsPerOp[varOp+1], 
             &params[finalParamInd], &numParamsPerOp[varOp+1],
-            mesOutcomes, &finalCtrlInd, &finalTargInd, &finalParamInd, 
+            observables, &finalCtrlInd, &finalTargInd, &finalParamInd, 
             dontShowProgress); // throws
     }
 }

@@ -16,7 +16,7 @@ BeginPackage["QuEST`"]
       * public API 
       *)
     
-    ApplyCircuit::usage = "ApplyCircuit[qureg, circuit] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
+    ApplyCircuit::usage = "ApplyCircuit[qureg, circuit] modifies qureg by applying the circuit. Returns any measurement outcomes and the probabilities encountered by projectors, ordered and grouped by the appearance of M and P in the circuit.
 ApplyCircuit[inQureg, circuit, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg.
 Accepts optional arguments WithBackup and ShowProgress."
     ApplyCircuit::error = "`1`"
@@ -282,10 +282,11 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
     
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
     
-    M::usage = "M is a destructive measurement gate which measures the indicated qubits in the Z basis."
+    M::usage = "M is a destructive measurement gate which measures the indicated qubits in the Z basis. Targeting multiple qubits is the same as applying M to each in-turn, though their outcomes will be grouped in the output of ApplyCircit[]."
     
-    P::usage = "P[val] is a (normalised) projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
-P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
+    P::usage = "P[val] is a (normalised) projector onto {0,1} (i.e. a forced measurement) such that the target qubits represent integer val in binary (right most target takes the least significant digit in val).
+P[outcome1, outcome2, ...] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome.
+The probability of the forced measurement outcome (if hypothetically not forced) is included in the output of ApplyCircuit[]."
     
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
     
