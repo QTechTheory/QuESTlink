@@ -621,14 +621,22 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 codes = getPauliSumTermCodes /@ List @@ paulis,
                 targs = getPauliSumTermTargs /@ List @@ paulis
                 },
-                CalcExpecPauliSumInternal[qureg, workspace, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
+                If[
+                    And @@ DuplicateFreeQ /@ targs,
+                    CalcExpecPauliSumInternal[qureg, workspace, coeffs, Flatten[codes], Flatten[targs], Length /@ targs],
+                    (Message[CalcExpecPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
+                ]
             ]
         (* single term: single Pauli *)
         CalcExpecPauliSum[qureg_Integer, pauli:pattPauli, workspace_Integer] :=
             CalcExpecPauliSumInternal[qureg, workspace, {1}, {getOpCode @ pauli[[1]]}, {pauli[[2]]}, {1}]
         (* single term: pauli product, with or without coeff *)
         CalcExpecPauliSum[qureg_Integer, Verbatim[Times][coeff:_?NumericQ:1, paulis:pattPauli..], workspace_Integer] :=
-            CalcExpecPauliSumInternal[qureg, workspace, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}]
+            If[
+                DuplicateFreeQ @ {paulis}[[All,2]],
+                CalcExpecPauliSumInternal[qureg, workspace, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}],
+                (Message[CalcExpecPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
+            ]
         (* constant plus pauli sum *)
         pattConstPlusPauliSum = Verbatim[Plus][const_?NumericQ, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
         CalcExpecPauliSum[qureg_Integer, blank:pattConstPlusPauliSum, workspace_Integer] := 
@@ -642,13 +650,21 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 codes = getPauliSumTermCodes /@ List @@ paulis,
                 targs = getPauliSumTermTargs /@ List @@ paulis
                 },
-                ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
+                If[
+                    And @@ DuplicateFreeQ /@ targs,
+                    ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs],
+                    (Message[ApplyPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
+                ]
             ]
         ApplyPauliSum[inQureg_Integer, pauli:pattPauli, outQureg_Integer] :=
             ApplyPauliSumInternal[inQureg, outQureg, {1}, {getOpCode @ pauli[[1]]}, {pauli[[2]]}, {1}]
         (* single term: pauli product, with or without coeff *)
         ApplyPauliSum[inQureg_Integer, Verbatim[Times][coeff:_?NumericQ:1, paulis:pattPauli..], outQureg_Integer] :=
-            ApplyPauliSumInternal[inQureg, outQureg, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}]
+            If[
+                DuplicateFreeQ @ {paulis}[[All,2]],
+                ApplyPauliSumInternal[inQureg, outQureg, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}],
+                (Message[ApplyPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
+            ]
         (* constant plus pauli sum *)
         ApplyPauliSum[inQureg_Integer, blank:pattConstPlusPauliSum, outQureg_Integer] := 
             (Message[ApplyPauliSum::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
