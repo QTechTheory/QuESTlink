@@ -687,7 +687,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     },
                     If[
                         And @@ DuplicateFreeQ /@ targs,
-                        CalcPauliSumMatrixInternal[1+Max@Flatten@targs, coeffs, Flatten[codes], Flatten[Echo @ targs], Length /@ targs],
+                        CalcPauliSumMatrixInternal[1+Max@Flatten@targs, coeffs, Flatten[codes], Flatten[targs], Length /@ targs],
                         (Message[CalcPauliSumMatrix::error, "Pauli operators within a product must target unique qubits."]; $Failed)
                     ]
                 ]},
@@ -708,11 +708,15 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         
         (* convert a list of Pauli coefficients and codes into a weighted (symbolic) sum of products *)
         GetPauliSumFromCoeffs[addr_String] :=
-            Plus @@ (#[[1]] Times @@ MapThread[
-                (   Subscript[Switch[#2, 0, Null, 1, X, 2, Y, 3, Z], #1 - 1] /. 
-                    Subscript[Null, _] -> Sequence[] & ), 
-                {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
-            ] &) /@ ReadList[addr, Number, RecordLists -> True];
+            Plus @@ (#[[1]] If[ 
+                    AllTrue[ #[[2;;]], PossibleZeroQ ],
+                    Subscript[Id, 0],
+                    Times @@ MapThread[
+                    (   Subscript[Switch[#2, 0, Id, 1, X, 2, Y, 3, Z], #1 - 1] /. 
+                        Subscript[Id, _] ->  Sequence[] & ), 
+                        {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
+                    ]
+                ] &) /@ ReadList[addr, Number, RecordLists -> True];
         GetPauliSumFromCoeffs[___] := invalidArgError[GetPauliSumFromCoeffs]
         
         getIgorLink[id_] :=
