@@ -120,7 +120,7 @@ SetWeightedQureg[fac1, q1, qOut] modifies qureg qOut to be fac1 * q1. qOut can b
 SetWeightedQureg[fac, qOut] modifies qureg qOut to be fac qOut; that is, qOut is scaled by factor fac."
     SetWeightedQureg::error = "`1`"
     
-    SimplifyPaulis::usage = "SimplifyPaulis[expr] freezes commutation and analytically simplifies the given expression of Pauli operators, and expands it in the Pauli basis. The input expression can include sums, products, powers and non-commuting products of (subscripted) X, Y and Z operators and other Mathematica symbols (including variables defined as Pauli expressions). 
+    SimplifyPaulis::usage = "SimplifyPaulis[expr] freezes commutation and analytically simplifies the given expression of Pauli operators, and expands it in the Pauli basis. The input expression can include sums, products, powers and non-commuting products of (subscripted) Id, X, Y and Z operators and other Mathematica symbols (including variables defined as Pauli expressions). 
 For example, try SimplifyPaulis[ Subscript[Y,0] (a Subscript[X,0] + b Subscript[Z,0] Subscript[X,1])^3 ].
 Be careful of performing algebra with Pauli operators outside of SimplifyPaulis[], since Mathematica may erroneously automatically commute them."
     SimplifyPaulis::error = "`1`"
@@ -912,8 +912,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          *)
          
          (* post-processing step to combine Pauli products that have identical symbols and indices... *)
-        getPauliSig[ a: Subscript[(X|Y|Z), _Integer] ] := {a}
-        getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, Subscript[(X|Y|Z), _]]
+        getPauliSig[ a: Subscript[(X|Y|Z|Id), _Integer] ] := {a}
+        getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, Subscript[(X|Y|Z|Id), _]]
         getPauliSig[ _ ] := {}
         (* which works by splitting a sum into groups containing the same Pauli tensor, and simplifying each *)
         factorPaulis[s_Plus] := Simplify /@ Plus @@@ GatherBy[List @@ s, getPauliSig] // Total
@@ -926,11 +926,14 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          *)
         SetAttributes[SimplifyPaulis, HoldAll]
         
-        SimplifyPaulis[ a:Subscript[(X|Y|Z), _] ] := 
+        SimplifyPaulis[ a:Subscript[(X|Y|Z|Id), _] ] := 
             a
 
-        SimplifyPaulis[ (a:Subscript[(X|Y|Z), _])^n_Integer ] /; (n >= 0) :=
-        	If[EvenQ[n],1,a]
+        SimplifyPaulis[ (a:Subscript[(X|Y|Z), q_])^n_Integer ] /; (n >= 0) :=
+        	If[EvenQ[n], Subscript[Id,q], a]
+            
+        SimplifyPaulis[ (a:Subscript[Id, q_])^n_Integer ] /; (n >= 0) :=
+            a
         
         SimplifyPaulis[ Verbatim[Times][t__] ] := With[
         	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
@@ -938,7 +941,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	(* pass product (which now contains no powers of pauli expressions) to simplify *)
         	SimplifyPaulis[nc]]
 
-        SimplifyPaulis[ Power[b_, n_Integer] ] /; (Not[FreeQ[b,Subscript[(X|Y|Z), _]]] && n >= 0) :=
+        SimplifyPaulis[ Power[b_, n_Integer] ] /; (Not[FreeQ[b,Subscript[(X|Y|Z|Id), _]]] && n >= 0) :=
         	(* simplify the base, then pass a (non-expanded) product to simplify (to trigger above def) *)
         	With[{s=ConstantArray[SimplifyPaulis[b], n]}, 
         		SimplifyPaulis @@ (Times @@@ Hold[s])]
@@ -956,18 +959,24 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	(* expand all multiplication into non-commuting; this means ex can be a sum now *)
         	{ex = Distribute[s /. Times -> NonCommutativeMultiply]},
         	(* notation shortcuts *)
-        	{xyz = X|Y|Z, ncm = NonCommutativeMultiply}, 
+        	{xyz = X|Y|Z, xyzi = X|Y|Z|Id, ncm = NonCommutativeMultiply}, 
         	(* since ex can now be a sum, after below transformation, factorise *)
         	factorPaulis[
         		ex //. {
         		(* destroy exponents of single terms *)
-        		(a:Subscript[xyz, _])^n_ :> If[EvenQ[n],1,a], 
+        		(a:Subscript[xyzi, q_])^n_Integer  /; (n >= 0) :> If[EvenQ[n], Subscript[Id,q], a], 
+                (a:Subscript[Id, _])^n_Integer :> a,
         		(* move scalars to their own element (to clean pauli pattern) *)
-        		ncm[r1___, (f:Except[Subscript[xyz, _]]) (a:Subscript[xyz, _]) , r2___] :> ncm[f,r1,a,r2],
+        		ncm[r1___, (f:Except[Subscript[xyzi, _]]) (a:Subscript[xyzi, _]) , r2___] :> ncm[f,r1,a,r2],
         		(* map same-qubit adjacent (closest) pauli matrices to their product *)
         		ncm[r1___, Subscript[(a:xyz), q_],r2:Shortest[___],Subscript[(b:xyz), q_], r3___] :>
-        			If[a === b, ncm[r1,r2,r3], With[{c = First @ Complement[List@@xyz, {a,b}]},
-        				ncm[r1, I If[Sort[{a,b}]==={a,b},1,-1] Subscript[c, q], r2, r3]]]
+        			If[a === b, ncm[r1,r2,r3,Subscript[Id,q]], With[{c = First @ Complement[List@@xyz, {a,b}]},
+        				ncm[r1, I If[Sort[{a,b}]==={a,b},1,-1] Subscript[c, q], r2, r3]]],
+                (* remove superfluous Id's when multiplying onto other paulis on any qubits *)
+                ncm[r1___, Subscript[Id, _], r2___, b:Subscript[xyzi, _], r3___] :>
+                    ncm[r1, r2, b, r3],
+                ncm[r1___, a:Subscript[xyzi, _], r2___, Subscript[Id, _], r3___] :>
+                    ncm[r1, a, r2, r3]
         	(* finally, restore products (overwriting user non-comms) and simplify scalars *)
         	} /. NonCommutativeMultiply -> Times]]
         	
