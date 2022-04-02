@@ -76,9 +76,12 @@ ApplyPhaseFunc[..., BitEncoding -> \"Unsigned\"] interprets each sub-register st
 ApplyPhaseFunc[..., BitEncoding -> \"TwosComplement\"] interprets each sub-register state as a two's complement signed integer in {-2^(N-1), ..., +2^(N-1)-1}, where N is the number of qubits (including the sign qubit).
 See ?BitEncoding and ?PhaseOverrides."
     ApplyPhaseFunc::error = "`1`"
-
-    CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the matrix form of the given weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target."
+    
+    CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the numerical matrix of the given real-weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target. This accepts only sums of Pauli products with unique qubits and floating-point coefficients, and is computed numerically."
     CalcPauliSumMatrix::error = "`1`"
+    
+    CalcPauliExpressionMatrix::usage = "CalcPauliExpressionMatrix[expr] returns the analytic matrix given by the symbolic expression of Pauli operators, X, Y, Z, Id. The number of qubits is assumed to be the largest Pauli target. Accepts the same inputs as SimplfyPaulis[], and is computed symbolically"
+    CalcPauliExpressionMatrix::error = "`1`"
 
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID. If qureg is a Symbol, it will additionally be cleared."
     DestroyQureg::error = "`1`"
@@ -654,8 +657,27 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
             ]
         ApplyPauliSum[___] := invalidArgError[ApplyPauliSum]
+        
+        (* convert a symbolic expression of Pauli products into an analytic matrix *)
+        getFullHilbertPauliMatrix[numQ_][Subscript[s_,q_]] := Module[
+        	{m=ConstantArray[IdentityMatrix[2], numQ]},
+        	m[[q+1]] = PauliMatrix[s /. {Id->0, X->1,Y->2,Z->3}];
+        	If[Length[m]>1, KroneckerProduct @@ (Reverse @ m), First @ m]]
+            
+        SetAttributes[CalcPauliExpressionMatrix, HoldAll]
+        CalcPauliExpressionMatrix[h_] := With[
+        	{pauliPatt = Subscript[Id|X|Y|Z,_Integer]},
+        	{hFlat = SimplifyPaulis[h]},
+        	{nQb = Max[1 + Cases[{hFlat}, Subscript[(Id|X|Y|Z), q_]:>q, Infinity]]},
+        	ReleaseHold[
+        		HoldForm[hFlat] /. Verbatim[Times][a___, b:pauliPatt, c___] :>
+        			RuleCondition @ Times[
+        				Sequence @@ Cases[{a,b,c}, Except[pauliPatt]],
+        				Dot @@ getFullHilbertPauliMatrix[nQb] /@ Cases[{a,b,c}, pauliPatt]
+        			] /. p:pauliPatt :> RuleCondition @ getFullHilbertPauliMatrix[nQb][p]]]
+        CalcPauliExpressionMatrix[___] := invalidArgError[CalcPauliExpressionMatrix]
                 
-        (* convert a weighted sum of Pauli products into a matrix *)
+        (* convert a real-weighted sum of Pauli products into a numerical matrix *)
         CalcPauliSumMatrix[paulis:pattPauliSum] := 
             With[{
                 arrs=With[{
