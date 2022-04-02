@@ -16,7 +16,7 @@ BeginPackage["QuEST`"]
       * public API 
       *)
     
-    ApplyCircuit::usage = "ApplyCircuit[qureg, circuit] modifies qureg by applying the circuit. Returns any measurement outcomes, grouped by M operators and ordered by their order in M.
+    ApplyCircuit::usage = "ApplyCircuit[qureg, circuit] modifies qureg by applying the circuit. Returns any measurement outcomes and the probabilities encountered by projectors, ordered and grouped by the appearance of M and P in the circuit.
 ApplyCircuit[inQureg, circuit, outQureg] leaves inQureg unchanged, but modifies outQureg to be the result of applying the circuit to inQureg.
 Accepts optional arguments WithBackup and ShowProgress."
     ApplyCircuit::error = "`1`"
@@ -76,9 +76,12 @@ ApplyPhaseFunc[..., BitEncoding -> \"Unsigned\"] interprets each sub-register st
 ApplyPhaseFunc[..., BitEncoding -> \"TwosComplement\"] interprets each sub-register state as a two's complement signed integer in {-2^(N-1), ..., +2^(N-1)-1}, where N is the number of qubits (including the sign qubit).
 See ?BitEncoding and ?PhaseOverrides."
     ApplyPhaseFunc::error = "`1`"
-
-    CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the matrix form of the given weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target."
+    
+    CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the numerical matrix of the given real-weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target. This accepts only sums of Pauli products with unique qubits and floating-point coefficients, and is computed numerically."
     CalcPauliSumMatrix::error = "`1`"
+    
+    CalcPauliExpressionMatrix::usage = "CalcPauliExpressionMatrix[expr] returns the analytic matrix given by the symbolic expression of Pauli operators, X, Y, Z, Id. The number of qubits is assumed to be the largest Pauli target. Accepts the same inputs as SimplfyPaulis[], and is computed symbolically"
+    CalcPauliExpressionMatrix::error = "`1`"
 
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID. If qureg is a Symbol, it will additionally be cleared."
     DestroyQureg::error = "`1`"
@@ -120,7 +123,7 @@ SetWeightedQureg[fac1, q1, qOut] modifies qureg qOut to be fac1 * q1. qOut can b
 SetWeightedQureg[fac, qOut] modifies qureg qOut to be fac qOut; that is, qOut is scaled by factor fac."
     SetWeightedQureg::error = "`1`"
     
-    SimplifyPaulis::usage = "SimplifyPaulis[expr] freezes commutation and analytically simplifies the given expression of Pauli operators, and expands it in the Pauli basis. The input expression can include sums, products, powers and non-commuting products of (subscripted) X, Y and Z operators and other Mathematica symbols (including variables defined as Pauli expressions). 
+    SimplifyPaulis::usage = "SimplifyPaulis[expr] freezes commutation and analytically simplifies the given expression of Pauli operators, and expands it in the Pauli basis. The input expression can include sums, products, powers and non-commuting products of (subscripted) Id, X, Y and Z operators and other Mathematica symbols (including variables defined as Pauli expressions). 
 For example, try SimplifyPaulis[ Subscript[Y,0] (a Subscript[X,0] + b Subscript[Z,0] Subscript[X,1])^3 ].
 Be careful of performing algebra with Pauli operators outside of SimplifyPaulis[], since Mathematica may erroneously automatically commute them."
     SimplifyPaulis::error = "`1`"
@@ -282,12 +285,15 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
     
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
     
-    M::usage = "M is a destructive measurement gate which measures the indicated qubits in the Z basis."
+    M::usage = "M is a destructive measurement gate which measures the indicated qubits in the Z basis. Targeting multiple qubits is the same as applying M to each in-turn, though their outcomes will be grouped in the output of ApplyCircit[]."
     
-    P::usage = "P[val] is a (normalised) projector onto {0,1} such that the target qubits represent val in binary (right most target takes the least significant digit in val).
-P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome."
+    P::usage = "P[val] is a (normalised) projector onto {0,1} (i.e. a forced measurement) such that the target qubits represent integer val in binary (right most target takes the least significant digit in val).
+P[outcome1, outcome2, ...] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome.
+The probability of the forced measurement outcome (if hypothetically not forced) is included in the output of ApplyCircuit[]."
     
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
+    
+    KrausNonTP::usage = "Kraus[ops] applies a one or two-qubit non-trace-preserving Kraus map (given as a list of matrix operators) to a density matrix."
     
     G::usage = "G[\[Theta]] applies a global phase rotation of phi, by premultiplying Exp[\[ImaginaryI] \[Theta]]."
     
@@ -348,7 +354,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                
         (* opcodes *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,_->-1}
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
         codifyMatrix[matr_] :=
@@ -377,6 +383,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 {getOpCode[U], {}, {targs}, codifyMatrix[matr]},
             Subscript[Kraus, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
                 {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
+            Subscript[KrausNonTP, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
+                {getOpCode[KrausNonTP], {}, {targs}, codifyMatrices[matrs]},
             Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__] :> 
                 {getOpCode[gate], {}, {targs}, {args}},
         	Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}] :> 
@@ -597,32 +605,42 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         CalcExpecPauliProd[___] := invalidArgError[CalcExpecPauliProd]
             
         (* compute the expected value of a weighted sum of Pauli products *)
-        getPauliSumTermCoeff[pauli:pattPauli] = 1;
+        pattXYZI = Subscript[X|Y|Z|Id, _Integer];
+        getPauliSumTermCoeff[pauli:pattXYZI] = 1;
         getPauliSumTermCoeff[Verbatim[Times][coeff:_?NumericQ:1, ___]] := coeff
-        getPauliSumTermCodes[pauli:pattPauli] := {getOpCode @ pauli[[1]]}
-        getPauliSumTermCodes[Verbatim[Times][___?NumericQ, paulis:pattPauli..]] := getOpCode /@ {paulis}[[All, 1]]
-        getPauliSumTermTargs[pauli:pattPauli] := {pauli[[2]]}
-        getPauliSumTermTargs[Verbatim[Times][___?NumericQ, paulis:pattPauli ..]] := {paulis}[[All, 2]]
-        (* sum of individual paulis or weighted pauli products *)
-        pattPauliSum = Verbatim[Plus][ (pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
+        getPauliSumTermCodes[pauli:pattXYZI] := {getOpCode @ pauli[[1]]}
+        getPauliSumTermCodes[Verbatim[Times][___?NumericQ, paulis:pattXYZI..]] := getOpCode /@ {paulis}[[All, 1]]
+        getPauliSumTermTargs[pauli:pattXYZI] := {pauli[[2]]}
+        getPauliSumTermTargs[Verbatim[Times][___?NumericQ, paulis:pattXYZI ..]] := {paulis}[[All, 2]]
+        (* sum of individual paulis or weighted pauli products *)        
+        pattPauliSum = Verbatim[Plus][ ( pattXYZI | Verbatim[Times][___?NumericQ, pattXYZI..] ) .. ]
+        
         CalcExpecPauliSum[qureg_Integer, paulis:pattPauliSum, workspace_Integer] := 
             With[{
                 coeffs = getPauliSumTermCoeff /@ List @@ paulis,
                 codes = getPauliSumTermCodes /@ List @@ paulis,
                 targs = getPauliSumTermTargs /@ List @@ paulis
                 },
-                CalcExpecPauliSumInternal[qureg, workspace, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
+                If[
+                    And @@ DuplicateFreeQ /@ targs,
+                    CalcExpecPauliSumInternal[qureg, workspace, coeffs, Flatten[codes], Flatten[targs], Length /@ targs],
+                    (Message[CalcExpecPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
+                ]
             ]
         (* single term: single Pauli *)
         CalcExpecPauliSum[qureg_Integer, pauli:pattPauli, workspace_Integer] :=
             CalcExpecPauliSumInternal[qureg, workspace, {1}, {getOpCode @ pauli[[1]]}, {pauli[[2]]}, {1}]
         (* single term: pauli product, with or without coeff *)
         CalcExpecPauliSum[qureg_Integer, Verbatim[Times][coeff:_?NumericQ:1, paulis:pattPauli..], workspace_Integer] :=
-            CalcExpecPauliSumInternal[qureg, workspace, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}]
+            If[
+                DuplicateFreeQ @ {paulis}[[All,2]],
+                CalcExpecPauliSumInternal[qureg, workspace, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}],
+                (Message[CalcExpecPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
+            ]
         (* constant plus pauli sum *)
         pattConstPlusPauliSum = Verbatim[Plus][const_?NumericQ, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
         CalcExpecPauliSum[qureg_Integer, blank:pattConstPlusPauliSum, workspace_Integer] := 
-            const + CalcExpecPauliSum[qureg, Plus @@ {pauliTerms}, workspace]
+            (Message[CalcExpecPauliSum::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
         CalcExpecPauliSum[___] := invalidArgError[CalcExpecPauliSum]
             
         (* apply a weighted sum of Pauli products to a qureg *)
@@ -632,25 +650,46 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                 codes = getPauliSumTermCodes /@ List @@ paulis,
                 targs = getPauliSumTermTargs /@ List @@ paulis
                 },
-                ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
+                If[
+                    And @@ DuplicateFreeQ /@ targs,
+                    ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs],
+                    (Message[ApplyPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
+                ]
             ]
         ApplyPauliSum[inQureg_Integer, pauli:pattPauli, outQureg_Integer] :=
             ApplyPauliSumInternal[inQureg, outQureg, {1}, {getOpCode @ pauli[[1]]}, {pauli[[2]]}, {1}]
         (* single term: pauli product, with or without coeff *)
         ApplyPauliSum[inQureg_Integer, Verbatim[Times][coeff:_?NumericQ:1, paulis:pattPauli..], outQureg_Integer] :=
-            ApplyPauliSumInternal[inQureg, outQureg, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}]
+            If[
+                DuplicateFreeQ @ {paulis}[[All,2]],
+                ApplyPauliSumInternal[inQureg, outQureg, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}],
+                (Message[ApplyPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
+            ]
         (* constant plus pauli sum *)
         ApplyPauliSum[inQureg_Integer, blank:pattConstPlusPauliSum, outQureg_Integer] := 
-            With[{
-                coeffs = Append[getPauliSumTermCoeff /@ {pauliTerms}, const], (* add const as new term... *)
-                codes = Append[getPauliSumTermCodes /@ {pauliTerms}, {0}],      (* with Identity=0 Pauli code... *)
-                targs = Append[getPauliSumTermTargs /@ {pauliTerms}, {0}]       (* on the first (or any) quqbit *)
-                },
-                ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
-            ]
+            (Message[ApplyPauliSum::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
         ApplyPauliSum[___] := invalidArgError[ApplyPauliSum]
+        
+        (* convert a symbolic expression of Pauli products into an analytic matrix *)
+        getFullHilbertPauliMatrix[numQ_][Subscript[s_,q_]] := Module[
+        	{m=ConstantArray[IdentityMatrix[2], numQ]},
+        	m[[q+1]] = PauliMatrix[s /. {Id->0, X->1,Y->2,Z->3}];
+        	If[Length[m]>1, KroneckerProduct @@ (Reverse @ m), First @ m]]
+            
+        SetAttributes[CalcPauliExpressionMatrix, HoldAll]
+        CalcPauliExpressionMatrix[h_] := With[
+        	{pauliPatt = Subscript[Id|X|Y|Z,_Integer]},
+        	{hFlat = SimplifyPaulis[h]},
+        	{nQb = Max[1 + Cases[{hFlat}, Subscript[(Id|X|Y|Z), q_]:>q, Infinity]]},
+        	ReleaseHold[
+        		HoldForm[hFlat] /. Verbatim[Times][a___, b:pauliPatt, c___] :>
+        			RuleCondition @ Times[
+        				Sequence @@ Cases[{a,b,c}, Except[pauliPatt]],
+        				Dot @@ getFullHilbertPauliMatrix[nQb] /@ Cases[{a,b,c}, pauliPatt]
+        			] /. p:pauliPatt :> RuleCondition @ getFullHilbertPauliMatrix[nQb][p]]]
+        CalcPauliExpressionMatrix[___] := invalidArgError[CalcPauliExpressionMatrix]
                 
-        (* convert a weighted sum of Pauli products into a matrix *)
+        (* convert a real-weighted sum of Pauli products into a numerical matrix *)
         CalcPauliSumMatrix[paulis:pattPauliSum] := 
             With[{
                 arrs=With[{
@@ -658,24 +697,32 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
                     codes = getPauliSumTermCodes /@ List @@ paulis,
                     targs = getPauliSumTermTargs /@ List @@ paulis
                     },
-                    CalcPauliSumMatrixInternal[1+Max@Flatten@targs, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
+                    If[
+                        And @@ DuplicateFreeQ /@ targs,
+                        CalcPauliSumMatrixInternal[1+Max@Flatten@targs, coeffs, Flatten[codes], Flatten[targs], Length /@ targs],
+                        (Message[CalcPauliSumMatrix::error, "Pauli operators within a product must target unique qubits."]; $Failed)
+                    ]
                 ]},
-                (#[[1]] + I #[[2]])& /@ Partition[arrs,2] // Transpose
+                If[
+                    arrs === $Failed, arrs,
+                    (#[[1]] + I #[[2]])& /@ Partition[arrs,2] // Transpose
+                ]
             ]
         CalcPauliSumMatrix[blank:pattConstPlusPauliSum] := 
-            With[
-                {matr=CalcPauliSumMatrix[Plus @@ {pauliTerms}]},
-                matr + const IdentityMatrix @ Length @ matr 
-            ]
+            (Message[CalcPauliSumMatrix::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
         CalcPauliSumMatrix[___] := invalidArgError[CalcPauliSumMatrix]
         
         (* convert a list of Pauli coefficients and codes into a weighted (symbolic) sum of products *)
         GetPauliSumFromCoeffs[addr_String] :=
-            Plus @@ (#[[1]] Times @@ MapThread[
-                (   Subscript[Switch[#2, 0, Null, 1, X, 2, Y, 3, Z], #1 - 1] /. 
-                    Subscript[Null, _] -> Sequence[] & ), 
-                {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
-            ] &) /@ ReadList[addr, Number, RecordLists -> True];
+            Plus @@ (#[[1]] If[ 
+                    AllTrue[ #[[2;;]], PossibleZeroQ ],
+                    Subscript[Id, 0],
+                    Times @@ MapThread[
+                    (   Subscript[Switch[#2, 0, Id, 1, X, 2, Y, 3, Z], #1 - 1] /. 
+                        Subscript[Id, _] ->  Sequence[] & ), 
+                        {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
+                    ]
+                ] &) /@ ReadList[addr, Number, RecordLists -> True];
         GetPauliSumFromCoeffs[___] := invalidArgError[GetPauliSumFromCoeffs]
         
         getIgorLink[id_] :=
@@ -907,8 +954,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
          *)
          
          (* post-processing step to combine Pauli products that have identical symbols and indices... *)
-        getPauliSig[ a: Subscript[(X|Y|Z), _Integer] ] := {a}
-        getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, Subscript[(X|Y|Z), _]]
+        getPauliSig[ a: Subscript[(X|Y|Z|Id), _Integer] ] := {a}
+        getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, Subscript[(X|Y|Z|Id), _]]
         getPauliSig[ _ ] := {}
         (* which works by splitting a sum into groups containing the same Pauli tensor, and simplifying each *)
         factorPaulis[s_Plus] := Simplify /@ Plus @@@ GatherBy[List @@ s, getPauliSig] // Total
@@ -921,11 +968,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
          *)
         SetAttributes[SimplifyPaulis, HoldAll]
         
-        SimplifyPaulis[ a:Subscript[(X|Y|Z), _] ] := 
+        SimplifyPaulis[ a:Subscript[(X|Y|Z|Id), _] ] := 
             a
 
-        SimplifyPaulis[ (a:Subscript[(X|Y|Z), _])^n_Integer ] /; (n >= 0) :=
-        	If[EvenQ[n],1,a]
+        SimplifyPaulis[ (a:Subscript[(X|Y|Z), q_])^n_Integer ] /; (n >= 0) :=
+        	If[EvenQ[n], Subscript[Id,q], a]
+            
+        SimplifyPaulis[ (a:Subscript[Id, q_])^n_Integer ] /; (n >= 0) :=
+            a
         
         SimplifyPaulis[ Verbatim[Times][t__] ] := With[
         	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
@@ -933,7 +983,7 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	(* pass product (which now contains no powers of pauli expressions) to simplify *)
         	SimplifyPaulis[nc]]
 
-        SimplifyPaulis[ Power[b_, n_Integer] ] /; (Not[FreeQ[b,Subscript[(X|Y|Z), _]]] && n >= 0) :=
+        SimplifyPaulis[ Power[b_, n_Integer] ] /; (Not[FreeQ[b,Subscript[(X|Y|Z|Id), _]]] && n >= 0) :=
         	(* simplify the base, then pass a (non-expanded) product to simplify (to trigger above def) *)
         	With[{s=ConstantArray[SimplifyPaulis[b], n]}, 
         		SimplifyPaulis @@ (Times @@@ Hold[s])]
@@ -951,18 +1001,24 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	(* expand all multiplication into non-commuting; this means ex can be a sum now *)
         	{ex = Distribute[s /. Times -> NonCommutativeMultiply]},
         	(* notation shortcuts *)
-        	{xyz = X|Y|Z, ncm = NonCommutativeMultiply}, 
+        	{xyz = X|Y|Z, xyzi = X|Y|Z|Id, ncm = NonCommutativeMultiply}, 
         	(* since ex can now be a sum, after below transformation, factorise *)
         	factorPaulis[
         		ex //. {
         		(* destroy exponents of single terms *)
-        		(a:Subscript[xyz, _])^n_ :> If[EvenQ[n],1,a], 
+        		(a:Subscript[xyzi, q_])^n_Integer  /; (n >= 0) :> If[EvenQ[n], Subscript[Id,q], a], 
+                (a:Subscript[Id, _])^n_Integer :> a,
         		(* move scalars to their own element (to clean pauli pattern) *)
-        		ncm[r1___, (f:Except[Subscript[xyz, _]]) (a:Subscript[xyz, _]) , r2___] :> ncm[f,r1,a,r2],
+        		ncm[r1___, (f:Except[Subscript[xyzi, _]]) (a:Subscript[xyzi, _]) , r2___] :> ncm[f,r1,a,r2],
         		(* map same-qubit adjacent (closest) pauli matrices to their product *)
         		ncm[r1___, Subscript[(a:xyz), q_],r2:Shortest[___],Subscript[(b:xyz), q_], r3___] :>
-        			If[a === b, ncm[r1,r2,r3], With[{c = First @ Complement[List@@xyz, {a,b}]},
-        				ncm[r1, I If[Sort[{a,b}]==={a,b},1,-1] Subscript[c, q], r2, r3]]]
+        			If[a === b, ncm[r1,r2,r3,Subscript[Id,q]], With[{c = First @ Complement[List@@xyz, {a,b}]},
+        				ncm[r1, I If[Sort[{a,b}]==={a,b},1,-1] Subscript[c, q], r2, r3]]],
+                (* remove superfluous Id's when multiplying onto other paulis on any qubits *)
+                ncm[r1___, Subscript[Id, _], r2___, b:Subscript[xyzi, _], r3___] :>
+                    ncm[r1, r2, b, r3],
+                ncm[r1___, a:Subscript[xyzi, _], r2___, Subscript[Id, _], r3___] :>
+                    ncm[r1, a, r2, r3]
         	(* finally, restore products (overwriting user non-comms) and simplify scalars *)
         	} /. NonCommutativeMultiply -> Times]]
         	
@@ -1124,8 +1180,9 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         getNumQubitsInCircuit[circ_List] :=
         	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], \[Infinity]],    
         		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], \[Infinity]]]
-        needsSpecialSwap[(SWAP|M|Rz|Ph), _List] := False
-        needsSpecialSwap[{R, (X|Y|Z)..}, _List] := False
+        isContiguousBlockGate[(SWAP|M|Rz|Ph|X|R|{R, (X|Y|Z)..})] := False
+        isContiguousBlockGate[_] := True
+        needsSpecialSwap[label_, _List] /; Not[isContiguousBlockGate[label]] := False
         needsSpecialSwap[label_Symbol, targs_List] :=
         	And[Length[targs] === 2, Abs[targs[[1]] - targs[[2]]] > 1]
         getFixedThenBotTopSwappedQubits[{targ1_,targ2_}] :=
@@ -1144,6 +1201,8 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+1-.1}]
         drawDoubleBox[targ_, col_] :=
         	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+2-.1}]
+        drawMultiBox[minTarg_, numTargs_, col_] :=
+            Rectangle[{col+.1,minTarg+.1}, {col+1-.1,minTarg+numTargs-.1}]
         drawQubitLines[qubits_List, col_, width_:1] :=
         	Table[Line[{{col,qb+.5},{col+width,qb+.5}}], {qb,qubits}]
         drawSpecialSwapLine[targ1_, targ2_, col_] := {
@@ -1163,9 +1222,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
             Line[{{col+.5,.5+Min@ctrls},{col+.5,.5+Max@ctrls}}]}
         drawGate[Ph, {ctrls___}, {targs__}, col_] := {
             drawControls[{ctrls,targs},{},col],
-            Text["\[Theta]", {col+.75,Min[{ctrls,targs}]+.75}]
-        }
-        	
+            Text["\[Theta]", {col+.75,Min[{ctrls,targs}]+.75}]}
+        drawGate[label:(Kraus|KrausNonTP|Damp|Deph|Depol), {}, targs_List, col_] := {
+            EdgeForm[Dashed],
+            drawGate[label /. {
+                    Kraus -> \[Kappa], KrausNonTP -> \[Kappa]NTP, Damp -> \[Gamma], 
+                    Deph -> \[Phi], Depol -> \[CapitalDelta]},
+                {}, targs, col]}
+
         (* single qubit gate graphics *)
         drawGate[Id, {}, {targs___}, col_] :=
             {}
@@ -1175,18 +1239,12 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         		Circle[{col+.5,targ+.5-.4}, .4, {.7,\[Pi]-.7}],
         		Line[{{col+.5,targ+.5-.25}, {col+.5+.2,targ+.5+.3}}]
         		}, {targ, {targs}}]
-        drawGate[Deph, {}, {targ_}, col_] := {
-        	EdgeForm[Dashed], drawGate[\[Phi], {}, {targ}, col]}
+
         drawGate[Depol, {}, {targ_}, col_] := {
             EdgeForm[Dashed], drawGate[\[CapitalDelta], {}, {targ}, col]}
-        drawGate[Damp, {}, {targ_}, col_] := {
-            EdgeForm[Dashed], drawGate[\[Gamma], {}, {targ}, col]}
-        drawGate[Kraus, {}, {targ_}, col_] := {
-            EdgeForm[Dashed], drawGate[\[Kappa], {}, {targ}, col]}
         drawGate[X, {}, {targ_}, col_] := {
             Circle[{col+.5,targ+.5},.25],
-            Line[{{col+.5,targ+.5-.25},{col+.5,targ+.5+.25}}]
-        }
+            Line[{{col+.5,targ+.5-.25},{col+.5,targ+.5+.25}}]}
         drawGate[label_Symbol, {}, {targ_}, col_] := {
         	drawSingleBox[targ, col],
         	Text[SymbolName@label, {col+.5,targ+.5}]}
@@ -1198,17 +1256,17 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         drawGate[{R, rots:(X|Y|Z)..}, {}, targs_List, col_] := {
             Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
             Sequence @@ MapThread[drawGate[#1/.{X->Rx,Y->Ry,Z->Rz}, {}, {#2}, col]&, {{rots}, targs}]}
+        drawGate[label_Symbol, {}, targs_List, col_] /; (isContiguousBlockGate[label] && Union@Differences@Sort@targs=={1}) := {
+            drawMultiBox[Min[targs], Length[targs], col],
+            Text[SymbolName@label, {col+.5,Mean[targs]+.5}]}
         drawGate[label_Symbol, {}, targs_List, col_] := {
             Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
             Sequence @@ (drawGate[label, {}, {#1}, col]& /@ targs)}
                 
         (* two-qubit gate graphics *)
-        drawGate[symb:(Deph|Depol), {}, {targ1_,targ2_}, col_] := {
-        	EdgeForm[Dashed],
-        	drawGate[If[symb===Deph,\[Phi],\[CapitalDelta]], {}, {targ1,targ2}, col]}
-        drawGate[Kraus, {}, {targ1_,targ2_}, col_] := {
-        	EdgeForm[Dashed],
-        	drawGate[\[Kappa], {}, {targ1,targ2}, col]}
+        drawGate[X, {}, targs:{targ1_,targ2_}, col_] := {
+            Line[{{col+.5,targ1+.5},{col+.5,targ2+.5}}],
+            Sequence @@ (drawGate[X, {}, {#1}, col]& /@ targs)}
         drawGate[label_Symbol, {}, {targ1_,targ2_}/;Abs[targ2-targ1]===1, col_] := {
         	drawDoubleBox[Min[targ1,targ2], col],
         	Text[SymbolName@label, {col+.5,Min[targ1,targ2]+.5+.5}]}
@@ -2024,8 +2082,14 @@ P[outcomes] is a (normalised) projector onto the given {0,1} outcomes. The left 
         (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
         (* note this is overriding alias rule -> with :> which should be fine *)
         optionalReplaceAliases[False, spec_Association][in_] := in 
-        optionalReplaceAliases[True, spec_Association][in_] := in //. If[
-            KeyExistsQ[spec, Aliases], (#1 :> Sequence @@ #2 &) @@@ spec[Aliases], {}]
+        (* alas, it was NOT fine; it triggered premature evaluation of the RHS of an alias rule! *)
+            (*
+            optionalReplaceAliases[True, spec_Association][in_] := in //. If[
+                KeyExistsQ[spec, Aliases], (#1 :> Sequence @@ #2 &) @@@ spec[Aliases], {}]
+            *)
+        (* we will have to instead trust the user to use :> when necessary *)
+        optionalReplaceAliases[True, spec_Association][in_] := in //. spec[Aliases]
+        
         
         (* declaring optional args to GetCircuitSchedule *)
         Options[GetCircuitSchedule] = {
