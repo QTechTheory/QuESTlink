@@ -685,14 +685,24 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     codes = getPauliSumTermCodes /@ List @@ paulis,
                     targs = getPauliSumTermTargs /@ List @@ paulis
                     },
-                    CalcPauliSumMatrixInternal[1+Max@Flatten@targs, coeffs, Flatten[codes], Flatten[targs], Length /@ targs]
+                    If[
+                        And @@ DuplicateFreeQ /@ targs,
+                        CalcPauliSumMatrixInternal[1+Max@Flatten@targs, coeffs, Flatten[codes], Flatten[Echo @ targs], Length /@ targs],
+                        (Message[CalcPauliSumMatrix::error, "Pauli operators within a product must target unique qubits."]; $Failed)
+                    ]
                 ]},
-                (#[[1]] + I #[[2]])& /@ Partition[arrs,2] // Transpose
+                If[
+                    arrs === $Failed, arrs,
+                    (#[[1]] + I #[[2]])& /@ Partition[arrs,2] // Transpose
+                ]
             ]
         CalcPauliSumMatrix[blank:pattConstPlusPauliSum] := 
             With[
                 {matr=CalcPauliSumMatrix[Plus @@ {pauliTerms}]},
-                matr + const IdentityMatrix @ Length @ matr 
+                If[
+                    matr === $Failed, matr,
+                    matr + const IdentityMatrix @ Length @ matr 
+                ]
             ]
         CalcPauliSumMatrix[___] := invalidArgError[CalcPauliSumMatrix]
         
