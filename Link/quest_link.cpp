@@ -1959,7 +1959,9 @@ pauliOpType* local_decodePauliSum(int numQb, int numTerms, int* allPauliCodes, i
                 }
             
             int arrInd = t*numQb + currTarget;
-            arrPaulis[arrInd] = (pauliOpType) allPauliCodes[allPaulisInd++];
+            int code = allPauliCodes[allPaulisInd++];
+            pauliOpType op = (code == OPCODE_Id)? PAULI_I : (pauliOpType) code;
+            arrPaulis[arrInd] = op;
         }
     }
     
