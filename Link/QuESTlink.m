@@ -2523,10 +2523,10 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         		Subscript[(g:(H|X|Y|Z|Id|SWAP|Ph|M||T|S)), t__Integer|{t__Integer}] :> Subscript[g, tidyInds@t],
         		Subscript[(g:(Rx|Ry|Rz|Damp|Deph|Depol)), t__Integer|{t__Integer}][x__] :> Subscript[g, tidyInds@t][x],
         		(* unpack all qubit lists *)
-        		\!\(\*SubscriptBox[\(s_\), \({t__}\)]\) :> Subscript[s, t],
-        		\!\(\*SubscriptBox[\(s_\), \({t__}\)]\)[x_] :> Subscript[s, t][x],
-        		Subscript[C, c__][\!\(\*SubscriptBox[\(s_\), \({t__}\)]\)] :> Subscript[C, c][Subscript[s, t]],
-        		Subscript[C, c__][\!\(\*SubscriptBox[\(s_\), \({t__}\)]\)[x_]] :> Subscript[C, c][Subscript[s, t][x]]
+        		Subscript[s_, {t__}] :> Subscript[s, t],
+        		Subscript[s_, {t__}][x_] :> Subscript[s, t][x],
+        		Subscript[C, c__][Subscript[s_, {t__}]] :> Subscript[C, c][Subscript[s, t]],
+        		Subscript[C, c__][Subscript[s_, {t__}][x_]] :> Subscript[C, c][Subscript[s, t][x]]
         	}},
         	(* above establishes preconditions:
         		- gates within a column target unique qubits
@@ -2596,7 +2596,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         				(* TODO: turn Rx[2\[Pi] + eh] = G[\[Pi]] Rx[eh] ??? *)
         			]];
         			(* 
-        			 * simplify single gates (at any level, even within C)
+        			 * simplify single gates (at any level, even within controls)
         			 *)
         			cols = cols //. {
         				(* remove empty columns *)
