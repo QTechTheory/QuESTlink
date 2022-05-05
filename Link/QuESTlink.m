@@ -194,6 +194,9 @@ ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables
     CheckDeviceSpec::usage = "CheckDeviceSpec[spec] checks that the given device specification satisfies a set of validity requirements, returning True if so, otherwise reporting a specific error. This is a useful debugging tool when creating a device specification, though a result of True does not gaurantee the spec is valid."
     CheckDeviceSpec::error = "`1`"
     
+    GetCircuitInverse::usage = "GetCircuitInverse[circuit] returns a circuit prescribing the inverse unitary operation of the given circuit."
+    GetCircuitInverse::error = "`1`"
+    
     (*
      * optional arguments to public functions
      *)
@@ -2446,6 +2449,36 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         CheckDeviceSpec[___] := (
             Message[CheckDeviceSpec::error, "Argument must be a single Association."];
             $Failed)
+            
+        
+        
+        (*
+         * Below are front-end functions 
+         * for modifying circuits
+         *)    
+        
+        getInverseGate[g:Subscript[H|Id|SWAP|X|Y|Z, __]] := g
+        getInverseGate[(g:Subscript[Rx|Ry|Rz|Ph, __])[x_]] := g[-x]
+        getInverseGate[R[x_, s_]] := R[-x, s]
+        getInverseGate[Subscript[T, q_]] := Subscript[Ph, q][-Pi/4]
+        getInverseGate[Subscript[S, q_]] := Subscript[Ph, q][-Pi/2]
+        getInverseGate[G[x_]] := G[-x]
+        getInverseGate[Subscript[U, q__][m_?MatrixQ]] := Subscript[U, q][ConjugateTranspose[m]]
+        getInverseGate[g:Subscript[C, c__][h_]] := With[
+            {hInv = getInverseGate[h]},
+            If[Head @ hInv =!= $Failed, 
+                Subscript[C, c][hInv], 
+                $Failed[g]]]
+        getInverseGate[g_] := $Failed[g]
+
+        GetCircuitInverse[circ_List] := With[
+            {invs = getInverseGate /@ Reverse[circ]},
+            {bad = FirstCase[invs, $Failed[g_] :> g]},
+            If[bad === Missing["NotFound"],
+                invs,
+                (Message[GetCircuitInverse::error, "Could not determine the inverse of gate " <> ToString@TraditionalForm@bad <> "."];
+                $Failed)]]
+        GetCircuitInverse[___] := invalidArgError[GetCircuitInverse]
 
     End[ ]
                                        
