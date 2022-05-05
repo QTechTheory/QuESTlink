@@ -200,6 +200,11 @@ ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables
     SimplifyCircuit::usage = "SimplifyCircuit[circuit] returns an equivalent but simplified circuit."
     SimplifyCircuit::error = "`1`"
     
+    GetKnownCircuit::usage = "GetKnownCircuit[\"QFT\", qubits]
+GetKnownCircuit[\"Trotter\", hamil, order, reps, time]"
+    GetKnownCircuit::error = "`1`"
+    
+    
     (*
      * optional arguments to public functions
      *)
@@ -2644,6 +2649,54 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         		}]]
         
         SimplifyCircuit[___] := invalidArgError[SimplifyCircuit]
+        
+        
+        
+        (*
+         * Below are front-end functions 
+         * for generating circuits for 
+         * GetKnownCircuit[]
+         *)
+         
+        GetKnownCircuit["QFT", qubits_List] := Flatten @ {
+            Table[ { 
+                Subscript[H, qubits[[n]]], 
+                Table[Subscript[Ph, qubits[[n]],qubits[[n-m]]][Pi/2^m], {m,1,n-1}]},
+                {n, Length[qubits], 1, -1}],
+            Table[
+                Subscript[SWAP, qubits[[q]], qubits[[-q]]], 
+                {q, 1, Floor[Length[qubits]/2]}] }
+        GetKnownCircuit["QFT", numQubits_Integer] :=
+            GetKnownCircuit["QFT", Range[0,numQubits-1]]
+            
+        separateCoeffAndPauliTensor[pauli_Subscript] := {1, pauli}
+        separateCoeffAndPauliTensor[prod_Times] := {
+        	Times@@Cases[prod, c:Except[Subscript[(X|Y|Z|Id), _Integer]]:>c],
+        	Times@@Cases[prod, p:Subscript[(X|Y|Z|Id), _Integer]:>p] }
+        separateTermsOfPauliHamil[hamil_Plus] := 
+        	separateCoeffAndPauliTensor /@ (List @@ hamil)
+        separateTermsOfPauliHamil[term_] := 
+        	{separateCoeffAndPauliTensor[term]}
+        getSymmetrizedTerms[terms_List, fac_, 1] := 
+        	MapAt[fac # &, terms, {All, 1}]
+        getSymmetrizedTerms[terms_List, fac_, 2] := With[
+        	{s1 = getSymmetrizedTerms[terms, fac/2, 1]}, 
+        	Join[s1, Reverse[s1]]]
+        getSymmetrizedTerms[terms_List, fac_, n_?EvenQ] := 
+        	Block[{x, p=1/(4-4^(1/(n-1)))}, With[
+        		{s = getSymmetrizedTerms[terms, x, n-2]}, 
+        		{r = s /. x -> fac p},
+        		Join[r, r, s /. x -> (1-4p)fac, r, r]]]
+        getTrotterTerms[terms_List, order_, reps_, time_] :=
+        	With[{s=getSymmetrizedTerms[terms, time/reps, order]},
+        		Join @@ ConstantArray[s, reps]]
+                
+        GetKnownCircuit["Trotter", hamil_, order_Integer, reps_Integer, time_] /; (
+        	order>=1 && (order===1 || EvenQ@order) && reps>=1) := 
+        	With[
+        		{terms = separateTermsOfPauliHamil @ hamil},
+        		{gates = R @@@ getTrotterTerms[terms, order, reps, time]},
+        		gates /. R[_, Subscript[Id, _Integer]] :> Nothing]
 
     End[ ]
                                        
