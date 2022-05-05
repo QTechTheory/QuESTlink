@@ -197,6 +197,9 @@ ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables
     GetCircuitInverse::usage = "GetCircuitInverse[circuit] returns a circuit prescribing the inverse unitary operation of the given circuit."
     GetCircuitInverse::error = "`1`"
     
+    SimplifyCircuit::usage = "SimplifyCircuit[circuit] returns an equivalent but simplified circuit."
+    SimplifyCircuit::error = "`1`"
+    
     (*
      * optional arguments to public functions
      *)
@@ -1176,6 +1179,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] := {gate, {}, {targs}}
         getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]]] := {Join[{R}, {paulis}[[All,1]]], {}, {paulis}[[All,2]]}
         getSymbCtrlsTargs[R[arg_, Subscript[pauli:(X|Y|Z), targ_Integer]]] := {{R,pauli}, {}, {targ}}
+            (* little hack to enable G[x] in GetCircuitColumns *)
+            getSymbCtrlsTargs[G[x_]] := {G, {}, {}}
 
         (* deciding how to handle gate placement *)
         getQubitInterval[{ctrls___}, {targs___}] :=
@@ -2149,6 +2154,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             Flatten @ subcircs
         ExtractCircuit[circuit_List] :=
             circuit
+        ExtractCircuit[{}] := 
+            {}
         ExtractCircuit[___] := invalidArgError[ExtractCircuit]
         
         formatGateParamMatrices[circ_List] :=
@@ -2479,6 +2486,164 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 (Message[GetCircuitInverse::error, "Could not determine the inverse of gate " <> ToString@TraditionalForm@bad <> "."];
                 $Failed)]]
         GetCircuitInverse[___] := invalidArgError[GetCircuitInverse]
+        
+        tidyInds[q__] := Sequence @@ Sort@DeleteDuplicates@List@q
+        tidyMatrixGate[Subscript[U, q_Integer][m_]] := Subscript[U, q][Simplify @ m]
+        tidyMatrixGate[Subscript[U, q__Integer][m_]] /; OrderedQ[{q}] := Subscript[U, q][Simplify @ m]
+        tidyMatrixGate[Subscript[U, q__Integer][m_]] := 
+        	With[{order=Ordering[{q}]},
+        		Do[
+        			If[order[[i]] =!= i, Block[{tmp}, With[
+        				{q1={q}[[i]], q2={q}[[order[[i]]]]}, 
+        				{s=CalcCircuitMatrix[{Subscript[SWAP, i-1,order[[i]]-1]}, Length[{q}]]},
+        				Return @ tidyMatrixGate @ Subscript[U, Sequence@@((({q} /. q1->tmp) /. q2->q1) /. tmp->q2)][s . m . s]]]],
+        			{i, Length[{q}]}]]
+
+        SimplifyCircuit[circ_List] := With[{
+        	(*
+        	 * establish preconditions
+        	 *)
+        	initCols = GetCircuitColumns[circ] //. {
+        		(* convert Ph controls into targets *)
+        		Subscript[C, c__Integer|{c__Integer}][Subscript[Ph, t__Integer|{t__Integer}][x__]] :> Subscript[Ph, tidyInds[c,t]][x],
+        		(* convert S and T gates into Ph *)
+        		Subscript[(g:S|T), t_Integer ]:> Subscript[Ph, t][Pi / (g/.{S->2,T->4})], 
+        		Subscript[C, c__Integer|{c__Integer}][Subscript[(g:S|T), t_Integer]] :> Subscript[Ph, tidyInds[c,t]][Pi / (g/.{S->2,T->4})],
+        		(* sort qubits of general unitaries by SWAPs upon matrix *)
+        		g:Subscript[U, q__Integer|{q__Integer}][m_] :> tidyMatrixGate[g],
+        		Subscript[C, c__][g:Subscript[U, q__Integer|{q__Integer}][m_]] :> Subscript[C, tidyInds@c][tidyMatrixGate@g],
+        		(* sort controls of any gate *)
+        		Subscript[C, c__Integer|{c__Integer}][g_] :> Subscript[C, tidyInds@c][g],
+        		(* sort targets of target-order-agnostic gates *)
+        		Subscript[(g:(H|X|Y|Z|Id|SWAP|Ph|M||T|S)), t__Integer|{t__Integer}] :> Subscript[g, tidyInds@t],
+        		Subscript[(g:(Rx|Ry|Rz|Damp|Deph|Depol)), t__Integer|{t__Integer}][x__] :> Subscript[g, tidyInds@t][x],
+        		(* unpack all qubit lists *)
+        		\!\(\*SubscriptBox[\(s_\), \({t__}\)]\) :> Subscript[s, t],
+        		\!\(\*SubscriptBox[\(s_\), \({t__}\)]\)[x_] :> Subscript[s, t][x],
+        		Subscript[C, c__][\!\(\*SubscriptBox[\(s_\), \({t__}\)]\)] :> Subscript[C, c][Subscript[s, t]],
+        		Subscript[C, c__][\!\(\*SubscriptBox[\(s_\), \({t__}\)]\)[x_]] :> Subscript[C, c][Subscript[s, t][x]]
+        	}},
+        	(* above establishes preconditions:
+        		- gates within a column target unique qubits
+        		- qubit lists of order-agnostic gates are ordered and duplicate-free
+        		- qubit lists are flat (not contained in List)
+        		- phase gates have no control qubits
+        		- there are no T or S gates
+        		- R[x, pauli-tensor] have fixed-order tensors (automatic by Times)
+        		- the first global phase G[] will appear in the first column
+        	*)
+        	Module[{simpCols},
+        		(* 
+        		* repeatedly simplify circuit until static 
+        		*)
+        		simpCols = FixedPoint[ Function[{prevCols}, Module[{cols},
+        			cols = prevCols;
+        			(* 
+        			 * simplify contiguous columns
+        			 *)
+        			cols = SequenceReplace[cols, Join[
+        				(* remove adjacent idempotent operations *)
+        				Join @@ Table[
+        					{ {a___, wrap@Subscript[gate, q__], b___}, {c___,  wrap@Subscript[gate, q__], d___} } :> Sequence[{a,b},{c,d}],
+        					{gate, {H,X,Y,Z,Id,SWAP}},
+        					{wrap, {Identity, Subscript[C, ctrls__]}}],
+        				(* combine arguments of adjacent parameterized gates *)
+        				Join @@ Table[ 
+        					(* awkward With[] use to force immediate eval of 'gate' in DelayedRule *)
+        					With[{gate=gateSymb}, {
+        					{ {a___, Subscript[gate, q__][x_], b___}, {c___, Subscript[gate, q__][y_], d___} } :> Sequence[{a,Subscript[gate, q][x+y//Simplify],b},{c,d}],
+        					{ {a___, Subscript[C, ctrl__][Subscript[gate, q__][x_]], b___}, {c___, Subscript[C, ctrl__][Subscript[gate, q__][y_]], d___} } :> Sequence[{a,Subscript[C, ctrl][Subscript[gate, q][x+y//Simplify]],b},{c,d}]
+        					}],
+        					{gateSymb, {Ph,Rx,Ry,Rz}}],
+        				{
+        					{ {a___, R[x_,op_], b___}, {c___, R[y_,op_], d___} } :> Sequence[{a,R[x+y//Simplify,op],b},{c,d}],
+        					{ {a___, Subscript[C, ctrl__]@R[x_,op_], b___}, {c___, Subscript[C, ctrl__]@R[y_,op_], d___} } :> Sequence[{a,Subscript[C, ctrl]@R[x+y//Simplify,op],b},{c,d}]
+        				},
+        				(* multiply matrices of adjacent unitaries *)
+        				{
+        					{ {a___, Subscript[U, q__][m1_], b___}, {c___, Subscript[U, q__][m2_], d___} } :> Sequence[{a,Subscript[U, q][m1 . m2//Simplify],b},{c,d}],
+        					{ {a___, Subscript[C, ctrl__]@Subscript[U, q__][m1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[U, q__][m2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[U, q][m1 . m2//Simplify],b},{c,d}]
+        				},
+        				(* merge all global phases *)
+        				{
+        					{ {a___, G[x_], b___, G[y_], c___} } :> {G[x+y//Simplify], a, b, c},
+        					{ {a___, G[x_], b___}, infix___, {c___, G[y_], d___} } :> Sequence[{G[x+y//Simplify],a,b}, infix, {c,d}]
+        				},
+        				(* merge adjacent Pauli operators *)
+        				{
+        					{ {a___, Subscript[X, q__], b___}, {c___, Subscript[Y, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[Z, q],b},{c,d}],
+        					{ {a___, Subscript[Y, q__], b___}, {c___, Subscript[Z, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[X, q],b},{c,d}],
+        					{ {a___, Subscript[Z, q__], b___}, {c___, Subscript[X, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[Y, q],b},{c,d}],
+        					{ {a___, Subscript[Y, q__], b___}, {c___, Subscript[X, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[Z, q],b},{c,d}],
+        					{ {a___, Subscript[Z, q__], b___}, {c___, Subscript[Y, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[X, q],b},{c,d}],
+        					{ {a___, Subscript[X, q__], b___}, {c___, Subscript[Z, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[Y, q],b},{c,d}]
+        				},
+        				(* merge adjacent rotations with paulis *)
+        				Join @@ Table[ With[{rot=First@ops, pauli=Last@ops}, {
+        					{ {a___, Subscript[pauli, q__], b___}, {c___, Subscript[rot, q__][x_], d___} } :> Sequence[{a,G[Pi/2],Subscript[rot, q][x+Pi],b},{c,d}],
+        					{ {a___, Subscript[rot, q__][x_], b___}, {c___, Subscript[pauli, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[rot, q][x+Pi],b},{c,d}]
+        				}], 
+        					{ops, {{Rx,X},{Ry,Y},{Rz,Z}}}]
+        				
+        				(* TODO: should I convert Z to Ph too in order to compound with Ph?? *)
+        				(* and should controlled Z become Ph too?? *)
+        				
+        				(* TODO: turn Rx[2\[Pi] + eh] = G[\[Pi]] Rx[eh] ??? *)
+        			]];
+        			(* 
+        			 * simplify single gates (at any level, even within C)
+        			 *)
+        			cols = cols //. {
+        				(* remove empty columns *)
+        				{} -> Nothing, 
+        				{{}..} -> Nothing,
+        				(* remove controlled gates with insides already removed *)
+        				Subscript[C, __][Nothing] -> Nothing,
+        				(* remove zero-parameter gates *)
+        				Subscript[(Ph|Rx|Ry|Rz|Damp|Deph|Depol), __][0] -> Nothing,
+        				R[0,_] -> Nothing,
+        				G[0] -> Nothing,
+        				(* remove identity matrices (qubits are sorted) *)
+        				Subscript[U, q__][m_] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
+        				(* simplify known parameters to within their periods *)
+        				Subscript[Ph, q__][x_?NumericQ] /; Not[0 <= x < 2 Pi] :> Subscript[Ph, q]@Mod[x, 2 Pi],
+        				(g:(Subscript[(Rx|Ry|Rz), q__]))[x_?NumericQ] /; Not[0 <= x < 4 Pi] :> g@Mod[x, 4 Pi],
+        				R[x_?NumericQ, op_] /; Not[0 <= x < 4 Pi] :> R[Mod[x, 4 Pi], op],
+        				(* convert single-target R to Rx, Ry or Rz *)
+        				R[x_, op:Subscript[(X|Y|Z), q_]] :> (op[x] /. {X->Rx,Y->Ry,Z->Rz})
+        			};
+        			(* 
+        			 * simplify single gates (top-level only, cannot occur within controls) 
+        			 *)
+        			cols = Replace[cols, {
+        				(* transform param gates with Pi params *)
+        				(g:(Subscript[(Rx|Ry|Rz), q__]))[Pi] :> Sequence[ G[3 Pi/2], g/.{Rx->X,Ry->Y,Rz->Z} ],
+        				R[Pi, op_Times] :> Sequence[G[3 Pi/2], Sequence@@op],
+        				Subscript[Ph, q_][Pi] :> Subscript[Z, q],
+        				Subscript[Ph, q__][Pi] :> Subscript[C, Sequence@@Rest[{q}]][Subscript[Z, First@{q}]],
+        				(* transform rotations gates with 2 Pi params *)
+        				(g:(Subscript[(Rx|Ry|Rz), q__]))[2 Pi] :> G[Pi],
+        				R[2 Pi, _Times] :> G[Pi]
+        				(* forces top-level, inside each subcircuit *)
+        				}, {2}];
+        			(* 
+        			 * re-update circuit columns 
+        			 *)
+        			If[cols === Nothing, cols={}];
+        			cols = GetCircuitColumns @ ExtractCircuit @ cols;
+        			cols
+        		]], initCols];
+        		(*
+        		 * post-process the simplified columns
+        		 *)
+        		ExtractCircuit @ simpCols /. {
+        			Subscript[Ph, q_][\[Pi]/2] :> Subscript[S, q],
+        			Subscript[Ph, q_][\[Pi]/4] :> Subscript[T, q]
+        			
+        			(* TODO: controls?? Z gates?? *)
+        		}]]
+        
+        SimplifyCircuit[___] := invalidArgError[SimplifyCircuit]
 
     End[ ]
                                        
