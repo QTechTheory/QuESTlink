@@ -267,50 +267,76 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
     BeginPackage["`Gate`"]
 
     H::usage = "H is the Hadamard gate."
-    
+    Protect[H]
+        
     X::usage = "X is the Pauli X gate, a.k.a NOT or bit-flip gate."
+    Protect[X]
     
     Y::usage = "Y is the Pauli Y gate."
+    Protect[Y]
     
     Z::usage = "Z is the Pauli Z gate."
+    Protect[Z]
     
     Rx::usage = "Rx[\[Theta]] is a rotation of \[Theta] around the x-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 X \[CircleTimes] X \[CircleTimes]...]."        
+    Protect[Rx]
     
     Ry::usage = "Ry[\[Theta]] is a rotation of \[Theta] around the y-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 Y \[CircleTimes] Y \[CircleTimes]...]." 
+    Protect[Ry]
     
     Rz::usage = "Rz[\[Theta]] is a rotation of \[Theta] around the z-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 Z \[CircleTimes] Z \[CircleTimes]...]." 
+    Protect[Rz]
     
     R::usage = "R[\[Theta], paulis] is the unitary Exp[-\[ImaginaryI] \[Theta]/2 \[CircleTimes] paulis]."   
+    Protect[R]
     
     S::usage = "S is the S gate, a.k.a. PI/2 gate."
+    Protect[S]
     
     T::usage = "T is the T gate, a.k.a PI/4 gate."
+    Protect[T]
     
     U::usage = "U[matrix] is a general 1 or 2 qubit unitary gate, enacting the given 2x2 or 4x4 matrix."
+    Protect[U]
     
     Deph::usage = "Deph[prob] is a 1 or 2 qubit dephasing with probability prob of error."
+    Protect[Deph]
     
     Depol::usage = "Depol[prob] is a 1 or 2 qubit depolarising with probability prob of error."
+    Protect[Depol]
     
     Damp::usage = "Damp[prob] is 1 qubit amplitude damping with the given decay probability."
+    Protect[Damp]
     
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
+    Protect[SWAP]
     
     M::usage = "M is a destructive measurement gate which measures the indicated qubits in the Z basis. Targeting multiple qubits is the same as applying M to each in-turn, though their outcomes will be grouped in the output of ApplyCircit[]."
+    Protect[M]
     
     P::usage = "P[val] is a (normalised) projector onto {0,1} (i.e. a forced measurement) such that the target qubits represent integer val in binary (right most target takes the least significant digit in val).
 P[outcome1, outcome2, ...] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome.
 The probability of the forced measurement outcome (if hypothetically not forced) is included in the output of ApplyCircuit[]."
+    Protect[P]
     
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
+    Protect[Kraus]
     
     KrausNonTP::usage = "Kraus[ops] applies a one or two-qubit non-trace-preserving Kraus map (given as a list of matrix operators) to a density matrix."
+    Protect[KrausNonTP]
     
     G::usage = "G[\[Theta]] applies a global phase rotation of phi, by premultiplying Exp[\[ImaginaryI] \[Theta]]."
+    Protect[G]
     
     Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit, or as an alternative to removing gates in ApplyCircuit."
+    Protect[Id]
  
     Ph::usage = "Ph is the phase shift gate, which introduces phase factor exp(i*theta) upon state |1...1> of the target and control qubits. The gate is the same under different orderings of qubits, and division between control and target qubits."
+    Protect[Ph]
+    
+    (* overriding Mathematica's doc for C[i] as i-th default constant *)
+    C::usage = "C is a declaration of control qubits (subscript), which can wrap other gates to conditionally/controlled apply them."
+    Protect[C]
  
     EndPackage[]
  
