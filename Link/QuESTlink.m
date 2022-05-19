@@ -145,6 +145,9 @@ DrawCircuitTopology additionally accepts DistinguishedStyles and all options of 
 CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the number of present qubits."
     CalcCircuitMatrix::error = "`1`"
     
+    GetCircuitGeneralised::usage = "GetCircuitGeneralised[circuit] returns an equivalent circuit composed only of general unitaries (and Matr operators) and Kraus operators of analytic matrices."
+    GetCircuitGeneralised::error = "`1`"
+    
     PlotDensityMatrix::usage = "PlotDensityMatrix[matrix] (accepts id or numeric matrix) plots a component (default is magnitude) of the given matrix as a 3D bar plot.
 PlotDensityMatrix[matrix1, matrix2] plots both matrix1 and matrix2 simultaneously, and the latter is intended as a \"reference\" state.
 PlotDensityMatrix[matrix, vector] converts the state-vector to a density matrix, and plots.
@@ -1803,6 +1806,61 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	CalcCircuitMatrix[gates, getNumQubitsInCircuit[gates]]
         CalcCircuitMatrix[___] := invalidArgError[CalcCircuitMatrix]
         
+        GetCircuitGeneralised[gates_List] := With[
+            {generalGates = Replace[gates, {
+            	(* known channels are converted to Kraus maps *)
+            	g:Subscript[Kraus, __][__] :> g,
+            	Subscript[Damp, q_][p_] :> Subscript[Kraus, q][{
+            		{{1,0},{0,Sqrt[1-p]}},
+            		{{0,Sqrt[p]},{0,0}}}],
+            	Subscript[Deph, q_][p_] :> Subscript[Kraus, q][{
+            		Sqrt[1-p] PauliMatrix[0], 
+            		Sqrt[p]   PauliMatrix[3]}],
+            	Subscript[Deph, q1_,q2_][p_] :> Subscript[Kraus, q1,q2][{
+            		Sqrt[1-p] IdentityMatrix[4], 
+            		Sqrt[p/3] KroneckerProduct[PauliMatrix[0], PauliMatrix[3]],
+            		Sqrt[p/3] KroneckerProduct[PauliMatrix[3], PauliMatrix[0]],
+            		Sqrt[p/3] KroneckerProduct[PauliMatrix[3], PauliMatrix[3]]}],
+            	Subscript[Depol, q_][p_] :> Subscript[Kraus, q][{
+            		Sqrt[1-p] PauliMatrix[0],
+            		Sqrt[p/3] PauliMatrix[1],
+            		Sqrt[p/3] PauliMatrix[2],
+            		Sqrt[p/3] PauliMatrix[3]}],
+            	Subscript[Depol, q1_,q2_][p_] :> Subscript[Kraus, q1,q2][ Join[
+            		{Sqrt[1-p] IdentityMatrix[4]},
+            		Flatten[ Table[
+            			(* the PauliMatrix[0] Kraus operator is duplicated, insignificantly *)
+            			If[n1===0 && n2===0, Nothing, Sqrt[p/15] KroneckerProduct[PauliMatrix[n1], PauliMatrix[n2]]],
+            			{n1,{0,1,2,3}}, {n2,{0,1,2,3}}], 1]]],
+            	(* global phase becomes a fac*identity on the first qubit *)
+            	G[x_] :> Subscript[U, 0][ Exp[I x] IdentityMatrix[2]],
+                (* Matr gates remain Matr *)
+                g:(Subscript[Matr, q__Integer|{q__Integer}][m_]) :> g,
+            	(* controlled gates are turned into U of identities with bottom-right submatrix *)
+                Subscript[C, c__Integer|{c__Integer}][Subscript[Matr, q__Integer|{q__Integer}][m_]] :> 
+                    With[{cDim=2^Length[{c}], tDim=Length@m},
+                        Subscript[Matr, Sequence @@ Join[{q}, {c}]][
+                        Join[
+                            MapThread[Join, {IdentityMatrix[cDim], ConstantArray[0,{cDim,tDim}]}],
+                            MapThread[Join, {ConstantArray[0,{tDim,cDim}], m}]]]],
+            	Subscript[C, c__Integer|{c__Integer}][g_] :> 
+            		With[{cDim=2^Length[{c}], tDim=2^Length[getAnalGateTargets[g]]},
+            			Subscript[U, Sequence @@ Join[getAnalGateTargets[g], {c}]][
+            			Join[
+            				MapThread[Join, {IdentityMatrix[cDim], ConstantArray[0,{cDim,tDim}]}],
+            				MapThread[Join, {ConstantArray[0,{tDim,cDim}], getAnalGateMatrix@g}]]]],
+            	(* all other symbols are treated like generic unitary gates *)
+            	g_ :> Subscript[U, Sequence @@ getAnalGateTargets[g]][getAnalGateMatrix[g]]
+            (* replace at top level *)
+            }, 1]},
+            If[ FreeQ[generalGates, getAnalGateMatrix],
+                generalGates,
+                (Message[GetCircuitGeneralised::error, "Circuit contained an unrecognised or unsupported gate: " <> 
+                    ToString @ StandardForm @ First @ Cases[generalGates, getAnalGateMatrix[g_] :> g, Infinity]];
+                    $Failed)
+                    ]]
+        GetCircuitGeneralised[op_] := GetCircuitGeneralised[{op}]
+        GetCircuitGeneralised[___] := invalidArgError[GetCircuitGeneralised]
         
         
         (*
