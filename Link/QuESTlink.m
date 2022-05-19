@@ -148,6 +148,10 @@ CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the n
     GetCircuitGeneralised::usage = "GetCircuitGeneralised[circuit] returns an equivalent circuit composed only of general unitaries (and Matr operators) and Kraus operators of analytic matrices."
     GetCircuitGeneralised::error = "`1`"
     
+    GetCircuitSuperoperator::usage = "GetCircuitSuperoperator[circuit] returns the corresponding superoperator circuit upon doubly-many qubits as per the Choi–Jamiolkowski isomorphism. Decoherence channels become Matr[] superoperators.
+GetCircuitSuperoperator[circuit, numQubits] forces the circuit to be assumed size numQubits, so that the output superoperator circuit is of size 2*numQubits."
+    GetCircuitSuperoperator::error = "`1`"
+    
     PlotDensityMatrix::usage = "PlotDensityMatrix[matrix] (accepts id or numeric matrix) plots a component (default is magnitude) of the given matrix as a 3D bar plot.
 PlotDensityMatrix[matrix1, matrix2] plots both matrix1 and matrix2 simultaneously, and the latter is intended as a \"reference\" state.
 PlotDensityMatrix[matrix, vector] converts the state-vector to a density matrix, and plots.
@@ -1862,6 +1866,54 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         GetCircuitGeneralised[op_] := GetCircuitGeneralised[{op}]
         GetCircuitGeneralised[___] := invalidArgError[GetCircuitGeneralised]
         
+        shiftInds[q__Integer|{q__Integer}, numQb_] := Sequence @@ (List[q]+numQb)
+    
+        GetCircuitSuperoperator[circ_List, numQb_] := With[
+            {superops = Flatten @ Replace[circ, {
+            (* unitaries *)
+            	(* global phase does nothing! *)
+            	G[x_] :> Nothing,
+            	(* real gates (self conjugate) *)
+            	Subscript[(g:H|X|Z), q__Integer|{q__Integer}] :> {Subscript[g, q], Subscript[g, shiftInds[q,numQb]]},
+            	g:Subscript[P, q__Integer|{q__Integer}][v_] :> {g, Subscript[P, shiftInds[q,numQb]][v]},
+            	g:Subscript[SWAP, q1_,q2_] :> {g, Subscript[SWAP, q1+numQb,q2+numQb]},
+                g:Subscript[Ry, q_Integer][x_] :> {g, Subscript[Ry, q+numQb][x]},
+            	(* reverse phase *)
+            	Subscript[T, q_Integer] :> {Subscript[T, q], Subscript[Ph, q+numQb][-Pi/4]},
+            	Subscript[S, q_Integer] :> {Subscript[S, q], Subscript[Ph, q+numQb][-Pi/2]},
+            	(* reverse parameter gates (beware the mischievous Pauli Y)*)
+            	Subscript[(g:Rx|Rz|Ph), q__Integer|{q__Integer}][x_] :> {Subscript[g, q][x], Subscript[g, shiftInds[q,numQb]][-x]},
+                R[x_, Subscript[Y, q_Integer]] :> {R[x,Subscript[Y, q]], R[x,Subscript[Y, q+numQb]]},
+            	R[x_, Subscript[p:(X|Z), q_Integer]] :> {R[x,Subscript[p, q]], R[-x,Subscript[p, q+numQb]]},
+            	R[x_, Verbatim[Times][p:Subscript[_Symbol, _Integer] ..]] :> With[
+                    {s = - (-1)^Count[{p}, Subscript[Y,_]]}, 
+                    {R[x, Times @ p],
+            		 R[s*x, Times @@ MapThread[(Subscript[#1, #2]&), {{p}[[All,1]], {p}[[All,2]] + numQb}]]}],
+            	(* gates with no inbuilt conjugates *)
+            	Subscript[Y, q_Integer] :> {Subscript[Y, q], Subscript[U, q+numQb][Conjugate@PauliMatrix@2]},
+            	Subscript[(g:U|Matr), q__Integer|{q__Integer}][m_] :> {Subscript[g, q][m], Subscript[g, shiftInds[q,numQb]][Conjugate@m]},
+            	(* controlled gates must recurse: assume inner gate resolves to two ops *)
+            	Subscript[C, c__Integer|{c__Integer}][g_] :> {Subscript[C, c][g], 
+            		Subscript[C, shiftInds[c,numQb]][Last @ GetCircuitSuperoperator[{g},numQb]]},
+            (* channels *)
+            	(* Kraus channels are turned into superoperators *)
+            	Subscript[(Kraus|KrausNonTP), q__Integer|{q__Integer}][matrs_List] :> Subscript[Matr, Sequence @@ Join[{q},{shiftInds[q,numQb]}]][
+            		Total[(KroneckerProduct[Conjugate[#], #]&) /@ matrs]],
+            	(* other channels are first converted to Kraus, before recursing *)
+            	g:Subscript[(Damp|Depol|Deph), q__Integer|{q__Integer}][x_] :> 
+            		GetCircuitSuperoperator[GetCircuitGeneralised[g],numQb],
+            (* wrap unrecognised gates in dummy Head *)
+            	g_ :> unrecognisedGateInSuperopCirc[g]
+            (* replace at top level *)
+            }, 1]},
+            If[ FreeQ[superops, unrecognisedGateInSuperopCirc],
+                superops,
+                (Message[GetCircuitSuperoperator::error, "Circuit contained an unrecognised or unsupported gate: " <> 
+                    ToString @ StandardForm @ First @ Cases[superops, unrecognisedGateInSuperopCirc[g_] :> g, Infinity]];
+                    $Failed)]]
+        GetCircuitSuperoperator[circ_List] := 
+            GetCircuitSuperoperator[circ, getNumQubitsInCircuit[circ]]
+        GetCircuitSuperoperator[___] := invalidArgError[GetCircuitSuperoperator]
         
         (*
          * Below are front-end functions for 
