@@ -1790,8 +1790,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         		getAnalGateTargets@#, 
         		getAnalGateMatrix@#, numQb
             ]& /@ gates},
-        	Dot @@ Reverse @ matrices
-        ]
+            If[
+                FreeQ[matrices, getAnalGateMatrix],
+                Dot @@ Reverse @ matrices,
+                (Message[CalcCircuitMatrix::error, "Circuit contained an unrecognised or unsupported gate: " <> 
+                    ToString @ StandardForm @ First @ Cases[matrices, getAnalGateMatrix[g_] :> g, Infinity]];
+                    $Failed)]]
         CalcCircuitMatrix[gates_List] :=
         	CalcCircuitMatrix[gates, 1 + Max @ Cases[gates, (Subscript[_, q__]|Subscript[_, q__][__]):> Max @ q, \[Infinity]]]
         CalcCircuitMatrix[___] := invalidArgError[CalcCircuitMatrix]
