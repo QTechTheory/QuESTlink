@@ -70,6 +70,7 @@
 #define OPCODE_Id 19
 #define OPCODE_Ph 20
 #define OPCODE_KrausNonTP 21
+#define OPCODE_Matr 22
 
 /*
  * Codes for dynamically updating kernel variables, to indicate progress 
@@ -1256,8 +1257,29 @@ void local_applyGates(
                         multiQubitUnitary(qureg, &targs[targInd], numTargs, u); // throws
                     else
                         multiControlledMultiQubitUnitary(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], numTargs, u); // throws
+                    // memory leak if above throws :^)
                     destroyComplexMatrixN(u);
                 }
+            }
+                break;
+                
+            case OPCODE_Matr : {
+                ;
+                long long int dim = (1 << numTargs);
+                if (numParams != 2 * dim*dim)
+                    throw QuESTException("", std::to_string(numTargs) + "-qubit Matr accepts only " + 
+                        std::to_string(dim) + "x" +  std::to_string(dim) + " matrices."); // throws
+                
+                // this is wastefully(?) allocating and deallocating memory on the fly!
+                ComplexMatrixN m = createComplexMatrixN(numTargs);
+                local_setMatrixNFromFlatList(&params[paramInd], m, numTargs);
+                if (numCtrls == 0)
+                    applyGateMatrixN(qureg, &targs[targInd], numTargs, m); // throws
+                else
+                    applyMultiControlledGateMatrixN(qureg, &ctrls[ctrlInd], numCtrls, &targs[targInd], numTargs, m); // throws
+                // memory leak if above throws :^)
+                destroyComplexMatrixN(m);
+                
             }
                 break;
                 

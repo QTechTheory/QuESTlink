@@ -296,7 +296,7 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
     T::usage = "T is the T gate, a.k.a PI/4 gate."
     Protect[T]
     
-    U::usage = "U[matrix] is a general 1 or 2 qubit unitary gate, enacting the given 2x2 or 4x4 matrix."
+    U::usage = "U[matrix] is a general unitary gate with any number of target qubits, specified as a unitary square complex matrix. To relax unitarity, use Matr."
     Protect[U]
     
     Deph::usage = "Deph[prob] is a 1 or 2 qubit dephasing with probability prob of error."
@@ -333,6 +333,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
  
     Ph::usage = "Ph is the phase shift gate, which introduces phase factor exp(i*theta) upon state |1...1> of the target and control qubits. The gate is the same under different orderings of qubits, and division between control and target qubits."
     Protect[Ph]
+    
+    Matr::usage = "Matr[matrix] is an arbitrary operator with any number of target qubits, specified as a completely general (even non-unitary) square complex matrix."
+    Protect[Matr]
     
     (* overriding Mathematica's doc for C[i] as i-th default constant *)
     C::usage = "C is a declaration of control qubits (subscript), which can wrap other gates to conditionally/controlled apply them."
@@ -389,9 +392,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                
                
                
-        (* opcodes *)
+        (* opcodes which correlate with the global IDs in quest_link.cpp *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,Matr->22,_->-1}
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
         codifyMatrix[matr_] :=
@@ -406,8 +409,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         
         (* recognising and codifying gates into {opcode, ctrls, targs, params} *)
         gatePatterns = {
-            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[U,  (targs:__Integer)|{targs:__Integer}][matr:_List]] :> 
-                {getOpCode[U], {ctrls}, {targs}, codifyMatrix[matr]},
+            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[g:U|Matr,  (targs:__Integer)|{targs:__Integer}][matr:_List]] :> 
+                {getOpCode[g], {ctrls}, {targs}, codifyMatrix[matr]},
         	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {args}},
         	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] :> 
@@ -416,8 +419,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 {getOpCode[R], {ctrls}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
             R[param_, ({paulis:pattPauli..}|Verbatim[Times][paulis:pattPauli..]|paulis:pattPauli__)] :>
                 {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
-        	Subscript[U, (targs:__Integer)|{targs:__Integer}][matr:_List] :> 
-                {getOpCode[U], {}, {targs}, codifyMatrix[matr]},
+        	Subscript[g:U|Matr, (targs:__Integer)|{targs:__Integer}][matr:_List] :> 
+                {getOpCode[g], {}, {targs}, codifyMatrix[matr]},
             Subscript[Kraus, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
                 {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
             Subscript[KrausNonTP, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
@@ -516,7 +519,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         extractUnitaryMatrix[Subscript[C, (__Integer|{__Integer})][Subscript[U, __Integer][u_List]]] := u
         calcUnitaryDeriv[{param_, gate_}] := 
             D[extractUnitaryMatrix[gate], param]
-        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] :=
+        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] := 
             With[
                 {varOpInds = DeleteDuplicates /@ (Position[circuit, _?(MemberQ[#])][[All, 1]]& /@ varVals[[All,1]]),
                 codes = codifyCircuit[(circuit /. varVals)]}, 
@@ -1756,7 +1759,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getAnalGateMatrix[Subscript[S, _]] = {{1,0},{0,I}};
         getAnalGateMatrix[Subscript[T, _]] = {{1,0},{0,Exp[I Pi/4]}};
         getAnalGateMatrix[Subscript[SWAP, _,_]] = {{1,0,0,0},{0,0,1,0},{0,1,0,0},{0,0,0,1}};
-        getAnalGateMatrix[Subscript[U, __][m_]] = m;
+        getAnalGateMatrix[Subscript[U|Matr, __][m_]] = m;
         getAnalGateMatrix[Subscript[Ph, t__][a_]] = DiagonalMatrix[ Append[ConstantArray[1, 2^Length[{t}] - 1], Exp[I a]] ];
         getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
         getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]]; (* KroneckerProduct doesn't have a one-arg identity overload?? Bah *)
@@ -1775,8 +1778,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getAnalGateControls[_] := {}
             
         (* extract targets from gate symbols *)
-        getAnalGateTargets[Subscript[U, t_List][_]] := t
-        getAnalGateTargets[Subscript[U, t__][_]] := {t}
+        getAnalGateTargets[Subscript[U|Matr, t_List][_]] := t
+        getAnalGateTargets[Subscript[U|Matr, t__][_]] := {t}
         getAnalGateTargets[R[_, Subscript[_, t_]]] := {t}
         getAnalGateTargets[R[_, paulis_Times]] := getAnalGateTargets /@ List @@ paulis // Flatten // Reverse
         getAnalGateTargets[Subscript[C, __][g_]] := getAnalGateTargets[g]
@@ -1797,7 +1800,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     ToString @ StandardForm @ First @ Cases[matrices, getAnalGateMatrix[g_] :> g, Infinity]];
                     $Failed)]]
         CalcCircuitMatrix[gates_List] :=
-        	CalcCircuitMatrix[gates, 1 + Max @ Cases[gates, (Subscript[_, q__]|Subscript[_, q__][__]):> Max @ q, \[Infinity]]]
+        	CalcCircuitMatrix[gates, getNumQubitsInCircuit[gates]]
         CalcCircuitMatrix[___] := invalidArgError[CalcCircuitMatrix]
         
         
@@ -2505,7 +2508,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getInverseGate[Subscript[T, q_]] := Subscript[Ph, q][-Pi/4]
         getInverseGate[Subscript[S, q_]] := Subscript[Ph, q][-Pi/2]
         getInverseGate[G[x_]] := G[-x]
-        getInverseGate[Subscript[U, q__][m_?MatrixQ]] := Subscript[U, q][ConjugateTranspose[m]]
+        getInverseGate[Subscript[g:(U|Matr), q__][m_?MatrixQ]] := Subscript[g, q][ConjugateTranspose[m]]
         getInverseGate[g:Subscript[C, c__][h_]] := With[
             {hInv = getInverseGate[h]},
             If[Head @ hInv =!= $Failed, 
@@ -2523,15 +2526,15 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         GetCircuitInverse[___] := invalidArgError[GetCircuitInverse]
         
         tidyInds[q__] := Sequence @@ Sort@DeleteDuplicates@List@q
-        tidyMatrixGate[Subscript[U, q_Integer][m_]] := Subscript[U, q][Simplify @ m]
-        tidyMatrixGate[Subscript[U, q__Integer][m_]] /; OrderedQ[{q}] := Subscript[U, q][Simplify @ m]
-        tidyMatrixGate[Subscript[U, q__Integer][m_]] := 
+        tidyMatrixGate[Subscript[g:(U|Matr), q_Integer][m_]] := Subscript[g, q][Simplify @ m]
+        tidyMatrixGate[Subscript[g:(U|Matr), q__Integer][m_]] /; OrderedQ[{q}] := Subscript[g, q][Simplify @ m]
+        tidyMatrixGate[Subscript[g:(U|Matr), q__Integer][m_]] := 
         	With[{order=Ordering[{q}]},
         		Do[
         			If[order[[i]] =!= i, Block[{tmp}, With[
         				{q1={q}[[i]], q2={q}[[order[[i]]]]}, 
         				{s=CalcCircuitMatrix[{Subscript[SWAP, i-1,order[[i]]-1]}, Length[{q}]]},
-        				Return @ tidyMatrixGate @ Subscript[U, Sequence@@((({q} /. q1->tmp) /. q2->q1) /. tmp->q2)][s . m . s]]]],
+        				Return @ tidyMatrixGate @ Subscript[g, Sequence@@((({q} /. q1->tmp) /. q2->q1) /. tmp->q2)][s . m . s]]]],
         			{i, Length[{q}]}]]
 
         SimplifyCircuit[circ_List] := With[{
@@ -2545,8 +2548,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         		Subscript[(g:S|T), t_Integer ]:> Subscript[Ph, t][Pi / (g/.{S->2,T->4})], 
         		Subscript[C, c__Integer|{c__Integer}][Subscript[(g:S|T), t_Integer]] :> Subscript[Ph, tidyInds[c,t]][Pi / (g/.{S->2,T->4})],
         		(* sort qubits of general unitaries by SWAPs upon matrix *)
-        		g:Subscript[U, q__Integer|{q__Integer}][m_] :> tidyMatrixGate[g],
-        		Subscript[C, c__][g:Subscript[U, q__Integer|{q__Integer}][m_]] :> Subscript[C, tidyInds@c][tidyMatrixGate@g],
+        		g:Subscript[U|Matr, q__Integer|{q__Integer}][m_] :> tidyMatrixGate[g],
+        		Subscript[C, c__][g:Subscript[U|Matr, q__Integer|{q__Integer}][m_]] :> Subscript[C, tidyInds@c][tidyMatrixGate@g],
         		(* sort controls of any gate *)
         		Subscript[C, c__Integer|{c__Integer}][g_] :> Subscript[C, tidyInds@c][g],
         		(* sort targets of target-order-agnostic gates *)
@@ -2594,10 +2597,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         					{ {a___, R[x_,op_], b___}, {c___, R[y_,op_], d___} } :> Sequence[{a,R[x+y//Simplify,op],b},{c,d}],
         					{ {a___, Subscript[C, ctrl__]@R[x_,op_], b___}, {c___, Subscript[C, ctrl__]@R[y_,op_], d___} } :> Sequence[{a,Subscript[C, ctrl]@R[x+y//Simplify,op],b},{c,d}]
         				},
-        				(* multiply matrices of adjacent unitaries *)
+        				(* multiply matrices of adjacent unitaries and Matr *)
+                        (* we do not presently merge U unto neighbouring Matr *)
         				{
-        					{ {a___, Subscript[U, q__][m1_], b___}, {c___, Subscript[U, q__][m2_], d___} } :> Sequence[{a,Subscript[U, q][m1 . m2//Simplify],b},{c,d}],
-        					{ {a___, Subscript[C, ctrl__]@Subscript[U, q__][m1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[U, q__][m2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[U, q][m1 . m2//Simplify],b},{c,d}]
+        					{ {a___, Subscript[g:(U|Matr), q__][m1_], b___}, {c___, Subscript[g:(U|Matr), q__][m2_], d___} } :> Sequence[{a,Subscript[g, q][m1 . m2//Simplify],b},{c,d}],
+        					{ {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr), q__][m1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr), q__][m2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][m1 . m2//Simplify],b},{c,d}]
         				},
         				(* merge all global phases *)
         				{
@@ -2639,7 +2643,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         				R[0,_] -> Nothing,
         				G[0] -> Nothing,
         				(* remove identity matrices (qubits are sorted) *)
-        				Subscript[U, q__][m_] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
+        				Subscript[U|Matr, q__][m_] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
         				(* simplify known parameters to within their periods *)
         				Subscript[Ph, q__][x_?NumericQ] /; Not[0 <= x < 2 Pi] :> Subscript[Ph, q]@Mod[x, 2 Pi],
         				(g:(Subscript[(Rx|Ry|Rz), q__]))[x_?NumericQ] /; Not[0 <= x < 4 Pi] :> g@Mod[x, 4 Pi],
@@ -2672,8 +2676,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         		 * post-process the simplified columns
         		 *)
         		ExtractCircuit @ simpCols /. {
-        			Subscript[Ph, q_][\[Pi]/2] :> Subscript[S, q],
-        			Subscript[Ph, q_][\[Pi]/4] :> Subscript[T, q]
+        			Subscript[Ph, q_][Pi/2] :> Subscript[S, q],
+        			Subscript[Ph, q_][Pi/4] :> Subscript[T, q]
         			
         			(* TODO: controls?? Z gates?? *)
         		}]]
