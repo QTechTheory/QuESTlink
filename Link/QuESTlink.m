@@ -141,8 +141,10 @@ DrawCircuitTopology accepts optional arguments DistinguishBy, ShowLocalGates, Sh
 DrawCircuitTopology additionally accepts DistinguishedStyles and all options of Graph[], Show[] and LineLegend[] for customising the plot aesthetic."
     DrawCircuitTopology::error = "`1`"
 
-    CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic expression for the given unitary circuit, which may contain undefined symbols. The number of qubits is inferred from the circuit indices (0 to maximum specified).
-CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the number of present qubits."
+    CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic matrix for the given unitary circuit, which may contain symbolic parameters. The number of qubits is inferred from the circuit indices (0 to maximum specified).
+CalcCircuitMatrix[circuit] returns an analytic superoperator for the given non-unitary circuit, expressed as a matrix upon twice as many qubits. The result can be multiplied upon a column-flattened density matrix.
+CalcCircuitMatrix[circuit, numQubits] forces the number of present qubits.
+CalcCircuitMatrix accepts optional argument AsSuperoperator->True to obtain a superoperator from a unitary circuit."
     CalcCircuitMatrix::error = "`1`"
     
     GetCircuitGeneralised::usage = "GetCircuitGeneralised[circuit] returns an equivalent circuit composed only of general unitaries (and Matr operators) and Kraus operators of analytic matrices."
@@ -262,6 +264,8 @@ Note under BitEncoding -> \"TwosComplement\", basis state indices can be negativ
     BitEncoding::usage = "Optional argument to ApplyPhaseFunc, specifying how the values of sub-register basis states are encoded in (qu)bits.
 BitEncoding -> \"Unsigned\" (default) interprets basis states as natural numbers {0, ..., 2^numQubits-1}.
 BitEncoding -> \"TwosComplement\" interprets basis states as two's complement signed numbers, {0, ... 2^(numQubits-1)-1} and {-1, -2, ... -2^(numQubits-1)}. The last qubit in a sub-register list is assumed the sign bit."
+
+    AsSuperoperator::usage = "Optional argument to CalcCircuitMatrix (default Automatic), specifying whether the output should be a 2^N by 2^N unitary matrix (False), or a 2^2N by 2^2N superoperator matrix (True). The latter can capture decoherence, and be multiplied upon column-flattened 2^2N vectors."
     
     EndPackage[]
     
@@ -1793,21 +1797,38 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getAnalGateTargets[Subscript[_, t__]] := {t}
         getAnalGateTargets[Subscript[_, t__][_]] := {t}
         
-        (* convert a symbolic circuit into an analytic matrix *)
-        CalcCircuitMatrix[gates_List, numQb_Integer] := With[{
-        	matrices = getAnalFullMatrix[
-        		getAnalGateControls@#, 
-        		getAnalGateTargets@#, 
-        		getAnalGateMatrix@#, numQb
-            ]& /@ gates},
-            If[
-                FreeQ[matrices, getAnalGateMatrix],
-                Dot @@ Reverse @ matrices,
-                (Message[CalcCircuitMatrix::error, "Circuit contained an unrecognised or unsupported gate: " <> 
-                    ToString @ StandardForm @ First @ Cases[matrices, getAnalGateMatrix[g_] :> g, Infinity]];
-                    $Failed)]]
-        CalcCircuitMatrix[gates_List] :=
-        	CalcCircuitMatrix[gates, getNumQubitsInCircuit[gates]]
+        (* declaring optional args to ApplyCircuit *)
+        Options[CalcCircuitMatrix] = {
+            AsSuperoperator -> Automatic
+        };
+        
+        (* convert a symbolic circuit channel into an analytic matrix *)
+        CalcCircuitMatrix[gates_List, numQb_Integer, OptionsPattern[]] /; MemberQ[gates, Subscript[Damp|Deph|Depol|Kraus|KrausNonTP, __][__]] := 
+            If[OptionValue[AsSuperoperator] =!= True && OptionValue[AsSuperoperator] =!= Automatic,
+                (Message[CalcCircuitMatrix::error, "The input circuit contains decoherence channels and must be calculated as a superoperator."]; $Failed),
+                With[{superops = GetCircuitSuperoperator[gates, numQb]},
+                    If[superops === $Failed,
+                    (Message[CalcCircuitMatrix::error, "Could not prepare superoperator, as per the above error."]; $Failed),
+                    CalcCircuitMatrix[superops, 2*numQb]]]]
+        (* convert a symbolic pure circuit into an analytic matrix *)
+        CalcCircuitMatrix[gates_List, numQb_Integer, OptionsPattern[]] := 
+            If[OptionValue[AsSuperoperator] === True,
+                With[{superops = GetCircuitSuperoperator[gates, numQb]},
+                    If[superops === $Failed,
+                    (Message[CalcCircuitMatrix::error, "Could not prepare superoperator, as per the above error."]; $Failed),
+                    CalcCircuitMatrix[superops, 2*numQb]]],
+                With[{matrices = getAnalFullMatrix[
+                    getAnalGateControls@#, getAnalGateTargets@#, getAnalGateMatrix@#, numQb
+                    ]& /@ gates},
+                    If[FreeQ[matrices, getAnalGateMatrix],
+                        Dot @@ Reverse @ matrices,
+                        (Message[CalcCircuitMatrix::error, "Circuit contained an unrecognised or unsupported gate: " <> 
+                            ToString @ StandardForm @ First @ Cases[matrices, getAnalGateMatrix[g_] :> g, Infinity]];
+                        $Failed)]]]
+        CalcCircuitMatrix[gates_List, opts:OptionsPattern[]] :=
+        	CalcCircuitMatrix[gates, getNumQubitsInCircuit[gates], opts]
+        CalcCircuitMatrix[gate_, opts:OptionsPattern[]] :=
+            CalcCircuitMatrix[{gate}, opts]
         CalcCircuitMatrix[___] := invalidArgError[CalcCircuitMatrix]
         
         GetCircuitGeneralised[gates_List] := With[
@@ -1914,6 +1935,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         GetCircuitSuperoperator[circ_List] := 
             GetCircuitSuperoperator[circ, getNumQubitsInCircuit[circ]]
         GetCircuitSuperoperator[___] := invalidArgError[GetCircuitSuperoperator]
+        
+        
         
         (*
          * Below are front-end functions for 
