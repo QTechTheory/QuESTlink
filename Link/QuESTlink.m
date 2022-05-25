@@ -689,7 +689,10 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 (Message[CalcExpecPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
             ]
         (* constant plus pauli sum *)
-        pattConstPlusPauliSum = Verbatim[Plus][const_?NumericQ, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
+        pattZeroPlusPauliSum = Verbatim[Plus][0.`, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
+        pattConstPlusPauliSum = Verbatim[Plus][const_?NumericQ /; const =!= 0.`, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
+        CalcExpecPauliSum[qureg_Integer, paulisum:pattZeroPlusPauliSum, workspace_Integer] :=
+            CalcExpecPauliSum[qureg, paulisum /. 0. -> 0, workspace]
         CalcExpecPauliSum[qureg_Integer, blank:pattConstPlusPauliSum, workspace_Integer] := 
             (Message[CalcExpecPauliSum::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
         CalcExpecPauliSum[___] := invalidArgError[CalcExpecPauliSum]
@@ -717,6 +720,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 (Message[ApplyPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
             ]
         (* constant plus pauli sum *)
+        ApplyPauliSum[inQureg_Integer, paulisum:pattZeroPlusPauliSum, outQureg_Integer] := 
+            ApplyPauliSum[inQureg, paulisum /. 0.` -> 0, outQureg]
         ApplyPauliSum[inQureg_Integer, blank:pattConstPlusPauliSum, outQureg_Integer] := 
             (Message[ApplyPauliSum::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
         ApplyPauliSum[___] := invalidArgError[ApplyPauliSum]
@@ -759,6 +764,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     (#[[1]] + I #[[2]])& /@ Partition[arrs,2] // Transpose
                 ]
             ]
+        CalcPauliSumMatrix[paulisum:pattZeroPlusPauliSum] := 
+            CalcPauliSumMatrix[paulisum /. 0. -> 0]
         CalcPauliSumMatrix[blank:pattConstPlusPauliSum] := 
             (Message[CalcPauliSumMatrix::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
         CalcPauliSumMatrix[___] := invalidArgError[CalcPauliSumMatrix]
