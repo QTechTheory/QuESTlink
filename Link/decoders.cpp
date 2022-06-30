@@ -1,6 +1,8 @@
 /* @file
  * Translates between Mathematica encodings of structures like matrices and circuits, 
  * and their C++ and/or representations.
+ *
+ * @author Tyson Jones
  */
 
 #include "QuEST.h"

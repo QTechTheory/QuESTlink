@@ -1,13 +1,16 @@
-:Begin:
-:Function:       testfunc
-:Pattern:        QuEST`testfunc[qureg_Integer, target_Integer, probDeriv_]
-:Arguments:      { qureg, target, probDeriv }
-:ArgumentTypes:  { Integer, Integer, Real }
-:ReturnType:     Manual
-:End:
-:Evaluate: 
-    QuEST`testfunc::usage = "testfunc[qureg, target, probderiv] just a test bro";
-
+:: @file
+:: Wraps C++ functions with Mathematica-callable symbols.
+::
+:: Some wrappers herein are directly callable by users without any surrounding 
+:: definition in QuESTlink.m, and so much define ::usage and ::error tags 
+:: (via :Evaluate). These use the QuEST` context. 
+:: Other wrappers are only internally called by QuESTlink.m, and use the 
+:: QuEST`Private` context, and an 'Internal' suffix.
+::
+:: ReturnType is always 'Manual' so that in the event of a user-input error, 
+:: errors can be propagated back to the Mathematica frontend.
+::
+:: @author Tyson Jones 
 
 
 

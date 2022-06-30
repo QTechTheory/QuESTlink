@@ -1,5 +1,7 @@
 /** @file 
  * Contains functions for processing analytic derivatives of circuits and channels.
+ *
+ * @author Tyson Jones
  */
 
 #include "wstp.h"

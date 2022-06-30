@@ -1,5 +1,7 @@
 /** @file
  * Contains functions for applying circuits to registers.
+ *
+ * @author Tyson Jones
  */
 
 #include "wstp.h"

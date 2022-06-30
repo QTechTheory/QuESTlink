@@ -14,6 +14,8 @@
  * 
  * Note the actual function names called from the MMA code differ from those 
  * below, as specified in quest_templates.tm
+ *
+ * @author Tyson Jones
  */
 
 #include "wstp.h"

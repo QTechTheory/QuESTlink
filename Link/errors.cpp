@@ -10,6 +10,8 @@
  * string specified in quest_templates.tm or QuESTlink.m. 
  * Sometimes, code QuESTlink will catch a core QuEST exception, tweak the message, and 
  * rethrow the exception to another QuESTlink catcher.
+ *
+ * @author Tyson Jones
  */
 
 #include "errors.hpp"
