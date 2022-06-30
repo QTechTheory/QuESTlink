@@ -1,3 +1,18 @@
+:: @file
+:: Wraps C++ functions with Mathematica-callable symbols.
+::
+:: Some wrappers herein are directly callable by users without any surrounding 
+:: definition in QuESTlink.m, and so much define ::usage and ::error tags 
+:: (via :Evaluate). These use the QuEST` context. 
+:: Other wrappers are only internally called by QuESTlink.m, and use the 
+:: QuEST`Private` context, and an 'Internal' suffix.
+::
+:: ReturnType is always 'Manual' so that in the event of a user-input error, 
+:: errors can be propagated back to the Mathematica frontend.
+::
+:: @author Tyson Jones 
+
+
 
 :Begin:
 :Function:       wrapper_createQureg

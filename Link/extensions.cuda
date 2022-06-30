@@ -1,0 +1,8 @@
+/** @file
+ * Contains GPU specific high-performance backend facilities,
+ * which can be considered as extensions to the QuEST API.
+ *
+ * @author Tyson Jones
+ */
+
+

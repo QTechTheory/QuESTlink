@@ -1,4 +1,13 @@
 
+(* @file
+ * The front-end Mathematica interface between the user API and the backend C++ facilities.
+ * Some functions herein merely wrap a core QuEST function, while others require 
+ * complicated argument translation, and some invoke only Mathematica routines.
+ * The C++ functions are wrapped to become callable Mathematica symbols via templates.tm
+ *
+ * @author Tyson Jones
+ *)
+
 BeginPackage["QuEST`"]
     
     (* 
