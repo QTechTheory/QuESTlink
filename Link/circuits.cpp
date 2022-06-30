@@ -14,6 +14,13 @@
 #include "link.hpp"
 #include "derivatives.hpp"
 
+/*
+ * PI constant needed for (multiControlled) sGate and tGate
+ */
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 
 /*
  * Max number of target and control qubits which can be specified 
