@@ -1281,29 +1281,6 @@ void wrapper_applyFullQFT(int id) {
 
 
 
-
-void testfunc(int id, int targetQubit, qreal probDeriv) {
-    
-    // local_mixDephasingDeriv(quregs[id], targetQubit, probDeriv);
-    
-    int ctrls[] = {0,2};
-    int targs[] = {3,1,4};
-    pauliOpType paulis[] = {PAULI_X, PAULI_Y, PAULI_Z};
-    
-    local_multiControlledMultiRotatePauliDeriv(
-        quregs[id], 
-        ctrls, 0, // !!!!!
-        targs, paulis, 3,
-        0.5*0.5, 2*0.5); // x^2, x = .5
-        
-    local_multiControlledPhaseShiftDeriv(quregs[id], targs, 3, 1/.5, -4); // 1/x, x=.5
-    
-    WSPutInteger(stdlink, id);
-}
-
-
-
-
 /*
  * WSTP Launch
  */
