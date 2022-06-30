@@ -1,3 +1,15 @@
+:Begin:
+:Function:       testfunc
+:Pattern:        QuEST`testfunc[qureg_Integer, target_Integer, probDeriv_]
+:Arguments:      { qureg, target, probDeriv }
+:ArgumentTypes:  { Integer, Integer, Real }
+:ReturnType:     Manual
+:End:
+:Evaluate: 
+    QuEST`testfunc::usage = "testfunc[qureg, target, probderiv] just a test bro";
+
+
+
 
 :Begin:
 :Function:       wrapper_createQureg
