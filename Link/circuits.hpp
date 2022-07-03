@@ -32,15 +32,13 @@
 
 
 
-
-void local_applyGates(
+void local_applySubCircuit(
     Qureg qureg, 
-    int numOps, int* opcodes, 
-    int* ctrls, int* numCtrlsPerOp, 
-    int* targs, int* numTargsPerOp, 
-    qreal* params, int* numParamsPerOp,
-    qreal* observablesCache,
-    int* finalCtrlInd, int* finalTargInd, int* finalParamInd,
+    int* opcodes,  int opIndStart, int opIndEnd,
+    int* ctrls,    int* numCtrlsPerOp,  int *ctrlInd,
+    int* targs,    int* numTargsPerOp,  int *targInd,
+    qreal* params, int* numParamsPerOp, int *paramInd,
+    qreal* observablesCache,            int *obvsInd,
     int showProgress
 );
 

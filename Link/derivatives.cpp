@@ -32,7 +32,7 @@ void local_getDerivativeQuregs(
     // circuit info
     int numOps, int* opcodes, 
     int* ctrls, int* numCtrlsPerOp, 
-    int* targs, int* numTargsPerOp, 
+    int* targs, int* numTargsPerOp,
     qreal* params, int* numParamsPerOp,
     // derivative matrices of general unitary gates in circuit
     qreal* unitaryDerivs)
@@ -41,7 +41,7 @@ void local_getDerivativeQuregs(
     int unitaryDerivInd = 0;
 
     // don't record observables
-    qreal* observables = NULL;
+    qreal* dontRecordObservables = NULL;
     
     // don't dynamically update frontend with progress
     int dontShowProgress = 0;
@@ -50,33 +50,29 @@ void local_getDerivativeQuregs(
     for (int v=0; v<numVars; v++) {
         
         // check whether the user has tried to abort
-        if (WSMessageReady(stdlink)) {
-            int code, arg;
-            WSGetMessage(stdlink, &code, &arg);
-            if (code == WSTerminateMessage || code == WSInterruptMessage || 
-                code == WSAbortMessage     || code == WSImDyingMessage) {
-                    
-                throw QuESTException("Abort", "Circuit simulation aborted."); // throws
-            }
-        }
+        local_throwExcepIfUserAborted();
         
+        // check whether the target deriv qureg has been created
         local_throwExcepIfQuregNotCreated(quregIds[v]); // throws
+        
         Qureg qureg = quregs[quregIds[v]];
         int varOp = varOpInds[v];
-        
-        // indices AFTER last gate applied by circuit
-        int finalCtrlInd, finalTargInd, finalParamInd;
-        
+
         // apply only gates up to and including the to-be-differentiated gate,
         // unless that gate is the general unitary
+        int ctrlInd = 0;
+        int targInd = 0;
+        int paramInd = 0;
         int op = opcodes[varOp];
         int diffGateWasApplied = (op != OPCODE_U);
-        local_applyGates(
-            qureg, (diffGateWasApplied)? varOp+1 : varOp, opcodes, 
-            ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp,
-            observables, &finalCtrlInd, &finalTargInd, &finalParamInd, 
-            dontShowProgress); // throws 
-
+        local_applySubCircuit(
+            qureg, 
+            opcodes,  0, (diffGateWasApplied)? varOp+1 : varOp,
+            ctrls,  numCtrlsPerOp,  &ctrlInd,
+            targs,  numTargsPerOp,  &targInd,
+            params, numParamsPerOp, &paramInd,
+            dontRecordObservables, NULL, dontShowProgress);
+            
         // details of (possibly already applied) to-be-differentiated gate
         int numCtrls = numCtrlsPerOp[varOp];
         int numTargs = numTargsPerOp[varOp];
@@ -84,9 +80,9 @@ void local_getDerivativeQuregs(
 
         // wind back inds to point to the to-be-differentiated gate 
         if (diffGateWasApplied) {
-            finalCtrlInd -= numCtrls;
-            finalTargInd -= numTargs;
-            finalParamInd -= numParams;
+            ctrlInd -= numCtrls;
+            targInd -= numTargs;
+            paramInd -= numParams;
         }
         
         // choices of re-normalisation (verbose for MSVC :( )
@@ -100,25 +96,25 @@ void local_getDerivativeQuregs(
         switch(op) {
             case OPCODE_Rx:
                 for (int t=0; t < numTargs; t++) // multi-target X may be possible later 
-                    pauliX(qureg, targs[t+finalTargInd]);  // throws
+                    pauliX(qureg, targs[t+targInd]);  // throws
                 normFac = negHalfI;
                 break;
             case OPCODE_Ry:
                 for (int t=0; t < numTargs; t++) // multi-target Y may be possible later 
-                    pauliY(qureg, targs[t+finalTargInd]);  // throws
+                    pauliY(qureg, targs[t+targInd]);  // throws
                 normFac = negHalfI;
                 break;
             case OPCODE_Rz:
                 for (int t=0; t < numTargs; t++)
-                    pauliZ(qureg, targs[t+finalTargInd]);  // throws
+                    pauliZ(qureg, targs[t+targInd]);  // throws
                 normFac = negHalfI;
                 break;
             case OPCODE_R:
                 for (int t=0; t < numTargs; t++) {
-                    int pauliCode = (int) params[t+finalParamInd+1];
-                    if (pauliCode == 1) pauliX(qureg, targs[t+finalTargInd]);  // throws
-                    if (pauliCode == 2) pauliY(qureg, targs[t+finalTargInd]);  // throws
-                    if (pauliCode == 3) pauliZ(qureg, targs[t+finalTargInd]);  // throws
+                    int pauliCode = (int) params[t+paramInd+1];
+                    if (pauliCode == 1) pauliX(qureg, targs[t+targInd]);  // throws
+                    if (pauliCode == 2) pauliY(qureg, targs[t+targInd]);  // throws
+                    if (pauliCode == 3) pauliZ(qureg, targs[t+targInd]);  // throws
                 }
                 normFac = negHalfI;
                 break;
@@ -130,11 +126,11 @@ void local_getDerivativeQuregs(
                 if (numTargs == 1) {
                     ComplexMatrix2 u2 = local_getMatrix2FromFlatList(&unitaryDerivs[unitaryDerivInd]);
                     unitaryDerivInd += 2*2*2;
-                    applyMatrix2(qureg, targs[finalTargInd], u2); // throws
+                    applyMatrix2(qureg, targs[targInd], u2); // throws
                 } else if (numTargs == 2) {
                     ComplexMatrix4 u4 = local_getMatrix4FromFlatList(&unitaryDerivs[unitaryDerivInd]);
                     unitaryDerivInd += 2*4*4;
-                    applyMatrix4(qureg, targs[finalTargInd], targs[finalTargInd+1], u4); // throws
+                    applyMatrix4(qureg, targs[targInd], targs[targInd+1], u4); // throws
                 }
                 else {
                     // TODO: create a non-dynamic ComplexMatrixN instance 
@@ -149,24 +145,24 @@ void local_getDerivativeQuregs(
         
         // differentiate control qubits by forcing them to 1, without renormalising
         for (int c=0; c<numCtrls; c++)
-            applyProjector(qureg, ctrls[finalCtrlInd], 1); // throws
+            applyProjector(qureg, ctrls[ctrlInd], 1); // throws
         
         // adjust normalisation
         setWeightedQureg(zero, qureg, zero, qureg, normFac, qureg); // cannot throw
         
         // wind forward inds to point to the next gate 
-        finalCtrlInd += numCtrls;
-        finalTargInd += numTargs;
-        finalParamInd += numParams;
+        ctrlInd += numCtrls;
+        targInd += numTargs;
+        paramInd += numParams;
 
         // apply the remainder of the circuit
-        local_applyGates(
-            qureg, numOps-(varOp+1), &opcodes[varOp+1], 
-            &ctrls[  finalCtrlInd], &numCtrlsPerOp[varOp+1], 
-            &targs[  finalTargInd], &numTargsPerOp[varOp+1], 
-            &params[finalParamInd], &numParamsPerOp[varOp+1],
-            observables, &finalCtrlInd, &finalTargInd, &finalParamInd, 
-            dontShowProgress); // throws
+        local_applySubCircuit(
+            qureg, 
+            opcodes,  varOp+1, numOps,
+            ctrls,  numCtrlsPerOp,  &ctrlInd,
+            targs,  numTargsPerOp,  &targInd,
+            params, numParamsPerOp, &paramInd,
+            dontRecordObservables, NULL, dontShowProgress);
     }
 }
 

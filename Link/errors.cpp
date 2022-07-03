@@ -94,3 +94,17 @@ QuESTException local_wrongNumGateTargsExcep(std::string gate, int wrongNumTargs,
         "the gate '" + gate + "' accepts " + rightNumTargs + ", but " +
          std::to_string(wrongNumTargs) + " were passed.");
 }
+
+// check whether the user has tried to abort
+void local_throwExcepIfUserAborted() {
+    
+    if (WSMessageReady(stdlink)) {
+        int code, arg;
+        WSGetMessage(stdlink, &code, &arg);
+        if (code == WSTerminateMessage || code == WSInterruptMessage || 
+            code == WSAbortMessage     || code == WSImDyingMessage) {
+                
+            throw QuESTException("Abort", "Calculation aborted."); // throws
+        }
+    }
+}
