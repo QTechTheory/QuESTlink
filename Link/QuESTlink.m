@@ -2657,7 +2657,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getInverseGate[Subscript[T, q_]] := Subscript[Ph, q][-Pi/4]
         getInverseGate[Subscript[S, q_]] := Subscript[Ph, q][-Pi/2]
         getInverseGate[G[x_]] := G[-x]
-        getInverseGate[Subscript[g:(U|Matr), q__][m_?MatrixQ]] := Subscript[g, q][ConjugateTranspose[m]]
+        getInverseGate[Subscript[U, q__][m_?MatrixQ]] := Subscript[U, q][ConjugateTranspose[m]]
+        getInverseGate[Subscript[Matr, q__][m_?MatrixQ]] := Subscript[Matr, q][Inverse[m]]
         getInverseGate[g:Subscript[C, c__][h_]] := With[
             {hInv = getInverseGate[h]},
             If[Head @ hInv =!= $Failed, 
