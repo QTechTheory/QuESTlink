@@ -26,6 +26,8 @@ void local_sendErrorAndAbort(std::string funcName, std::string errMsg);
 
 void local_throwExcepIfQuregNotCreated(int id);
 
+void local_throwExcepIfUserAborted();
+
 QuESTException local_gateUnsupportedExcep(std::string gate);
 
 QuESTException local_wrongNumGateParamsExcep(std::string gate, int wrongNumParams, int rightNumParams);
