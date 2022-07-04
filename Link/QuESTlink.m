@@ -2884,18 +2884,23 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         		gates /. R[_, Subscript[Id, _Integer]] :> Nothing]
                 
         GetKnownCircuit["HardwareEfficientAnsatz", reps_Integer, param_Symbol, qubits_List] := 
-        	Module[{i, ent},
-        	i = 1;
-            ent = Subscript[C, #[[1]]][Subscript[Z, #[[2]]]]& /@ Partition[qubits,2,1,{1,1}];
-        	Flatten[{
-        		Table[{
-        			Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}],
-        			ent[[1 ;; ;; 2 ]],
-                    ent[[2 ;; ;; 2 ]]
-        		}, reps],
-        		Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}]}]]
+        	Module[{i=1, ent},
+                ent = Subscript[C, #[[1]]][Subscript[Z, #[[2]]]]& /@ Partition[qubits,2,1,{1,1}];
+            	Flatten[{
+            		Table[{
+            			Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}],
+            			ent[[1 ;; ;; 2 ]],
+                        ent[[2 ;; ;; 2 ]]
+            		}, reps],
+            		Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}]}]]
         GetKnownCircuit["HardwareEfficientAnsatz", reps_Integer, param_Symbol, numQubits_Integer] :=
         	GetKnownCircuit["HardwareEfficientAnsatz", reps, param, Range[0,numQubits-1]]
+            
+        GetKnownCircuit["TrotterAnsatz", hamil_, order_Integer, reps_Integer, param_Symbol] := 
+            Module[{i=1},
+                GetKnownCircuit["Trotter", hamil, order, reps, 1] /. {
+                    R[x_, p_] :> R[param[i++], p],
+                    (g:Subscript[Rx|Ry|Rz, _])[x_] :> g[param[i++]]}]
 
     End[ ]
                                        
