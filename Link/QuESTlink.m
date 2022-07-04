@@ -2878,7 +2878,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 
         GetKnownCircuit["Trotter", hamil_, order_Integer, reps_Integer, time_] /; (
         	order>=1 && (order===1 || EvenQ@order) && reps>=1) := 
-        	With[
+        	SimplifyCircuit @ With[
         		{terms = separateTermsOfPauliHamil @ hamil},
         		{gates = R @@@ getTrotterTerms[terms, order, reps, time]},
         		gates /. R[_, Subscript[Id, _Integer]] :> Nothing]
