@@ -219,7 +219,8 @@ ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables
     SimplifyCircuit::error = "`1`"
     
     GetKnownCircuit::usage = "GetKnownCircuit[\"QFT\", qubits]
-GetKnownCircuit[\"Trotter\", hamil, order, reps, time]"
+GetKnownCircuit[\"Trotter\", hamil, order, reps, time]
+GetKnownCircuit[\"HardwareEfficientAnsatz\", reps, paramSymbol, qubits]"
     GetKnownCircuit::error = "`1`"
     
     
@@ -2881,6 +2882,20 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         		{terms = separateTermsOfPauliHamil @ hamil},
         		{gates = R @@@ getTrotterTerms[terms, order, reps, time]},
         		gates /. R[_, Subscript[Id, _Integer]] :> Nothing]
+                
+        GetKnownCircuit["HardwareEfficientAnsatz", reps_Integer, param_Symbol, qubits_List] := 
+        	Module[{i, ent},
+        	i = 1;
+            ent = Subscript[C, #[[1]]][Subscript[Z, #[[2]]]]& /@ Partition[qubits,2,1,{1,1}];
+        	Flatten[{
+        		Table[{
+        			Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}],
+        			ent[[1 ;; ;; 2 ]],
+                    ent[[2 ;; ;; 2 ]]
+        		}, reps],
+        		Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}]}]]
+        GetKnownCircuit["HardwareEfficientAnsatz", reps_Integer, param_Symbol, numQubits_Integer] :=
+        	GetKnownCircuit["HardwareEfficientAnsatz", reps, param, Range[0,numQubits-1]]
 
     End[ ]
                                        
