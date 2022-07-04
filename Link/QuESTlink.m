@@ -1,4 +1,13 @@
 
+(* @file
+ * The front-end Mathematica interface between the user API and the backend C++ facilities.
+ * Some functions herein merely wrap a core QuEST function, while others require 
+ * complicated argument translation, and some invoke only Mathematica routines.
+ * The C++ functions are wrapped to become callable Mathematica symbols via templates.tm
+ *
+ * @author Tyson Jones
+ *)
+
 BeginPackage["QuEST`"]
     
     (* 
@@ -141,9 +150,18 @@ DrawCircuitTopology accepts optional arguments DistinguishBy, ShowLocalGates, Sh
 DrawCircuitTopology additionally accepts DistinguishedStyles and all options of Graph[], Show[] and LineLegend[] for customising the plot aesthetic."
     DrawCircuitTopology::error = "`1`"
 
-    CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic expression for the given unitary circuit, which may contain undefined symbols. The number of qubits is inferred from the circuit indices (0 to maximum specified).
-CalcCircuitMatrix[circuit, numQubits] gives CalcCircuitMatrix a clue about the number of present qubits."
+    CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic matrix for the given unitary circuit, which may contain symbolic parameters. The number of qubits is inferred from the circuit indices (0 to maximum specified).
+CalcCircuitMatrix[circuit] returns an analytic superoperator for the given non-unitary circuit, expressed as a matrix upon twice as many qubits. The result can be multiplied upon a column-flattened density matrix.
+CalcCircuitMatrix[circuit, numQubits] forces the number of present qubits.
+CalcCircuitMatrix accepts optional argument AsSuperoperator->True to obtain a superoperator from a unitary circuit."
     CalcCircuitMatrix::error = "`1`"
+    
+    GetCircuitGeneralised::usage = "GetCircuitGeneralised[circuit] returns an equivalent circuit composed only of general unitaries (and Matr operators) and Kraus operators of analytic matrices."
+    GetCircuitGeneralised::error = "`1`"
+    
+    GetCircuitSuperoperator::usage = "GetCircuitSuperoperator[circuit] returns the corresponding superoperator circuit upon doubly-many qubits as per the Choi–Jamiolkowski isomorphism. Decoherence channels become Matr[] superoperators.
+GetCircuitSuperoperator[circuit, numQubits] forces the circuit to be assumed size numQubits, so that the output superoperator circuit is of size 2*numQubits."
+    GetCircuitSuperoperator::error = "`1`"
     
     PlotDensityMatrix::usage = "PlotDensityMatrix[matrix] (accepts id or numeric matrix) plots a component (default is magnitude) of the given matrix as a 3D bar plot.
 PlotDensityMatrix[matrix1, matrix2] plots both matrix1 and matrix2 simultaneously, and the latter is intended as a \"reference\" state.
@@ -193,6 +211,17 @@ ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables
     
     CheckDeviceSpec::usage = "CheckDeviceSpec[spec] checks that the given device specification satisfies a set of validity requirements, returning True if so, otherwise reporting a specific error. This is a useful debugging tool when creating a device specification, though a result of True does not gaurantee the spec is valid."
     CheckDeviceSpec::error = "`1`"
+    
+    GetCircuitInverse::usage = "GetCircuitInverse[circuit] returns a circuit prescribing the inverse unitary operation of the given circuit."
+    GetCircuitInverse::error = "`1`"
+    
+    SimplifyCircuit::usage = "SimplifyCircuit[circuit] returns an equivalent but simplified circuit."
+    SimplifyCircuit::error = "`1`"
+    
+    GetKnownCircuit::usage = "GetKnownCircuit[\"QFT\", qubits]
+GetKnownCircuit[\"Trotter\", hamil, order, reps, time]"
+    GetKnownCircuit::error = "`1`"
+    
     
     (*
      * optional arguments to public functions
@@ -244,6 +273,8 @@ Note under BitEncoding -> \"TwosComplement\", basis state indices can be negativ
     BitEncoding::usage = "Optional argument to ApplyPhaseFunc, specifying how the values of sub-register basis states are encoded in (qu)bits.
 BitEncoding -> \"Unsigned\" (default) interprets basis states as natural numbers {0, ..., 2^numQubits-1}.
 BitEncoding -> \"TwosComplement\" interprets basis states as two's complement signed numbers, {0, ... 2^(numQubits-1)-1} and {-1, -2, ... -2^(numQubits-1)}. The last qubit in a sub-register list is assumed the sign bit."
+
+    AsSuperoperator::usage = "Optional argument to CalcCircuitMatrix (default Automatic), specifying whether the output should be a 2^N by 2^N unitary matrix (False), or a 2^2N by 2^2N superoperator matrix (True). The latter can capture decoherence, and be multiplied upon column-flattened 2^2N vectors."
     
     EndPackage[]
     
@@ -256,50 +287,79 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
     BeginPackage["`Gate`"]
 
     H::usage = "H is the Hadamard gate."
-    
+    Protect[H]
+        
     X::usage = "X is the Pauli X gate, a.k.a NOT or bit-flip gate."
+    Protect[X]
     
     Y::usage = "Y is the Pauli Y gate."
+    Protect[Y]
     
     Z::usage = "Z is the Pauli Z gate."
+    Protect[Z]
     
     Rx::usage = "Rx[\[Theta]] is a rotation of \[Theta] around the x-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 X \[CircleTimes] X \[CircleTimes]...]."        
+    Protect[Rx]
     
     Ry::usage = "Ry[\[Theta]] is a rotation of \[Theta] around the y-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 Y \[CircleTimes] Y \[CircleTimes]...]." 
+    Protect[Ry]
     
     Rz::usage = "Rz[\[Theta]] is a rotation of \[Theta] around the z-axis of the Bloch sphere, Exp[-\[ImaginaryI] \[Theta]/2 Z \[CircleTimes] Z \[CircleTimes]...]." 
+    Protect[Rz]
     
     R::usage = "R[\[Theta], paulis] is the unitary Exp[-\[ImaginaryI] \[Theta]/2 \[CircleTimes] paulis]."   
+    Protect[R]
     
     S::usage = "S is the S gate, a.k.a. PI/2 gate."
+    Protect[S]
     
     T::usage = "T is the T gate, a.k.a PI/4 gate."
+    Protect[T]
     
-    U::usage = "U[matrix] is a general 1 or 2 qubit unitary gate, enacting the given 2x2 or 4x4 matrix."
+    U::usage = "U[matrix] is a general unitary gate with any number of target qubits, specified as a unitary square complex matrix. To relax unitarity, use Matr."
+    Protect[U]
     
     Deph::usage = "Deph[prob] is a 1 or 2 qubit dephasing with probability prob of error."
+    Protect[Deph]
     
     Depol::usage = "Depol[prob] is a 1 or 2 qubit depolarising with probability prob of error."
+    Protect[Depol]
     
     Damp::usage = "Damp[prob] is 1 qubit amplitude damping with the given decay probability."
+    Protect[Damp]
     
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
+    Protect[SWAP]
     
     M::usage = "M is a destructive measurement gate which measures the indicated qubits in the Z basis. Targeting multiple qubits is the same as applying M to each in-turn, though their outcomes will be grouped in the output of ApplyCircit[]."
+    Protect[M]
     
     P::usage = "P[val] is a (normalised) projector onto {0,1} (i.e. a forced measurement) such that the target qubits represent integer val in binary (right most target takes the least significant digit in val).
 P[outcome1, outcome2, ...] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome.
 The probability of the forced measurement outcome (if hypothetically not forced) is included in the output of ApplyCircuit[]."
+    Protect[P]
     
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
+    Protect[Kraus]
     
     KrausNonTP::usage = "Kraus[ops] applies a one or two-qubit non-trace-preserving Kraus map (given as a list of matrix operators) to a density matrix."
+    Protect[KrausNonTP]
     
     G::usage = "G[\[Theta]] applies a global phase rotation of phi, by premultiplying Exp[\[ImaginaryI] \[Theta]]."
+    Protect[G]
     
     Id::usage = "Id is an identity gate which effects no change, but can be used for forcing gate alignment in DrawCircuit, or as an alternative to removing gates in ApplyCircuit."
+    Protect[Id]
  
     Ph::usage = "Ph is the phase shift gate, which introduces phase factor exp(i*theta) upon state |1...1> of the target and control qubits. The gate is the same under different orderings of qubits, and division between control and target qubits."
+    Protect[Ph]
+    
+    Matr::usage = "Matr[matrix] is an arbitrary operator with any number of target qubits, specified as a completely general (even non-unitary) square complex matrix."
+    Protect[Matr]
+    
+    (* overriding Mathematica's doc for C[i] as i-th default constant *)
+    C::usage = "C is a declaration of control qubits (subscript), which can wrap other gates to conditionally/controlled apply them."
+    Protect[C]
  
     EndPackage[]
  
@@ -352,9 +412,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                
                
                
-        (* opcodes *)
+        (* opcodes which correlate with the global IDs in quest_link.cpp *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,Matr->22,_->-1}
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
         codifyMatrix[matr_] :=
@@ -369,8 +429,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         
         (* recognising and codifying gates into {opcode, ctrls, targs, params} *)
         gatePatterns = {
-            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[U,  (targs:__Integer)|{targs:__Integer}][matr:_List]] :> 
-                {getOpCode[U], {ctrls}, {targs}, codifyMatrix[matr]},
+            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[g:U|Matr,  (targs:__Integer)|{targs:__Integer}][matr:_List]] :> 
+                {getOpCode[g], {ctrls}, {targs}, codifyMatrix[matr]},
         	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {args}},
         	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] :> 
@@ -379,8 +439,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 {getOpCode[R], {ctrls}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
             R[param_, ({paulis:pattPauli..}|Verbatim[Times][paulis:pattPauli..]|paulis:pattPauli__)] :>
                 {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
-        	Subscript[U, (targs:__Integer)|{targs:__Integer}][matr:_List] :> 
-                {getOpCode[U], {}, {targs}, codifyMatrix[matr]},
+        	Subscript[g:U|Matr, (targs:__Integer)|{targs:__Integer}][matr:_List] :> 
+                {getOpCode[g], {}, {targs}, codifyMatrix[matr]},
             Subscript[Kraus, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
                 {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
             Subscript[KrausNonTP, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
@@ -479,7 +539,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         extractUnitaryMatrix[Subscript[C, (__Integer|{__Integer})][Subscript[U, __Integer][u_List]]] := u
         calcUnitaryDeriv[{param_, gate_}] := 
             D[extractUnitaryMatrix[gate], param]
-        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] :=
+        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] := 
             With[
                 {varOpInds = DeleteDuplicates /@ (Position[circuit, _?(MemberQ[#])][[All, 1]]& /@ varVals[[All,1]]),
                 codes = codifyCircuit[(circuit /. varVals)]}, 
@@ -638,7 +698,10 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 (Message[CalcExpecPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
             ]
         (* constant plus pauli sum *)
-        pattConstPlusPauliSum = Verbatim[Plus][const_?NumericQ, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
+        pattZeroPlusPauliSum = Verbatim[Plus][0.`, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
+        pattConstPlusPauliSum = Verbatim[Plus][const_?NumericQ /; const =!= 0.`, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
+        CalcExpecPauliSum[qureg_Integer, paulisum:pattZeroPlusPauliSum, workspace_Integer] :=
+            CalcExpecPauliSum[qureg, paulisum /. 0. -> 0, workspace]
         CalcExpecPauliSum[qureg_Integer, blank:pattConstPlusPauliSum, workspace_Integer] := 
             (Message[CalcExpecPauliSum::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
         CalcExpecPauliSum[___] := invalidArgError[CalcExpecPauliSum]
@@ -666,6 +729,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 (Message[ApplyPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
             ]
         (* constant plus pauli sum *)
+        ApplyPauliSum[inQureg_Integer, paulisum:pattZeroPlusPauliSum, outQureg_Integer] := 
+            ApplyPauliSum[inQureg, paulisum /. 0.` -> 0, outQureg]
         ApplyPauliSum[inQureg_Integer, blank:pattConstPlusPauliSum, outQureg_Integer] := 
             (Message[ApplyPauliSum::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
         ApplyPauliSum[___] := invalidArgError[ApplyPauliSum]
@@ -708,6 +773,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     (#[[1]] + I #[[2]])& /@ Partition[arrs,2] // Transpose
                 ]
             ]
+        CalcPauliSumMatrix[paulisum:pattZeroPlusPauliSum] := 
+            CalcPauliSumMatrix[paulisum /. 0. -> 0]
         CalcPauliSumMatrix[blank:pattConstPlusPauliSum] := 
             (Message[CalcPauliSumMatrix::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
         CalcPauliSumMatrix[___] := invalidArgError[CalcPauliSumMatrix]
@@ -1173,6 +1240,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] := {gate, {}, {targs}}
         getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]]] := {Join[{R}, {paulis}[[All,1]]], {}, {paulis}[[All,2]]}
         getSymbCtrlsTargs[R[arg_, Subscript[pauli:(X|Y|Z), targ_Integer]]] := {{R,pauli}, {}, {targ}}
+            (* little hack to enable G[x] in GetCircuitColumns *)
+            getSymbCtrlsTargs[G[x_]] := {G, {}, {}}
 
         (* deciding how to handle gate placement *)
         getQubitInterval[{ctrls___}, {targs___}] :=
@@ -1717,7 +1786,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getAnalGateMatrix[Subscript[S, _]] = {{1,0},{0,I}};
         getAnalGateMatrix[Subscript[T, _]] = {{1,0},{0,Exp[I Pi/4]}};
         getAnalGateMatrix[Subscript[SWAP, _,_]] = {{1,0,0,0},{0,0,1,0},{0,1,0,0},{0,0,0,1}};
-        getAnalGateMatrix[Subscript[U, __][m_]] = m;
+        getAnalGateMatrix[Subscript[U|Matr, __][m_]] = m;
         getAnalGateMatrix[Subscript[Ph, t__][a_]] = DiagonalMatrix[ Append[ConstantArray[1, 2^Length[{t}] - 1], Exp[I a]] ];
         getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
         getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]]; (* KroneckerProduct doesn't have a one-arg identity overload?? Bah *)
@@ -1736,26 +1805,152 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getAnalGateControls[_] := {}
             
         (* extract targets from gate symbols *)
-        getAnalGateTargets[Subscript[U, t_List][_]] := t
-        getAnalGateTargets[Subscript[U, t__][_]] := {t}
+        getAnalGateTargets[Subscript[U|Matr, t_List][_]] := t
+        getAnalGateTargets[Subscript[U|Matr, t__][_]] := {t}
         getAnalGateTargets[R[_, Subscript[_, t_]]] := {t}
         getAnalGateTargets[R[_, paulis_Times]] := getAnalGateTargets /@ List @@ paulis // Flatten // Reverse
         getAnalGateTargets[Subscript[C, __][g_]] := getAnalGateTargets[g]
         getAnalGateTargets[Subscript[_, t__]] := {t}
         getAnalGateTargets[Subscript[_, t__][_]] := {t}
         
-        (* convert a symbolic circuit into an analytic matrix *)
-        CalcCircuitMatrix[gates_List, numQb_Integer] := With[{
-        	matrices = getAnalFullMatrix[
-        		getAnalGateControls@#, 
-        		getAnalGateTargets@#, 
-        		getAnalGateMatrix@#, numQb
-            ]& /@ gates},
-        	Dot @@ Reverse @ matrices
-        ]
-        CalcCircuitMatrix[gates_List] :=
-        	CalcCircuitMatrix[gates, 1 + Max @ Cases[gates, (Subscript[_, q__]|Subscript[_, q__][__]):> Max @ q, \[Infinity]]]
+        (* declaring optional args to ApplyCircuit *)
+        Options[CalcCircuitMatrix] = {
+            AsSuperoperator -> Automatic
+        };
+        
+        (* convert a symbolic circuit channel into an analytic matrix *)
+        CalcCircuitMatrix[gates_List, numQb_Integer, OptionsPattern[]] /; MemberQ[gates, Subscript[Damp|Deph|Depol|Kraus|KrausNonTP, __][__]] := 
+            If[OptionValue[AsSuperoperator] =!= True && OptionValue[AsSuperoperator] =!= Automatic,
+                (Message[CalcCircuitMatrix::error, "The input circuit contains decoherence channels and must be calculated as a superoperator."]; $Failed),
+                With[{superops = GetCircuitSuperoperator[gates, numQb]},
+                    If[superops === $Failed,
+                    (Message[CalcCircuitMatrix::error, "Could not prepare superoperator, as per the above error."]; $Failed),
+                    CalcCircuitMatrix[superops, 2*numQb]]]]
+        (* convert a symbolic pure circuit into an analytic matrix *)
+        CalcCircuitMatrix[gates_List, numQb_Integer, OptionsPattern[]] := 
+            If[OptionValue[AsSuperoperator] === True,
+                With[{superops = GetCircuitSuperoperator[gates, numQb]},
+                    If[superops === $Failed,
+                    (Message[CalcCircuitMatrix::error, "Could not prepare superoperator, as per the above error."]; $Failed),
+                    CalcCircuitMatrix[superops, 2*numQb]]],
+                With[{matrices = getAnalFullMatrix[
+                    getAnalGateControls@#, getAnalGateTargets@#, getAnalGateMatrix@#, numQb
+                    ]& /@ gates},
+                    If[FreeQ[matrices, getAnalGateMatrix],
+                        Dot @@ Reverse @ matrices,
+                        (Message[CalcCircuitMatrix::error, "Circuit contained an unrecognised or unsupported gate: " <> 
+                            ToString @ StandardForm @ First @ Cases[matrices, getAnalGateMatrix[g_] :> g, Infinity]];
+                        $Failed)]]]
+        CalcCircuitMatrix[gates_List, opts:OptionsPattern[]] :=
+        	CalcCircuitMatrix[gates, getNumQubitsInCircuit[gates], opts]
+        CalcCircuitMatrix[gate_, opts:OptionsPattern[]] :=
+            CalcCircuitMatrix[{gate}, opts]
         CalcCircuitMatrix[___] := invalidArgError[CalcCircuitMatrix]
+        
+        GetCircuitGeneralised[gates_List] := With[
+            {generalGates = Replace[gates, {
+            	(* known channels are converted to Kraus maps *)
+            	g:Subscript[Kraus, __][__] :> g,
+            	Subscript[Damp, q_][p_] :> Subscript[Kraus, q][{
+            		{{1,0},{0,Sqrt[1-p]}},
+            		{{0,Sqrt[p]},{0,0}}}],
+            	Subscript[Deph, q_][p_] :> Subscript[Kraus, q][{
+            		Sqrt[1-p] PauliMatrix[0], 
+            		Sqrt[p]   PauliMatrix[3]}],
+            	Subscript[Deph, q1_,q2_][p_] :> Subscript[Kraus, q1,q2][{
+            		Sqrt[1-p] IdentityMatrix[4], 
+            		Sqrt[p/3] KroneckerProduct[PauliMatrix[0], PauliMatrix[3]],
+            		Sqrt[p/3] KroneckerProduct[PauliMatrix[3], PauliMatrix[0]],
+            		Sqrt[p/3] KroneckerProduct[PauliMatrix[3], PauliMatrix[3]]}],
+            	Subscript[Depol, q_][p_] :> Subscript[Kraus, q][{
+            		Sqrt[1-p] PauliMatrix[0],
+            		Sqrt[p/3] PauliMatrix[1],
+            		Sqrt[p/3] PauliMatrix[2],
+            		Sqrt[p/3] PauliMatrix[3]}],
+            	Subscript[Depol, q1_,q2_][p_] :> Subscript[Kraus, q1,q2][ Join[
+            		{Sqrt[1-p] IdentityMatrix[4]},
+            		Flatten[ Table[
+            			(* the PauliMatrix[0] Kraus operator is duplicated, insignificantly *)
+            			If[n1===0 && n2===0, Nothing, Sqrt[p/15] KroneckerProduct[PauliMatrix[n1], PauliMatrix[n2]]],
+            			{n1,{0,1,2,3}}, {n2,{0,1,2,3}}], 1]]],
+            	(* global phase becomes a fac*identity on the first qubit *)
+            	G[x_] :> Subscript[U, 0][ Exp[I x] IdentityMatrix[2]],
+                (* Matr gates remain Matr *)
+                g:(Subscript[Matr, q__Integer|{q__Integer}][m_]) :> g,
+            	(* controlled gates are turned into U of identities with bottom-right submatrix *)
+                Subscript[C, c__Integer|{c__Integer}][Subscript[Matr, q__Integer|{q__Integer}][m_]] :> 
+                    With[{cDim=2^Length[{c}], tDim=Length@m},
+                        Subscript[Matr, Sequence @@ Join[{q}, {c}]][
+                        Join[
+                            MapThread[Join, {IdentityMatrix[cDim], ConstantArray[0,{cDim,tDim}]}],
+                            MapThread[Join, {ConstantArray[0,{tDim,cDim}], m}]]]],
+            	Subscript[C, c__Integer|{c__Integer}][g_] :> 
+            		With[{cDim=2^Length[{c}], tDim=2^Length[getAnalGateTargets[g]]},
+            			Subscript[U, Sequence @@ Join[getAnalGateTargets[g], {c}]][
+            			Join[
+            				MapThread[Join, {IdentityMatrix[cDim], ConstantArray[0,{cDim,tDim}]}],
+            				MapThread[Join, {ConstantArray[0,{tDim,cDim}], getAnalGateMatrix@g}]]]],
+            	(* all other symbols are treated like generic unitary gates *)
+            	g_ :> Subscript[U, Sequence @@ getAnalGateTargets[g]][getAnalGateMatrix[g]]
+            (* replace at top level *)
+            }, 1]},
+            If[ FreeQ[generalGates, getAnalGateMatrix],
+                generalGates,
+                (Message[GetCircuitGeneralised::error, "Circuit contained an unrecognised or unsupported gate: " <> 
+                    ToString @ StandardForm @ First @ Cases[generalGates, getAnalGateMatrix[g_] :> g, Infinity]];
+                    $Failed)
+                    ]]
+        GetCircuitGeneralised[op_] := GetCircuitGeneralised[{op}]
+        GetCircuitGeneralised[___] := invalidArgError[GetCircuitGeneralised]
+        
+        shiftInds[q__Integer|{q__Integer}, numQb_] := Sequence @@ (List[q]+numQb)
+    
+        GetCircuitSuperoperator[circ_List, numQb_] := With[
+            {superops = Flatten @ Replace[circ, {
+            (* unitaries *)
+            	(* global phase does nothing! *)
+            	G[x_] :> Nothing,
+            	(* real gates (self conjugate) *)
+            	Subscript[(g:H|X|Z), q__Integer|{q__Integer}] :> {Subscript[g, q], Subscript[g, shiftInds[q,numQb]]},
+            	g:Subscript[P, q__Integer|{q__Integer}][v_] :> {g, Subscript[P, shiftInds[q,numQb]][v]},
+            	g:Subscript[SWAP, q1_,q2_] :> {g, Subscript[SWAP, q1+numQb,q2+numQb]},
+                g:Subscript[Ry, q_Integer][x_] :> {g, Subscript[Ry, q+numQb][x]},
+            	(* reverse phase *)
+            	Subscript[T, q_Integer] :> {Subscript[T, q], Subscript[Ph, q+numQb][-Pi/4]},
+            	Subscript[S, q_Integer] :> {Subscript[S, q], Subscript[Ph, q+numQb][-Pi/2]},
+            	(* reverse parameter gates (beware the mischievous Pauli Y)*)
+            	Subscript[(g:Rx|Rz|Ph), q__Integer|{q__Integer}][x_] :> {Subscript[g, q][x], Subscript[g, shiftInds[q,numQb]][-x]},
+                R[x_, Subscript[Y, q_Integer]] :> {R[x,Subscript[Y, q]], R[x,Subscript[Y, q+numQb]]},
+            	R[x_, Subscript[p:(X|Z), q_Integer]] :> {R[x,Subscript[p, q]], R[-x,Subscript[p, q+numQb]]},
+            	R[x_, Verbatim[Times][p:Subscript[_Symbol, _Integer] ..]] :> With[
+                    {s = - (-1)^Count[{p}, Subscript[Y,_]]}, 
+                    {R[x, Times @ p],
+            		 R[s*x, Times @@ MapThread[(Subscript[#1, #2]&), {{p}[[All,1]], {p}[[All,2]] + numQb}]]}],
+            	(* gates with no inbuilt conjugates *)
+            	Subscript[Y, q_Integer] :> {Subscript[Y, q], Subscript[U, q+numQb][Conjugate@PauliMatrix@2]},
+            	Subscript[(g:U|Matr), q__Integer|{q__Integer}][m_] :> {Subscript[g, q][m], Subscript[g, shiftInds[q,numQb]][Conjugate@m]},
+            	(* controlled gates must recurse: assume inner gate resolves to two ops *)
+            	Subscript[C, c__Integer|{c__Integer}][g_] :> {Subscript[C, c][g], 
+            		Subscript[C, shiftInds[c,numQb]][Last @ GetCircuitSuperoperator[{g},numQb]]},
+            (* channels *)
+            	(* Kraus channels are turned into superoperators *)
+            	Subscript[(Kraus|KrausNonTP), q__Integer|{q__Integer}][matrs_List] :> Subscript[Matr, Sequence @@ Join[{q},{shiftInds[q,numQb]}]][
+            		Total[(KroneckerProduct[Conjugate[#], #]&) /@ matrs]],
+            	(* other channels are first converted to Kraus, before recursing *)
+            	g:Subscript[(Damp|Depol|Deph), q__Integer|{q__Integer}][x_] :> 
+            		GetCircuitSuperoperator[GetCircuitGeneralised[g],numQb],
+            (* wrap unrecognised gates in dummy Head *)
+            	g_ :> unrecognisedGateInSuperopCirc[g]
+            (* replace at top level *)
+            }, 1]},
+            If[ FreeQ[superops, unrecognisedGateInSuperopCirc],
+                superops,
+                (Message[GetCircuitSuperoperator::error, "Circuit contained an unrecognised or unsupported gate: " <> 
+                    ToString @ StandardForm @ First @ Cases[superops, unrecognisedGateInSuperopCirc[g_] :> g, Infinity]];
+                    $Failed)]]
+        GetCircuitSuperoperator[circ_List] := 
+            GetCircuitSuperoperator[circ, getNumQubitsInCircuit[circ]]
+        GetCircuitSuperoperator[___] := invalidArgError[GetCircuitSuperoperator]
         
         
         
@@ -2146,6 +2341,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             Flatten @ subcircs
         ExtractCircuit[circuit_List] :=
             circuit
+        ExtractCircuit[{}] := 
+            {}
         ExtractCircuit[___] := invalidArgError[ExtractCircuit]
         
         formatGateParamMatrices[circ_List] :=
@@ -2446,6 +2643,244 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         CheckDeviceSpec[___] := (
             Message[CheckDeviceSpec::error, "Argument must be a single Association."];
             $Failed)
+            
+        
+        
+        (*
+         * Below are front-end functions 
+         * for modifying circuits
+         *)    
+        
+        getInverseGate[g:Subscript[H|Id|SWAP|X|Y|Z, __]] := g
+        getInverseGate[(g:Subscript[Rx|Ry|Rz|Ph, __])[x_]] := g[-x]
+        getInverseGate[R[x_, s_]] := R[-x, s]
+        getInverseGate[Subscript[T, q_]] := Subscript[Ph, q][-Pi/4]
+        getInverseGate[Subscript[S, q_]] := Subscript[Ph, q][-Pi/2]
+        getInverseGate[G[x_]] := G[-x]
+        getInverseGate[Subscript[U, q__][m_?MatrixQ]] := Subscript[U, q][ConjugateTranspose[m]]
+        getInverseGate[Subscript[Matr, q__][m_?MatrixQ]] := Subscript[Matr, q][Inverse[m]]
+        getInverseGate[g:Subscript[C, c__][h_]] := With[
+            {hInv = getInverseGate[h]},
+            If[Head @ hInv =!= $Failed, 
+                Subscript[C, c][hInv], 
+                $Failed[g]]]
+        getInverseGate[g_] := $Failed[g]
+
+        GetCircuitInverse[circ_List] := With[
+            {invs = getInverseGate /@ Reverse[circ]},
+            {bad = FirstCase[invs, $Failed[g_] :> g]},
+            If[bad === Missing["NotFound"],
+                invs,
+                (Message[GetCircuitInverse::error, "Could not determine the inverse of gate " <> ToString@TraditionalForm@bad <> "."];
+                $Failed)]]
+        GetCircuitInverse[___] := invalidArgError[GetCircuitInverse]
+        
+        tidyInds[q__] := Sequence @@ Sort@DeleteDuplicates@List@q
+        tidyMatrixGate[Subscript[g:(U|Matr), q_Integer][m_]] := Subscript[g, q][Simplify @ m]
+        tidyMatrixGate[Subscript[g:(U|Matr), q__Integer][m_]] /; OrderedQ[{q}] := Subscript[g, q][Simplify @ m]
+        tidyMatrixGate[Subscript[g:(U|Matr), q__Integer][m_]] := 
+        	With[{order=Ordering[{q}]},
+        		Do[
+        			If[order[[i]] =!= i, Block[{tmp}, With[
+        				{q1={q}[[i]], q2={q}[[order[[i]]]]}, 
+        				{s=CalcCircuitMatrix[{Subscript[SWAP, i-1,order[[i]]-1]}, Length[{q}]]},
+        				Return @ tidyMatrixGate @ Subscript[g, Sequence@@((({q} /. q1->tmp) /. q2->q1) /. tmp->q2)][s . m . s]]]],
+        			{i, Length[{q}]}]]
+
+        SimplifyCircuit[circ_List] := With[{
+        	(*
+        	 * establish preconditions
+        	 *)
+        	initCols = GetCircuitColumns[circ] //. {
+        		(* convert Ph controls into targets *)
+        		Subscript[C, c__Integer|{c__Integer}][Subscript[Ph, t__Integer|{t__Integer}][x__]] :> Subscript[Ph, tidyInds[c,t]][x],
+        		(* convert S and T gates into Ph *)
+        		Subscript[(g:S|T), t_Integer ]:> Subscript[Ph, t][Pi / (g/.{S->2,T->4})], 
+        		Subscript[C, c__Integer|{c__Integer}][Subscript[(g:S|T), t_Integer]] :> Subscript[Ph, tidyInds[c,t]][Pi / (g/.{S->2,T->4})],
+        		(* sort qubits of general unitaries by SWAPs upon matrix *)
+        		g:Subscript[U|Matr, q__Integer|{q__Integer}][m_] :> tidyMatrixGate[g],
+        		Subscript[C, c__][g:Subscript[U|Matr, q__Integer|{q__Integer}][m_]] :> Subscript[C, tidyInds@c][tidyMatrixGate@g],
+        		(* sort controls of any gate *)
+        		Subscript[C, c__Integer|{c__Integer}][g_] :> Subscript[C, tidyInds@c][g],
+        		(* sort targets of target-order-agnostic gates *)
+        		Subscript[(g:(H|X|Y|Z|Id|SWAP|Ph|M||T|S)), t__Integer|{t__Integer}] :> Subscript[g, tidyInds@t],
+        		Subscript[(g:(Rx|Ry|Rz|Damp|Deph|Depol)), t__Integer|{t__Integer}][x__] :> Subscript[g, tidyInds@t][x],
+        		(* unpack all qubit lists *)
+        		Subscript[s_, {t__}] :> Subscript[s, t],
+        		Subscript[s_, {t__}][x_] :> Subscript[s, t][x],
+        		Subscript[C, c__][Subscript[s_, {t__}]] :> Subscript[C, c][Subscript[s, t]],
+        		Subscript[C, c__][Subscript[s_, {t__}][x_]] :> Subscript[C, c][Subscript[s, t][x]]
+        	}},
+        	(* above establishes preconditions:
+        		- gates within a column target unique qubits
+        		- qubit lists of order-agnostic gates are ordered and duplicate-free
+        		- qubit lists are flat (not contained in List)
+        		- phase gates have no control qubits
+        		- there are no T or S gates
+        		- R[x, pauli-tensor] have fixed-order tensors (automatic by Times)
+        		- the first global phase G[] will appear in the first column
+        	*)
+        	Module[{simpCols},
+        		(* 
+        		* repeatedly simplify circuit until static 
+        		*)
+        		simpCols = FixedPoint[ Function[{prevCols}, Module[{cols},
+        			cols = prevCols;
+        			(* 
+        			 * simplify contiguous columns
+        			 *)
+        			cols = SequenceReplace[cols, Join[
+        				(* remove adjacent idempotent operations *)
+        				Join @@ Table[
+        					{ {a___, wrap@Subscript[gate, q__], b___}, {c___,  wrap@Subscript[gate, q__], d___} } :> Sequence[{a,b},{c,d}],
+        					{gate, {H,X,Y,Z,Id,SWAP}},
+        					{wrap, {Identity, Subscript[C, ctrls__]}}],
+        				(* combine arguments of adjacent parameterized gates *)
+        				Join @@ Table[ 
+        					(* awkward With[] use to force immediate eval of 'gate' in DelayedRule *)
+        					With[{gate=gateSymb}, {
+        					{ {a___, Subscript[gate, q__][x_], b___}, {c___, Subscript[gate, q__][y_], d___} } :> Sequence[{a,Subscript[gate, q][x+y//Simplify],b},{c,d}],
+        					{ {a___, Subscript[C, ctrl__][Subscript[gate, q__][x_]], b___}, {c___, Subscript[C, ctrl__][Subscript[gate, q__][y_]], d___} } :> Sequence[{a,Subscript[C, ctrl][Subscript[gate, q][x+y//Simplify]],b},{c,d}]
+        					}],
+        					{gateSymb, {Ph,Rx,Ry,Rz}}],
+        				{
+        					{ {a___, R[x_,op_], b___}, {c___, R[y_,op_], d___} } :> Sequence[{a,R[x+y//Simplify,op],b},{c,d}],
+        					{ {a___, Subscript[C, ctrl__]@R[x_,op_], b___}, {c___, Subscript[C, ctrl__]@R[y_,op_], d___} } :> Sequence[{a,Subscript[C, ctrl]@R[x+y//Simplify,op],b},{c,d}]
+        				},
+        				(* multiply matrices of adjacent unitaries and Matr *)
+                        (* we do not presently merge U unto neighbouring Matr *)
+        				{
+        					{ {a___, Subscript[g:(U|Matr), q__][m1_], b___}, {c___, Subscript[g:(U|Matr), q__][m2_], d___} } :> Sequence[{a,Subscript[g, q][m1 . m2//Simplify],b},{c,d}],
+        					{ {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr), q__][m1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr), q__][m2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][m1 . m2//Simplify],b},{c,d}]
+        				},
+        				(* merge all global phases *)
+        				{
+        					{ {a___, G[x_], b___, G[y_], c___} } :> {G[x+y//Simplify], a, b, c},
+        					{ {a___, G[x_], b___}, infix___, {c___, G[y_], d___} } :> Sequence[{G[x+y//Simplify],a,b}, infix, {c,d}]
+        				},
+        				(* merge adjacent Pauli operators *)
+        				{
+        					{ {a___, Subscript[X, q__], b___}, {c___, Subscript[Y, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[Z, q],b},{c,d}],
+        					{ {a___, Subscript[Y, q__], b___}, {c___, Subscript[Z, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[X, q],b},{c,d}],
+        					{ {a___, Subscript[Z, q__], b___}, {c___, Subscript[X, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[Y, q],b},{c,d}],
+        					{ {a___, Subscript[Y, q__], b___}, {c___, Subscript[X, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[Z, q],b},{c,d}],
+        					{ {a___, Subscript[Z, q__], b___}, {c___, Subscript[Y, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[X, q],b},{c,d}],
+        					{ {a___, Subscript[X, q__], b___}, {c___, Subscript[Z, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[Y, q],b},{c,d}]
+        				},
+        				(* merge adjacent rotations with paulis *)
+        				Join @@ Table[ With[{rot=First@ops, pauli=Last@ops}, {
+        					{ {a___, Subscript[pauli, q__], b___}, {c___, Subscript[rot, q__][x_], d___} } :> Sequence[{a,G[Pi/2],Subscript[rot, q][x+Pi],b},{c,d}],
+        					{ {a___, Subscript[rot, q__][x_], b___}, {c___, Subscript[pauli, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[rot, q][x+Pi],b},{c,d}]
+        				}], 
+        					{ops, {{Rx,X},{Ry,Y},{Rz,Z}}}]
+        				
+        				(* TODO: should I convert Z to Ph too in order to compound with Ph?? *)
+        				(* and should controlled Z become Ph too?? *)
+        				
+        				(* TODO: turn Rx[2\[Pi] + eh] = G[\[Pi]] Rx[eh] ??? *)
+        			]];
+        			(* 
+        			 * simplify single gates (at any level, even within controls)
+        			 *)
+        			cols = cols //. {
+        				(* remove empty columns *)
+        				{} -> Nothing, 
+        				{{}..} -> Nothing,
+        				(* remove controlled gates with insides already removed *)
+        				Subscript[C, __][Nothing] -> Nothing,
+        				(* remove zero-parameter gates *)
+        				Subscript[(Ph|Rx|Ry|Rz|Damp|Deph|Depol), __][0] -> Nothing,
+        				R[0,_] -> Nothing,
+        				G[0] -> Nothing,
+        				(* remove identity matrices (qubits are sorted) *)
+        				Subscript[U|Matr, q__][m_] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
+        				(* simplify known parameters to within their periods *)
+        				Subscript[Ph, q__][x_?NumericQ] /; Not[0 <= x < 2 Pi] :> Subscript[Ph, q]@Mod[x, 2 Pi],
+        				(g:(Subscript[(Rx|Ry|Rz), q__]))[x_?NumericQ] /; Not[0 <= x < 4 Pi] :> g@Mod[x, 4 Pi],
+        				R[x_?NumericQ, op_] /; Not[0 <= x < 4 Pi] :> R[Mod[x, 4 Pi], op],
+        				(* convert single-target R to Rx, Ry or Rz *)
+        				R[x_, op:Subscript[(X|Y|Z), q_]] :> (op[x] /. {X->Rx,Y->Ry,Z->Rz})
+        			};
+        			(* 
+        			 * simplify single gates (top-level only, cannot occur within controls) 
+        			 *)
+        			cols = Replace[cols, {
+        				(* transform param gates with Pi params *)
+        				(g:(Subscript[(Rx|Ry|Rz), q__]))[Pi] :> Sequence[ G[3 Pi/2], g/.{Rx->X,Ry->Y,Rz->Z} ],
+        				R[Pi, op_Times] :> Sequence[G[3 Pi/2], Sequence@@op],
+        				Subscript[Ph, q_][Pi] :> Subscript[Z, q],
+        				Subscript[Ph, q__][Pi] :> Subscript[C, Sequence@@Rest[{q}]][Subscript[Z, First@{q}]],
+        				(* transform rotations gates with 2 Pi params *)
+        				(g:(Subscript[(Rx|Ry|Rz), q__]))[2 Pi] :> G[Pi],
+        				R[2 Pi, _Times] :> G[Pi]
+        				(* forces top-level, inside each subcircuit *)
+        				}, {2}];
+        			(* 
+        			 * re-update circuit columns 
+        			 *)
+        			If[cols === Nothing, cols={}];
+        			cols = GetCircuitColumns @ ExtractCircuit @ cols;
+        			cols
+        		]], initCols];
+        		(*
+        		 * post-process the simplified columns
+        		 *)
+        		ExtractCircuit @ simpCols /. {
+        			Subscript[Ph, q_][Pi/2] :> Subscript[S, q],
+        			Subscript[Ph, q_][Pi/4] :> Subscript[T, q]
+        			
+        			(* TODO: controls?? Z gates?? *)
+        		}]]
+        
+        SimplifyCircuit[___] := invalidArgError[SimplifyCircuit]
+        
+        
+        
+        (*
+         * Below are front-end functions 
+         * for generating circuits for 
+         * GetKnownCircuit[]
+         *)
+         
+        GetKnownCircuit["QFT", qubits_List] := Flatten @ {
+            Table[ { 
+                Subscript[H, qubits[[n]]], 
+                Table[Subscript[Ph, qubits[[n]],qubits[[n-m]]][Pi/2^m], {m,1,n-1}]},
+                {n, Length[qubits], 1, -1}],
+            Table[
+                Subscript[SWAP, qubits[[q]], qubits[[-q]]], 
+                {q, 1, Floor[Length[qubits]/2]}] }
+        GetKnownCircuit["QFT", numQubits_Integer] :=
+            GetKnownCircuit["QFT", Range[0,numQubits-1]]
+            
+        separateCoeffAndPauliTensor[pauli_Subscript] := {1, pauli}
+        separateCoeffAndPauliTensor[prod_Times] := {
+        	Times@@Cases[prod, c:Except[Subscript[(X|Y|Z|Id), _Integer]]:>c],
+        	Times@@Cases[prod, p:Subscript[(X|Y|Z|Id), _Integer]:>p] }
+        separateTermsOfPauliHamil[hamil_Plus] := 
+        	separateCoeffAndPauliTensor /@ (List @@ hamil)
+        separateTermsOfPauliHamil[term_] := 
+        	{separateCoeffAndPauliTensor[term]}
+        getSymmetrizedTerms[terms_List, fac_, 1] := 
+        	MapAt[fac # &, terms, {All, 1}]
+        getSymmetrizedTerms[terms_List, fac_, 2] := With[
+        	{s1 = getSymmetrizedTerms[terms, fac/2, 1]}, 
+        	Join[s1, Reverse[s1]]]
+        getSymmetrizedTerms[terms_List, fac_, n_?EvenQ] := 
+        	Block[{x, p=1/(4-4^(1/(n-1)))}, With[
+        		{s = getSymmetrizedTerms[terms, x, n-2]}, 
+        		{r = s /. x -> fac p},
+        		Join[r, r, s /. x -> (1-4p)fac, r, r]]]
+        getTrotterTerms[terms_List, order_, reps_, time_] :=
+        	With[{s=getSymmetrizedTerms[terms, time/reps, order]},
+        		Join @@ ConstantArray[s, reps]]
+                
+        GetKnownCircuit["Trotter", hamil_, order_Integer, reps_Integer, time_] /; (
+        	order>=1 && (order===1 || EvenQ@order) && reps>=1) := 
+        	With[
+        		{terms = separateTermsOfPauliHamil @ hamil},
+        		{gates = R @@@ getTrotterTerms[terms, order, reps, time]},
+        		gates /. R[_, Subscript[Id, _Integer]] :> Nothing]
 
     End[ ]
                                        

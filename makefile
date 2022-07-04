@@ -47,7 +47,7 @@ SUPPRESS_WARNING = 0
 EXE = quest_link
 
 # space-separated names (no file type) of all user source files (.c or .cpp) in the root directory
-SOURCES = quest_link quest_templates.tm
+SOURCES = link templates.tm
 
 # path to QuEST library from root directory
 QUEST_DIR = QuEST/QuEST
@@ -315,6 +315,7 @@ endif
 #
 
 OBJ = QuEST.o QuEST_validation.o QuEST_common.o QuEST_qasm.o mt19937ar.o
+OBJ += extensions.o circuits.o derivatives.o errors.o decoders.o
 ifeq ($(GPUACCELERATED), 1)
     OBJ += QuEST_gpu.o
 else
@@ -348,7 +349,7 @@ endif
 	$(COMPILER) $(C_MODE) $(C_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 	
 # CPU (C++)
-%.o: %.cpp quest_templates.tm.cpp
+%.o: %.cpp templates.tm.cpp
 	$(COMPILER) $(CPP_FLAGS) $(QUESTLINK_INCLUDE) -c $<
 %.o: $(QUEST_INNER_DIR)/%.cpp
 	$(COMPILER) $(CPP_FLAGS) -c $<
@@ -397,8 +398,8 @@ else ifeq ($(OS), WINDOWS)
     PREP = windows_wsprep.exe
 endif
 
-quest_templates.tm.cpp:
-	$(WSTP_SRC_DIR)/$(PREP) $(LINK_DIR)/quest_templates.tm -o quest_templates.tm.cpp
+templates.tm.cpp:
+	$(WSTP_SRC_DIR)/$(PREP) $(LINK_DIR)/templates.tm -o templates.tm.cpp
 
 
 
@@ -423,7 +424,7 @@ endif
 .PHONY:		tidy clean veryclean
 tidy:
 			$(REM) *.o *.lib *.exp
-			$(REM) quest_templates.tm.cpp
+			$(REM) templates.tm.cpp
 clean:	tidy
 			$(REM) $(EXE_FN)
 veryclean:	clean
