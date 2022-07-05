@@ -219,7 +219,14 @@ ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables
     SimplifyCircuit::error = "`1`"
     
     GetKnownCircuit::usage = "GetKnownCircuit[\"QFT\", qubits]
-GetKnownCircuit[\"Trotter\", hamil, order, reps, time]"
+GetKnownCircuit[\"Trotter\", hamil, order, reps, time]
+    (https://arxiv.org/pdf/math-ph/0506007.pdf)
+GetKnownCircuit[\"HardwareEfficientAnsatz\", reps, paramSymbol, qubits]
+    (https://arxiv.org/pdf/1704.05018.pdf)
+GetKnownCircuit[\"TrotterAnsatz\", hamil, order, reps, paramSymbol]
+    (https://arxiv.org/pdf/1507.08969.pdf)
+GetKnownCircuit[\"LowDepthAnsatz\", reps, paramSymbol, qubits]
+    (https://arxiv.org/pdf/1801.01053.pdf)"
     GetKnownCircuit::error = "`1`"
     
     
@@ -1025,7 +1032,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, Subscript[(X|Y|Z|Id), _]]
         getPauliSig[ _ ] := {}
         (* which works by splitting a sum into groups containing the same Pauli tensor, and simplifying each *)
-        factorPaulis[s_Plus] := Simplify /@ Plus @@@ GatherBy[List @@ s, getPauliSig] // Total
+        factorPaulis[s_Plus] := Total[Simplify /@ Plus @@@ GatherBy[List @@ s, getPauliSig]] /. Complex[0.`, 0.`] -> 0
         factorPaulis[e_] := e
         
         (* SimplifyPaulis prevents Mathemtica commutation (and inadvertently, variable substitution)
@@ -2865,7 +2872,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	MapAt[fac # &, terms, {All, 1}]
         getSymmetrizedTerms[terms_List, fac_, 2] := With[
         	{s1 = getSymmetrizedTerms[terms, fac/2, 1]}, 
-        	Join[s1, Reverse[s1]]]
+        	Join[Most[s1], {{2 s1[[-1,1]], s1[[-1,2]]}}, Reverse[Most[s1]]]]
         getSymmetrizedTerms[terms_List, fac_, n_?EvenQ] := 
         	Block[{x, p=1/(4-4^(1/(n-1)))}, With[
         		{s = getSymmetrizedTerms[terms, x, n-2]}, 
@@ -2879,8 +2886,42 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	order>=1 && (order===1 || EvenQ@order) && reps>=1) := 
         	With[
         		{terms = separateTermsOfPauliHamil @ hamil},
-        		{gates = R @@@ getTrotterTerms[terms, order, reps, time]},
+        		{gates = (R[2 #1, #2]&) @@@ getTrotterTerms[terms, order, reps, time]},
         		gates /. R[_, Subscript[Id, _Integer]] :> Nothing]
+                
+        GetKnownCircuit["HardwareEfficientAnsatz", reps_Integer, param_Symbol, qubits_List] := 
+        	Module[{i=1, ent},
+                ent = Subscript[C, #[[1]]][Subscript[Z, #[[2]]]]& /@ Partition[qubits,2,1,{1,1}];
+            	Flatten[{
+            		Table[{
+            			Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}],
+            			ent[[1 ;; ;; 2 ]],
+                        ent[[2 ;; ;; 2 ]]
+            		}, reps],
+            		Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}]}]]
+        GetKnownCircuit["HardwareEfficientAnsatz", reps_Integer, param_Symbol, numQubits_Integer] :=
+        	GetKnownCircuit["HardwareEfficientAnsatz", reps, param, Range[0,numQubits-1]]
+            
+        GetKnownCircuit["TrotterAnsatz", hamil_, order_Integer, reps_Integer, param_Symbol] := 
+            Module[{i=1},
+                GetKnownCircuit["Trotter", hamil, order, reps, 1] /. {
+                    R[x_, p_] :> R[param[i++], p],
+                    (g:Subscript[Rx|Ry|Rz, _])[x_] :> g[param[i++]]}]
+                    
+        GetKnownCircuit["LowDepthAnsatz", reps_Integer, paramSymbol_Symbol, qubits_List] := 
+            Module[{i=1, pairs=Most@Partition[qubits,2,1,{1,1}]},
+                Flatten @ Join[
+                    Table[Subscript[Rz, q][paramSymbol[i++]], {q,qubits}],
+                    Table[{
+                            R[ paramSymbol[i++], Subscript[X, #1] Subscript[Y, #2] ],
+                            R[ paramSymbol[i++], Subscript[Y, #1] Subscript[X, #2] ],
+                            R[ paramSymbol[i++], Subscript[Y, #1] Subscript[Y, #2] ],
+                            R[ paramSymbol[i++], Subscript[X, #1] Subscript[X, #2] ]
+                            }& @@@
+                            Join[ pairs[[1;;;;2]], pairs[[2;;;;2]] ],
+                        reps]]]
+        GetKnownCircuit["LowDepthAnsatz", reps_Integer, paramSymbol_Symbol, numQubits_Integer] :=
+            GetKnownCircuit["LowDepthAnsatz", reps, paramSymbol, Range[0,numQubits-1]]
 
     End[ ]
                                        
