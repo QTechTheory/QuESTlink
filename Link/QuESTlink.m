@@ -1026,7 +1026,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, Subscript[(X|Y|Z|Id), _]]
         getPauliSig[ _ ] := {}
         (* which works by splitting a sum into groups containing the same Pauli tensor, and simplifying each *)
-        factorPaulis[s_Plus] := Simplify /@ Plus @@@ GatherBy[List @@ s, getPauliSig] // Total
+        factorPaulis[s_Plus] := Total[Simplify /@ Plus @@@ GatherBy[List @@ s, getPauliSig]] /. Complex[0.`, 0.`] -> 0
         factorPaulis[e_] := e
         
         (* SimplifyPaulis prevents Mathemtica commutation (and inadvertently, variable substitution)
@@ -2866,7 +2866,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	MapAt[fac # &, terms, {All, 1}]
         getSymmetrizedTerms[terms_List, fac_, 2] := With[
         	{s1 = getSymmetrizedTerms[terms, fac/2, 1]}, 
-        	Join[s1, Reverse[s1]]]
+        	Join[Most[s1], {{2 s1[[-1,1]], s1[[-1,2]]}}, Reverse[Most[s1]]]]
         getSymmetrizedTerms[terms_List, fac_, n_?EvenQ] := 
         	Block[{x, p=1/(4-4^(1/(n-1)))}, With[
         		{s = getSymmetrizedTerms[terms, x, n-2]}, 
@@ -2878,9 +2878,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 
         GetKnownCircuit["Trotter", hamil_, order_Integer, reps_Integer, time_] /; (
         	order>=1 && (order===1 || EvenQ@order) && reps>=1) := 
-        	SimplifyCircuit @ With[
+        	With[
         		{terms = separateTermsOfPauliHamil @ hamil},
-        		{gates = R @@@ getTrotterTerms[terms, order, reps, time]},
+        		{gates = (R[2 #1, #2]&) @@@ getTrotterTerms[terms, order, reps, time]},
         		gates /. R[_, Subscript[Id, _Integer]] :> Nothing]
                 
         GetKnownCircuit["HardwareEfficientAnsatz", reps_Integer, param_Symbol, qubits_List] := 
