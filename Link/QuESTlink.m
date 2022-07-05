@@ -220,7 +220,8 @@ ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables
     
     GetKnownCircuit::usage = "GetKnownCircuit[\"QFT\", qubits]
 GetKnownCircuit[\"Trotter\", hamil, order, reps, time]
-GetKnownCircuit[\"HardwareEfficientAnsatz\", reps, paramSymbol, qubits]"
+GetKnownCircuit[\"HardwareEfficientAnsatz\", reps, paramSymbol, qubits]
+GetKnownCircuit[\"TrotterAnsatz\", hamil, order, reps, paramSymbol]"
     GetKnownCircuit::error = "`1`"
     
     
