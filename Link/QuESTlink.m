@@ -220,8 +220,13 @@ ViewDeviceSpec accepts all optional arguments of Grid[] (to customise all tables
     
     GetKnownCircuit::usage = "GetKnownCircuit[\"QFT\", qubits]
 GetKnownCircuit[\"Trotter\", hamil, order, reps, time]
+    (https://arxiv.org/pdf/math-ph/0506007.pdf)
 GetKnownCircuit[\"HardwareEfficientAnsatz\", reps, paramSymbol, qubits]
-GetKnownCircuit[\"TrotterAnsatz\", hamil, order, reps, paramSymbol]"
+    (https://arxiv.org/pdf/1704.05018.pdf)
+GetKnownCircuit[\"TrotterAnsatz\", hamil, order, reps, paramSymbol]
+    (https://arxiv.org/pdf/1507.08969.pdf)
+GetKnownCircuit[\"LowDepthAnsatz\", reps, paramSymbol, qubits]
+    (https://arxiv.org/pdf/1801.01053.pdf)"
     GetKnownCircuit::error = "`1`"
     
     
@@ -2902,6 +2907,21 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 GetKnownCircuit["Trotter", hamil, order, reps, 1] /. {
                     R[x_, p_] :> R[param[i++], p],
                     (g:Subscript[Rx|Ry|Rz, _])[x_] :> g[param[i++]]}]
+                    
+        GetKnownCircuit["LowDepthAnsatz", reps_Integer, paramSymbol_Symbol, qubits_List] := 
+            Module[{i=1, pairs=Most@Partition[qubits,2,1,{1,1}]},
+                Flatten @ Join[
+                    Table[Subscript[Rz, q][paramSymbol[i++]], {q,qubits}],
+                    Table[{
+                            R[ paramSymbol[i++], Subscript[X, #1] Subscript[Y, #2] ],
+                            R[ paramSymbol[i++], Subscript[Y, #1] Subscript[X, #2] ],
+                            R[ paramSymbol[i++], Subscript[Y, #1] Subscript[Y, #2] ],
+                            R[ paramSymbol[i++], Subscript[X, #1] Subscript[X, #2] ]
+                            }& @@@
+                            Join[ pairs[[1;;;;2]], pairs[[2;;;;2]] ],
+                        reps]]]
+        GetKnownCircuit["LowDepthAnsatz", reps_Integer, paramSymbol_Symbol, numQubits_Integer] :=
+            GetKnownCircuit["LowDepthAnsatz", reps, paramSymbol, Range[0,numQubits-1]]
 
     End[ ]
                                        
