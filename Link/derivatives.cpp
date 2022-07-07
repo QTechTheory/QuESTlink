@@ -5,11 +5,7 @@
  */
 
 #include "wstp.h"
-
 #include "QuEST.h"
-#include "QuEST_internal.h"
-#include "QuEST_cpu_internal.h"
-#include "QuEST_validation.h"
 
 #include "errors.hpp"
 #include "decoders.hpp"
