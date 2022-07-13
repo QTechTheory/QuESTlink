@@ -95,8 +95,13 @@ QuESTException local_wrongNumGateTargsExcep(std::string gate, int wrongNumTargs,
          std::to_string(wrongNumTargs) + " were passed.");
 }
 
-// check whether the user has tried to abort
 void local_throwExcepIfUserAborted() {
+    
+    /* Dear ancient Wolfram Gods; why does this no longer work? 
+     * Why is WSAbort undefined despite appearing in the WSTP doc?
+     * Why is MLAbort undefined despite appearing in wstp.h?
+     * Why is LinkSnooper not reporting a WSAbortMessage when aborting?
+     */
     
     if (WSMessageReady(stdlink)) {
         int code, arg;
