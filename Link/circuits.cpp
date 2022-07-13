@@ -71,18 +71,34 @@ void local_updateCircuitProgress(qreal progress) {
 
 
 
-/** Applies a single gate to qureg.
- * @param ctrls,targs,params are arrays which should begin with the gate's info 
- * @returns the output of the gate if exists (like measurements), else -1
- * @throws QuESTException if the gate info is invalid
+/*
+ * Gate methods
  */
-inline qreal local_applyGate(
-    Qureg qureg, 
+
+void Gate::init(
     int opcode, 
-    int* ctrls, int numCtrls,
-    int* targs, int numTargs,
-    qreal* params, int numParams
-) {
+    int* ctrls,     int numCtrls, 
+    int* targs,     int numTargs, 
+    qreal* params,  int numParams)
+{
+    this->opcode = opcode;
+    this->ctrls = ctrls;     this->numCtrls = numCtrls;
+    this->targs = targs;     this->numTargs = numTargs;
+    this->params = params;   this->numParams = numParams;
+}
+
+int Gate::getNumOutputs() {
+    
+    if (opcode == OPCODE_P)
+        return 1;
+        
+    if (opcode == OPCODE_M)
+        return numTargs;
+        
+    return 0;
+}
+
+void Gate::applyTo(Qureg qureg, qreal* outputs) {
     
     switch(opcode) {
         
@@ -362,7 +378,9 @@ inline qreal local_applyGate(
             if (numCtrls != 0)
                 throw local_gateUnsupportedExcep("controlled measurement"); // throws
             for (int q=0; q < numTargs; q++) {
-                return (qreal) measure(qureg, targs[q]); // throws
+                int outcome = measure(qureg, targs[q]);
+                if (outputs != NULL)
+                    outputs[q] = (qreal) outcome;
             }
         }
             break;
@@ -379,7 +397,8 @@ inline qreal local_applyGate(
                 qreal prob = 1;
                 for (int q=0; q < numParams; q++)
                     prob *= collapseToOutcome(qureg, targs[q], (int) params[q]); // throws
-                return prob;
+                if (outputs != NULL)
+                    outputs[0] = prob;
             }
             else {
                 // check value isn't impossibly high
@@ -392,7 +411,8 @@ inline qreal local_applyGate(
                 qreal prob = 1;
                 for (int q=0; q < numTargs; q++)
                     prob *= collapseToOutcome(qureg, targs[numTargs-q-1], (((int) params[0]) >> q) & 1); // throws
-                return prob;
+                 if (outputs != NULL)
+                    outputs[0] = prob; 
             }
             break;
             
@@ -515,118 +535,99 @@ inline qreal local_applyGate(
         default:            
             throw QuESTException("", "circuit contained an unknown gate."); // throws
     }
+}
+
+void Gate::applyTo(Qureg qureg) {
     
-    // flag for no gate-return
-    return -1;
+    applyTo(qureg, NULL);
 }
 
 
 
-/* applies a subset of the gates in the specified circuit.
- * @param opIndStart the index of the first gate to apply (inclusive)
- * @param opIndEnd the index of the final gate (exclusive)
- * @precondition ctrlInd,targInd,paramInd,obvsInd are assumed to correlate with opIndStart
- * @precondition ctrlInd,targInd,paramInd,obvsInd must be unique pointers
- * @param observablesCache may be NULL, to signify no gate outputs are to be recorded
- * @precondition if observablesCache is not NULL, it is a pre-allocated array of sufficient 
- * length to store every encountered observable in the sub-circuit, starting from obvsInd.
- * @postcondition ctrlInd,targInd,paramInd,obvsInd will be the indices of the next unapplied gate
- * @throws QuESTException if a core-QuEST function fails validation (in this case,
- *      exception.thrower will be the name of the throwing core API function),
- *      or if a QuESTlink validation herein fails (exception.thrower will be ""),
- *      or if evaluation is aborted (exception.throw = "Abort")
+/*
+ * Circuit methods
  */
-void local_applySubCircuit(
-    Qureg qureg, 
-    int* opcodes,  int opIndStart, int opIndEnd,
-    int* ctrls,    int* numCtrlsPerOp,  int *ctrlInd,
-    int* targs,    int* numTargsPerOp,  int *targInd,
-    qreal* params, int* numParamsPerOp, int *paramInd,
-    qreal* observablesCache,            int *obvsInd,
-    int showProgress
-) {
-    // assume ctrlInd,targInd,paramInd are preset to correlate with opIndStart, but
-    // explicitly check they are unique pointers, because I fear invalid shortcuts 
-    if (ctrlInd == targInd || ctrlInd == paramInd || ctrlInd == obvsInd ||
-        targInd == paramInd || targInd == obvsInd || paramInd == obvsInd)
-        throw QuESTException("", 
-            std::string("An internel error has occured! "
-            "Please inform Tyson Jones that local_applySubCircuit was "
-            "invoked with non-unique ctrlInd,targInd,paramInd,obvsInd pointers.")); // throws
+ 
+Gate Circuit::getGate(int ind) {
+    return gates[ind];
+}
+ 
+int Circuit::getNumGates() {
+    return numGates;
+}
 
-    // do nothing if the specified subcircuit is empty
-    if (opIndStart >= opIndEnd)
-        return;
+int Circuit::getTotalNumOutputs() {
     
-    // iterate every gate in the specified subcircuit
-    for (int opInd=opIndStart; opInd < opIndEnd; opInd++ ) {
+    int n = 0;
+    for (int i=0; i<numGates; i++)
+        n += gates[i].getNumOutputs();
+    
+    return n;
+}
 
+int Circuit::getNumGatesWithOutputs() {
+    
+    int n = 0;
+    for (int i=0; i<numGates; i++)
+        if (gates[i].getNumOutputs() > 0)
+            n++;
+            
+    return n;
+}
+
+void Circuit::applyTo(Qureg qureg, qreal* outputs, bool showProgress) {
+    
+    int outInd = 0;
+    
+    for (int gateInd=0; gateInd < numGates; gateInd++) {
+        
         // halt if the user has tried to abort
         local_throwExcepIfUserAborted(); // throws
         
         // display progress to the user
         if (showProgress)
-            local_updateCircuitProgress((opInd-opIndStart) / (qreal) (opIndEnd-opIndStart));
-            
-        // get current gate info
-        int op = opcodes[opInd];
-        int numCtrls = numCtrlsPerOp[opInd];
-        int numTargs = numTargsPerOp[opInd];
-        int numParams = numParamsPerOp[opInd];
-        
-        // apply gate
-        qreal obvs = local_applyGate(qureg, op, 
-            &ctrls[*ctrlInd], numCtrls,
-            &targs[*targInd], numTargs,
-            &params[*paramInd], numParams); // throws
-            
-        // optionally record gate output
-        if (observablesCache != NULL && obvs != -1)
-            observablesCache[(*obvsInd)++] = obvs;
-            
-        // update progress indices
-        *ctrlInd += numCtrls;
-        *targInd += numTargs;
-        *paramInd += numParams;
+            local_updateCircuitProgress(gateInd / (qreal) numGates);
+
+        // apply gate, optionally recording output
+        Gate gate = gates[gateInd];
+        qreal *outAddr = (outputs == NULL)? NULL : &outputs[outInd];
+        gate.applyTo(qureg, outAddr); // throws
+        outInd += gate.getNumOutputs();
     }
     
-    // ctrlInd, targInd, paramInd have been modified to point to the end of the 
-    // subcircuit (i.e. to the indices of the next unapplied gate).
+    // display progress to the user
+    if (showProgress)
+        local_updateCircuitProgress(1);
+}
+
+void Circuit::applySubTo(Qureg qureg, int startGateInd, int endGateInd) {
+    
+    for (int gateInd=startGateInd; gateInd < endGateInd; gateInd++)
+        gates[gateInd].applyTo(qureg); // throws
+}
+
+Circuit::~Circuit() {
+    
+    freeMMA();
+    delete[] gates;
 }
 
 
 
-/* Applies a given circuit to the identified qureg.
- * The circuit is expressed as lists of opcodes (identifying gates),
- * the total flat sequence control qubits, a list denoting how many of
- * the control qubits apply to each operation, their target qubits (flat list),
- * a list denotating how many targets each operation has, their parameters 
- * (flat list) and a list denoting how many params each operation has.
- * Returns a list of measurement outcome of any performed measurements in the circuit.
- * The original qureg of the state is restored when this function
- * is aborted by the calling MMA (sends Abort[] to MMA), or aborted due to encountering
- * an invalid gate or a QuEST-core validation error (sends $Failed to MMA). 
+/*
+ * interfacing 
  */
+
 void internal_applyCircuit(int id, int storeBackup, int showProgress) {
     
-    // get circuit data from Mathematica; these must be later freed!
-    int numOps;
-    int *opcodes, *ctrls, *numCtrlsPerOp, *targs, *numTargsPerOp, *numParamsPerOp;
-    qreal* params;
-    int totalNumCtrls, totalNumTargs, totalNumParams; // these fields are only needed by clean-up
-    local_loadCircuitFromMMA(
-        &numOps, &opcodes, &ctrls, &numCtrlsPerOp, 
-        &targs, &numTargsPerOp, &params, &numParamsPerOp,
-        &totalNumCtrls, &totalNumTargs, &totalNumParams);
+    // load circuit description (local so no need to explicitly delete)
+    Circuit circ;
+    circ.loadFromMMA();
     
     // ensure qureg exists, else clean-up and exit
     try {
         local_throwExcepIfQuregNotCreated(id); // throws
     } catch (QuESTException& err) {
-        local_freeCircuit(
-            opcodes, ctrls, numCtrlsPerOp, targs, 
-            numTargsPerOp, params, numParamsPerOp,
-            numOps, totalNumCtrls, totalNumTargs, totalNumParams);    
         local_sendErrorAndFail("ApplyCircuit", err.message);
         return;
     }
@@ -637,73 +638,21 @@ void internal_applyCircuit(int id, int storeBackup, int showProgress) {
     if (storeBackup)
         backup = createCloneQureg(qureg, env); // must later free
     
-    // count the total number of observables to be returned by the circuit
-    int totalNumObvsGates = 0;
-    int totalNumObvs = 0;
-    for (int opInd=0; opInd < numOps; opInd++) {
-        if (opcodes[opInd] == OPCODE_M || opcodes[opInd] == OPCODE_P) {
-            totalNumObvsGates++;
-            totalNumObvs += (opcodes[opInd] == OPCODE_P)? 1 : numTargsPerOp[opInd];
-        }
-    }
-        
-    // prepare record of observables
-    qreal* observablesCache = (qreal*) malloc(totalNumObvs * sizeof(qreal)); // must later free
-
-    // attempt to apply the circuit
-    try {
-        int ctrlInd = 0;        // dummy  vars that don't need to be tracked
-        int targInd = 0;
-        int paramInd = 0;
-        int obvsInd = 0;
-        local_applySubCircuit(
-            qureg, opcodes, 0, numOps,
-            ctrls,  numCtrlsPerOp,  &ctrlInd,
-            targs,  numTargsPerOp,  &targInd,
-            params, numParamsPerOp, &paramInd,
-            observablesCache,       &obvsInd,
-            showProgress); // throws
-
-        // return lists of observables
-        int obsInd = 0;
-        WSPutFunction(stdlink, "List", totalNumObvsGates);
-        for (int opInd=0; opInd < numOps; opInd++) {
-            if (opcodes[opInd] == OPCODE_M) {
-                // M_0,1,2 -> {0, 1, 1}, M_0 -> {1}
-                WSPutFunction(stdlink, "List", numTargsPerOp[opInd]);
-                for (int i=0; i < numTargsPerOp[opInd]; i++)
-                    WSPutInteger(stdlink, (int) observablesCache[obsInd++]);
-            }
-            if (opcodes[opInd] == OPCODE_P) {
-                // P_0 -> .1
-                WSPutReal64(stdlink, observablesCache[obsInd++]);
-            }
-        }
-        
-        // free structures
-        if (storeBackup)
-            destroyQureg(backup, env);
-        free(observablesCache);
-        local_freeCircuit(
-            opcodes, ctrls, numCtrlsPerOp, targs, 
-            numTargsPerOp, params, numParamsPerOp,
-            numOps, totalNumCtrls, totalNumTargs, totalNumParams);
+    // prepare gate output cache
+    qreal* outputs = (qreal*) malloc(circ.getTotalNumOutputs() * sizeof *outputs);
     
-    // if circuit application fails...
+    // attempt to apply circuit and send outputs to MMA
+    try {
+        circ.applyTo(qureg, outputs, showProgress); // throws
+        
+        circ.sendOutputsToMMA(outputs);
+        
+    // but if circuit application fails...
     } catch (QuESTException& err) {
         
         // restore backup (if made)
-        if (storeBackup) {
+        if (storeBackup)
             cloneQureg(qureg, backup);
-            destroyQureg(backup, env);
-        }
-                
-        // free all structures
-        free(observablesCache);
-        local_freeCircuit(
-            opcodes, ctrls, numCtrlsPerOp, targs, 
-            numTargsPerOp, params, numParamsPerOp,
-            numOps, totalNumCtrls, totalNumTargs, totalNumParams);
             
         // prepare error message
         std::string backupNotice;
@@ -723,4 +672,9 @@ void internal_applyCircuit(int id, int storeBackup, int showProgress) {
             local_sendErrorAndFail("ApplyCircuit", 
                 "Error in " + err.thrower + ": " + err.message + backupNotice);
     }
+    
+    // clean-up regardless of error state
+    free(outputs);
+    if (storeBackup)
+        destroyQureg(backup, env);
 }
