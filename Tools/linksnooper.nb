@@ -1,0 +1,137 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[      4419,        129]
+NotebookOptionsPosition[      3665,        109]
+NotebookOutlinePosition[      4062,        125]
+CellTagsIndexPosition[      4019,        122]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", " ", "@", " ", 
+   RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"Import", "[", "\"\<../Link/QuESTlink.m\>\"", "]"}], ";"}], 
+  "\n"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"cmdline", "=", 
+   RowBox[{"StringJoin", "[", "\n", "\t", 
+    RowBox[{"\"\<java -cp \>\"", ",", " ", 
+     RowBox[{"FileNameJoin", "[", 
+      RowBox[{"{", 
+       RowBox[{
+       "$InstallationDirectory", ",", "\"\<SystemFiles\>\"", ",", 
+        "\"\<Links\>\"", ",", "\"\<JLink\>\"", ",", "\"\<JLink.jar\>\""}], 
+       "}"}], "]"}], ",", "\n", "\t", 
+     "\"\< com.wolfram.jlink.util.LinkSnooper -kernelname \\\"\>\"", ",", 
+     "\n", "\t", "\"\<../quest_link\\\"\>\""}], "]"}]}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{"Install", "[", "cmdline", "]"}], ";"}]}], "Code",
+ CellChangeTimes->{
+  3.866704487519043*^9, {3.866705127913443*^9, 3.866705129634906*^9}, {
+   3.8667051852474327`*^9, 3.86670520778517*^9}},
+ CellLabel->"In[1]:=",ExpressionUUID->"cb9f6134-00b7-472a-a0f0-9a2fef31dab4"],
+
+Cell[TextData[{
+ "The above should open a new ",
+ StyleBox["LinkSnooper",
+  FontWeight->"Bold"],
+ " window, displaying only the messages between Mathematica and WSTP (and ",
+ StyleBox["not",
+  FontSlant->"Italic"],
+ " the kernel)"
+}], "Text",
+ CellChangeTimes->{{3.866705214142157*^9, 3.8667052363848047`*^9}},
+ Background->RGBColor[
+  0.88, 1, 0.88],ExpressionUUID->"6a13648a-7bf3-4738-95a4-e50392218798"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"\[Psi]", " ", "=", " ", 
+   RowBox[{"CreateQureg", "[", "23", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"u", " ", "=", " ", 
+   RowBox[{"Circuit", "[", 
+    RowBox[{
+     SubscriptBox["X", "0"], 
+     SubscriptBox["Y", "3"], 
+     SubscriptBox["Z", "5"], " ", 
+     RowBox[{
+      SubscriptBox["C", 
+       RowBox[{"0", ",", "1", ",", "2"}]], "[", 
+      RowBox[{"R", "[", 
+       RowBox[{".1", ",", " ", 
+        RowBox[{
+         SubscriptBox["X", "3"], 
+         SubscriptBox["Y", "4"], 
+         SubscriptBox["Z", "5"]}]}], "]"}], "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Matr", "0"], "[", 
+      RowBox[{"(", "\[NoBreak]", GridBox[{
+         {
+          RowBox[{".1", "+", 
+           RowBox[{".2", "\[ImaginaryI]"}]}], "0"},
+         {
+          RowBox[{"-", "5"}], 
+          RowBox[{
+           RowBox[{"-", "7"}], "-", 
+           RowBox[{"\[Pi]", " ", "\[ImaginaryI]"}]}]}
+        }], "\[NoBreak]", ")"}], "]"}]}], "]"}]}], ";"}]}], "Input",
+ CellChangeTimes->{{3.86670524847995*^9, 3.8667053352298613`*^9}},
+ CellLabel->"In[5]:=",ExpressionUUID->"d7b273ce-0a76-4687-bd6d-21a5e82e5337"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ApplyCircuit", "[", 
+  RowBox[{"\[Psi]", ",", " ", "u"}], "]"}]], "Input",
+ CellChangeTimes->{{3.8667053545205812`*^9, 3.8667053570150957`*^9}},
+ CellLabel->"In[9]:=",ExpressionUUID->"6f77eab7-01a0-4d9e-92c8-2dc5e04684b6"],
+
+Cell[BoxData[
+ RowBox[{"{", "}"}]], "Output",
+ CellChangeTimes->{3.866705357770567*^9},
+ CellLabel->"Out[9]=",ExpressionUUID->"f9177644-b18e-465b-b22a-edeb6b4bc37d"]
+}, Open  ]]
+},
+WindowSize->{808, 755},
+WindowMargins->{{190, Automatic}, {49, Automatic}},
+FrontEndVersion->"13.0 for Mac OS X x86 (64-bit) (February 4, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"dcb7dc0b-a010-41ed-b001-3c48d3c7fded"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[558, 20, 1084, 25, 186, "Code",ExpressionUUID->"cb9f6134-00b7-472a-a0f0-9a2fef31dab4"],
+Cell[1645, 47, 406, 11, 74, "Text",ExpressionUUID->"6a13648a-7bf3-4738-95a4-e50392218798"],
+Cell[2054, 60, 1156, 33, 66, "Input",ExpressionUUID->"d7b273ce-0a76-4687-bd6d-21a5e82e5337"],
+Cell[CellGroupData[{
+Cell[3235, 97, 246, 4, 30, "Input",ExpressionUUID->"6f77eab7-01a0-4d9e-92c8-2dc5e04684b6"],
+Cell[3484, 103, 165, 3, 34, "Output",ExpressionUUID->"f9177644-b18e-465b-b22a-edeb6b4bc37d"]
+}, Open  ]]
+}
+]
+*)
+
