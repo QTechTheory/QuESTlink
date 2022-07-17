@@ -24,12 +24,6 @@
 #endif
 
 /*
- * Max number of target and control qubits which can be specified 
- * for an individual gate 
- */
-#define MAX_NUM_TARGS_CTRLS 100
-
-/*
  * Codes for dynamically updating kernel variables, to indicate progress 
  */
 #define CIRC_PROGRESS_VAR "QuEST`Private`circuitProgressVar"
@@ -625,6 +619,7 @@ void internal_applyCircuit(int id, int storeBackup, int showProgress) {
     circ.loadFromMMA();
     
     // ensure qureg exists, else clean-up and exit
+    // (must do this after loading from MMA so those packets are flushed)
     try {
         local_throwExcepIfQuregNotCreated(id); // throws
     } catch (QuESTException& err) {

@@ -30,7 +30,8 @@ ApplyCircuit[inQureg, circuit, outQureg] leaves inQureg unchanged, but modifies 
 Accepts optional arguments WithBackup and ShowProgress."
     ApplyCircuit::error = "`1`"
     
-    CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] sets the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in Rx, Ry, Rz, R or U (and controlled) of the given circuit ONCE (multiple times within a U matrix is allowed). The initQureg is unchanged. Note Rx[theta] is allowed, but Rx[f(theta)] is not. Furthermore U matrices must contain at most one parameter."
+    CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] modifies the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in any continuous gate or decoherence channel.
+Variable repetition, multi-parameter gates, variable dependent element-wise matrices, variable dependent channels and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted."
     CalcQuregDerivs::error = "`1`"
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
@@ -541,33 +542,62 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         (* error for bad args *)
         ApplyCircuit[___] := invalidArgError[ApplyCircuit]
         
-        (* apply the derivatives of a circuit on an initial state, storing the ersults in the given quregs *)
-        extractUnitaryMatrix[Subscript[U, __Integer][u_List]] := u
-        extractUnitaryMatrix[Subscript[C, (__Integer|{__Integer})][Subscript[U, __Integer][u_List]]] := u
-        calcUnitaryDeriv[{param_, gate_}] := 
-            D[extractUnitaryMatrix[gate], param]
+        encodeDerivParams[Subscript[Rx|Ry|Rz|Ph|Damp|Deph|Depol, __][f_], x_] := {D[f,x]}
+        encodeDerivParams[R[f_,_], x_] := {D[f,x]}
+        encodeDerivParams[G[f_], x_] := {D[f,x]}
+        encodeDerivParams[Subscript[U|Matr, __][matr_], x_] := codifyMatrix @ D[matr,x]
+        encodeDerivParams[Subscript[Kraus|KrausNonTP, __][matrs_List], x_] := codifyMatrices @ Table[D[m,x] , {m,matrs}]
+        encodeDerivParams[Subscript[C, __][g_], x_] := encodeDerivParams[g, x]
+        
         CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] := 
-            With[
-                {varOpInds = DeleteDuplicates /@ (Position[circuit, _?(MemberQ[#])][[All, 1]]& /@ varVals[[All,1]]),
-                codes = codifyCircuit[(circuit /. varVals)]}, 
-                Which[
-                    AnyTrue[varOpInds, Length[#]<1&],
-                    Message[CalcQuregDerivs::error, "One or more variables were not present in the circuit!"]; $Failed,
-                    AnyTrue[varOpInds, Length[#]>1&],
-                    Message[CalcQuregDerivs::error, "One or more variables appeared multiple times in the circuit!"]; $Failed,
-                    Not @ AllTrue[codes[[4]], NumericQ, 2],
-                    Message[CalcQuregDerivs::error, "The circuit contained variables not assigned values in varVals!"]; $Failed,
-                    True,
-                    With[{unitaryGates = Select[
-                        Flatten[{varVals[[All,1]], circuit[[varOpInds[[All,1]]]]}, {{2},{1}}], Not[FreeQ[#, U]] &]},
-                        CalcQuregDerivsInternal[
-                            initQureg, derivQuregs, Flatten[varOpInds]-1,  (* maps indices from MMA to C *)
-                            unpackEncodedCircuit @ codes,
-                            Flatten[codifyMatrix /@ (calcUnitaryDeriv /@ unitaryGates /. varVals)]
-                        ]
-                    ]
-                ]
-            ]
+            Module[{gateInds, quregInds, order, encodedCirc, derivParams},
+            
+                If[Length[varVals] =!= Length[derivQuregs],
+                    Message[CalcQuregDerivs::error, "An equal number of variables and derivQuregs must be passed."]; Return @ Failed];
+                    
+                (* locate the gate indices of the diff variables *)
+            	gateInds = DeleteDuplicates /@ (Position[circuit, _?(MemberQ[#])][[All, 1]]& /@ varVals[[All,1]]);
+                
+                (* validate all variables were present in the circuit *)
+                If[AnyTrue[gateInds, (# === {} &)],
+                    Message[CalcQuregDerivs::error, "One or more variables were not present in the circuit!"]; Return @ $Failed];
+                
+                (* map flat gate indices to (relative indices of) derivQuregs *)
+            	quregInds = Flatten @ Table[ConstantArray[i, Length @ gateInds[[i]]], {i, Length@varVals}];
+            	gateInds = Flatten @ gateInds;
+            	
+                (* sort info so that gateInds is increasing (for backend optimisation *)
+            	order = Ordering[gateInds];
+            	gateInds = gateInds[[order]];
+            	quregInds = quregInds[[order]];
+                
+                (* encode the circuit for the backend *)
+                encodedCirc = codifyCircuit[(circuit /. varVals)];
+                
+                (* validate the circuit contains no unspecified variables *)
+                If[Not @ AllTrue[encodedCirc[[4]], NumericQ, 2],
+                    Message[CalcQuregDerivs::error, "The circuit contained variables which were not assigned values!"]; Return @ $Failed];
+
+                (* differentiate gate args, and pack for backend (without yet making numerical) *)
+            	derivParams = MapThread[encodeDerivParams, 
+            		{circuit[[gateInds]], varVals[[quregInds,1]]}];
+                    
+                (* validate all gates with diff variables have known derivatives *)
+                If[MemberQ[derivParams, encodeDerivParams[_,_]],
+                    Message[CalcQuregDerivs::error, "The circuit contained the following variable gate which could not be differentiated: " <> 
+                        ToString @ StandardForm @ First @ Cases[derivParams, encodeDerivParams[g_,_] :> g]]; Return @ $Failed];
+                
+                (* convert packed diff gate args to numerical *)
+                derivParams = derivParams /. varVals // N;
+                
+                (* validate all gate derivatives could be numerically evaluated *)
+                If[Not @ AllTrue[derivParams, NumericQ, 2],
+                    Message[CalcQuregDerivs::error, "The circuit contained gate derivatives with parameters which could not be numerically evaluated."]; Return @ $Failed];
+                
+                (* send to backend, mapping Mathematica indices to C++ indices *)
+                CalcQuregDerivsInternal[initQureg, derivQuregs, unpackEncodedCircuit @ encodedCirc, 
+                    gateInds - 1, quregInds - 1, Flatten @ derivParams, Length /@ derivParams]]
+                    
         (* error for bad args *)
         CalcQuregDerivs[___] := invalidArgError[CalcQuregDerivs]
             

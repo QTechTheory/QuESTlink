@@ -34,5 +34,9 @@ QuESTException local_wrongNumGateParamsExcep(std::string gate, int wrongNumParam
 
 QuESTException local_wrongNumGateTargsExcep(std::string gate, int wrongNumTargs, std::string rightNumTargs);
 
+QuESTException local_wrongNumDerivParamsExcep(std::string gate, int wrongNumParams, int rightNumParams);
+
+void sendDebugEcho(std::string msg);
+
 
 # endif // ERRORS_H

@@ -11,6 +11,9 @@ ComplexMatrix4 local_getMatrix4FromFlatList(qreal* list);
 
 void local_setMatrixNFromFlatList(qreal* list, ComplexMatrixN m, int numQubits);
 
+void local_createManyMatrixNFromFlatList(qreal* list, ComplexMatrixN* matrs, int numOps, int numQubits);
+
+long long int local_getNumScalarsToFormMatrix(int numQubits);
 
 
 void local_loadEncodedPauliSumFromMMA(

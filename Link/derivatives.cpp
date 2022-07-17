@@ -6,234 +6,561 @@
 
 #include "wstp.h"
 #include "QuEST.h"
+#include "QuEST_internal.h"
+#include "QuEST_validation.h"
 
 #include "errors.hpp"
 #include "decoders.hpp"
 #include "extensions.hpp"
 #include "circuits.hpp"
+#include "derivatives.hpp"
 #include "link.hpp"
 
 
 
-/* @precondition quregs must be prior initialised and cloned to the initial state of the circuit.
- * @throws QuESTException if a core QuEST validation fails (in this case,
- *      exception.thrower will be the name of the throwing core API function), 
- *      or we encounter an unsupported gate (exception.thrower = ""), 
- *      or if evaluation is aborted (exception.throw = "Abort").
- *      If an exception is thrown, some quregs may have been modified and are not restored.
+/*
+ * Kraus map derivative superoperator preparation
  */
-void local_getDerivativeQuregs(
-    // variable (to be differentiated) info
-    int* quregIds, int* varOpInds, int numVars, 
-    // circuit info
-    int numOps, int* opcodes, 
-    int* ctrls, int* numCtrlsPerOp, 
-    int* targs, int* numTargsPerOp,
-    qreal* params, int* numParamsPerOp,
-    // derivative matrices of general unitary gates in circuit
-    qreal* unitaryDerivs)
-{        
-    // index of the first (real) element of the next unitary derivative
-    int unitaryDerivInd = 0;
 
-    // don't record observables
-    qreal* dontRecordObservables = NULL;
-    
-    // don't dynamically update frontend with progress
-    int dontShowProgress = 0;
-    
-    // compute each derivative one-by-one
-    for (int v=0; v<numVars; v++) {
-        
-        // check whether the user has tried to abort
-        local_throwExcepIfUserAborted();
-        
-        // check whether the target deriv qureg has been created
-        local_throwExcepIfQuregNotCreated(quregIds[v]); // throws
-        
-        Qureg qureg = quregs[quregIds[v]];
-        int varOp = varOpInds[v];
+#define macro_populateKrausOperatorDeriv(superOp, ops, opDerivs, numOps, opDim) \
+    /* clear the superop */ \
+    for (int r=0; r < (opDim)*(opDim); r++) \
+        for (int c=0; c < (opDim)*(opDim); c++) { \
+            superOp->real[r][c] = 0; \
+            superOp->imag[r][c] = 0; \
+        } \
+    /* add each op's contribution to the superop */ \
+    for (int n=0; n<(numOps); n++) \
+        /* superop += conjugate(op) (x) deriv(op), where (x) is a tensor product */ \
+        for (int i = 0; i < (opDim); i++) \
+            for (int j = 0; j < (opDim); j++) \
+    			for (int k = 0; k < (opDim); k++) \
+                    for (int l = 0; l < (opDim); l++) { \
+                        superOp->real[i*(opDim) + k][j*(opDim) + l] += \
+                              ops[n].real[i][j] * opDerivs[n].real[k][l] \
+                            + ops[n].imag[i][j] * opDerivs[n].imag[k][l]; \
+    					superOp->imag[i*(opDim) + k][j*(opDim) + l] += \
+                              ops[n].real[i][j]*opDerivs[n].imag[k][l] \
+                            - ops[n].imag[i][j]*opDerivs[n].real[k][l]; \
+                    }            
 
-        // apply only gates up to and including the to-be-differentiated gate,
-        // unless that gate is the general unitary
-        int ctrlInd = 0;
-        int targInd = 0;
-        int paramInd = 0;
-        int op = opcodes[varOp];
-        int diffGateWasApplied = (op != OPCODE_U);
-        local_applySubCircuit(
-            qureg, 
-            opcodes,  0, (diffGateWasApplied)? varOp+1 : varOp,
-            ctrls,  numCtrlsPerOp,  &ctrlInd,
-            targs,  numTargsPerOp,  &targInd,
-            params, numParamsPerOp, &paramInd,
-            dontRecordObservables, NULL, dontShowProgress);
-            
-        // details of (possibly already applied) to-be-differentiated gate
-        int numCtrls = numCtrlsPerOp[varOp];
-        int numTargs = numTargsPerOp[varOp];
-        int numParams = numParamsPerOp[varOp];
-
-        // wind back inds to point to the to-be-differentiated gate 
-        if (diffGateWasApplied) {
-            ctrlInd -= numCtrls;
-            targInd -= numTargs;
-            paramInd -= numParams;
-        }
-        
-        // choices of re-normalisation (verbose for MSVC :( )
-        Complex negHalfI; negHalfI.real=0; negHalfI.imag=-0.5;
-        Complex posI; posI.real=0; posI.imag=1;
-        Complex zero; zero.real=0; zero.imag=0;
-        Complex one; one.real=1; one.imag=0;
-        
-        // disregard control qubits and apply gate Paulis incurred by differentiation 
-        Complex normFac;
-        switch(op) {
-            case OPCODE_Rx:
-                for (int t=0; t < numTargs; t++) // multi-target X may be possible later 
-                    pauliX(qureg, targs[t+targInd]);  // throws
-                normFac = negHalfI;
-                break;
-            case OPCODE_Ry:
-                for (int t=0; t < numTargs; t++) // multi-target Y may be possible later 
-                    pauliY(qureg, targs[t+targInd]);  // throws
-                normFac = negHalfI;
-                break;
-            case OPCODE_Rz:
-                for (int t=0; t < numTargs; t++)
-                    pauliZ(qureg, targs[t+targInd]);  // throws
-                normFac = negHalfI;
-                break;
-            case OPCODE_R:
-                for (int t=0; t < numTargs; t++) {
-                    int pauliCode = (int) params[t+paramInd+1];
-                    if (pauliCode == 1) pauliX(qureg, targs[t+targInd]);  // throws
-                    if (pauliCode == 2) pauliY(qureg, targs[t+targInd]);  // throws
-                    if (pauliCode == 3) pauliZ(qureg, targs[t+targInd]);  // throws
-                }
-                normFac = negHalfI;
-                break;
-            case OPCODE_G:
-                ; // no additional gate introduced by derivative
-                normFac = posI;
-                break;
-            case OPCODE_U:
-                if (numTargs == 1) {
-                    ComplexMatrix2 u2 = local_getMatrix2FromFlatList(&unitaryDerivs[unitaryDerivInd]);
-                    unitaryDerivInd += 2*2*2;
-                    applyMatrix2(qureg, targs[targInd], u2); // throws
-                } else if (numTargs == 2) {
-                    ComplexMatrix4 u4 = local_getMatrix4FromFlatList(&unitaryDerivs[unitaryDerivInd]);
-                    unitaryDerivInd += 2*4*4;
-                    applyMatrix4(qureg, targs[targInd], targs[targInd+1], u4); // throws
-                }
-                else {
-                    // TODO: create a non-dynamic ComplexMatrixN instance 
-                    // general matrix N unpacking here; can do static
-                    throw QuESTException("", "multi-qubit U derivative is not yet supported."); // throws
-                }
-                normFac = one;
-                break;
-            default:            
-                throw QuESTException("", "Only Rx, Ry, Rz, R, U and their controlled gates may be differentiated."); // throws
-        }
-        
-        // differentiate control qubits by forcing them to 1, without renormalising
-        for (int c=0; c<numCtrls; c++)
-            applyProjector(qureg, ctrls[ctrlInd], 1); // throws
-        
-        // adjust normalisation
-        setWeightedQureg(zero, qureg, zero, qureg, normFac, qureg); // cannot throw
-        
-        // wind forward inds to point to the next gate 
-        ctrlInd += numCtrls;
-        targInd += numTargs;
-        paramInd += numParams;
-
-        // apply the remainder of the circuit
-        local_applySubCircuit(
-            qureg, 
-            opcodes,  varOp+1, numOps,
-            ctrls,  numCtrlsPerOp,  &ctrlInd,
-            targs,  numTargsPerOp,  &targInd,
-            params, numParamsPerOp, &paramInd,
-            dontRecordObservables, NULL, dontShowProgress);
-    }
+void populateKrausSuperOperatorDerivN(ComplexMatrixN* superOp, ComplexMatrixN* ops, ComplexMatrixN* opDerivs, int numOps) {
+    int opDim = 1 << ops[0].numQubits;
+    macro_populateKrausOperatorDeriv(superOp, ops, opDerivs, numOps, opDim);
 }
 
-void internal_calcQuregDerivs(int initStateId) {
+
+
+/*
+ * decoherence derivativess (density matrix only)
+ */
+
+void local_mixTwoQubitDephasingDeriv(Qureg qureg, int targ1, int targ2, qreal probDeriv, Qureg workspace) {
+    
+    // TODO: remove workspace via bespoke extensions implementation
+
+    cloneQureg(workspace, qureg);
+
+    mixTwoQubitDephasing(qureg, targ1, targ2, probDeriv/2); // throws
+
+    // qureg -> qureg - workspace
+    Complex zero = {.real=0, .imag=0};
+    Complex one = {.real=1, .imag=0};
+    Complex neg = {.real=-1, .imag=0};
+    setWeightedQureg(neg, workspace, zero, workspace, one, qureg);
+
+    extension_addAdjointToSelf(qureg);
+}
+
+void local_mixDepolarisingDeriv(Qureg qureg, int targ, qreal probDeriv, Qureg workspace) {
+
+    // TODO: remove workspace via bespoke extensions implementation
+
+    cloneQureg(workspace, qureg);
+
+    mixDepolarising(qureg, targ, probDeriv/2); // throws
+
+    // qureg -> qureg - workspace
+    Complex zero = {.real=0, .imag=0};
+    Complex one = {.real=1, .imag=0};
+    Complex neg = {.real=-1, .imag=0};
+    setWeightedQureg(neg, workspace, zero, workspace, one, qureg);
+
+    extension_addAdjointToSelf(qureg);
+}
+
+void local_mixTwoQubitDepolarisingDeriv(Qureg qureg, int targ1, int targ2, qreal probDeriv, Qureg workspace) {
+
+    // TODO: remove workspace via bespoke extensions implementation
+
+    cloneQureg(workspace, qureg);
+
+    mixTwoQubitDepolarising(qureg, targ1, targ2, probDeriv/2); // throws
+
+    // qureg -> qureg - workspace
+    Complex zero = {.real=0, .imag=0};
+    Complex one = {.real=1, .imag=0};
+    Complex neg = {.real=-1, .imag=0};
+    setWeightedQureg(neg, workspace, zero, workspace, one, qureg);
+
+    extension_addAdjointToSelf(qureg);
+}
+
+void local_mixMultiQubitKrausMapDeriv(
+    Qureg qureg, int* targs, int numTargs, 
+    ComplexMatrixN* ops, ComplexMatrixN* opDerivs, int numOps
+) {
+    // validation must be done explicitly, since backend is called directly to avoid dens-matr full ops
+    validateMultiTargets(qureg, targs, numTargs, "applyMultiQubitKrausSuperoperator");
+    validateMultiQubitMatrixFitsInNode(qureg, 2*numTargs, "applyMultiQubitKrausSuperoperator");
+    for (int i=0; i<numOps; i++) {
+        validateMatrixInit(ops[i], "applyMultiQubitKrausSuperoperator");
+        validateMatrixInit(opDerivs[i], "applyMultiQubitKrausSuperoperator");
+        if (ops[i].numQubits != numTargs)
+            throw QuESTException("", 
+                "All Kraus matrices must have the same dimension, equal to 2^numTargs."); // throws
+        // derivOps[n] gauaranteed equal sized to ops
+    }
+    
+    ComplexMatrixN superOp = createComplexMatrixN(2*numTargs);
+    populateKrausSuperOperatorDerivN(&superOp, ops, opDerivs, numOps);
+    
+    long long int ctrlMask = 0;
+    int allTargs[2*numTargs];
+    for (int t=0; t < numTargs; t++) {
+        allTargs[t] = targs[t];
+        allTargs[t+numTargs] = targs[t] + qureg.numQubitsRepresented;
+    }
+    statevec_multiControlledMultiQubitUnitary(qureg, ctrlMask, allTargs, 2*numTargs, superOp);    
+    
+    destroyComplexMatrixN(superOp);
+}
+
+
+
+/*
+ * gate derivatives (statevector & density matrix agnostic)
+ */
+
+void local_multiControlledMultiRotatePauliDeriv(
+    Qureg qureg, 
+    int* ctrls, int numCtrls, 
+    int* targs, pauliOpType* paulis, int numTargs,
+    qreal arg, qreal argDeriv
+) {
+
+    /* d/dx R[f(x), paulis] = (-i/2 * df/dx) [paulis] R[f(x), paulis] 
+     * C_c[...] =  (...)|c=1><c=1|
+     * note the R is a full operation, but the [paulis] and the projector act only 
+     * on the lower qubits (of a density matrix).
+     */
+
+    // this call performs all input validation
+    if (numCtrls > 0)
+        multiControlledMultiRotatePauli(qureg, ctrls, numCtrls, targs, paulis, numTargs, arg); // throws
+    else
+        multiRotatePauli(qureg, targs, paulis, numTargs, arg); // throws
+
+    for (int c=0; c<numCtrls; c++)
+        statevec_collapseToKnownProbOutcome(qureg, ctrls[c], 1, 1);
+
+    for (int t=0; t < numTargs; t++) {
+        if (paulis[t] == PAULI_X)
+            statevec_pauliX(qureg, targs[t]);
+        if (paulis[t] == PAULI_Y)
+            statevec_pauliY(qureg, targs[t]);
+        if (paulis[t] == PAULI_Z)
+            statevec_pauliZ(qureg, targs[t]);
+    }
+
+    extension_applyImagFactor(qureg, -argDeriv/2);
+
+    if (qureg.isDensityMatrix)
+        extension_addAdjointToSelf(qureg);
+}
+
+void local_multiControlledPhaseShiftDeriv(
+    Qureg qureg, int* ctrls, int numCtrls, qreal arg, qreal argDeriv
+) {
+
+    /* d/dx C_c[Ph_t[f(x)] = d/dx Ph_{c & t}[f(x)] = (i df/dx) |c,t=1><c,t=1| Ph_{c & t}[f(x)]
+     * where Ph is a full operation, but the projector applies only to the lower qubits 
+     * of a density matrix.
+     */
+
+    // this call performs all input validation
+    multiControlledPhaseShift(qureg, ctrls, numCtrls, arg); // throws
+
+    for (int c=0; c<numCtrls; c++)
+        statevec_collapseToKnownProbOutcome(qureg, ctrls[c], 1, 1);
+
+    extension_applyImagFactor(qureg, argDeriv);
+
+    if (qureg.isDensityMatrix)
+        extension_addAdjointToSelf(qureg);
+}
+
+void local_multiControlledMultiQubitMatrixDeriv(
+    Qureg qureg, 
+    int* ctrls, int numCtrls, 
+    int* targs, int numTargs,
+    ComplexMatrixN matr, ComplexMatrixN matrDeriv
+) {
+    // validation must be done explicitly, since backend is called directly to avoid dens-matr full ops
+    validateMultiQubitMatrix(qureg, matrDeriv, numTargs, "applyGateMatrixN");
+    if (qureg.isDensityMatrix)
+        validateMultiQubitMatrix(qureg, matr, numTargs, "applyGateMatrixN"); // only featured in dens matr picture
+    if (numCtrls > 0)
+        validateMultiControlsMultiTargets(qureg, ctrls, numCtrls, targs, numTargs, "applyMultiControlledGateMatrixN");
+    else
+        validateMultiTargets(qureg, targs, numTargs, "applyGateMatrixN");
+
+    // state-vector (low region of density matrix)
+    long long int ctrlMask = getQubitBitMask(ctrls, numCtrls);
+    statevec_multiControlledMultiQubitUnitary(qureg, ctrlMask, targs, numTargs, matrDeriv);
+
+    for (int c=0; c<numCtrls; c++)
+        statevec_collapseToKnownProbOutcome(qureg, ctrls[c], 1, 1);
+
+    // density matrix (upper region)
+    if (qureg.isDensityMatrix) {
+        int shift = qureg.numQubitsRepresented;
+        shiftIndices(targs, numTargs, shift);
+        setConjugateMatrixN(matr);
+        statevec_multiControlledMultiQubitUnitary(qureg, ctrlMask<<shift, targs, numTargs, matr);
+        setConjugateMatrixN(matr);
+        shiftIndices(targs, numTargs, - shift);
+    }
+
+    if (qureg.isDensityMatrix)
+        extension_addAdjointToSelf(qureg);
+}
+
+void local_globalPhaseDeriv(Qureg qureg, qreal phaseDeriv) {
+    
+    if (qureg.isDensityMatrix)
+        initBlankState(qureg);
+    else
+        extension_applyImagFactor(qureg, phaseDeriv);
+}
+
+
+
+/*
+ * Gate methods
+ */
+ 
+pauliOpType* local_preparePauliCache(pauliOpType pauli, int numPaulis) {
+    
+    static pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
+    for (int i=0; i < numPaulis; i++)
+        paulis[i] = pauli;
+    return paulis;
+}
+
+void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
+    
+    /* TODO: WARNING:
+     * If this function is utilised for CalcPauliSumDerivs using my O(P) algorithm,
+     * it must throw error on encountering non-unitary state-vector gates (like Matr)
+     * since their arbitarity will violate L2 assumptions embedded in the algorithm. 
+     */
+    
+    // TODO: remove workspace via bespoke extensions implementation
+    // (especially because it gets leaked upon error throw)
+    Qureg workspace = createCloneQureg(qureg, env);
+    
+    switch(opcode) {
+            
+        case OPCODE_Rx : {
+            if (numDerivParams != 1)
+                throw local_wrongNumDerivParamsExcep("Rx", numDerivParams, 1); // throws
+            local_multiControlledMultiRotatePauliDeriv(
+                qureg, ctrls, numCtrls, 
+                targs, local_preparePauliCache(PAULI_X, numTargs), numTargs,
+                params[0], derivParams[0]);
+        }
+            break;
+            
+        case OPCODE_Ry : {
+            if (numDerivParams != 1)
+                throw local_wrongNumDerivParamsExcep("Ry", numDerivParams, 1); // throws
+            local_multiControlledMultiRotatePauliDeriv(
+                qureg, ctrls, numCtrls, 
+                targs, local_preparePauliCache(PAULI_Y, numTargs), numTargs,
+                params[0], derivParams[0]);
+        }
+            break;
+            
+        case OPCODE_Rz : {
+            if (numDerivParams != 1)
+                throw local_wrongNumDerivParamsExcep("Rz", numDerivParams, 1); // throws
+            local_multiControlledMultiRotatePauliDeriv(
+                qureg, ctrls, numCtrls, 
+                targs, local_preparePauliCache(PAULI_Z, numTargs), numTargs,
+                params[0], derivParams[0]);
+        }
+            break;
+            
+        case OPCODE_R: {
+            if (numDerivParams != 1)
+                throw local_wrongNumDerivParamsExcep("R", numDerivParams, 1); // throws
+                
+            pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
+            for (int p=0; p < numTargs; p++)
+                paulis[p] = (pauliOpType) ((int) params[1+p]);
+                
+            local_multiControlledMultiRotatePauliDeriv(
+                qureg, ctrls, numCtrls, 
+                targs, paulis, numTargs,
+                params[0], derivParams[0]);
+        }
+            break;
+        
+        case OPCODE_U : { ; 
+            int reqNumDerivParams = local_getNumScalarsToFormMatrix(numTargs);
+            if (numDerivParams != reqNumDerivParams)
+                throw local_wrongNumDerivParamsExcep("U", numDerivParams, reqNumDerivParams); // throws
+            
+            ComplexMatrixN matr = createComplexMatrixN(numTargs);
+            ComplexMatrixN matrDeriv = createComplexMatrixN(numTargs);
+            local_setMatrixNFromFlatList(params, matr, numTargs);
+            local_setMatrixNFromFlatList(derivParams, matrDeriv, numTargs);
+            
+            local_multiControlledMultiQubitMatrixDeriv(
+                qureg, ctrls, numCtrls, targs, numTargs, matr, matrDeriv);
+            
+            destroyComplexMatrixN(matr);
+            destroyComplexMatrixN(matrDeriv);
+        }
+            break;
+            
+        case OPCODE_Matr : { ;
+            int reqNumDerivParams = local_getNumScalarsToFormMatrix(numTargs);
+            if (numDerivParams != reqNumDerivParams)
+                throw local_wrongNumDerivParamsExcep("Matr", numDerivParams, reqNumDerivParams); // throws
+            
+            ComplexMatrixN matr = createComplexMatrixN(numTargs);
+            ComplexMatrixN matrDeriv = createComplexMatrixN(numTargs);
+            local_setMatrixNFromFlatList(params, matr, numTargs);
+            local_setMatrixNFromFlatList(derivParams, matrDeriv, numTargs);
+            
+            local_multiControlledMultiQubitMatrixDeriv(
+                qureg, ctrls, numCtrls, targs, numTargs, matr, matrDeriv);
+                
+            destroyComplexMatrixN(matr);
+            destroyComplexMatrixN(matrDeriv);
+        }
+            break;
+            
+        case OPCODE_Deph :
+            if (numDerivParams != 1)
+                throw local_wrongNumDerivParamsExcep("Dephasing", numDerivParams, 1); // throws
+            if (numTargs == 1)
+                extension_mixDephasingDeriv(qureg, targs[0], derivParams[0]);
+            if (numTargs == 2)
+                local_mixTwoQubitDephasingDeriv(qureg, targs[0], targs[1], derivParams[0], workspace);
+            break;
+            
+        case OPCODE_Depol :
+            if (numDerivParams != 1)
+                throw local_wrongNumDerivParamsExcep("Depolarising", numDerivParams, 1); // throws
+            if (numTargs == 1)
+                local_mixDepolarisingDeriv(qureg, targs[0], derivParams[0], workspace);
+            if (numTargs == 2)
+                local_mixTwoQubitDepolarisingDeriv(qureg, targs[0], targs[1], derivParams[0], workspace);
+            break;
+            
+        case OPCODE_Damp :
+            if (numDerivParams != 1)
+                throw local_wrongNumDerivParamsExcep("Damping", numDerivParams, 1); // throws
+            extension_mixDampingDeriv(qureg, targs[0], params[0], derivParams[0]);
+            break;
+            
+        case OPCODE_Kraus: { ;
+            int numOps = (int) params[0];
+            int reqNumDerivParams = numOps * local_getNumScalarsToFormMatrix(numTargs);
+            if (numDerivParams != reqNumDerivParams)
+                throw local_wrongNumDerivParamsExcep("Kraus map", numDerivParams, reqNumDerivParams); // throws
+                
+            ComplexMatrixN ops[numOps];
+            ComplexMatrixN opDerivs[numOps];
+            local_createManyMatrixNFromFlatList(&params[1], ops, numOps, numTargs);
+            local_createManyMatrixNFromFlatList(&derivParams[1], opDerivs, numOps, numTargs);
+            
+            local_mixMultiQubitKrausMapDeriv(qureg, targs, numTargs, ops, opDerivs, numOps);
+            
+            for (int i=0; i<numOps; i++) {
+                destroyComplexMatrixN(ops[i]);
+                destroyComplexMatrixN(opDerivs[i]);
+            }
+        }
+            break;
+            
+        case OPCODE_KrausNonTP: { ;
+            // identical to above
+            int numOps = (int) params[0];
+            int reqNumDerivParams = numOps * local_getNumScalarsToFormMatrix(numTargs);
+            if (numDerivParams != reqNumDerivParams)
+                throw local_wrongNumDerivParamsExcep("Non-trace-preserving Kraus map", numDerivParams, reqNumDerivParams); // throws
+                
+            ComplexMatrixN ops[numOps];
+            ComplexMatrixN opDerivs[numOps];
+            local_createManyMatrixNFromFlatList(&params[1], ops, numOps, numTargs);
+            local_createManyMatrixNFromFlatList(derivParams, opDerivs, numOps, numTargs);
+            
+            local_mixMultiQubitKrausMapDeriv(qureg, targs, numTargs, ops, opDerivs, numOps);
+            
+            for (int i=0; i<numOps; i++) {
+                destroyComplexMatrixN(ops[i]);
+                destroyComplexMatrixN(opDerivs[i]);
+            }
+        }
+            break;
+            
+        case OPCODE_G :
+            if (numDerivParams != 1)
+                throw local_wrongNumDerivParamsExcep("Global phase", numDerivParams, 1); // throws
+            local_globalPhaseDeriv(qureg, derivParams[0]);
+            break;
+            
+        case OPCODE_Ph : {
+            if (numDerivParams != 1)
+                throw local_wrongNumDerivParamsExcep("Phase gate", numDerivParams, 1); // throws
+                
+            int* qubitCache = local_prepareCtrlCache(ctrls, numCtrls, -1);
+            for (int i=0; i<numTargs; i++)
+                qubitCache[numCtrls+i] = targs[i];
+            
+            local_multiControlledPhaseShiftDeriv(
+                qureg, qubitCache, numCtrls+numTargs, params[0], derivParams[0]);
+        }
+            break;
+            
+        default:            
+            throw QuESTException("", "The circuit contained a parameterised gate which does not "
+                "have a known analytic derivative."); // throws
+    }
+
+    destroyQureg(workspace, env);
+}
+
+
+
+/*
+ * DerivTerm methods 
+ */
+
+void DerivTerm::init(Gate gate, int gateInd, int varInd, qreal* derivParams, int numDerivParams) {
+    
+    this->gate = gate;
+    this->gateInd = gateInd;
+    this->varInd = varInd;
+    this->derivParams = derivParams;
+    this->numDerivParams = numDerivParams;
+}
+
+void DerivTerm::applyTo(Qureg qureg) {
+    
+    gate.applyDerivTo(qureg, derivParams, numDerivParams);
+}
+
+
+
+/*
+ * DerivCircuit methods 
+ */
+
+void DerivCircuit::applyTo(Qureg* quregs, int numQuregs, Qureg initQureg) {
+    
+    /* A reader may desire to optimise this function by cloning partial states 
+     * between the derivQuregs so that no single gate is performed more 
+     * than once per local-diff-variable. This would only offer a factor 2x 
+     * speedup (since the remaining gates of each partial state must be sequentially
+     * applied), but is anyway precluded by our support of repeated parameters / 
+     * chain rule through use of a workspace. Pity!
+     */
+    
+    for (int q=0; q<numQuregs; q++)
+        initBlankState(quregs[q]);
+    
+    Qureg workspace = createCloneQureg(initQureg, env);
+    
+    for (int t=0; t<numTerms; t++) {
+        
+        local_throwExcepIfUserAborted(); // throws
+        
+        DerivTerm term = terms[t];
+        int gateInd = term.getGateInd();
+        
+        cloneQureg(workspace, initQureg);
+        circuit->applySubTo(workspace, 0, gateInd); // throws
+        term.applyTo(workspace); // throws
+        circuit->applySubTo(workspace, gateInd+1, circuit->getNumGates()); // throws
+            
+        Qureg qureg = quregs[term.getVarInd()];
+        Complex zero = {.real=0, .imag=0};
+        Complex one = {.real=1, .imag=0};    
+        setWeightedQureg(zero, workspace, one, workspace, one, qureg);
+    }
+
+    // clean up
+    destroyQureg(workspace, env);
+}
+
+DerivCircuit::~DerivCircuit() {
+    
+    freeMMA();
+    delete circuit;
+    delete[] terms;
+}
+
+
+
+/*
+ * interfacing
+ */
+
+void internal_calcQuregDerivs(int initQuregId) {
     
     // get qureg ids (one for each var)
     int* quregIds;
     int numQuregs;
     WSGetInteger32List(stdlink, &quregIds, &numQuregs); // must free
     
-    // get circuit indices of variables (ordered by return order)
-    int* varOpInds;
-    int numVars;
-    WSGetInteger32List(stdlink, &varOpInds, &numVars); // must free
-
-    // get ansatz circuit from MMA link
-    int numOps;
-    int *opcodes, *ctrls, *numCtrlsPerOp, *targs, *numTargsPerOp, *numParamsPerOp;
-    qreal* params;
-    int totalNumCtrls, totalNumTargs, totalNumParams; // these fields are only needed by clean-up
-    local_loadCircuitFromMMA(
-        &numOps, &opcodes, &ctrls, &numCtrlsPerOp, 
-        &targs, &numTargsPerOp, &params, &numParamsPerOp,
-        &totalNumCtrls, &totalNumTargs, &totalNumParams); // must free
+    // load the circuit and derivative descriptions (local so no need to explicitly delete)
+    DerivCircuit derivCirc;
+    derivCirc.loadFromMMA();
     
-    // get derivatives of any unitary matrices present in ansatz
-    qreal* unitaryDerivs;
-    int numElems;
-    WSGetReal64List(stdlink, &unitaryDerivs, &numElems); // must free
-    
+    // validate quregs (must do so after loading derivCircuit from MMA so those packets are flushed)
     try {
-        // validate inputs (note varOpInds is already validated by MMA caller)
-        if (numQuregs != numVars)
-            throw QuESTException("", "An equal number of quregs as variables must be passed.");
+        local_throwExcepIfQuregNotCreated(initQuregId); // throws
         
-        // check initQureg is a created state-vector
-        local_throwExcepIfQuregNotCreated(initStateId);
-        int numQb = quregs[initStateId].numQubitsRepresented;
-        
-        /*
-        if (quregs[initStateId].isDensityMatrix)
-            throw QuESTException("", "Density matrices are not yet supported.");
-        */
-        
-        for (int i=0; i < numQuregs; i++) {
-            // check all quregs are created
-            local_throwExcepIfQuregNotCreated(quregIds[i]);
-            
-            // check initStateId is not in derivatives
-            if (quregIds[i] == initStateId)
-                throw QuESTException("", "derivQuregs must not contain initQureg.");
-
-            // check all quregs are the same size
-            if (quregs[quregIds[i]].numQubitsRepresented != numQb)
-                throw QuESTException("", "All qureg dimensions (of initQureg, and derivQuregs) must match.");
-                
-            // check all quregs are state-vectors
-            /*
-            if (quregs[quregIds[i]].isDensityMatrix)
-                throw QuESTException("", "Density matrices are not yet supported.");
-            */
+        int numQb = quregs[initQuregId].numQubitsRepresented;
+        int isDens = quregs[initQuregId].isDensityMatrix;
+        for (int q=0; q<numQuregs; q++) {
+            local_throwExcepIfQuregNotCreated(quregIds[q]); // throws
+            if (quregIds[q] == initQuregId)
+                throw QuESTException("", "The initial state qureg must not also be one of the derivative quregs"); // throws 
+            if (quregs[quregIds[q]].numQubitsRepresented != numQb)
+                throw QuESTException("", "All derivative quregs must have the same dimension as the initial state."); // throws
+            if (quregs[quregIds[q]].isDensityMatrix != isDens)
+                throw QuESTException("", "Quregs must be all state-vectors or all density-matrices"); // throws
         }
-            
-        // set all quregs to the initial state
-        for (int q=0; q < numQuregs; q++)
-            cloneQureg(quregs[quregIds[q]], quregs[initStateId]); // throw precluded by above validation
-            
-        local_getDerivativeQuregs(
-            quregIds, varOpInds, numVars, numOps, opcodes, ctrls, numCtrlsPerOp, 
-            targs, numTargsPerOp, params, numParamsPerOp, unitaryDerivs); // throws
-            
-        // return
-        WSPutInteger(stdlink, initStateId);
+    } catch (QuESTException& err) {
+        local_sendErrorAndFail("CalcQuregDerivs", err.message);
+        return;
+    }
+    
+    Qureg initQureg = quregs[initQuregId];
+    Qureg derivQuregs[numQuregs];
+    for (int q=0; q<numQuregs; q++)
+        derivQuregs[q] = quregs[quregIds[q]];
         
-        // proceed to clean-up afer catch
+    try {
+        derivCirc.applyTo(derivQuregs, numQuregs, initQureg); // throws
+        
+        WSPutInteger(stdlink, initQuregId);
         
     } catch (QuESTException& err) {
         
@@ -245,17 +572,5 @@ void internal_calcQuregDerivs(int initStateId) {
         else 
             local_sendErrorAndFail("CalcQuregDerivs", 
                 "Problem in " + err.thrower + ": " + err.message);
-                
-        // proceed to clean-up below
-    }
-    
-    // clean-up, even if errors have been sent to MMA
-    WSReleaseInteger32List(stdlink, quregIds, numQuregs);
-    WSReleaseInteger32List(stdlink, varOpInds, numVars);
-    WSReleaseReal64List(stdlink, unitaryDerivs, numElems);
-    local_freeCircuit(
-        opcodes, ctrls, numCtrlsPerOp, targs, 
-        numTargsPerOp, params, numParamsPerOp,
-        numOps, totalNumCtrls, totalNumTargs, totalNumParams);
+    } 
 }
-

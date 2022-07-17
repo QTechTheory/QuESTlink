@@ -199,7 +199,7 @@ endif
 #
 
 ifeq ($(OS), MACOS)
-    LIBS = -lm -lc++ $(WSTP_SRC_DIR)/MACOS_libWSTPi4.36.a -framework Foundation
+    LIBS = -lm -lc++ -lstdc++ $(WSTP_SRC_DIR)/MACOS_libWSTPi4.36.a -framework Foundation
 else ifeq ($(OS), WINDOWS)
     LIBS = kernel32.lib user32.lib gdi32.lib $(WSTP_SRC_DIR)/windows_wstp$(WINDOWS_ARCH)i4.lib $(WSTP_SRC_DIR)/windows_wstp$(WINDOWS_ARCH)i4m.lib $(WSTP_SRC_DIR)/windows_wstp$(WINDOWS_ARCH)i4s.lib
 else ifeq ($(OS), LINUX)
