@@ -33,6 +33,18 @@
 
 
 
+/*
+ * Max number of target and control qubits which can be specified 
+ * for an individual gate 
+ */
+#define MAX_NUM_TARGS_CTRLS 100
+
+
+
+int* local_prepareCtrlCache(int* ctrls, int numCtrls, int addTarg);
+
+
+
 /** A single quantum gate or decoherence operator.
  * A Gate instance does not need explicit deletion.
  */
@@ -75,7 +87,8 @@ class Gate {
         int getNumOutputs();
         
         /** Perform this gate upon the given qureg, modifying qureg, ignoring 
-         * any outputs. This is equivalent to applyTo(qureg, NULL).
+         * any outputs. This is equivalent to applyTo(qureg, NULL). 
+         * @throws if the gate details are invalid
          */
         void applyTo(Qureg qureg);
         
@@ -83,8 +96,20 @@ class Gate {
          * front of the given outputs array (unless it is NULL). Although cast to 
          * qreal, some outputs may be integers (like the results of measurement)
          * needing later recasting.
+         * @throws if the gate details are invalid
          */
         void applyTo(Qureg qureg, qreal* outputs);
+        
+        /** Apply the derivative of this gate upon the qureg. In simple cases, 
+         * the derivative is with respect to the real scalar parameter of the 
+         * gate. Generally, it is with respect to a variable which itself 
+         * determines the gate parameter. derivParams should contain the necessary 
+         * additional scalars to determine the full derivative.
+         *  
+         * @throws if the gate details are invalid
+         * @throws if derivParams are invalid
+         */
+        void applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams);
 };
 
 
@@ -108,6 +133,7 @@ class Circuit {
 
         /** Destroys the MMA arrays which supply ctrls, targs and params to 
          * the gate instances. This should only be called by the destructor.
+         * This method is defined in decoders.cpp.
          */
         void freeMMA();
         
@@ -115,7 +141,8 @@ class Circuit {
         
         /** Load Gate instances from the WSTP link, populating the Circuit 
          * attributes. Calling this before the WSTP messages are sent will cause 
-         * a crash.
+         * a crash. Unlike the other methods defined in circuits.cpp, this method 
+         * is defined in decoders.cpp.
          */
         void loadFromMMA();
         
@@ -161,7 +188,7 @@ class Circuit {
         void sendOutputsToMMA(qreal* outputs);
         
         /** Destructor will free the persistent Mathematica arrays accesssed by 
-         * the gate instances, and the gates array
+         * the gate instances, and the gates array.
          */
         ~Circuit();
 };

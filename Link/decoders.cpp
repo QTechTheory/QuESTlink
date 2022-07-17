@@ -10,13 +10,15 @@
 
 #include "errors.hpp"
 #include "circuits.hpp"
+#include "derivatives.hpp"
+#include "link.hpp"
 
 #include <string>
 
 
 
 /*
- * parsers
+ * matrix formatters
  */
  
 ComplexMatrix2 local_getMatrix2FromFlatList(qreal* list) {
@@ -48,6 +50,19 @@ void local_setMatrixNFromFlatList(qreal* list, ComplexMatrixN m, int numQubits) 
             m.real[r][c] = list[2*(dim*r+c)];
             m.imag[r][c] = list[2*(dim*r+c)+1];
         }
+}
+
+void local_createManyMatrixNFromFlatList(qreal* list, ComplexMatrixN* matrs, int numOps, int numQubits) {
+    long long int dim = (1LL << numQubits);
+    for (int i=0; i<numOps; i++) {
+        matrs[i] = createComplexMatrixN(numQubits);
+        local_setMatrixNFromFlatList(&list[2*dim*dim*i], matrs[i], numQubits);
+    }
+}
+
+long long int local_getNumScalarsToFormMatrix(int numQubits) {
+    long long int dim = (1LL << numQubits);
+    return dim*dim*2; // fac 2 for separate real and imag cmoponents
 }
 
 
@@ -137,6 +152,57 @@ void Circuit::sendOutputsToMMA(qreal* outputs) {
                 WSPutInteger(stdlink, (int) outputs[outInd++]);
         }
     }
+}
+
+
+
+/* 
+ * Derivative circuit methods
+ */
+
+void DerivCircuit::loadFromMMA() {
+    
+    circuit = new Circuit();
+    circuit->loadFromMMA();
+    
+    int* derivGateInds;    // may contain repetitions (multi-var gates)
+    int* derivVarInds;     // may contain repetitions (repetition of params, product rule) 
+    qreal* derivParams;   int totalNumDerivParams; // needed for later freeing
+    int* numDerivParamsPerDerivGate;    // used only for fault-checking
+    
+    WSGetInteger32List(stdlink, &derivGateInds, &numTerms);
+    WSGetInteger32List(stdlink, &derivVarInds,  &numTerms);
+    WSGetReal64List(stdlink, &derivParams, &totalNumDerivParams);
+    WSGetInteger32List(stdlink, &numDerivParamsPerDerivGate, &numTerms);
+    
+    /*
+        derivQuregInds are numbers 0 to numQuregs which indicate which of the 
+        given quregs (in quregIds) correspond to the current deriv term. 
+    */
+    
+    terms = new DerivTerm[numTerms];
+    int derivParamInd = 0;
+    
+    for (int t=0; t<numTerms; t++) {
+        
+        int gateInd = derivGateInds[t];
+        Gate gate = circuit->getGate(gateInd);
+        int varInd = derivVarInds[t];
+        int numDerivParams = numDerivParamsPerDerivGate[t];
+
+        terms[t].init(gate, gateInd, varInd, &derivParams[derivParamInd], numDerivParams);
+        derivParamInd += numDerivParams;
+    }
+    
+    WSReleaseInteger32List(stdlink, derivGateInds, numTerms);
+    WSReleaseInteger32List(stdlink, derivVarInds, numTerms);
+    WSReleaseInteger32List(stdlink, numDerivParamsPerDerivGate, numTerms);
+}
+
+void DerivCircuit::freeMMA() {
+    
+    // first term holds (i.e. has array beginning pointer) all term's derivParams
+    WSReleaseReal64List(stdlink, terms[0].getDerivParamsAddr(), totalNumDerivParams);
 }
 
 

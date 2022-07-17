@@ -95,6 +95,13 @@ QuESTException local_wrongNumGateTargsExcep(std::string gate, int wrongNumTargs,
          std::to_string(wrongNumTargs) + " were passed.");
 }
 
+QuESTException local_wrongNumDerivParamsExcep(std::string gate, int wrongNumParams, int rightNumParams) {
+    return QuESTException("",
+        "An internal error has occurred. The QuESTlink backend expected to receive " + std::to_string(rightNumParams) + 
+        " 'derivative' scalars in order to effect the derivative of gate " + gate + ", but instead " +
+        "received " + std::to_string(wrongNumParams) + ". Please report this problem to the QuESTlink team.");
+}
+
 void local_throwExcepIfUserAborted() {
     
     /* Dear ancient Wolfram Gods; why does this no longer work? 
@@ -112,4 +119,17 @@ void local_throwExcepIfUserAborted() {
             throw QuESTException("Abort", "Calculation aborted."); // throws
         }
     }
+}
+
+void sendDebugEcho(std::string msg) {
+
+    WSPutFunction(stdlink, "EvaluatePacket", 1);
+    WSPutFunction(stdlink, "Echo", 1);
+    WSPutString(stdlink, msg.c_str());
+
+    WSEndPacket(stdlink);
+    WSNextPacket(stdlink);
+    WSNewPacket(stdlink);
+    
+    // a new packet is now expected; caller MUST send something else
 }
