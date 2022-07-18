@@ -72,6 +72,10 @@ class DerivCircuit {
          */
         Circuit *circuit;
         
+        /** The number of represented differential variables.
+         */
+        int numVars;
+        
         /** A complete description of the differential terms of the circuit,
          * after expansion via the chain rule. The gateInd of each successive 
          * term is increasing or the same, to permit optimisations. All instances 
@@ -85,6 +89,11 @@ class DerivCircuit {
          * derivParams array which is shared between DerivTerm instances.
          */
         int totalNumDerivParams;
+        
+        /** Qureg type-specific implementations of calcDerivEnergies 
+         */
+        void calcDerivEnergiesStateVec(qreal* energies, PauliHamil hamil, Qureg initQureg);
+        void calcDerivEnergiesDensMatr(qreal* energies, PauliHamil hamil, Qureg initQureg);
         
         /** Destroys the MMA arrays shared between DerivTerm instances (derivPArams), 
          * invoked during the destructor. This method is defined in decoders.cpp.
@@ -101,6 +110,10 @@ class DerivCircuit {
          */
         void loadFromMMA();
         
+        /** Getters 
+         */
+        int getNumVars() { return numVars; };
+        
         /** Modify quregs to be the derivative of the circuit state produced 
          * by attribute circuit upon constant initial state initQureg. 
          * @param quregs the list of to-be-modified quregs which match the order 
@@ -113,6 +126,17 @@ class DerivCircuit {
          *         (i.e. contains invalid gate details), or if the user aborts
          */
         void applyTo(Qureg* quregs, int numQuregs, Qureg initQureg);
+        
+        /** Modifies eneryGrad to be the gradient of the expected energy under
+         * the given Hamiltonian, as prescribed by the circuit derivatives.
+         * If initQureg is a state-vector, and isPureCirc = true, then this 
+         * function uses the O(#parameters) algorithm from arXiv 2009.02823.
+         * Otherwise, it uses a O(#parameters^2) method. In both scenarios, 
+         * the memory overhead is fixed. 
+         * @param energyGrad must be a pre-allocated length-numVars array
+         * @param isPureCirc indicates whether the circuit contains only statevector gates
+         */ 
+        void calcDerivEnergies(qreal* eneryGrad, PauliHamil hamil, Qureg initQureg, bool isPureCirc);
         
         /** Destructor will free the persistent Mathematica arrays accesssed by 
          * the DerivTerm instances, as well as the Circuit. 

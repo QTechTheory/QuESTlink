@@ -13,6 +13,10 @@ void local_setMatrixNFromFlatList(qreal* list, ComplexMatrixN m, int numQubits);
 
 void local_createManyMatrixNFromFlatList(qreal* list, ComplexMatrixN* matrs, int numOps, int numQubits);
 
+void local_setFlatListFromMatrixN(qreal* list, ComplexMatrixN m, int numQubits);
+
+void local_setFlatListToMatrixDagger(qreal* list, int numQubits);
+
 long long int local_getNumScalarsToFormMatrix(int numQubits);
 
 
@@ -24,6 +28,10 @@ pauliOpType* local_decodePauliSum(
 
 void local_freePauliSum(
     int numPaulis, int numTerms, qreal* termCoeffs, int* allPauliCodes, int* allPauliTargets, int* numPaulisPerTerm, pauliOpType* arrPaulis);
+
+PauliHamil local_loadPauliHamilFromMMA(int numQubits);
+
+void local_freePauliHamil(PauliHamil hamil);
 
 
 
