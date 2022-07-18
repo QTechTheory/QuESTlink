@@ -536,6 +536,57 @@ void Gate::applyTo(Qureg qureg) {
     applyTo(qureg, NULL);
 }
 
+void Gate::applyDaggerTo(Qureg qureg) {
+    
+    switch(opcode) {
+        
+        // involutory gates
+        case OPCODE_Id :
+        case OPCODE_H :
+        case OPCODE_SWAP :
+        case OPCODE_X :
+        case OPCODE_Y :
+        case OPCODE_Z :
+            applyTo(qureg); // throws
+            break;
+
+        // neg-param = inverse gates:
+        case OPCODE_Rx :
+        case OPCODE_Ry :
+        case OPCODE_Rz :
+        case OPCODE_R :
+        case OPCODE_Ph :
+        case OPCODE_G :
+            params[0] *= -1;
+            applyTo(qureg); // throws (safe to persist params mod)
+            params[0] *= -1;
+            break;
+            
+        // gates with transposable matrices
+        case OPCODE_U :
+        case OPCODE_Matr :
+            local_setFlatListToMatrixDagger(params, numTargs);
+            applyTo(qureg);
+            local_setFlatListToMatrixDagger(params, numTargs);
+            break;
+        
+        // name -> phase
+        case OPCODE_S : { ;
+            int* ctrlCache = local_prepareCtrlCache(ctrls, numCtrls, targs[0]);
+            multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, -M_PI/2); // throws
+        }   
+            break;
+        case OPCODE_T : { ;
+            int* ctrlCache = local_prepareCtrlCache(ctrls, numCtrls, targs[0]);
+            multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, -M_PI/4); // throws
+        }
+            break;
+                        
+        default:            
+            throw QuESTException("", "The dagger operator was attempted upon an operator with no known conjugate-transpose."); // throws
+    }
+}
+
 
 
 /*
@@ -594,10 +645,20 @@ void Circuit::applyTo(Qureg qureg, qreal* outputs, bool showProgress) {
         local_updateCircuitProgress(1);
 }
 
+void Circuit::applyTo(Qureg qureg) {
+    applyTo(qureg, NULL, false);
+}
+
 void Circuit::applySubTo(Qureg qureg, int startGateInd, int endGateInd) {
     
     for (int gateInd=startGateInd; gateInd < endGateInd; gateInd++)
         gates[gateInd].applyTo(qureg); // throws
+}
+
+void Circuit::applyDaggerSubTo(Qureg qureg, int startGateInd, int endGateInd) {
+    
+    for (int gateInd = endGateInd-1; gateInd >= startGateInd; gateInd--)
+        gates[gateInd].applyDaggerTo(qureg); // throws
 }
 
 Circuit::~Circuit() {

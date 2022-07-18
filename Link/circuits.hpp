@@ -100,12 +100,17 @@ class Gate {
          */
         void applyTo(Qureg qureg, qreal* outputs);
         
+        /** Apply the conjugate transpose of this gate upon the qureg.
+         * @throws if the gate details are invalid
+         * @throws if the gate has no known conjugate transpose
+         */
+        void applyDaggerTo(Qureg qureg);
+        
         /** Apply the derivative of this gate upon the qureg. In simple cases, 
          * the derivative is with respect to the real scalar parameter of the 
          * gate. Generally, it is with respect to a variable which itself 
          * determines the gate parameter. derivParams should contain the necessary 
          * additional scalars to determine the full derivative.
-         *  
          * @throws if the gate details are invalid
          * @throws if derivParams are invalid
          */
@@ -173,12 +178,20 @@ class Circuit {
          * of the circuit simulation (via local_updateCircuitProgress()).
          */
         void applyTo(Qureg qureg, qreal* outputs, bool showProgress);
+        void applyTo(Qureg qureg);
         
         /** Apply only a contiguous subset of the circuit gates to qureg, starting 
          * at index startGateInd (inclusive) and ending with endGateInd (exclusive).
          * No outputs are recorded and progress is not shown.
          */
         void applySubTo(Qureg qureg, int startGateInd, int endGateInd);
+        
+        /** Apply the dagger of a contiguous subset of the circuit gates to qureg.
+         * The subset starts at startGateInd (inclusvie), and ends at endGateInd 
+         * (exclusive). Then, each gate in the subset in REVERSE order has its 
+         * dagger applied. 
+         */
+        void applyDaggerSubTo(Qureg qureg, int startGateInd, int endGateInd);
         
         /** Send the given list of outputs (which must have been produced from 
          * this circuit instance via applyCircuit()) to Mathematica, formatting 

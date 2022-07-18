@@ -6,6 +6,7 @@
  */
 
 #include "QuEST.h"
+#include "QuEST_internal.h"
 #include "wstp.h"
 
 #include "errors.hpp"
@@ -50,6 +51,23 @@ void local_setMatrixNFromFlatList(qreal* list, ComplexMatrixN m, int numQubits) 
             m.real[r][c] = list[2*(dim*r+c)];
             m.imag[r][c] = list[2*(dim*r+c)+1];
         }
+}
+
+void local_setFlatListFromMatrixN(qreal* list, ComplexMatrixN m, int numQubits) {
+    long long int dim = (1LL << numQubits);
+    for (long long int r=0; r<dim; r++)
+        for (long long int c=0; c<dim; c++) {
+            list[2*(dim*r+c)]   = m.real[r][c];
+            list[2*(dim*r+c)+1] = m.imag[r][c];
+        }
+}
+
+void local_setFlatListToMatrixDagger(qreal* list, int numQubits) {
+    ComplexMatrixN m = createComplexMatrixN(numQubits);
+    local_setMatrixNFromFlatList(list, m, numQubits);
+    setConjugateMatrixN(m);
+    local_setFlatListFromMatrixN(list, m, numQubits);
+    destroyComplexMatrixN(m);
 }
 
 void local_createManyMatrixNFromFlatList(qreal* list, ComplexMatrixN* matrs, int numOps, int numQubits) {
@@ -182,6 +200,7 @@ void DerivCircuit::loadFromMMA() {
     
     terms = new DerivTerm[numTerms];
     int derivParamInd = 0;
+    int maxVarInd = 0;
     
     for (int t=0; t<numTerms; t++) {
         
@@ -192,7 +211,12 @@ void DerivCircuit::loadFromMMA() {
 
         terms[t].init(gate, gateInd, varInd, &derivParams[derivParamInd], numDerivParams);
         derivParamInd += numDerivParams;
+        
+        if (varInd > maxVarInd)
+            maxVarInd = varInd;
     }
+    
+    numVars = maxVarInd + 1;
     
     WSReleaseInteger32List(stdlink, derivGateInds, numTerms);
     WSReleaseInteger32List(stdlink, derivVarInds, numTerms);
@@ -265,4 +289,29 @@ void local_freePauliSum(int numPaulis, int numTerms, qreal* termCoeffs, int* all
     // may be none if validation triggers clean-up before arrPaulis gets created
     if (arrPaulis != NULL)
         free(arrPaulis);
+}
+
+PauliHamil local_loadPauliHamilFromMMA(int numQubits) {
+    
+    PauliHamil hamil;
+    
+    int numPaulis;
+    int *allPauliCodes, *allPauliTargets, *numPaulisPerTerm;
+    local_loadEncodedPauliSumFromMMA(
+        &numPaulis, &hamil.numSumTerms, &hamil.termCoeffs, &allPauliCodes, &allPauliTargets, &numPaulisPerTerm);
+    hamil.pauliCodes = local_decodePauliSum(
+        numQubits, hamil.numSumTerms, allPauliCodes, allPauliTargets, numPaulisPerTerm); // throws
+    hamil.numQubits = numQubits;
+    
+    WSReleaseInteger32List(stdlink, allPauliCodes, numPaulis);
+    WSReleaseInteger32List(stdlink, allPauliTargets, numPaulis);
+    WSReleaseInteger32List(stdlink, numPaulisPerTerm, hamil.numSumTerms);
+    
+    return hamil;
+}
+
+void local_freePauliHamil(PauliHamil hamil) {
+    
+    WSReleaseReal64List(stdlink, hamil.termCoeffs, hamil.numSumTerms);
+    free(hamil.pauliCodes);
 }

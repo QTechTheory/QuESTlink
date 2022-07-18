@@ -34,6 +34,10 @@ Accepts optional arguments WithBackup and ShowProgress."
 Variable repetition, multi-parameter gates, variable dependent element-wise matrices, variable dependent channels and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted."
     CalcQuregDerivs::error = "`1`"
     
+    CalcExpecPauliSumDerivs::usage = "CalcExpecPauliSumDerivs[circuit, initQureg, varVals, pauliSum] returns the gradient vector of the pauliSum expected values, as produced by the derivatives of the circuit (with respect to varVals, {var -> value}) acting upon the given initial state.
+This function  permits all the freedoms of CalcQuregDerivs[], but with fixed memory overheads, and when performed upon statevectors, will run a factor Length[circuit] faster."
+    CalcExpecPauliSumDerivs::error = "`1`"
+    
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
 CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element CalcInnerProduct[braId, ketIds[i]]."
     CalcInnerProducts::error = "`1`"
@@ -549,57 +553,96 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         encodeDerivParams[Subscript[Kraus|KrausNonTP, __][matrs_List], x_] := codifyMatrices @ Table[D[m,x] , {m,matrs}]
         encodeDerivParams[Subscript[C, __][g_], x_] := encodeDerivParams[g, x]
         
-        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] := 
-            Module[{gateInds, quregInds, order, encodedCirc, derivParams},
-            
-                If[Length[varVals] =!= Length[derivQuregs],
-                    Message[CalcQuregDerivs::error, "An equal number of variables and derivQuregs must be passed."]; Return @ Failed];
-                    
-                (* locate the gate indices of the diff variables *)
-            	gateInds = DeleteDuplicates /@ (Position[circuit, _?(MemberQ[#])][[All, 1]]& /@ varVals[[All,1]]);
-                
-                (* validate all variables were present in the circuit *)
-                If[AnyTrue[gateInds, (# === {} &)],
-                    Message[CalcQuregDerivs::error, "One or more variables were not present in the circuit!"]; Return @ $Failed];
-                
-                (* map flat gate indices to (relative indices of) derivQuregs *)
-            	quregInds = Flatten @ Table[ConstantArray[i, Length @ gateInds[[i]]], {i, Length@varVals}];
-            	gateInds = Flatten @ gateInds;
-            	
-                (* sort info so that gateInds is increasing (for backend optimisation *)
-            	order = Ordering[gateInds];
-            	gateInds = gateInds[[order]];
-            	quregInds = quregInds[[order]];
-                
-                (* encode the circuit for the backend *)
-                encodedCirc = codifyCircuit[(circuit /. varVals)];
-                
-                (* validate the circuit contains no unspecified variables *)
-                If[Not @ AllTrue[encodedCirc[[4]], NumericQ, 2],
-                    Message[CalcQuregDerivs::error, "The circuit contained variables which were not assigned values!"]; Return @ $Failed];
+        encodeDerivCirc[circuit_, varVals_] := Module[{gateInds, varInds, order, encodedCirc, derivParams},
 
-                (* differentiate gate args, and pack for backend (without yet making numerical) *)
-            	derivParams = MapThread[encodeDerivParams, 
-            		{circuit[[gateInds]], varVals[[quregInds,1]]}];
-                    
-                (* validate all gates with diff variables have known derivatives *)
-                If[MemberQ[derivParams, encodeDerivParams[_,_]],
-                    Message[CalcQuregDerivs::error, "The circuit contained the following variable gate which could not be differentiated: " <> 
-                        ToString @ StandardForm @ First @ Cases[derivParams, encodeDerivParams[g_,_] :> g]]; Return @ $Failed];
+            (* locate the gate indices of the diff variables *)
+            gateInds = DeleteDuplicates /@ (Position[circuit, _?(MemberQ[#])][[All, 1]]& /@ varVals[[All,1]]);
+            
+            (* validate all variables were present in the circuit *)
+            If[AnyTrue[gateInds, (# === {} &)],
+                Throw @ "One or more variables were not present in the circuit!"];
+            
+            (* map flat gate indices to relative indices of variables *)
+            varInds = Flatten @ Table[ConstantArray[i, Length @ gateInds[[i]]], {i, Length@varVals}];
+            gateInds = Flatten @ gateInds;
+            
+            (* sort info so that gateInds is increasing (for backend optimisations() *)
+            order = Ordering[gateInds];
+            gateInds = gateInds[[order]];
+            varInds = varInds[[order]];
+            
+            (* encode the circuit for the backend *)
+            encodedCirc = codifyCircuit[(circuit /. varVals)];
+            
+            (* validate the circuit contains no unspecified variables *)
+            If[Not @ AllTrue[encodedCirc[[4]], NumericQ, 2],
+                Throw @ "The circuit contained variables which were not assigned values!"];
+
+            (* differentiate gate args, and pack for backend (without yet making numerical) *)
+            derivParams = MapThread[encodeDerivParams, 
+                {circuit[[gateInds]], varVals[[varInds,1]]}];
                 
-                (* convert packed diff gate args to numerical *)
-                derivParams = derivParams /. varVals // N;
-                
-                (* validate all gate derivatives could be numerically evaluated *)
-                If[Not @ AllTrue[derivParams, NumericQ, 2],
-                    Message[CalcQuregDerivs::error, "The circuit contained gate derivatives with parameters which could not be numerically evaluated."]; Return @ $Failed];
-                
+            (* validate all gates with diff variables have known derivatives *)
+            If[MemberQ[derivParams, encodeDerivParams[_,_]],
+                Throw["The circuit contained the following variable gate which could not be differentiated: " <> 
+                    ToString @ StandardForm @ First @ Cases[derivParams, encodeDerivParams[g_,_] :> g]]];
+            
+            (* convert packed diff gate args to numerical *)
+            derivParams = derivParams /. varVals // N;
+            
+            (* validate all gate derivatives could be numerically evaluated *)
+            If[Not @ AllTrue[derivParams, NumericQ, 2],
+                Throw @ "The circuit contained gate derivatives with parameters which could not be numerically evaluated."];
+            
+            (* return *)
+            {encodedCirc, {gateInds, varInds, derivParams}}]
+            
+        unpackEncodedDerivCircTerms[{gateInds_, varInds_, derivParams_}] :=
+            Sequence[gateInds-1, varInds-1, Flatten @ derivParams, Length /@ derivParams]
+            
+        (* TODO: restrict Pauli pattern!!!! *)
+        (* TODO has forgone product arget uniqueness:    And @@ DuplicateFreeQ /@ targs   *)
+        encodePauliSum[paulis_] := With[{
+            coeffs = getPauliSumTermCoeff /@ List @@ paulis,
+            codes = getPauliSumTermCodes /@ List @@ paulis,
+            targs = getPauliSumTermTargs /@ List @@ paulis},
+            {coeffs, Flatten[codes], Flatten[targs], Length /@ targs}]
+
+        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] :=  
+            Module[
+                {ret, encodedCirc, encodedDerivTerms},
+                (* check each var corresponds to a deriv qureg *)
+                If[Length[varVals] =!= Length[derivQuregs],
+                    Message[CalcQuregDerivs::error, "An equal number of variables and derivQuregs must be passed."]; Return@$Failed];
+                (* encode deriv circuit for backend, throwing any parsing errors *)
+                ret = Catch @ encodeDerivCirc[circuit, varVals];
+                If[Head@ret === String,
+                    Message[CalcQuregDerivs::error, ret]; Return @ $Failed];
                 (* send to backend, mapping Mathematica indices to C++ indices *)
-                CalcQuregDerivsInternal[initQureg, derivQuregs, unpackEncodedCircuit @ encodedCirc, 
-                    gateInds - 1, quregInds - 1, Flatten @ derivParams, Length /@ derivParams]]
-                    
-        (* error for bad args *)
+                {encodedCirc, encodedDerivTerms} = ret;
+                CalcQuregDerivsInternal[initQureg, derivQuregs, 
+                    unpackEncodedCircuit @ encodedCirc, 
+                    unpackEncodedDerivCircTerms @ encodedDerivTerms]]
         CalcQuregDerivs[___] := invalidArgError[CalcQuregDerivs]
+        
+        (* TODO!!! adjust pauliSum patterns as per other functions *)
+        CalcExpecPauliSumDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, paulis_] :=
+            Module[
+                {ret, encodedCirc, encodedDerivTerms},
+                (* encode deriv circuit for backend, throwing any parsing errors *)
+                ret = Catch @ encodeDerivCirc[circuit, varVals];
+                If[Head@ret === String,
+                    Message[CalcExpecPauliSumDerivs::error, ret]; Return @ $Failed];
+                isPureCirc = 
+                (* send to backend, mapping Mathematica indices to C++ indices *)
+                {encodedCirc, encodedDerivTerms} = ret;
+                CalcExpecPauliSumDerivsInternal[initQureg, 
+                    Boole @ Not @ MemberQ[circuit, Subscript[Damp|Deph|Depol|Kraus|KrausNonTP, __][__]],
+                    getNumQubitsInCircuit[circuit],
+                    unpackEncodedCircuit @ encodedCirc, 
+                    unpackEncodedDerivCircTerms @ encodedDerivTerms,
+                    Sequence @@ encodePauliSum[paulis]]]
+        CalcExpecPauliSumDerivs[__] := invalidArgError[CalcExpecPauliSumDerivs]
             
         (* compute a matrix of inner products; this is used in tandem with CalcQuregDerivs to populate the Li matrix *)
         CalcInnerProducts[quregIds:{__Integer}] := 
@@ -713,17 +756,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         pattPauliSum = Verbatim[Plus][ ( pattXYZI | Verbatim[Times][___?NumericQ, pattXYZI..] ) .. ]
         
         CalcExpecPauliSum[qureg_Integer, paulis:pattPauliSum, workspace_Integer] := 
-            With[{
-                coeffs = getPauliSumTermCoeff /@ List @@ paulis,
-                codes = getPauliSumTermCodes /@ List @@ paulis,
-                targs = getPauliSumTermTargs /@ List @@ paulis
-                },
+            With[{targs = getPauliSumTermTargs /@ List @@ paulis},
                 If[
                     And @@ DuplicateFreeQ /@ targs,
-                    CalcExpecPauliSumInternal[qureg, workspace, coeffs, Flatten[codes], Flatten[targs], Length /@ targs],
-                    (Message[CalcExpecPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
-                ]
-            ]
+                    CalcExpecPauliSumInternal[qureg, workspace, Sequence @@ encodePauliSum[paulis]],
+                    (Message[CalcExpecPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)]]
         (* single term: single Pauli *)
         CalcExpecPauliSum[qureg_Integer, pauli:pattPauli, workspace_Integer] :=
             CalcExpecPauliSumInternal[qureg, workspace, {1}, {getOpCode @ pauli[[1]]}, {pauli[[2]]}, {1}]

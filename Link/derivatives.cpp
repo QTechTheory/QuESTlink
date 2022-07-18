@@ -488,8 +488,6 @@ void DerivCircuit::applyTo(Qureg* quregs, int numQuregs, Qureg initQureg) {
     
     for (int t=0; t<numTerms; t++) {
         
-        local_throwExcepIfUserAborted(); // throws
-        
         DerivTerm term = terms[t];
         int gateInd = term.getGateInd();
         
@@ -506,6 +504,114 @@ void DerivCircuit::applyTo(Qureg* quregs, int numQuregs, Qureg initQureg) {
 
     // clean up
     destroyQureg(workspace, env);
+}
+
+void DerivCircuit::calcDerivEnergiesStateVec(qreal* eneryGrad, PauliHamil hamil, Qureg initQureg) {
+        
+    // prepare lambda = H circuit(init) and phi=circuit(init)
+    Qureg workLambda = createCloneQureg(initQureg, env);
+    circuit->applyTo(workLambda);
+    Qureg workPhi = createCloneQureg(workLambda, env);
+    applyPauliHamil(workPhi, hamil, workLambda);
+    
+    // prepare workMu in arbitrary state
+    Qureg workMu = createQureg(initQureg.numQubitsRepresented, env);
+
+    // clear energies
+    for (int i=0; i<numVars; i++)
+        eneryGrad[i] = 0;
+        
+    // explicitly catch and rethrow errors to force clean-up of above quregs
+    try {
+        
+        for (int t=numTerms-1; t>=0; t--) {
+            
+            DerivTerm derivTerm = terms[t];
+            int gateInd = derivTerm.getGateInd();
+            int varInd = derivTerm.getVarInd();
+            
+            // remove all gates >= gateInd (not removed by previous iteration) from workPhi
+            circuit->applyDaggerSubTo(workPhi, gateInd, 
+                (t<numTerms-1)? terms[t+1].getGateInd() : circuit->getNumGates());
+
+            // add all (daggered) gates > gateInd (not added by previous iteration) to workLambda
+            circuit->applyDaggerSubTo(workLambda, gateInd + 1,
+                (t<numTerms-1)? terms[t+1].getGateInd() + 1 : circuit->getNumGates());
+                
+            cloneQureg(workMu, workPhi);
+            derivTerm.applyTo(workMu);
+            eneryGrad[varInd] += 2 * calcInnerProduct(workLambda, workMu).real;        
+        }
+        
+    } catch (QuESTException& err) {
+        
+        // clean-up and rethrow
+        destroyQureg(workLambda, env);
+        destroyQureg(workPhi, env);
+        destroyQureg(workMu, env);
+        throw;
+    }
+    
+    // clean-up
+    destroyQureg(workLambda, env);
+    destroyQureg(workPhi, env);
+    destroyQureg(workMu, env);
+}
+
+void DerivCircuit::calcDerivEnergiesDensMatr(qreal* energyGrad, PauliHamil hamil, Qureg initQureg) {
+    
+    // initQureg may be a statevector or a density matrix
+    Qureg qureg = createDensityQureg(initQureg.numQubitsRepresented, env);
+    Qureg workspace = createCloneQureg(qureg, env);
+    
+    // clear energies
+    for (int i=0; i<numVars; i++)
+        energyGrad[i] = 0;
+    
+    // explicitly catch and rethrow errors to force clean-up of above quregs
+    try {
+        
+        // iterate each differential term (those produced after chain-rule expansion)
+        for (int t=0; t<numTerms; t++) {
+            
+            DerivTerm term = terms[t];
+            int gateInd = term.getGateInd();
+            int varInd = term.getVarInd();
+            
+            // set qureg = initQureg
+            if (initQureg.isDensityMatrix)
+                cloneQureg(qureg, initQureg);
+            else
+                initPureState(qureg, initQureg);
+            
+            // produce a single term of (d circuit(qureg) / d var)
+            circuit->applySubTo(qureg, 0, gateInd); // throws
+            term.applyTo(qureg); // throws
+            circuit->applySubTo(qureg, gateInd+1, circuit->getNumGates()); // throws
+            
+            // add this term to (d circuit(qureg) / d var)
+            energyGrad[varInd] += calcExpecPauliHamil(qureg, hamil, workspace);
+        }
+        
+    } catch (QuESTException& err) {
+        
+        // clean-up and rethrow
+        destroyQureg(qureg, env);
+        destroyQureg(workspace, env);
+        throw;
+    }
+
+    // clean-up
+    destroyQureg(qureg, env);
+    destroyQureg(workspace, env);
+}
+
+void DerivCircuit::calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg initQureg, bool isPureCirc) {
+    
+    if (isPureCirc && !initQureg.isDensityMatrix)
+        calcDerivEnergiesStateVec(energyGrad, hamil, initQureg);
+    else
+        calcDerivEnergiesDensMatr(energyGrad, hamil, initQureg);
 }
 
 DerivCircuit::~DerivCircuit() {
@@ -573,4 +679,31 @@ void internal_calcQuregDerivs(int initQuregId) {
             local_sendErrorAndFail("CalcQuregDerivs", 
                 "Problem in " + err.thrower + ": " + err.message);
     } 
+}
+
+void internal_calcExpecPauliSumDerivs(int initQuregId, int isPureCirc, int numQb) {
+    
+    // load the circuit, deriv and hamiltonians from mma
+    DerivCircuit derivCirc;
+    derivCirc.loadFromMMA(); // local, so desconstructor automatic
+    PauliHamil hamil = local_loadPauliHamilFromMMA(numQb);
+    
+    int numDerivs = derivCirc.getNumVars();
+    qreal* energyGrad = (qreal*) calloc(numDerivs, sizeof *energyGrad);
+    
+    try {
+        local_throwExcepIfQuregNotCreated(initQuregId); // throws
+    
+        derivCirc.calcDerivEnergies(energyGrad, hamil, quregs[initQuregId], isPureCirc); // throws
+        
+        WSPutReal64List(stdlink, energyGrad, numDerivs);
+        
+    } catch (QuESTException& err) {
+        
+        local_sendErrorAndFail("CalcExpecPauliSumDerivs", err.message);
+    }
+
+    // clean-up even despite errors
+    free(energyGrad);
+    local_freePauliHamil(hamil);
 }

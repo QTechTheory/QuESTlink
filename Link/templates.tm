@@ -439,6 +439,15 @@
 :Evaluate: QuEST`Private`CalcQuregDerivsInternal::usage = "CalcQuregDerivsInternal[initStateId, quregIds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp] accepts a circuit (complete with rotation angles) and a nominated set of gates (by indices), sets each qureg to be the result of applying the derivative of the circuit w.r.t the nominated gates, upon the initial state."
 
 :Begin:
+:Function:       internal_calcExpecPauliSumDerivs
+:Pattern:        QuEST`Private`CalcExpecPauliSumDerivsInternal[initStateId_Integer, isPureCirc_Integer, numQb_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, derivOpInds_List, derivVarInds_List, derivParams_List, numDerivParamsPerDerivOp_List, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
+:Arguments:      { initStateId, isPureCirc, numQb, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm }
+:ArgumentTypes:  { Integer, Integer, Integer, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`CalcExpecPauliSumDerivsInternal::usage = "CalcExpecPauliSumDerivsInternal[initStateId, isPureCirc, numQb, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] accepts a circuit (complete with rotation angles), a derivative specification, and a Hamiltonian, and returns the energy gradient."
+
+:Begin:
 :Function:       internal_calcInnerProductsMatrix
 :Pattern:        QuEST`Private`CalcInnerProductsMatrixInternal[quregIds_List]
 :Arguments:      { quregIds }
