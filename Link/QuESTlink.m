@@ -328,7 +328,7 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
     T::usage = "T is the T gate, a.k.a PI/4 gate."
     Protect[T]
     
-    U::usage = "U[matrix] is a general unitary gate with any number of target qubits, specified as a unitary square complex matrix. To relax unitarity, use Matr."
+    U::usage = "U[matrix] is a general unitary gate with any number of target qubits, specified as a unitary square complex matrix. If the matrix breaks normalisation but is intended unitarity, use UNonNorm. To specify a general non-unitary matrix, use Matr."
     Protect[U]
     
     Deph::usage = "Deph[prob] is a 1 or 2 qubit dephasing with probability prob of error."
@@ -366,7 +366,10 @@ The probability of the forced measurement outcome (if hypothetically not forced)
     Ph::usage = "Ph is the phase shift gate, which introduces phase factor exp(i*theta) upon state |1...1> of the target and control qubits. The gate is the same under different orderings of qubits, and division between control and target qubits."
     Protect[Ph]
     
-    Matr::usage = "Matr[matrix] is an arbitrary operator with any number of target qubits, specified as a completely general (even non-unitary) square complex matrix."
+    UNonNorm::usage = "UNonNorm[matr] is treated like a general unitary gate U, but with relaxed normalisation conditions on the matrix. This is distinct to gate Matr, which will be internally assumed non-unitary."
+    Protect[UNonNorm]
+    
+    Matr::usage = "Matr[matrix] is an arbitrary operator with any number of target qubits, specified as a completely general (even non-unitary) square complex matrix. Unlike UNonNorm, the given matrix is not internally assumed unitary. It is hence only left-multiplied onto density matrices."
     Protect[Matr]
     
     (* overriding Mathematica's doc for C[i] as i-th default constant *)
@@ -426,7 +429,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                
         (* opcodes which correlate with the global IDs in quest_link.cpp *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,Matr->22,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,Matr->22,UNonNorm->23,_->-1}
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
         codifyMatrix[matr_] :=
@@ -441,7 +444,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         
         (* recognising and codifying gates into {opcode, ctrls, targs, params} *)
         gatePatterns = {
-            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[g:U|Matr,  (targs:__Integer)|{targs:__Integer}][matr:_List]] :> 
+            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[g:U|Matr|UNonNorm,  (targs:__Integer)|{targs:__Integer}][matr:_List]] :> 
                 {getOpCode[g], {ctrls}, {targs}, codifyMatrix[matr]},
         	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {args}},
@@ -451,7 +454,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 {getOpCode[R], {ctrls}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
             R[param_, ({paulis:pattPauli..}|Verbatim[Times][paulis:pattPauli..]|paulis:pattPauli__)] :>
                 {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
-        	Subscript[g:U|Matr, (targs:__Integer)|{targs:__Integer}][matr:_List] :> 
+        	Subscript[g:U|Matr|UNonNorm, (targs:__Integer)|{targs:__Integer}][matr:_List] :> 
                 {getOpCode[g], {}, {targs}, codifyMatrix[matr]},
             Subscript[Kraus, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
                 {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
@@ -549,7 +552,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         encodeDerivParams[Subscript[Rx|Ry|Rz|Ph|Damp|Deph|Depol, __][f_], x_] := {D[f,x]}
         encodeDerivParams[R[f_,_], x_] := {D[f,x]}
         encodeDerivParams[G[f_], x_] := {D[f,x]}
-        encodeDerivParams[Subscript[U|Matr, __][matr_], x_] := codifyMatrix @ D[matr,x]
+        encodeDerivParams[Subscript[U|Matr|UNonNorm, __][matr_], x_] := codifyMatrix @ D[matr,x]
         encodeDerivParams[Subscript[Kraus|KrausNonTP, __][matrs_List], x_] := codifyMatrices @ Table[D[m,x] , {m,matrs}]
         encodeDerivParams[Subscript[C, __][g_], x_] := encodeDerivParams[g, x]
         
@@ -1860,7 +1863,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getAnalGateMatrix[Subscript[S, _]] = {{1,0},{0,I}};
         getAnalGateMatrix[Subscript[T, _]] = {{1,0},{0,Exp[I Pi/4]}};
         getAnalGateMatrix[Subscript[SWAP, _,_]] = {{1,0,0,0},{0,0,1,0},{0,1,0,0},{0,0,0,1}};
-        getAnalGateMatrix[Subscript[U|Matr, __][m_]] = m;
+        getAnalGateMatrix[Subscript[U|Matr|UNonNorm, __][m_]] = m;
         getAnalGateMatrix[Subscript[Ph, t__][a_]] = DiagonalMatrix[ Append[ConstantArray[1, 2^Length[{t}] - 1], Exp[I a]] ];
         getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
         getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]]; (* KroneckerProduct doesn't have a one-arg identity overload?? Bah *)
@@ -1879,8 +1882,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getAnalGateControls[_] := {}
             
         (* extract targets from gate symbols *)
-        getAnalGateTargets[Subscript[U|Matr, t_List][_]] := t
-        getAnalGateTargets[Subscript[U|Matr, t__][_]] := {t}
+        getAnalGateTargets[Subscript[U|Matr|UNonNorm, t_List][_]] := t
+        getAnalGateTargets[Subscript[U|Matr|UNonNorm, t__][_]] := {t}
         getAnalGateTargets[R[_, Subscript[_, t_]]] := {t}
         getAnalGateTargets[R[_, paulis_Times]] := getAnalGateTargets /@ List @@ paulis // Flatten // Reverse
         getAnalGateTargets[Subscript[C, __][g_]] := getAnalGateTargets[g]
@@ -1949,12 +1952,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             			{n1,{0,1,2,3}}, {n2,{0,1,2,3}}], 1]]],
             	(* global phase becomes a fac*identity on the first qubit *)
             	G[x_] :> Subscript[U, 0][ Exp[I x] IdentityMatrix[2]],
-                (* Matr gates remain Matr *)
-                g:(Subscript[Matr, q__Integer|{q__Integer}][m_]) :> g,
+                (* Matr and UNonNorm gates remain the same *)
+                g:(Subscript[Matr|UNonNorm, q__Integer|{q__Integer}][m_]) :> g,
             	(* controlled gates are turned into U of identities with bottom-right submatrix *)
-                Subscript[C, c__Integer|{c__Integer}][Subscript[Matr, q__Integer|{q__Integer}][m_]] :> 
+                Subscript[C, c__Integer|{c__Integer}][Subscript[(mg:Matr|UNonNorm), q__Integer|{q__Integer}][m_]] :> 
                     With[{cDim=2^Length[{c}], tDim=Length@m},
-                        Subscript[Matr, Sequence @@ Join[{q}, {c}]][
+                        Subscript[mg, Sequence @@ Join[{q}, {c}]][
                         Join[
                             MapThread[Join, {IdentityMatrix[cDim], ConstantArray[0,{cDim,tDim}]}],
                             MapThread[Join, {ConstantArray[0,{tDim,cDim}], m}]]]],
@@ -2002,7 +2005,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             		 R[s*x, Times @@ MapThread[(Subscript[#1, #2]&), {{p}[[All,1]], {p}[[All,2]] + numQb}]]}],
             	(* gates with no inbuilt conjugates *)
             	Subscript[Y, q_Integer] :> {Subscript[Y, q], Subscript[U, q+numQb][Conjugate@PauliMatrix@2]},
-            	Subscript[(g:U|Matr), q__Integer|{q__Integer}][m_] :> {Subscript[g, q][m], Subscript[g, shiftInds[q,numQb]][Conjugate@m]},
+            	Subscript[(g:U|UNonNorm), q__Integer|{q__Integer}][m_] :> {Subscript[g, q][m], Subscript[g, shiftInds[q,numQb]][Conjugate@m]},
+                Subscript[Matr, q__Integer|{q__Integer}][m_] :> {Subscript[Matr, q][m]},
             	(* controlled gates must recurse: assume inner gate resolves to two ops *)
             	Subscript[C, c__Integer|{c__Integer}][g_] :> {Subscript[C, c][g], 
             		Subscript[C, shiftInds[c,numQb]][Last @ GetCircuitSuperoperator[{g},numQb]]},
@@ -2731,7 +2735,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getInverseGate[Subscript[T, q_]] := Subscript[Ph, q][-Pi/4]
         getInverseGate[Subscript[S, q_]] := Subscript[Ph, q][-Pi/2]
         getInverseGate[G[x_]] := G[-x]
-        getInverseGate[Subscript[U, q__][m_?MatrixQ]] := Subscript[U, q][ConjugateTranspose[m]]
+        getInverseGate[Subscript[(g:U|UNonNorm), q__][m_?MatrixQ]] := Subscript[g, q][ConjugateTranspose[m]]
         getInverseGate[Subscript[Matr, q__][m_?MatrixQ]] := Subscript[Matr, q][Inverse[m]]
         getInverseGate[g:Subscript[C, c__][h_]] := With[
             {hInv = getInverseGate[h]},
@@ -2750,9 +2754,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         GetCircuitInverse[___] := invalidArgError[GetCircuitInverse]
         
         tidyInds[q__] := Sequence @@ Sort@DeleteDuplicates@List@q
-        tidyMatrixGate[Subscript[g:(U|Matr), q_Integer][m_]] := Subscript[g, q][Simplify @ m]
-        tidyMatrixGate[Subscript[g:(U|Matr), q__Integer][m_]] /; OrderedQ[{q}] := Subscript[g, q][Simplify @ m]
-        tidyMatrixGate[Subscript[g:(U|Matr), q__Integer][m_]] := 
+        tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q_Integer][m_]] := Subscript[g, q][Simplify @ m]
+        tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q__Integer][m_]] /; OrderedQ[{q}] := Subscript[g, q][Simplify @ m]
+        tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q__Integer][m_]] := 
         	With[{order=Ordering[{q}]},
         		Do[
         			If[order[[i]] =!= i, Block[{tmp}, With[
@@ -2772,8 +2776,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         		Subscript[(g:S|T), t_Integer ]:> Subscript[Ph, t][Pi / (g/.{S->2,T->4})], 
         		Subscript[C, c__Integer|{c__Integer}][Subscript[(g:S|T), t_Integer]] :> Subscript[Ph, tidyInds[c,t]][Pi / (g/.{S->2,T->4})],
         		(* sort qubits of general unitaries by SWAPs upon matrix *)
-        		g:Subscript[U|Matr, q__Integer|{q__Integer}][m_] :> tidyMatrixGate[g],
-        		Subscript[C, c__][g:Subscript[U|Matr, q__Integer|{q__Integer}][m_]] :> Subscript[C, tidyInds@c][tidyMatrixGate@g],
+        		g:Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][m_] :> tidyMatrixGate[g],
+        		Subscript[C, c__][g:Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][m_]] :> Subscript[C, tidyInds@c][tidyMatrixGate@g],
         		(* sort controls of any gate *)
         		Subscript[C, c__Integer|{c__Integer}][g_] :> Subscript[C, tidyInds@c][g],
         		(* sort targets of target-order-agnostic gates *)
@@ -2824,8 +2828,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         				(* multiply matrices of adjacent unitaries and Matr *)
                         (* we do not presently merge U unto neighbouring Matr *)
         				{
-        					{ {a___, Subscript[g:(U|Matr), q__][m1_], b___}, {c___, Subscript[g:(U|Matr), q__][m2_], d___} } :> Sequence[{a,Subscript[g, q][m1 . m2//Simplify],b},{c,d}],
-        					{ {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr), q__][m1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr), q__][m2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][m1 . m2//Simplify],b},{c,d}]
+        					{ {a___, Subscript[g:(U|Matr|UNonNorm), q__][m1_], b___}, {c___, Subscript[g:(U|Matr|UNonNorm), q__][m2_], d___} } :> Sequence[{a,Subscript[g, q][m1 . m2//Simplify],b},{c,d}],
+        					{ {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][m1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][m2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][m1 . m2//Simplify],b},{c,d}]
         				},
         				(* merge all global phases *)
         				{
@@ -2867,7 +2871,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         				R[0,_] -> Nothing,
         				G[0] -> Nothing,
         				(* remove identity matrices (qubits are sorted) *)
-        				Subscript[U|Matr, q__][m_] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
+        				Subscript[U|Matr|UNonNorm, q__][m_] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
         				(* simplify known parameters to within their periods *)
         				Subscript[Ph, q__][x_?NumericQ] /; Not[0 <= x < 2 Pi] :> Subscript[Ph, q]@Mod[x, 2 Pi],
         				(g:(Subscript[(Rx|Ry|Rz), q__]))[x_?NumericQ] /; Not[0 <= x < 4 Pi] :> g@Mod[x, 4 Pi],

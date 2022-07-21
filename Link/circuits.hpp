@@ -30,6 +30,7 @@
 #define OPCODE_Ph 20
 #define OPCODE_KrausNonTP 21
 #define OPCODE_Matr 22
+#define OPCODE_UNonNorm 23
 
 
 
