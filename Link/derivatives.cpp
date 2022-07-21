@@ -317,7 +317,9 @@ void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
         }
             break;
         
-        case OPCODE_U : { ; 
+        case OPCODE_U :     // intentional fallthrough
+        case OPCODE_UNonNorm : 
+        case OPCODE_Matr : { ; 
             int reqNumDerivParams = local_getNumScalarsToFormMatrix(numTargs);
             if (numDerivParams != reqNumDerivParams)
                 throw local_wrongNumDerivParamsExcep("U", numDerivParams, reqNumDerivParams); // throws
@@ -330,24 +332,6 @@ void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
             local_multiControlledMultiQubitMatrixDeriv(
                 qureg, ctrls, numCtrls, targs, numTargs, matr, matrDeriv);
             
-            destroyComplexMatrixN(matr);
-            destroyComplexMatrixN(matrDeriv);
-        }
-            break;
-            
-        case OPCODE_Matr : { ;
-            int reqNumDerivParams = local_getNumScalarsToFormMatrix(numTargs);
-            if (numDerivParams != reqNumDerivParams)
-                throw local_wrongNumDerivParamsExcep("Matr", numDerivParams, reqNumDerivParams); // throws
-            
-            ComplexMatrixN matr = createComplexMatrixN(numTargs);
-            ComplexMatrixN matrDeriv = createComplexMatrixN(numTargs);
-            local_setMatrixNFromFlatList(params, matr, numTargs);
-            local_setMatrixNFromFlatList(derivParams, matrDeriv, numTargs);
-            
-            local_multiControlledMultiQubitMatrixDeriv(
-                qureg, ctrls, numCtrls, targs, numTargs, matr, matrDeriv);
-                
             destroyComplexMatrixN(matr);
             destroyComplexMatrixN(matrDeriv);
         }

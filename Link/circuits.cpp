@@ -279,7 +279,7 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
         }
             break;
             
-        case OPCODE_Matr : {
+        case OPCODE_UNonNorm : {
             ;
             long long int dim = (1 << numTargs);
             if (numParams != 2 * dim*dim)
@@ -293,6 +293,26 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
                 applyGateMatrixN(qureg, targs, numTargs, m); // throws
             else
                 applyMultiControlledGateMatrixN(qureg, ctrls, numCtrls, targs, numTargs, m); // throws
+            // memory leak if above throws :^)
+            destroyComplexMatrixN(m);
+            
+        }
+            break;
+            
+        case OPCODE_Matr : {
+            ;
+            long long int dim = (1 << numTargs);
+            if (numParams != 2 * dim*dim)
+                throw QuESTException("", std::to_string(numTargs) + "-qubit Matr accepts only " + 
+                    std::to_string(dim) + "x" +  std::to_string(dim) + " matrices."); // throws
+            
+            // this is wastefully(?) allocating and deallocating memory on the fly!
+            ComplexMatrixN m = createComplexMatrixN(numTargs);
+            local_setMatrixNFromFlatList(params, m, numTargs);
+            if (numCtrls == 0)
+                applyMatrixN(qureg, targs, numTargs, m); // throws
+            else
+                applyMultiControlledMatrixN(qureg, ctrls, numCtrls, targs, numTargs, m); // throws
             // memory leak if above throws :^)
             destroyComplexMatrixN(m);
             
@@ -564,6 +584,7 @@ void Gate::applyDaggerTo(Qureg qureg) {
             
         // gates with transposable matrices
         case OPCODE_U :
+        case OPCODE_UNonNorm :
         case OPCODE_Matr :
             local_setFlatListToMatrixDagger(params, numTargs);
             applyTo(qureg);
