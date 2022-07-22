@@ -84,7 +84,7 @@ ifneq ($(SILENT), 1)
     ifneq ($(OS), LINUX)
     ifneq ($(OS), MACOS)
     ifneq ($(OS), WINDOWS)
-        $(error OS must be LINUX, MACOS or LINUX)
+        $(error OS must be LINUX, MACOS or WINDOWS)
     endif
     endif
     endif

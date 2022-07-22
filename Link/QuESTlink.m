@@ -35,8 +35,12 @@ Variable repetition, multi-parameter gates, variable dependent element-wise matr
     CalcQuregDerivs::error = "`1`"
     
     CalcExpecPauliSumDerivs::usage = "CalcExpecPauliSumDerivs[circuit, initQureg, varVals, pauliSum] returns the gradient vector of the pauliSum expected values, as produced by the derivatives of the circuit (with respect to varVals, {var -> value}) acting upon the given initial state.
-This function  permits all the freedoms of CalcQuregDerivs[], but with fixed memory overheads, and when performed upon statevectors, will run a factor Length[circuit] faster."
+This function permits all the freedoms of CalcQuregDerivs[], but with fixed memory overheads, and when performed upon statevectors, will run a factor Length[circuit] faster."
     CalcExpecPauliSumDerivs::error = "`1`"
+    
+    CalcGeometricTensor::usage = "CalcGeometricTensor[circuit, initQureg, varVals] returns the geometric tensor of the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}.
+This quantity relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections."
+    CalcGeometricTensor::error = "`1`"
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
 CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element CalcInnerProduct[braId, ketIds[i]]."
@@ -552,7 +556,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         encodeDerivParams[Subscript[Rx|Ry|Rz|Ph|Damp|Deph|Depol, __][f_], x_] := {D[f,x]}
         encodeDerivParams[R[f_,_], x_] := {D[f,x]}
         encodeDerivParams[G[f_], x_] := {D[f,x]}
-        encodeDerivParams[Subscript[U|Matr|UNonNorm, __][matr_], x_] := codifyMatrix @ D[matr,x]
+        encodeDerivParams[Subscript[U|Matr|UNonNorm, __][matr_], x_] := With[
+            {dm = D[matr,x]}, Riffle[Re @ Flatten @ dm, Im @ Flatten @ dm]]
         encodeDerivParams[Subscript[Kraus|KrausNonTP, __][matrs_List], x_] := codifyMatrices @ Table[D[m,x] , {m,matrs}]
         encodeDerivParams[Subscript[C, __][g_], x_] := encodeDerivParams[g, x]
         
@@ -628,6 +633,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     unpackEncodedDerivCircTerms @ encodedDerivTerms]]
         CalcQuregDerivs[___] := invalidArgError[CalcQuregDerivs]
         
+        isPureCircuit[circuit_] := 
+            Boole @ Not @ MemberQ[circuit, Subscript[Damp|Deph|Depol|Kraus|KrausNonTP, __][__]]
+        
         (* TODO!!! adjust pauliSum patterns as per other functions *)
         CalcExpecPauliSumDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, paulis_] :=
             Module[
@@ -636,16 +644,30 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 ret = Catch @ encodeDerivCirc[circuit, varVals];
                 If[Head@ret === String,
                     Message[CalcExpecPauliSumDerivs::error, ret]; Return @ $Failed];
-                isPureCirc = 
                 (* send to backend, mapping Mathematica indices to C++ indices *)
                 {encodedCirc, encodedDerivTerms} = ret;
-                CalcExpecPauliSumDerivsInternal[initQureg, 
-                    Boole @ Not @ MemberQ[circuit, Subscript[Damp|Deph|Depol|Kraus|KrausNonTP, __][__]],
-                    getNumQubitsInCircuit[circuit],
+                CalcExpecPauliSumDerivsInternal[initQureg, isPureCircuit[circuit],
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms,
                     Sequence @@ encodePauliSum[paulis]]]
         CalcExpecPauliSumDerivs[__] := invalidArgError[CalcExpecPauliSumDerivs]
+        
+        CalcGeometricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}] :=
+            Module[
+                {ret, encodedCirc, encodedDerivTerms, retArrs},
+                (* encode deriv circuit for backend, throwing any parsing errors *)
+                ret = Catch @ encodeDerivCirc[circuit, varVals];
+                If[Head@ret === String,
+                    Message[CalcGeometricTensor::error, ret]; Return @ $Failed];
+                (* send to backend, mapping Mathematica indices to C++ indices *)
+                {encodedCirc, encodedDerivTerms} = ret;
+                data = CalcGeometricTensorInternal[initQureg, isPureCircuit[circuit],
+                    unpackEncodedCircuit @ encodedCirc, 
+                    unpackEncodedDerivCircTerms @ encodedDerivTerms];
+                (* reformat output to complex matrix *)
+                If[data === $Failed, data, ArrayReshape[
+                    MapThread[#1 + I #2 &, {data[[1]], data[[2]]}], 
+                    Length[varVals] {1,1}]]]
             
         (* compute a matrix of inner products; this is used in tandem with CalcQuregDerivs to populate the Li matrix *)
         CalcInnerProducts[quregIds:{__Integer}] := 

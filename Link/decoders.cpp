@@ -6,6 +6,7 @@
  */
 
 #include "QuEST.h"
+#include "QuEST_complex.h"
 #include "QuEST_internal.h"
 #include "wstp.h"
 
@@ -14,6 +15,7 @@
 #include "derivatives.hpp"
 #include "link.hpp"
 
+#include <stdlib.h>
 #include <string>
 
 
@@ -63,11 +65,25 @@ void local_setFlatListFromMatrixN(qreal* list, ComplexMatrixN m, int numQubits) 
 }
 
 void local_setFlatListToMatrixDagger(qreal* list, int numQubits) {
-    ComplexMatrixN m = createComplexMatrixN(numQubits);
-    local_setMatrixNFromFlatList(list, m, numQubits);
-    setConjugateMatrixN(m);
-    local_setFlatListFromMatrixN(list, m, numQubits);
-    destroyComplexMatrixN(m);
+    
+    int dim = (1 << numQubits);
+    
+    for (int r=0; r<dim; r++) {
+        for (int c=0; c<r; c++) {
+            
+            qreal tmpRe = list[2*dim*r + 2*c];
+            qreal tmpIm = list[2*dim*r + 2*c + 1];
+            
+            list[2*dim*r + 2*c]     =   list[2*dim*c + 2*r];
+            list[2*dim*r + 2*c + 1] = - list[2*dim*c + 2*r + 1];
+            
+            list[2*dim*c + 2*r]     =   tmpRe;
+            list[2*dim*c + 2*r + 1] = - tmpIm;
+        }
+    }
+    
+    for (int r=0; r<dim; r++)
+        list[2*dim*r + 2*r + 1] *= -1;
 }
 
 void local_createManyMatrixNFromFlatList(qreal* list, ComplexMatrixN* matrs, int numOps, int numQubits) {
@@ -81,6 +97,39 @@ void local_createManyMatrixNFromFlatList(qreal* list, ComplexMatrixN* matrs, int
 long long int local_getNumScalarsToFormMatrix(int numQubits) {
     long long int dim = (1LL << numQubits);
     return dim*dim*2; // fac 2 for separate real and imag cmoponents
+}
+
+
+
+/*
+ * Matrix sending 
+ */
+
+void local_sendMatrixToMMA(qcomp** matrix, int dim) {
+    
+    // must store in heap, not stack, to avoid overflows
+    int len = dim*dim;
+    qreal* matrRe = (qreal*) malloc(len * sizeof *matrRe);
+    qreal* matrIm = (qreal*) malloc(len * sizeof *matrIm);
+    
+    // unpack matrix into separate flat arrays
+    int i=0;
+    for (int r=0; r<dim; r++) {
+        for (int c=0; c<dim; c++) {
+            matrRe[i] = real(matrix[r][c]);
+            matrIm[i] = imag(matrix[r][c]);
+            i++;
+        }
+    }
+    
+    // send each to Mathematica
+    WSPutFunction(stdlink, "List", 2);
+    WSPutReal64List(stdlink, matrRe, len);
+    WSPutReal64List(stdlink, matrIm, len);
+
+    // clean-up
+    free(matrRe);
+    free(matrIm);
 }
 
 
@@ -263,11 +312,10 @@ pauliOpType* local_decodePauliSum(int numQb, int numTerms, int* allPauliCodes, i
             // clean-up and error on invalid target qubit
             if (currTarget >= numQb) {
                 free(arrPaulis);
-                arrPaulis = NULL;
                 throw QuESTException("",
                     "Invalid target index (" + std::to_string(currTarget) + 
                     ") of Pauli operator in Pauli sum of " + std::to_string(numQb) + " qubits.");
-                }
+            }
             
             int arrInd = t*numQb + currTarget;
             int code = allPauliCodes[allPaulisInd++];
@@ -291,18 +339,26 @@ void local_freePauliSum(int numPaulis, int numTerms, qreal* termCoeffs, int* all
         free(arrPaulis);
 }
 
-PauliHamil local_loadPauliHamilFromMMA(int numQubits) {
+PauliHamil local_loadPauliHamilForQuregFromMMA(int quregId) {
     
     PauliHamil hamil;
     
+    // load/flush all Hamiltonian terms from MMA 
     int numPaulis;
     int *allPauliCodes, *allPauliTargets, *numPaulisPerTerm;
     local_loadEncodedPauliSumFromMMA(
         &numPaulis, &hamil.numSumTerms, &hamil.termCoeffs, &allPauliCodes, &allPauliTargets, &numPaulisPerTerm);
+    
+    // validate the qureg, so we can safely access its numQubits for tailoring Hamiltonian dimension
+    local_throwExcepIfQuregNotCreated(quregId); // throws
+
+    // encode the Hamiltonian terms for compatibility with the qureg
+    int numQubits = quregs[quregId].numQubitsRepresented;
     hamil.pauliCodes = local_decodePauliSum(
         numQubits, hamil.numSumTerms, allPauliCodes, allPauliTargets, numPaulisPerTerm); // throws
     hamil.numQubits = numQubits;
     
+    // immediately free superfluous MMA arrays
     WSReleaseInteger32List(stdlink, allPauliCodes, numPaulis);
     WSReleaseInteger32List(stdlink, allPauliTargets, numPaulis);
     WSReleaseInteger32List(stdlink, numPaulisPerTerm, hamil.numSumTerms);
