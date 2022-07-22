@@ -2,6 +2,8 @@
 #ifndef CIRCUITS_H
 #define CIRCUITS_H
 
+#include <string>
+
 
 /*
  * Codes for Mathematica gate symbols 
@@ -31,6 +33,17 @@
 #define OPCODE_KrausNonTP 21
 #define OPCODE_Matr 22
 #define OPCODE_UNonNorm 23
+#define NUM_OPCODES 24
+
+static const std::string opcodeStrings[] = {
+    [OPCODE_H] = "H",   [OPCODE_X] = "X",   [OPCODE_Y] = "Y",   [OPCODE_Z] = "Z",
+    [OPCODE_S] = "S",   [OPCODE_T] = "T",   [OPCODE_U] = "U",   [OPCODE_M] = "M",
+    [OPCODE_P] = "P",   [OPCODE_Ph] = "Ph", [OPCODE_G] = "G",   [OPCODE_Id] = "Id",
+    [OPCODE_R] = "R",   [OPCODE_Rx] = "Rx", [OPCODE_Ry] = "Ry", [OPCODE_Rz] = "Rz", 
+    [OPCODE_SWAP] = "SWAP",     [OPCODE_Matr] = "Matr",     [OPCODE_UNonNorm] = "UNonNorm",
+    [OPCODE_Deph] = "Deph",     [OPCODE_Depol] = "Depol",   [OPCODE_Damp] = "Damp",
+    [OPCODE_Kraus] = "Kraus",   [OPCODE_KrausNonTP] = "KrausNonTP"
+};
 
 
 
@@ -62,6 +75,8 @@ class Gate {
         int* ctrls;         int numCtrls;
         int* targs;         int numTargs;
         qreal* params;      int numParams;
+        
+        std::string getOpcodeStr();
     
     public:
         
@@ -80,6 +95,11 @@ class Gate {
         int* getCtrlsAddr() { return ctrls; }
         int* getTargsAddr() { return targs; }
         qreal* getParamsAddr() { return params; }
+        
+        /** Returns whether the gate is (at least, intended) unitary 
+         * (such as Rx, H, U, UNonNorm), or not (like M, P, Matr, Damp)
+         */
+        bool isUnitary();
             
         /** Returns the number of outputs that this gate produces when performed 
          * in a circuit. This is the number of elements added to the outputs array 
@@ -106,6 +126,12 @@ class Gate {
          * @throws if the gate has no known conjugate transpose
          */
         void applyDaggerTo(Qureg qureg);
+        
+        /** Apply the conjugate transpose of this gate upon the qureg.
+         * @throws if the gate details are invalid
+         * @throws if the gate has no known inverse
+         */
+        void applyInverseTo(Qureg qureg);
         
         /** Apply the derivative of this gate upon the qureg. In simple cases, 
          * the derivative is with respect to the real scalar parameter of the 
@@ -171,6 +197,11 @@ class Circuit {
          */
         int getTotalNumOutputs();
         
+        /** Returns whether the circuit contains only unitary operations (like
+         * U, UNonNorm, Rx, etc) as opposed to non-unitaries (like Matr, P, M, Damp)
+         */
+        bool isUnitary();
+        
         /** Modify qureg by sequentially applying every gate within the circuit, 
          * with increasing index. Array outputs is modified to have its first n 
          * elements modified to the gate outputs, where n = getTotalNumOutputs(),
@@ -193,6 +224,13 @@ class Circuit {
          * dagger applied. 
          */
         void applyDaggerSubTo(Qureg qureg, int startGateInd, int endGateInd);
+        
+        /** Apply the inverse of a contiguous subset of the circuit gates to qureg.
+         * The subset starts at startGateInd (inclusvie), and ends at endGateInd 
+         * (exclusive). Then, each gate in the subset in REVERSE order has its 
+         * inverse applied. 
+         */
+        void applyInverseSubTo(Qureg qureg, int startGateInd, int endGateInd);
         
         /** Send the given list of outputs (which must have been produced from 
          * this circuit instance via applyCircuit()) to Mathematica, formatting 

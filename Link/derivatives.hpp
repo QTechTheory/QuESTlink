@@ -2,8 +2,10 @@
 #ifndef DERIVATIVES_H
 #define DERIVATIVES_H
 
+#include "QuEST_complex.h"
 
 
+ 
 /** A single term among the partial derivatives of a parameterised circuit, 
  * after expansion via the chain rule.
  */
@@ -90,10 +92,12 @@ class DerivCircuit {
          */
         int totalNumDerivParams;
         
-        /** Qureg type-specific implementations of calcDerivEnergies 
+        /** Qureg type-specific implementations of public methods 
          */
         void calcDerivEnergiesStateVec(qreal* energies, PauliHamil hamil, Qureg initQureg);
         void calcDerivEnergiesDensMatr(qreal* energies, PauliHamil hamil, Qureg initQureg);
+        void calcGeometricTensorStateVec(qcomp** tensor, Qureg initQureg);
+        void calcGeometricTensorDensMatr(qcomp** tensor, Qureg initQureg);
         
         /** Destroys the MMA arrays shared between DerivTerm instances (derivPArams), 
          * invoked during the destructor. This method is defined in decoders.cpp.
@@ -136,7 +140,16 @@ class DerivCircuit {
          * @param energyGrad must be a pre-allocated length-numVars array
          * @param isPureCirc indicates whether the circuit contains only statevector gates
          */ 
-        void calcDerivEnergies(qreal* eneryGrad, PauliHamil hamil, Qureg initQureg, bool isPureCirc);
+        void calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg initQureg, bool isPureCirc);
+        
+        /** Modifies tensor to be the quantum geometric tensor prescribed by 
+         * the circuit derivatives. This relates to the Fubini-Study metric, 
+         * the classical Fisher information metric, and the imaginary-time Li 
+         * tensor, and appears in pure-state quantum natural gradient.
+         * @param energyGrad must be a pre-allocated 2D length-numVars array
+         * @param isPureCirc indicates whether the circuit contains only statevector gates
+         */
+        void calcGeometricTensor(qcomp** tensor, Qureg initQureg, bool isPureCirc);
         
         /** Destructor will free the persistent Mathematica arrays accesssed by 
          * the DerivTerm instances, as well as the Circuit. 

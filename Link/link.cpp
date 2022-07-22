@@ -38,12 +38,13 @@
 
 
 
-
-
+/*
+ * global persistent QuESTlink objects 
+ */
+ 
 QuESTEnv env;
 std::vector<Qureg> quregs;
 std::vector<bool> quregIsCreated;
-
 
 
 
@@ -827,29 +828,10 @@ void internal_calcInnerProductsMatrix(int* quregIds, long numQuregs) {
 
 
 
-
-/*
- * CIRCUIT EXECUTION 
- */
-
-
-
-
-
-
-
-
-
-
-
-
 /*
  * HAMILTONIAN EVALUATION
  */
 
-
-
-/* Evaluates the expected value of a Pauli product */
 void internal_calcExpecPauliProd(int quregId, int workspaceId) {
     
     // get arguments from MMA link before validation (must be freed)
@@ -879,22 +861,16 @@ void internal_calcExpecPauliProd(int quregId, int workspaceId) {
         qreal prod = calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace); // throws
         WSPutReal64(stdlink, prod);
         
-        // clean-up
-        WSReleaseInteger32List(stdlink, pauliIntCodes, numPaulis);
-        WSReleaseInteger32List(stdlink, targs, numPaulis);
-        if (pauliCodes != NULL)
-            free(pauliCodes);
-        
     } catch (QuESTException& err) {
-        
-        // must still clean-up
-        WSReleaseInteger32List(stdlink, pauliIntCodes, numPaulis);
-        WSReleaseInteger32List(stdlink, targs, numPaulis);
-        if (pauliCodes != NULL)
-            free(pauliCodes);
         
         local_sendErrorAndFail("CalcExpecPauliProd", err.message);
     }
+    
+    // clean-up regardless of error state
+    WSReleaseInteger32List(stdlink, pauliIntCodes, numPaulis);
+    WSReleaseInteger32List(stdlink, targs, numPaulis);
+    if (pauliCodes != NULL)
+        free(pauliCodes);
 }
 
 void internal_calcExpecPauliSum(int quregId, int workspaceId) {
@@ -927,21 +903,15 @@ void internal_calcExpecPauliSum(int quregId, int workspaceId) {
         // compute return value
         qreal val = calcExpecPauliSum(qureg, arrPaulis, termCoeffs, numTerms, workspace); // throws
         WSPutReal64(stdlink, val);
-        
-        // cleanup
-        local_freePauliSum(numPaulis, numTerms, 
-            termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm, arrPaulis);
     
     } catch( QuESTException& err) {
-        
-        // must still perform cleanup to avoid memory leak
-        // (arrPaulis may still be NULL, even though other data is populated)
-        local_freePauliSum(numPaulis, numTerms, 
-            termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm, arrPaulis);
 
         local_sendErrorAndFail("CalcExpecPauliSum", err.message);
-        return;
     }
+    
+    // cleanup (despite error send)
+    local_freePauliSum(numPaulis, numTerms, 
+        termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm, arrPaulis);
 }
 
 void internal_calcPauliSumMatrix(int numQubits) {
@@ -1050,6 +1020,12 @@ void internal_applyPauliSum(int inId, int outId) {
         local_sendErrorAndFail("ApplyPauliSum", err.message);
     }
 }
+
+
+
+/*
+ * PHASE FUNCTIONS
+ */
 
 void internal_applyPhaseFunc(int quregId, int* qubits, long numQubits, int encoding) {
     
@@ -1250,6 +1226,12 @@ void internal_applyParamNamedPhaseFunc(int quregId) {
     WSReleaseReal64List(stdlink, overridePhases, numOverrides);
 }
 
+
+
+/*
+ * QFT
+ */
+
 void wrapper_applyQFT(int id, int* qubits, long numQubits) {
     
     try {
@@ -1276,7 +1258,7 @@ void wrapper_applyFullQFT(int id) {
 
 
 /*
- * WSTP Launch
+ * WSTP LAUNCH
  */
 
 #ifndef _WIN32

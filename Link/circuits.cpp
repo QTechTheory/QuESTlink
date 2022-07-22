@@ -92,6 +92,51 @@ int Gate::getNumOutputs() {
     return 0;
 }
 
+std::string Gate::getOpcodeStr() {
+
+    if (opcode < NUM_OPCODES)
+        return opcodeStrings[opcode];
+        
+    throw QuESTException("", "encountered an unrecognised gate."); // throws
+}
+
+bool Gate::isUnitary() {
+    
+    switch(opcode) {
+        
+        case OPCODE_Id :
+        case OPCODE_H :
+        case OPCODE_SWAP :
+        case OPCODE_X :
+        case OPCODE_Y :
+        case OPCODE_Z :
+        case OPCODE_Rx :
+        case OPCODE_Ry :
+        case OPCODE_Rz :
+        case OPCODE_R :
+        case OPCODE_G :
+        case OPCODE_S :
+        case OPCODE_T :
+        case OPCODE_Ph :
+        case OPCODE_U :
+        case OPCODE_UNonNorm : 
+            return true;
+
+        case OPCODE_M :
+        case OPCODE_P :
+        case OPCODE_Matr : 
+        case OPCODE_Deph :
+        case OPCODE_Depol :
+        case OPCODE_Damp :
+        case OPCODE_Kraus :
+        case OPCODE_KrausNonTP :
+            return false;
+                  
+        default:            
+            throw QuESTException("", "an unrecognised gate was queried for unitarity. This is likely an internal error."); // throws
+    }
+}
+
 void Gate::applyTo(Qureg qureg, qreal* outputs) {
     
     switch(opcode) {
@@ -603,9 +648,25 @@ void Gate::applyDaggerTo(Qureg qureg) {
         }
             break;
                         
-        default:            
-            throw QuESTException("", "The dagger operator was attempted upon an operator with no known conjugate-transpose."); // throws
+        default:
+            std::string badop = getOpcodeStr(); // throws (if gate unrecognised)
+            throw QuESTException("", "The dagger operator was attempted upon an operator with no known conjugate-transpose "
+                "(" + badop + ")."); // throws
     }
+}
+
+void Gate::applyInverseTo(Qureg qureg) {
+    
+    if (opcode == OPCODE_Matr)
+        throw QuESTException("", "The Matr gate cannot be inverted (due to a present technical limitation). "
+            "If your matrix is intended to be treated as unitary (such that its inverse is its conjugate transpose), "
+            "please use UNonNorm"); // throws
+    
+    else if (isUnitary())
+        applyDaggerTo(qureg);
+        
+    else
+        throw QuESTException("", "A gate with no known inverse was attemptedly inverted."); // throws
 }
 
 
@@ -639,6 +700,15 @@ int Circuit::getNumGatesWithOutputs() {
             n++;
             
     return n;
+}
+
+bool Circuit::isUnitary() {
+    
+    for (int i=0; i<numGates; i++)
+        if (! gates[i].isUnitary())
+            return false;
+            
+    return true;
 }
 
 void Circuit::applyTo(Qureg qureg, qreal* outputs, bool showProgress) {
@@ -680,6 +750,12 @@ void Circuit::applyDaggerSubTo(Qureg qureg, int startGateInd, int endGateInd) {
     
     for (int gateInd = endGateInd-1; gateInd >= startGateInd; gateInd--)
         gates[gateInd].applyDaggerTo(qureg); // throws
+}
+
+void Circuit::applyInverseSubTo(Qureg qureg, int startGateInd, int endGateInd) {
+    
+    for (int gateInd = endGateInd-1; gateInd >= startGateInd; gateInd--)
+        gates[gateInd].applyInverseTo(qureg); // throws
 }
 
 Circuit::~Circuit() {

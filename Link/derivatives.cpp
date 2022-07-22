@@ -6,6 +6,7 @@
 
 #include "wstp.h"
 #include "QuEST.h"
+#include "QuEST_complex.h"
 #include "QuEST_internal.h"
 #include "QuEST_validation.h"
 
@@ -126,7 +127,7 @@ void local_mixMultiQubitKrausMapDeriv(
     populateKrausSuperOperatorDerivN(&superOp, ops, opDerivs, numOps);
     
     long long int ctrlMask = 0;
-    int allTargs[2*numTargs];
+    int allTargs[MAX_NUM_TARGS_CTRLS]; // 2*numTargs
     for (int t=0; t < numTargs; t++) {
         allTargs[t] = targs[t];
         allTargs[t+numTargs] = targs[t] + qureg.numQubitsRepresented;
@@ -260,12 +261,6 @@ pauliOpType* local_preparePauliCache(pauliOpType pauli, int numPaulis) {
 
 void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
     
-    /* TODO: WARNING:
-     * If this function is utilised for CalcPauliSumDerivs using my O(P) algorithm,
-     * it must throw error on encountering non-unitary state-vector gates (like Matr)
-     * since their arbitarity will violate L2 assumptions embedded in the algorithm. 
-     */
-    
     // TODO: remove workspace via bespoke extensions implementation
     // (especially because it gets leaked upon error throw)
     Qureg workspace = createCloneQureg(qureg, env);
@@ -306,7 +301,7 @@ void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
             if (numDerivParams != 1)
                 throw local_wrongNumDerivParamsExcep("R", numDerivParams, 1); // throws
                 
-            pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
+            pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; // numTargs
             for (int p=0; p < numTargs; p++)
                 paulis[p] = (pauliOpType) ((int) params[1+p]);
                 
@@ -361,14 +356,15 @@ void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
             extension_mixDampingDeriv(qureg, targs[0], params[0], derivParams[0]);
             break;
             
-        case OPCODE_Kraus: { ;
+        case OPCODE_Kraus :         // intentional fallthrough
+        case OPCODE_KrausNonTP : { ;
             int numOps = (int) params[0];
             int reqNumDerivParams = numOps * local_getNumScalarsToFormMatrix(numTargs);
             if (numDerivParams != reqNumDerivParams)
                 throw local_wrongNumDerivParamsExcep("Kraus map", numDerivParams, reqNumDerivParams); // throws
-                
-            ComplexMatrixN ops[numOps];
-            ComplexMatrixN opDerivs[numOps];
+            
+            ComplexMatrixN* ops = (ComplexMatrixN*) malloc(numOps * sizeof *ops);
+            ComplexMatrixN* opDerivs = (ComplexMatrixN*) malloc(numOps * sizeof *opDerivs);
             local_createManyMatrixNFromFlatList(&params[1], ops, numOps, numTargs);
             local_createManyMatrixNFromFlatList(&derivParams[1], opDerivs, numOps, numTargs);
             
@@ -378,27 +374,8 @@ void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
                 destroyComplexMatrixN(ops[i]);
                 destroyComplexMatrixN(opDerivs[i]);
             }
-        }
-            break;
-            
-        case OPCODE_KrausNonTP: { ;
-            // identical to above
-            int numOps = (int) params[0];
-            int reqNumDerivParams = numOps * local_getNumScalarsToFormMatrix(numTargs);
-            if (numDerivParams != reqNumDerivParams)
-                throw local_wrongNumDerivParamsExcep("Non-trace-preserving Kraus map", numDerivParams, reqNumDerivParams); // throws
-                
-            ComplexMatrixN ops[numOps];
-            ComplexMatrixN opDerivs[numOps];
-            local_createManyMatrixNFromFlatList(&params[1], ops, numOps, numTargs);
-            local_createManyMatrixNFromFlatList(derivParams, opDerivs, numOps, numTargs);
-            
-            local_mixMultiQubitKrausMapDeriv(qureg, targs, numTargs, ops, opDerivs, numOps);
-            
-            for (int i=0; i<numOps; i++) {
-                destroyComplexMatrixN(ops[i]);
-                destroyComplexMatrixN(opDerivs[i]);
-            }
+            free(ops);
+            free(opDerivs);
         }
             break;
             
@@ -491,7 +468,12 @@ void DerivCircuit::applyTo(Qureg* quregs, int numQuregs, Qureg initQureg) {
 }
 
 void DerivCircuit::calcDerivEnergiesStateVec(qreal* eneryGrad, PauliHamil hamil, Qureg initQureg) {
-        
+    
+    if (!circuit->isUnitary())
+        throw QuESTException("", "The given circuit must be composed strictly of unitary gates "
+            "(and ergo exclude gates like Matr[] and P[]), in order to return a valid real "
+            "observable gradient. Please instead use CalcQuregDerivs[]"); // throws
+    
     // prepare lambda = H circuit(init) and phi=circuit(init)
     Qureg workLambda = createCloneQureg(initQureg, env);
     circuit->applyTo(workLambda);
@@ -598,6 +580,128 @@ void DerivCircuit::calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg 
         calcDerivEnergiesDensMatr(energyGrad, hamil, initQureg);
 }
 
+void DerivCircuit::calcGeometricTensorStateVec(qcomp** tensor, Qureg initQureg) {
+    
+    Qureg quregDiag = createCloneQureg(initQureg, env);
+    Qureg quregSuffix = createCloneQureg(initQureg, env);
+    Qureg quregPrefix = createCloneQureg(initQureg, env);
+    Qureg quregDeriv = createCloneQureg(initQureg, env);
+    
+    // clear tensor
+    for (int i=0; i<numVars; i++)
+        for (int j=0; j<numVars; j++)
+            tensor[i][j] = 0;
+            
+    // separate array for the Berry connection terms
+    qcomp* berries = (qcomp*) calloc(numVars, sizeof* berries);
+    
+    try {
+        int indOfLastGateOnDiag = -1;
+        
+        for (int t=0; t<numTerms; t++) {
+            
+            DerivTerm rowDerivTerm = terms[t];
+            int rowGateInd = rowDerivTerm.getGateInd();
+            int rowVarInd = rowDerivTerm.getVarInd();
+
+            // apply all prior gates to |diag>, such that 
+            // |diag> = U_(r-1) ... U2 U1 |in>
+            circuit->applySubTo(quregDiag, indOfLastGateOnDiag+1, rowGateInd); // throws
+            indOfLastGateOnDiag = rowGateInd-1;
+        
+            // |deriv> = (dU_r/dx) U_(r-1) ... U2 U1 |in>
+            cloneQureg(quregDeriv, quregDiag);
+            rowDerivTerm.applyTo(quregDeriv); // throws
+            
+            // <deriv|deriv> = || (dU_r/dx) U_(r-1) ... U2 U1 |in> ||^2
+            Complex norm = calcInnerProduct(quregDeriv, quregDeriv);
+            tensor[rowVarInd][rowVarInd] += fromComplex(norm);
+            
+            // <prefix| = <in| U1^ U2^ ... U_(r-1)^ (dU_r/dx)^
+            cloneQureg(quregPrefix, quregDeriv);
+            
+            // |suffix> = U_(r-1) ... U2 U1 |in>
+            cloneQureg(quregSuffix, quregDiag);
+            
+            // aside: compute single Berry connection term (safely modify quregDeriv)
+            cloneQureg(quregDeriv, quregDiag);
+            circuit->applySubTo(quregDeriv, indOfLastGateOnDiag+1, rowGateInd+1);
+            Complex berry = calcInnerProduct(quregPrefix, quregDeriv);
+            berries[rowVarInd] += fromComplex(berry);
+            
+            // mark that prefix needs only gates before U_r (inclusive)
+            int indOfLastGateOnPrefix = rowGateInd+1;   // as added
+            int indOfLastGateOnSuffix = rowGateInd-1;   // as remaining
+            
+            for (int s=t-1; s>=0; s--) {
+                
+                DerivTerm colDerivTerm = terms[s];
+                int colGateInd = colDerivTerm.getGateInd();
+                int colVarInd = colDerivTerm.getVarInd();
+
+                // <prefix| = <in| U1^ U2^ ... U_(r-1)^ (dU_r/dx)^ U_r U_(r-1) ... U_(c+1)                    
+                circuit->applyDaggerSubTo(quregPrefix, colGateInd+1, indOfLastGateOnPrefix);
+                indOfLastGateOnPrefix = colGateInd + 1;
+                
+                // |suffix> = U_(c-1) ... U2 U1 |in>
+                circuit->applyInverseSubTo(quregSuffix, colGateInd, indOfLastGateOnSuffix+1);
+                indOfLastGateOnSuffix = colGateInd - 1;
+                
+                // |deriv> = (dU_c/dx) U_(c-1) ... U2 U1 |in>
+                cloneQureg(quregDeriv, quregSuffix);
+                colDerivTerm.applyTo(quregDeriv);
+
+                // <prefix|deriv> = 
+                // <in| U1^ U2^ ... U_(r-1)^ (dU_r/dx)^ U_r U_(r-1) ... U_(c+1) (dU_c/dx) U_(c-1) ... U2 U1 |in>
+                Complex prod = calcInnerProduct(quregPrefix, quregDeriv);
+                tensor[rowVarInd][colVarInd] += fromComplex(prod);
+                tensor[colVarInd][rowVarInd] += conj(fromComplex(prod));
+            }
+        }
+        
+        // add Berry connections to the geometric tensor
+        for (int r=0; r<numVars; r++)
+            for (int c=0; c<numVars; c++)
+                tensor[r][c] -= berries[r] * conj(berries[c]);
+        
+    } catch (QuESTException& err) {
+        
+        // clean-up and rethrow
+        free(berries);
+        destroyQureg(quregDiag, env);
+        destroyQureg(quregSuffix, env);
+        destroyQureg(quregPrefix, env);
+        destroyQureg(quregDeriv, env);
+        throw;
+    }
+
+    // clean-up
+    free(berries);
+    destroyQureg(quregDiag, env);
+    destroyQureg(quregSuffix, env);
+    destroyQureg(quregPrefix, env);
+    destroyQureg(quregDeriv, env);
+}
+
+void DerivCircuit::calcGeometricTensorDensMatr(qcomp** tensor, Qureg initQureg) {
+    
+    /* TODO:
+     * Implement quantum Fisher information matrix?
+     * - Thm 1 https://arxiv.org/pdf/1801.00945.pdf gives QFI in terms of inv(rho) and d rho/dx
+     * - inv(rho) could be estimated with https://arxiv.org/pdf/cs/0412107.pdf
+     */
+    
+    throw QuESTException("", "This facility is not yet available for channels or density matrices.");
+}
+
+void DerivCircuit::calcGeometricTensor(qcomp** tensor, Qureg initQureg, bool isPureCirc) {
+    
+    if (isPureCirc &&  !initQureg.isDensityMatrix)
+        calcGeometricTensorStateVec(tensor, initQureg); // throws
+    else
+        calcGeometricTensorDensMatr(tensor, initQureg); // throws
+}
+
 DerivCircuit::~DerivCircuit() {
     
     freeMMA();
@@ -643,7 +747,8 @@ void internal_calcQuregDerivs(int initQuregId) {
     }
     
     Qureg initQureg = quregs[initQuregId];
-    Qureg derivQuregs[numQuregs];
+    
+    Qureg* derivQuregs = (Qureg*) malloc(numQuregs * sizeof *derivQuregs);
     for (int q=0; q<numQuregs; q++)
         derivQuregs[q] = quregs[quregIds[q]];
         
@@ -663,21 +768,33 @@ void internal_calcQuregDerivs(int initQuregId) {
             local_sendErrorAndFail("CalcQuregDerivs", 
                 "Problem in " + err.thrower + ": " + err.message);
     } 
+    
+    // clean-up even in event of error 
+    free(derivQuregs);
 }
 
-void internal_calcExpecPauliSumDerivs(int initQuregId, int isPureCirc, int numQb) {
+void internal_calcExpecPauliSumDerivs(int initQuregId, int isPureCirc) {
     
-    // load the circuit, deriv and hamiltonians from mma
+    // load the circuit and deriv spec from MMA
     DerivCircuit derivCirc;
     derivCirc.loadFromMMA(); // local, so desconstructor automatic
-    PauliHamil hamil = local_loadPauliHamilFromMMA(numQb);
     
-    int numDerivs = derivCirc.getNumVars();
-    qreal* energyGrad = (qreal*) calloc(numDerivs, sizeof *energyGrad);
-    
+    // load Hamiltonian from MMA (and also validate initQuregId)
+    PauliHamil hamil;
     try {
-        local_throwExcepIfQuregNotCreated(initQuregId); // throws
+        hamil = local_loadPauliHamilForQuregFromMMA(initQuregId); // throws
+        
+    } catch (QuESTException& err) {
+        
+        local_sendErrorAndFail("CalcExpecPauliSumDerivs", err.message);
+        return;
+    }
     
+    // prepare energy grad vector (malloc onto heap to avoid stack size limits)
+    int numDerivs = derivCirc.getNumVars();
+    qreal* energyGrad = (qreal*) malloc(numDerivs * sizeof *energyGrad);
+    
+    try {    
         derivCirc.calcDerivEnergies(energyGrad, hamil, quregs[initQuregId], isPureCirc); // throws
         
         WSPutReal64List(stdlink, energyGrad, numDerivs);
@@ -690,4 +807,34 @@ void internal_calcExpecPauliSumDerivs(int initQuregId, int isPureCirc, int numQb
     // clean-up even despite errors
     free(energyGrad);
     local_freePauliHamil(hamil);
+}
+
+void internal_calcGeometricTensor(int initQuregId, int isPureCirc) {
+    
+    // load the circuit and deriv spec from MMA
+    DerivCircuit derivCirc;
+    derivCirc.loadFromMMA(); // local, so desconstructor automatic
+    
+    int tensorDim = derivCirc.getNumVars();
+    qcomp** tensor = (qcomp**) malloc(tensorDim * sizeof *tensor);
+    for (int i=0; i<tensorDim; i++)
+        tensor[i] = (qcomp*) malloc(tensorDim * sizeof **tensor);
+    
+    try {
+        
+        local_throwExcepIfQuregNotCreated(initQuregId); // throws
+
+        derivCirc.calcGeometricTensor(tensor, quregs[initQuregId], isPureCirc); // throws
+        
+        local_sendMatrixToMMA(tensor, tensorDim);
+    
+    } catch (QuESTException& err) {
+        
+        local_sendErrorAndFail("CalcGeometricTensor", err.message);
+    }
+    
+    // clean-up, even if error
+    for (int i=0; i<tensorDim; i++)
+        free(tensor[i]);
+    free(tensor);
 }
