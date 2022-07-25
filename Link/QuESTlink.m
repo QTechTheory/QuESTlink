@@ -9,6 +9,30 @@
  *)
 
 BeginPackage["QuEST`"]
+
+
+
+    (* 
+     * deprecated
+     *)
+     
+    CalcExpecPauliProd[args___] := (
+        Message[CalcExpecPauliString::error, "The function CalcExpecPauliProd[] is being deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
+        CalcExpecPauliString[args])
+    CalcExpecPauliSum[args___] := (
+        Message[CalcExpecPauliString::error, "The function CalcExpecPauliSum[] is being deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
+        CalcExpecPauliString[args])
+    ApplyPauliSum[args___] := (
+        Message[ApplyPauliString::error, "The function ApplyPauliSum[] is being deprecated. Use ApplyPauliString[] or temporarily hide this message using Quiet[]."]; 
+        ApplyPauliString[args])
+    CalcPauliSumMatrix[args___] := (
+        Message[CalcPauliStringMatrix::error, "The function CalcPauliSumMatrix[] is being deprecated. Use CalcPauliStringMatrix[] or temporarily hide this message using Quiet[]."]; 
+        CalcPauliStringMatrix[args])
+    GetPauliSumFromCoeffs[args___] := (
+        Message[GetPauliStringFromCoeffs::error, "The function GetPauliSumFromCoeffs[] is being deprecated. Use GetPauliStringFromCoeffs[] or temporarily hide this message using Quiet[]."]; 
+        GetPauliStringFromCoeffs[args])
+    
+    
     
     (* 
      * Note additional functions and their usage messages are fetched when CreateRemoteQuESTEnv is called.
@@ -34,9 +58,9 @@ Accepts optional arguments WithBackup and ShowProgress."
 Variable repetition, multi-parameter gates, variable dependent element-wise matrices, variable dependent channels and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted."
     CalcQuregDerivs::error = "`1`"
     
-    CalcExpecPauliSumDerivs::usage = "CalcExpecPauliSumDerivs[circuit, initQureg, varVals, pauliSum] returns the gradient vector of the pauliSum expected values, as produced by the derivatives of the circuit (with respect to varVals, {var -> value}) acting upon the given initial state.
+    CalcExpecPauliStringDerivs::usage = "CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString] returns the gradient vector of the pauliString expected values, as produced by the derivatives of the circuit (with respect to varVals, {var -> value}) acting upon the given initial state.
 This function permits all the freedoms of CalcQuregDerivs[], but with fixed memory overheads, and when performed upon statevectors, will run a factor Length[circuit] faster."
-    CalcExpecPauliSumDerivs::error = "`1`"
+    CalcExpecPauliStringDerivs::error = "`1`"
     
     CalcGeometricTensor::usage = "CalcGeometricTensor[circuit, initQureg, varVals] returns the geometric tensor of the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}.
 This quantity relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections."
@@ -55,15 +79,12 @@ CalcDensityInnerProducts[rhoId, omegaIds] returns a real vector with i-th elemen
     
     Operator::usage = "Operator[gates] converts a product of gates into a right-to-left circuit."
     Operator::error = "`1`"
-    
-    CalcExpecPauliProd::usage = "CalcExpecPauliProd[qureg, paulis, workspace] evaluates the expected value of a product of Paulis. workspace must be a qureg of equal dimensions to qureg."
-    CalcExpecPauliProd::error = "`1`"
 
-    CalcExpecPauliSum::usage = "CalcExpecPauliSum[qureg, pauliSum, workspace] evaluates the expected value of a weighted sum of Pauli products, of a normalised qureg. workspace must be a qureg of equal dimensions to qureg. qureg is unchanged, and workspace is modified."
-    CalcExpecPauliSum::error = "`1`"
+    CalcExpecPauliString::usage = "CalcExpecPauliString[qureg, pauliString, workspace] evaluates the expected value of a weighted sum of Pauli tensors, of a normalised qureg. workspace must be a qureg of equal dimensions to qureg. qureg is unchanged, and workspace is modified."
+    CalcExpecPauliString::error = "`1`"
 
-    ApplyPauliSum::usage = "ApplyPauliSum[inQureg, pauliSum, outQureg] modifies outQureg to be the result of applying the weighted sum of Paulis to inQureg."
-    ApplyPauliSum::error = "`1`"
+    ApplyPauliString::usage = "ApplyPauliString[inQureg, pauliString, outQureg] modifies outQureg to be the result of applying the weighted sum of Pauli tensors to inQureg."
+    ApplyPauliString::error = "`1`"
     
     ApplyPhaseFunc::usage = "ApplyPhaseFunc[qureg, qubits, f[r], r] multiplies a phase factor e^(i f[r]) onto each amplitude in qureg, where r is substituted with the index of each basis state as informed by the list of qubits (ordered least to most significant), and optional argument BitEncoding.
 \[Bullet] qubits is a list of which qubits to include in the determination of the index r for each basis state. For example, qubits={0,1,2} implies the canonical indexing of basis states in a 3-qubit register.
@@ -95,10 +116,11 @@ ApplyPhaseFunc[..., BitEncoding -> \"TwosComplement\"] interprets each sub-regis
 See ?BitEncoding and ?PhaseOverrides."
     ApplyPhaseFunc::error = "`1`"
     
-    CalcPauliSumMatrix::usage = "CalcPauliSumMatrix[pauliSum] returns the numerical matrix of the given real-weighted sum of Pauli operators. The number of qubits is assumed to be the largest Pauli target. This accepts only sums of Pauli products with unique qubits and floating-point coefficients, and is computed numerically."
-    CalcPauliSumMatrix::error = "`1`"
+    CalcPauliStringMatrix::usage = "CalcPauliStringMatrix[pauliString] returns the numerical matrix of the given real-weighted sum of Pauli tensors. The number of qubits is assumed to be the largest Pauli target. This accepts only sums of Pauli products with unique qubits and floating-point coefficients, and is computed numerically."
+    CalcPauliStringMatrix::error = "`1`"
     
-    CalcPauliExpressionMatrix::usage = "CalcPauliExpressionMatrix[expr] returns the analytic matrix given by the symbolic expression of Pauli operators, X, Y, Z, Id. The number of qubits is assumed to be the largest Pauli target. Accepts the same inputs as SimplfyPaulis[], and is computed symbolically"
+    CalcPauliExpressionMatrix::usage = "CalcPauliExpressionMatrix[expr] returns the analytic matrix given by the symbolic expression of Pauli operators, X, Y, Z, Id. The number of qubits is assumed to be the largest Pauli target. Accepts the same inputs as SimplfyPaulis[], and is computed symbolically.
+CalcPauliExpressionMatrix[expr, numQb] overrides the assumed number of qubits."
     CalcPauliExpressionMatrix::error = "`1`"
 
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID. If qureg is a Symbol, it will additionally be cleared."
@@ -118,8 +140,8 @@ SetAmp[qureg, row, col, amp] modifies the indexed (row, col) amplitude of the de
     SetQuregMatrix::usage = "SetQuregMatrix[qureg, matr] modifies qureg, overwriting its statevector or density matrix with that passed."
     SetQuregMatrix::error = "`1`"
     
-    GetPauliSumFromCoeffs::usage = "GetPauliSumFromCoeffs[addr] opens or downloads the file at addr (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes, converting this to a symbolic weighted sum of Pauli products. Each line of the file is a separate term (a Pauli product), with format {coeff code1 code2 ... codeN} (exclude braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z term in the product respectively), for an N-qubit operator. Each line must have N+1 terms (including the real decimal coefficient at the beginning)."
-    GetPauliSumFromCoeffs::error = "`1`"
+    GetPauliStringFromCoeffs::usage = "GetPauliStringFromCoeffs[addr] opens or downloads the file at addr (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes, converting this to a symbolic weighted sum of Pauli tensors. Each line of the file is a separate term (a Pauli product), with format {coeff code1 code2 ... codeN} (exclude braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z term in the product respectively), for an N-qubit operator. Each line must have N+1 terms (including the real decimal coefficient at the beginning)."
+    GetPauliStringFromCoeffs::error = "`1`"
     
     CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[ip, port1, port2] connects to a remote QuESTlink server at ip, at the given ports, and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
     CreateRemoteQuESTEnv::error = "`1`"
@@ -237,6 +259,7 @@ GetKnownCircuit[\"TrotterAnsatz\", hamil, order, reps, paramSymbol]
 GetKnownCircuit[\"LowDepthAnsatz\", reps, paramSymbol, qubits]
     (https://arxiv.org/pdf/1801.01053.pdf)"
     GetKnownCircuit::error = "`1`"
+    
     
     
     (*
@@ -431,9 +454,54 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                
                
                
-        (* opcodes which correlate with the global IDs in quest_link.cpp *)
+        (* opcodes which correlate with the global IDs in circuits.hpp *)
         getOpCode[gate_] :=
 	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,Matr->22,UNonNorm->23,_->-1}
+        
+        
+        
+        (*
+         * encoding Pauli strings
+         *)
+         
+        pauliCodePatt = X|Y|Z|Id;
+        pauliOpPatt = Subscript[pauliCodePatt, _Integer];
+        pauliTensorPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?NumericQ,{0,1}], p:pauliOpPatt .. ] /; (CountDistinct @ {p}[[All,2]] === Length@{p})  ;
+        pauliStringPatt = pauliTensorPatt | Verbatim[Plus][ Repeated[0.`,{0,1}], pauliTensorPatt..];
+
+        getEncodedPauliString[ Subscript[op:pauliCodePatt, q_Integer] ] := 
+            {{1}, {getOpCode@op}, {q}, {1}}
+        getEncodedPauliString[ Verbatim[Times][c:_?NumericQ, p:pauliOpPatt.. ] ] := 
+            {{c}, getOpCode/@{p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
+        getEncodedPauliString[ Verbatim[Times][p:pauliOpPatt.. ] ] := 
+            {{1}, getOpCode/@{p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
+        getEncodedPauliString[ s:Verbatim[Plus][ pauliTensorPatt.. ] ] := 
+            Join @@@ Transpose[getEncodedPauliString /@ (List @@ s)]
+        getEncodedPauliString[ s:Verbatim[Plus][ 0.`, pauliTensorPatt..] ] := 
+            getEncodedPauliString @ s[[2;;]]
+        
+        
+        
+        (*
+         * encoding circuits
+         *)
+         
+        (* checking a product is a valid operator *)
+        SetAttributes[isOperatorFormat, HoldAll]
+        isOperatorFormat[op_Times] := isCircuitFormat[ReleaseHold[List @@@ Hold[op]]]
+        isOperatorFormat[___] := False
+        
+        (* convert an operator into a circuit spec without commuting gates *)
+        SetAttributes[Circuit, HoldAll]
+        SetAttributes[Operator, HoldAll]
+        Circuit[gate_?isGateFormat] := 
+            {gate}
+        Circuit[op_?isOperatorFormat] := 
+            ReleaseHold[List @@@ Hold[op]]
+        Operator[op_?isGateFormat] :=
+            {gate}
+        Operator[op_?isOperatorFormat] :=
+            Reverse @ Circuit @ op
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
         codifyMatrix[matr_] :=
@@ -442,9 +510,6 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         (* convert multiple MMA matrices into {#matrices, ... flattened matrices ...} *)
         codifyMatrices[matrs_] :=
             Prepend[Join @@ (codifyMatrix /@ matrs), Length @ matrs]
-            
-        (* sub-gate patterns *)
-        pattPauli = Subscript[(X|Y|Z), _Integer];
         
         (* recognising and codifying gates into {opcode, ctrls, targs, params} *)
         gatePatterns = {
@@ -454,9 +519,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 {getOpCode[gate], {ctrls}, {targs}, {args}},
         	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {}},
-            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][R[param_, ({paulis:pattPauli..}|Verbatim[Times][paulis:pattPauli..]|paulis:pattPauli__)]] :>
+            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][R[param_, ({paulis:pauliOpPatt..}|Verbatim[Times][paulis:pauliOpPatt..]|paulis:pauliOpPatt__)]] :>
                 {getOpCode[R], {ctrls}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
-            R[param_, ({paulis:pattPauli..}|Verbatim[Times][paulis:pattPauli..]|paulis:pattPauli__)] :>
+            R[param_, ({paulis:pauliOpPatt..}|Verbatim[Times][paulis:pauliOpPatt..]|paulis:pauliOpPatt__)] :>
                 {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
         	Subscript[g:U|Matr|UNonNorm, (targs:__Integer)|{targs:__Integer}][matr:_List] :> 
                 {getOpCode[g], {}, {targs}, codifyMatrix[matr]},
@@ -481,7 +546,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         (* checking circuit format *)
         isGateFormat[Subscript[_Symbol, (__Integer)|{__Integer}]] := True
         isGateFormat[Subscript[_Symbol, (__Integer)|{__Integer}][__]] := True
-        isGateFormat[R[_, (pattPauli|{pattPauli..}|Verbatim[Times][pattPauli..])]] := True
+        isGateFormat[R[_, (pauliOpPatt|{pauliOpPatt..}|Verbatim[Times][pauliOpPatt..])]] := True
         isGateFormat[G[_]] := True
         isGateFormat[___] := False
         isCircuitFormat[circ_List] := AllTrue[circ,isGateFormat]
@@ -495,6 +560,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 Flatten @ codes[[3]], Length /@ codes[[3]],
                 Flatten[N /@ codes[[4]]], Length /@ codes[[4]]
             ]
+            
+        
+        
+        (*
+         * ApplyCircuit[]
+         *)
             
         (* declaring optional args to ApplyCircuit *)
         Options[ApplyCircuit] = {
@@ -553,6 +624,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         (* error for bad args *)
         ApplyCircuit[___] := invalidArgError[ApplyCircuit]
         
+        
+        
+        (*
+         * encoding circuit derivatives
+         *)
+        
         encodeDerivParams[Subscript[Rx|Ry|Rz|Ph|Damp|Deph|Depol, __][f_], x_] := {D[f,x]}
         encodeDerivParams[R[f_,_], x_] := {D[f,x]}
         encodeDerivParams[G[f_], x_] := {D[f,x]}
@@ -609,13 +686,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         unpackEncodedDerivCircTerms[{gateInds_, varInds_, derivParams_}] :=
             Sequence[gateInds-1, varInds-1, Flatten @ derivParams, Length /@ derivParams]
             
-        (* TODO: restrict Pauli pattern!!!! *)
-        (* TODO has forgone product arget uniqueness:    And @@ DuplicateFreeQ /@ targs   *)
-        encodePauliSum[paulis_] := With[{
-            coeffs = getPauliSumTermCoeff /@ List @@ paulis,
-            codes = getPauliSumTermCodes /@ List @@ paulis,
-            targs = getPauliSumTermTargs /@ List @@ paulis},
-            {coeffs, Flatten[codes], Flatten[targs], Length /@ targs}]
+            
+            
+        (*
+         * derivatives
+         *)
 
         CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] :=  
             Module[
@@ -632,26 +707,27 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 CalcQuregDerivsInternal[initQureg, derivQuregs, 
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms]]
+                    
         CalcQuregDerivs[___] := invalidArgError[CalcQuregDerivs]
         
         isPureCircuit[circuit_] := 
             Boole @ Not @ MemberQ[circuit, Subscript[Damp|Deph|Depol|Kraus|KrausNonTP, __][__]]
         
-        (* TODO!!! adjust pauliSum patterns as per other functions *)
-        CalcExpecPauliSumDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, paulis_] :=
+        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, paulis:pauliStringPatt] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
                 ret = Catch @ encodeDerivCirc[circuit, varVals];
                 If[Head@ret === String,
-                    Message[CalcExpecPauliSumDerivs::error, ret]; Return @ $Failed];
+                    Message[CalcExpecPauliStringDerivs::error, ret]; Return @ $Failed];
                 (* send to backend, mapping Mathematica indices to C++ indices *)
                 {encodedCirc, encodedDerivTerms} = ret;
-                CalcExpecPauliSumDerivsInternal[initQureg, isPureCircuit[circuit],
+                CalcExpecPauliStringDerivs[initQureg, isPureCircuit[circuit],
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms,
-                    Sequence @@ encodePauliSum[paulis]]]
-        CalcExpecPauliSumDerivs[__] := invalidArgError[CalcExpecPauliSumDerivs]
+                    Sequence @@ getEncodedPauliString[paulis]]]
+                    
+        CalcExpecPauliStringDerivs[__] := invalidArgError[CalcExpecPauliStringDerivs]
         
         CalcGeometricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}] :=
             Module[
@@ -669,6 +745,14 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 If[data === $Failed, data, ArrayReshape[
                     MapThread[#1 + I #2 &, {data[[1]], data[[2]]}], 
                     Length[varVals] {1,1}]]]
+                    
+        CalcGeometricTensor[__] := invalidArgError[CalcGeometricTensor]
+        
+        
+        
+        (*
+         * inner products 
+         *)
             
         (* compute a matrix of inner products; this is used in tandem with CalcQuregDerivs to populate the Li matrix *)
         CalcInnerProducts[quregIds:{__Integer}] := 
@@ -700,23 +784,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             CalcDensityInnerProductsVectorInternal[rhoId, omegaIds]
         (* error for bad args *)
         CalcDensityInnerProducts[___] := invalidArgError[CalcDensityInnerProducts]
-
-        (* checking a product is a valid operator *)
-        SetAttributes[isOperatorFormat, HoldAll]
-        isOperatorFormat[op_Times] := isCircuitFormat[ReleaseHold[List @@@ Hold[op]]]
-        isOperatorFormat[___] := False
         
-        (* convert an operator into a circuit spec without commuting gates *)
-        SetAttributes[Circuit, HoldAll]
-        SetAttributes[Operator, HoldAll]
-        Circuit[gate_?isGateFormat] := 
-            {gate}
-        Circuit[op_?isOperatorFormat] := 
-            ReleaseHold[List @@@ Hold[op]]
-        Operator[op_?isGateFormat] :=
-            {gate}
-        Operator[op_?isOperatorFormat] :=
-            Reverse @ Circuit @ op
+        
+        
+        (* 
+         * Qureg management 
+         *)
 
         (* destroying a qureg, and clearing the local symbol if recognised *)
         SetAttributes[DestroyQureg, HoldAll];
@@ -762,125 +835,59 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         		QuEST`InitStateFromAmps[qureg, Re[flatelems], Im[flatelems]]
         	]
         SetQuregMatrix[___] := invalidArgError[SetQuregMatrix]
-            
-        (* compute the expected value of a Pauli product *)
-        CalcExpecPauliProd[qureg_Integer, Verbatim[Times][paulis:pattPauli..], workspace_Integer] :=
-            CalcExpecPauliProdInternal[qureg, workspace, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]]]
-        CalcExpecPauliProd[qureg_Integer, Subscript[pauli:(X|Y|Z),targ:_Integer], workspace_Integer] :=
-            CalcExpecPauliProdInternal[qureg, workspace, getOpCode /@ {pauli}, {targ}]
-        CalcExpecPauliProd[___] := invalidArgError[CalcExpecPauliProd]
-            
-        (* compute the expected value of a weighted sum of Pauli products *)
-        pattXYZI = Subscript[X|Y|Z|Id, _Integer];
-        getPauliSumTermCoeff[pauli:pattXYZI] = 1;
-        getPauliSumTermCoeff[Verbatim[Times][coeff:_?NumericQ:1, ___]] := coeff
-        getPauliSumTermCodes[pauli:pattXYZI] := {getOpCode @ pauli[[1]]}
-        getPauliSumTermCodes[Verbatim[Times][___?NumericQ, paulis:pattXYZI..]] := getOpCode /@ {paulis}[[All, 1]]
-        getPauliSumTermTargs[pauli:pattXYZI] := {pauli[[2]]}
-        getPauliSumTermTargs[Verbatim[Times][___?NumericQ, paulis:pattXYZI ..]] := {paulis}[[All, 2]]
-        (* sum of individual paulis or weighted pauli products *)        
-        pattPauliSum = Verbatim[Plus][ ( pattXYZI | Verbatim[Times][___?NumericQ, pattXYZI..] ) .. ]
         
-        CalcExpecPauliSum[qureg_Integer, paulis:pattPauliSum, workspace_Integer] := 
-            With[{targs = getPauliSumTermTargs /@ List @@ paulis},
-                If[
-                    And @@ DuplicateFreeQ /@ targs,
-                    CalcExpecPauliSumInternal[qureg, workspace, Sequence @@ encodePauliSum[paulis]],
-                    (Message[CalcExpecPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)]]
-        (* single term: single Pauli *)
-        CalcExpecPauliSum[qureg_Integer, pauli:pattPauli, workspace_Integer] :=
-            CalcExpecPauliSumInternal[qureg, workspace, {1}, {getOpCode @ pauli[[1]]}, {pauli[[2]]}, {1}]
-        (* single term: pauli product, with or without coeff *)
-        CalcExpecPauliSum[qureg_Integer, Verbatim[Times][coeff:_?NumericQ:1, paulis:pattPauli..], workspace_Integer] :=
-            If[
-                DuplicateFreeQ @ {paulis}[[All,2]],
-                CalcExpecPauliSumInternal[qureg, workspace, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}],
-                (Message[CalcExpecPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
-            ]
-        (* constant plus pauli sum *)
-        pattZeroPlusPauliSum = Verbatim[Plus][0.`, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
-        pattConstPlusPauliSum = Verbatim[Plus][const_?NumericQ /; const =!= 0.`, pauliTerms:(pattPauli | Verbatim[Times][___?NumericQ, pattPauli..])..];
-        CalcExpecPauliSum[qureg_Integer, paulisum:pattZeroPlusPauliSum, workspace_Integer] :=
-            CalcExpecPauliSum[qureg, paulisum /. 0. -> 0, workspace]
-        CalcExpecPauliSum[qureg_Integer, blank:pattConstPlusPauliSum, workspace_Integer] := 
-            (Message[CalcExpecPauliSum::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
-        CalcExpecPauliSum[___] := invalidArgError[CalcExpecPauliSum]
-            
-        (* apply a weighted sum of Pauli products to a qureg *)
-        ApplyPauliSum[inQureg_Integer, paulis:pattPauliSum, outQureg_Integer] :=
-            With[{
-                coeffs = getPauliSumTermCoeff /@ List @@ paulis,
-                codes = getPauliSumTermCodes /@ List @@ paulis,
-                targs = getPauliSumTermTargs /@ List @@ paulis
-                },
-                If[
-                    And @@ DuplicateFreeQ /@ targs,
-                    ApplyPauliSumInternal[inQureg, outQureg, coeffs, Flatten[codes], Flatten[targs], Length /@ targs],
-                    (Message[ApplyPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
-                ]
-            ]
-        ApplyPauliSum[inQureg_Integer, pauli:pattPauli, outQureg_Integer] :=
-            ApplyPauliSumInternal[inQureg, outQureg, {1}, {getOpCode @ pauli[[1]]}, {pauli[[2]]}, {1}]
-        (* single term: pauli product, with or without coeff *)
-        ApplyPauliSum[inQureg_Integer, Verbatim[Times][coeff:_?NumericQ:1, paulis:pattPauli..], outQureg_Integer] :=
-            If[
-                DuplicateFreeQ @ {paulis}[[All,2]],
-                ApplyPauliSumInternal[inQureg, outQureg, {coeff}, getOpCode /@ {paulis}[[All,1]], {paulis}[[All,2]], {Length @ {paulis}}],
-                (Message[ApplyPauliSum::error, "Pauli operators within a product must target unique qubits."]; $Failed)
-            ]
-        (* constant plus pauli sum *)
-        ApplyPauliSum[inQureg_Integer, paulisum:pattZeroPlusPauliSum, outQureg_Integer] := 
-            ApplyPauliSum[inQureg, paulisum /. 0.` -> 0, outQureg]
-        ApplyPauliSum[inQureg_Integer, blank:pattConstPlusPauliSum, outQureg_Integer] := 
-            (Message[ApplyPauliSum::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
-        ApplyPauliSum[___] := invalidArgError[ApplyPauliSum]
         
-        (* convert a symbolic expression of Pauli products into an analytic matrix *)
+        
+        (*
+         * Pauli strings
+         *)
+
+        invalidPauliScalarError[caller_] := (
+            Message[caller::error, "The Pauli string contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; 
+            $Failed)
+            
+        CalcExpecPauliString[qureg_Integer, paulis:pauliStringPatt, workspace_Integer] :=
+            CalcExpecPauliStringInternal[qureg, workspace, Sequence @@ getEncodedPauliString[paulis]]
+        CalcExpecPauliString[_Integer, Verbatim[Plus][_?NumericQ, ___], _Integer] := 
+            invalidPauliScalarError[CalcExpecPauliString]
+        CalcExpecPauliString[___] := invalidArgError[CalcExpecPauliString]
+
+        ApplyPauliString[inQureg_Integer, paulis:pauliStringPatt, outQureg_Integer] :=
+            ApplyPauliStringInternal[inQureg, outQureg, Sequence @@ getEncodedPauliString[paulis]]
+        ApplyPauliString[_Integer, Verbatim[Plus][_?NumericQ, ___], _Integer] := 
+            invalidPauliScalarError[ApplyPauliString]
+        ApplyPauliString[___] := invalidArgError[ApplyPauliString]
+        
         getFullHilbertPauliMatrix[numQ_][Subscript[s_,q_]] := Module[
         	{m=ConstantArray[IdentityMatrix[2], numQ]},
         	m[[q+1]] = PauliMatrix[s /. {Id->0, X->1,Y->2,Z->3}];
         	If[Length[m]>1, KroneckerProduct @@ (Reverse @ m), First @ m]]
             
         SetAttributes[CalcPauliExpressionMatrix, HoldAll]
-        CalcPauliExpressionMatrix[h_] := With[
-        	{pauliPatt = Subscript[Id|X|Y|Z,_Integer]},
+        CalcPauliExpressionMatrix[h_, nQb_] := With[
         	{hFlat = SimplifyPaulis[h]},
-        	{nQb = Max[1 + Cases[{hFlat}, Subscript[(Id|X|Y|Z), q_]:>q, Infinity]]},
         	ReleaseHold[
-        		HoldForm[hFlat] /. Verbatim[Times][a___, b:pauliPatt, c___] :>
+        		HoldForm[hFlat] /. Verbatim[Times][a___, b:pauliOpPatt, c___] :>
         			RuleCondition @ Times[
-        				Sequence @@ Cases[{a,b,c}, Except[pauliPatt]],
-        				Dot @@ getFullHilbertPauliMatrix[nQb] /@ Cases[{a,b,c}, pauliPatt]
-        			] /. p:pauliPatt :> RuleCondition @ getFullHilbertPauliMatrix[nQb][p]]]
+        				Sequence @@ Cases[{a,b,c}, Except[pauliOpPatt]],
+        				Dot @@ getFullHilbertPauliMatrix[nQb] /@ Cases[{a,b,c}, pauliOpPatt]
+        			] /. p:pauliOpPatt :> RuleCondition @ getFullHilbertPauliMatrix[nQb][p]]]
+        CalcPauliExpressionMatrix[h_] := With[
+            {hFlat = SimplifyPaulis[h]},
+            {nQb = Max[1 + Cases[{hFlat}, Subscript[(Id|X|Y|Z), q_]:>q, Infinity]]},
+            CalcPauliExpressionMatrix[hFlat, nQb]]
         CalcPauliExpressionMatrix[___] := invalidArgError[CalcPauliExpressionMatrix]
-                
-        (* convert a real-weighted sum of Pauli products into a numerical matrix *)
-        CalcPauliSumMatrix[paulis:pattPauliSum] := 
-            With[{
-                arrs=With[{
-                    coeffs = getPauliSumTermCoeff /@ List @@ paulis,
-                    codes = getPauliSumTermCodes /@ List @@ paulis,
-                    targs = getPauliSumTermTargs /@ List @@ paulis
-                    },
-                    If[
-                        And @@ DuplicateFreeQ /@ targs,
-                        CalcPauliSumMatrixInternal[1+Max@Flatten@targs, coeffs, Flatten[codes], Flatten[targs], Length /@ targs],
-                        (Message[CalcPauliSumMatrix::error, "Pauli operators within a product must target unique qubits."]; $Failed)
-                    ]
-                ]},
-                If[
-                    arrs === $Failed, arrs,
-                    (#[[1]] + I #[[2]])& /@ Partition[arrs,2] // Transpose
-                ]
-            ]
-        CalcPauliSumMatrix[paulisum:pattZeroPlusPauliSum] := 
-            CalcPauliSumMatrix[paulisum /. 0. -> 0]
-        CalcPauliSumMatrix[blank:pattConstPlusPauliSum] := 
-            (Message[CalcPauliSumMatrix::error, "The Pauli sum contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; $Failed)
-        CalcPauliSumMatrix[___] := invalidArgError[CalcPauliSumMatrix]
         
-        (* convert a list of Pauli coefficients and codes into a weighted (symbolic) sum of products *)
-        GetPauliSumFromCoeffs[addr_String] :=
+        CalcPauliStringMatrix[paulis:pauliStringPatt] := With[
+            {pauliCodes = getEncodedPauliString[paulis]},
+            {elems = CalcPauliStringMatrixInternal[1+Max@pauliCodes[[3]], Sequence @@ pauliCodes]},
+            If[elems === $Failed, elems, 
+                (#[[1]] + I #[[2]])& /@ Partition[elems,2] // Transpose]]
+        CalcPauliStringMatrix[Verbatim[Plus][_?NumericQ, ___]] :=
+            invalidPauliScalarError[CalcPauliStringMatrix]
+        CalcPauliStringMatrix[___] := invalidArgError[CalcPauliStringMatrix]
+        
+        GetPauliStringFromCoeffs[addr_String] :=
             Plus @@ (#[[1]] If[ 
                     AllTrue[ #[[2;;]], PossibleZeroQ ],
                     Subscript[Id, 0],
@@ -890,7 +897,13 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                         {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
                     ]
                 ] &) /@ ReadList[addr, Number, RecordLists -> True];
-        GetPauliSumFromCoeffs[___] := invalidArgError[GetPauliSumFromCoeffs]
+        GetPauliStringFromCoeffs[___] := invalidArgError[GetPauliStringFromCoeffs]
+        
+
+        
+        (*
+         * QuESTEnv management 
+         *)
         
         getIgorLink[id_] :=
         	LinkConnect[
@@ -932,6 +945,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         DestroyQuESTEnv[link_] := Uninstall @ link
         DestroyQuESTEnv[___] := invalidArgError[DestroyQuESTEnv]
         
+        
+        
+        (*
+         * state getters and setters 
+         *)
+         
         (* Im[0.] = 0, how annoying *)
         SetWeightedQureg[fac1_?NumericQ, q1_Integer, fac2_?NumericQ, q2_Integer, facOut_?NumericQ, qOut_Integer] :=
             SetWeightedQuregInternal[
@@ -966,6 +985,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         SetAmp[qureg_Integer, index_Integer, amp_?NumericQ] := SetAmpInternal[qureg, N@Re@N@amp, N@Im@N@amp, index, -1]
         SetAmp[qureg_Integer, row_Integer, col_Integer, amp_?NumericQ] := SetAmpInternal[qureg, N@Re@N@amp, N@Im@N@amp, row, col]
         SetAmp[___] := invalidArgError[SetAmp]
+        
+        
+        
+        (*
+         * phase functions
+         *)
         
         (* for extracting {coeffs}, {exponents} from a 1D exponential-polynomial *)
         extractCoeffExpo[s_Symbol][c_?NumericQ] := {c,0}
@@ -1113,6 +1138,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         (* invalid args and symbol syntax highlighting *)
         ApplyPhaseFunc[___] := invalidArgError[ApplyPhaseFunc]
         SyntaxInformation[ApplyPhaseFunc] = {"LocalVariables" -> {"Solve", {4, 4}}};
+        
         
         
         (* 

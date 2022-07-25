@@ -409,7 +409,7 @@ void DerivCircuit::applyTo(Qureg* quregs, int numQuregs, Qureg initQureg) {
 void DerivCircuit::calcDerivEnergiesStateVec(qreal* eneryGrad, PauliHamil hamil, Qureg initQureg) {
     
     if (!circuit->isUnitary())
-        throw QuESTException("", "The given circuit must be composed strictly of unitary gates "
+        throw QuESTException("", "The given circuit must be composed strictly of invertible gates "
             "(and ergo exclude gates like Matr[] and P[]), in order to return a valid real "
             "observable gradient. Please instead use CalcQuregDerivs[]"); // throws
     
@@ -714,7 +714,7 @@ void internal_calcQuregDerivs(int initQuregId) {
     free(derivQuregs);
 }
 
-void internal_calcExpecPauliSumDerivs(int initQuregId, int isPureCirc) {
+void internal_calcExpecPauliStringDerivs(int initQuregId, int isPureCirc) {
     
     // load the circuit and deriv spec from MMA
     DerivCircuit derivCirc;
@@ -727,7 +727,7 @@ void internal_calcExpecPauliSumDerivs(int initQuregId, int isPureCirc) {
         
     } catch (QuESTException& err) {
         
-        local_sendErrorAndFail("CalcExpecPauliSumDerivs", err.message);
+        local_sendErrorAndFail("CalcExpecPauliStringDerivs", err.message);
         return;
     }
     
@@ -742,7 +742,7 @@ void internal_calcExpecPauliSumDerivs(int initQuregId, int isPureCirc) {
         
     } catch (QuESTException& err) {
         
-        local_sendErrorAndFail("CalcExpecPauliSumDerivs", err.message);
+        local_sendErrorAndFail("CalcExpecPauliStringDerivs", err.message);
     }
 
     // clean-up even despite errors

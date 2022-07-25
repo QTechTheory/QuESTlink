@@ -284,7 +284,7 @@ void DerivCircuit::freeMMA() {
  * Hamiltonian loading
  */
 
-void local_loadEncodedPauliSumFromMMA(int* numPaulis, int* numTerms, qreal** termCoeffs, int** allPauliCodes, int** allPauliTargets, int** numPaulisPerTerm) {
+void local_loadEncodedPauliStringFromMMA(int* numPaulis, int* numTerms, qreal** termCoeffs, int** allPauliCodes, int** allPauliTargets, int** numPaulisPerTerm) {
     
     WSGetReal64List(stdlink, termCoeffs, numTerms);
     WSGetInteger32List(stdlink, allPauliCodes, numPaulis);    
@@ -295,7 +295,7 @@ void local_loadEncodedPauliSumFromMMA(int* numPaulis, int* numTerms, qreal** ter
 /* can throw exception if pauli targets are invalid indices.
  * in that event, arrPaulis will be freed internally, and set to NULL (if init'd by caller)
  */
-pauliOpType* local_decodePauliSum(int numQb, int numTerms, int* allPauliCodes, int* allPauliTargets, int* numPaulisPerTerm) {
+pauliOpType* local_decodePauliString(int numQb, int numTerms, int* allPauliCodes, int* allPauliTargets, int* numPaulisPerTerm) {
     
     // convert {allPauliCodes}, {allPauliTargets}, {numPaulisPerTerm}, and
     // qureg.numQubitsRepresented into {pauli-code-for-every-qubit}
@@ -328,7 +328,7 @@ pauliOpType* local_decodePauliSum(int numQb, int numTerms, int* allPauliCodes, i
     return arrPaulis;
 }
 
-void local_freePauliSum(int numPaulis, int numTerms, qreal* termCoeffs, int* allPauliCodes, int* allPauliTargets, int* numPaulisPerTerm, pauliOpType* arrPaulis) {
+void local_freePauliString(int numPaulis, int numTerms, qreal* termCoeffs, int* allPauliCodes, int* allPauliTargets, int* numPaulisPerTerm, pauliOpType* arrPaulis) {
     WSReleaseReal64List(stdlink, termCoeffs, numTerms);
     WSReleaseInteger32List(stdlink, allPauliCodes, numPaulis);
     WSReleaseInteger32List(stdlink, allPauliTargets, numPaulis);
@@ -346,7 +346,7 @@ PauliHamil local_loadPauliHamilForQuregFromMMA(int quregId) {
     // load/flush all Hamiltonian terms from MMA 
     int numPaulis;
     int *allPauliCodes, *allPauliTargets, *numPaulisPerTerm;
-    local_loadEncodedPauliSumFromMMA(
+    local_loadEncodedPauliStringFromMMA(
         &numPaulis, &hamil.numSumTerms, &hamil.termCoeffs, &allPauliCodes, &allPauliTargets, &numPaulisPerTerm);
     
     // validate the qureg, so we can safely access its numQubits for tailoring Hamiltonian dimension
@@ -354,7 +354,7 @@ PauliHamil local_loadPauliHamilForQuregFromMMA(int quregId) {
 
     // encode the Hamiltonian terms for compatibility with the qureg
     int numQubits = quregs[quregId].numQubitsRepresented;
-    hamil.pauliCodes = local_decodePauliSum(
+    hamil.pauliCodes = local_decodePauliString(
         numQubits, hamil.numSumTerms, allPauliCodes, allPauliTargets, numPaulisPerTerm); // throws
     hamil.numQubits = numQubits;
     

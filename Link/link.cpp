@@ -832,54 +832,13 @@ void internal_calcInnerProductsMatrix(int* quregIds, long numQuregs) {
  * HAMILTONIAN EVALUATION
  */
 
-void internal_calcExpecPauliProd(int quregId, int workspaceId) {
-    
-    // get arguments from MMA link before validation (must be freed)
-    int numPaulis;
-    int *pauliIntCodes;
-    WSGetInteger32List(stdlink, &pauliIntCodes, &numPaulis);
-    int *targs;
-    WSGetInteger32List(stdlink, &targs, &numPaulis);
-    
-    enum pauliOpType* pauliCodes = NULL;
-    
-    try {
-        local_throwExcepIfQuregNotCreated(quregId); // throws 
-        local_throwExcepIfQuregNotCreated(workspaceId); // throws
-        
-        if (quregId == workspaceId)
-            throw QuESTException("", "qureg and workspace must be different quregs.");
-        
-        Qureg qureg = quregs[quregId];
-        Qureg workspace = quregs[workspaceId];
-        
-        // recast pauli codes (must free)
-        pauliCodes = (enum pauliOpType*) malloc(numPaulis * sizeof *pauliCodes);
-        for (int i=0; i<numPaulis; i++)
-            pauliCodes[i] = (pauliOpType) pauliIntCodes[i];
-            
-        qreal prod = calcExpecPauliProd(qureg, targs, pauliCodes, numPaulis, workspace); // throws
-        WSPutReal64(stdlink, prod);
-        
-    } catch (QuESTException& err) {
-        
-        local_sendErrorAndFail("CalcExpecPauliProd", err.message);
-    }
-    
-    // clean-up regardless of error state
-    WSReleaseInteger32List(stdlink, pauliIntCodes, numPaulis);
-    WSReleaseInteger32List(stdlink, targs, numPaulis);
-    if (pauliCodes != NULL)
-        free(pauliCodes);
-}
-
-void internal_calcExpecPauliSum(int quregId, int workspaceId) {
+void internal_calcExpecPauliString(int quregId, int workspaceId) {
     
     // must load MMA args before validation (these must all also be freed)
     int numPaulis, numTerms;
     qreal* termCoeffs;
     int *allPauliCodes, *allPauliTargets, *numPaulisPerTerm;
-    local_loadEncodedPauliSumFromMMA(
+    local_loadEncodedPauliStringFromMMA(
         &numPaulis, &numTerms, &termCoeffs, &allPauliCodes, &allPauliTargets, &numPaulisPerTerm);
         
     // init to null in case loading fails, to indicate no-cleanup needed
@@ -897,7 +856,7 @@ void internal_calcExpecPauliSum(int quregId, int workspaceId) {
         Qureg workspace = quregs[workspaceId];
         
         // reformat MMA args into QuEST Hamil format (must be later freed)
-        arrPaulis = local_decodePauliSum(
+        arrPaulis = local_decodePauliString(
             qureg.numQubitsRepresented, numTerms, allPauliCodes, allPauliTargets, numPaulisPerTerm); // throws
         
         // compute return value
@@ -906,21 +865,21 @@ void internal_calcExpecPauliSum(int quregId, int workspaceId) {
     
     } catch( QuESTException& err) {
 
-        local_sendErrorAndFail("CalcExpecPauliSum", err.message);
+        local_sendErrorAndFail("CalcExpecPauliString", err.message);
     }
     
     // cleanup (despite error send)
-    local_freePauliSum(numPaulis, numTerms, 
+    local_freePauliString(numPaulis, numTerms, 
         termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm, arrPaulis);
 }
 
-void internal_calcPauliSumMatrix(int numQubits) {
+void internal_calcPauliStringMatrix(int numQubits) {
     
     // must load MMA args before validation (these must all also be freed)
     int numPaulis, numTerms;
     qreal* termCoeffs;
     int *allPauliCodes, *allPauliTargets, *numPaulisPerTerm;
-    local_loadEncodedPauliSumFromMMA(
+    local_loadEncodedPauliStringFromMMA(
         &numPaulis, &numTerms, &termCoeffs, &allPauliCodes, &allPauliTargets, &numPaulisPerTerm);
 
     // create states needed to apply Pauli products
@@ -932,7 +891,7 @@ void internal_calcPauliSumMatrix(int numQubits) {
     
     try {
         // reformat MMA args into QuEST Hamil format (must be later freed)    
-        arrPaulis = local_decodePauliSum(
+        arrPaulis = local_decodePauliString(
             numQubits, numTerms, allPauliCodes, allPauliTargets, numPaulisPerTerm); // throws
         
         // check that applyPauliSum will succeed (small price to pay; can't interrupt loop!)
@@ -941,13 +900,13 @@ void internal_calcPauliSumMatrix(int numQubits) {
     } catch( QuESTException& err) {
 
         // must still perform cleanup to avoid memory leak
-        local_freePauliSum(numPaulis, numTerms, 
+        local_freePauliString(numPaulis, numTerms, 
             termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm, arrPaulis);
         destroyQureg(inQureg, env);
         destroyQureg(outQureg, env);
         
         // then exit 
-        local_sendErrorAndFail("CalcPauliSumMatrix", err.message);
+        local_sendErrorAndFail("CalcPauliStringMatrix", err.message);
         return;
     }
     
@@ -969,19 +928,19 @@ void internal_calcPauliSumMatrix(int numQubits) {
     // output has already been 'put'
 
     // clean up
-    local_freePauliSum(numPaulis, numTerms, 
+    local_freePauliString(numPaulis, numTerms, 
         termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm, arrPaulis);
     destroyQureg(inQureg, env);
     destroyQureg(outQureg, env);
 }
 
-void internal_applyPauliSum(int inId, int outId) {
+void internal_applyPauliString(int inId, int outId) {
     
     // must load MMA args before validation (these must all also be freed)
     int numPaulis, numTerms;
     qreal* termCoeffs;
     int *allPauliCodes, *allPauliTargets, *numPaulisPerTerm;
-    local_loadEncodedPauliSumFromMMA(
+    local_loadEncodedPauliStringFromMMA(
         &numPaulis, &numTerms, &termCoeffs, &allPauliCodes, &allPauliTargets, &numPaulisPerTerm);
 
     // init to null in case loading fails, to indicate no-cleanup needed
@@ -998,13 +957,13 @@ void internal_applyPauliSum(int inId, int outId) {
         Qureg outQureg = quregs[outId];
         
         // reformat MMA args into QuEST Hamil format (must be later freed)
-        arrPaulis = local_decodePauliSum(
+        arrPaulis = local_decodePauliString(
             inQureg.numQubitsRepresented, numTerms, allPauliCodes, allPauliTargets, numPaulisPerTerm); // throws
         
         applyPauliSum(inQureg, arrPaulis, termCoeffs, numTerms, outQureg); // throws
         
         // cleanup
-        local_freePauliSum(numPaulis, numTerms, 
+        local_freePauliString(numPaulis, numTerms, 
             termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm, arrPaulis);
             
         // and return
@@ -1013,11 +972,11 @@ void internal_applyPauliSum(int inId, int outId) {
     } catch( QuESTException& err) {
         
         // must still clean-up (arrPaulis may still be NULL)
-        local_freePauliSum(numPaulis, numTerms, 
+        local_freePauliString(numPaulis, numTerms, 
             termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm, arrPaulis);
             
         // and report error
-        local_sendErrorAndFail("ApplyPauliSum", err.message);
+        local_sendErrorAndFail("ApplyPauliString", err.message);
     }
 }
 
