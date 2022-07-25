@@ -33,16 +33,34 @@
 #define OPCODE_KrausNonTP 21
 #define OPCODE_Matr 22
 #define OPCODE_UNonNorm 23
+
 #define NUM_OPCODES 24
 
 static const std::string opcodeStrings[] = {
-    [OPCODE_H] = "H",   [OPCODE_X] = "X",   [OPCODE_Y] = "Y",   [OPCODE_Z] = "Z",
-    [OPCODE_S] = "S",   [OPCODE_T] = "T",   [OPCODE_U] = "U",   [OPCODE_M] = "M",
-    [OPCODE_P] = "P",   [OPCODE_Ph] = "Ph", [OPCODE_G] = "G",   [OPCODE_Id] = "Id",
-    [OPCODE_R] = "R",   [OPCODE_Rx] = "Rx", [OPCODE_Ry] = "Ry", [OPCODE_Rz] = "Rz", 
-    [OPCODE_SWAP] = "SWAP",     [OPCODE_Matr] = "Matr",     [OPCODE_UNonNorm] = "UNonNorm",
-    [OPCODE_Deph] = "Deph",     [OPCODE_Depol] = "Depol",   [OPCODE_Damp] = "Damp",
-    [OPCODE_Kraus] = "Kraus",   [OPCODE_KrausNonTP] = "KrausNonTP"
+    "H",			// OPCODE_H 0
+    "X",			// OPCODE_X 1
+    "Y",			// OPCODE_Y 2
+    "Z",			// OPCODE_Z 3
+    "Rx",			// OPCODE_Rx 4
+    "Ry",			// OPCODE_Ry 5
+    "Rz",			// OPCODE_Rz 6
+    "R",			// OPCODE_R 7
+    "S",			// OPCODE_S 8
+    "T",			// OPCODE_T 9
+    "U",			// OPCODE_U 10
+    "Deph",			// OPCODE_Deph 11
+    "Depol",		// OPCODE_Depol 12
+    "Damp",			// OPCODE_Damp 13
+    "SWAP",			// OPCODE_SWAP 14
+    "M",			// OPCODE_M 15
+    "P",			// OPCODE_P 16
+    "Kraus",		// OPCODE_Kraus 17
+    "G",			// OPCODE_G 18
+    "Id",			// OPCODE_Id 19
+    "Ph",			// OPCODE_Ph 20
+    "KrausNonTP",	// OPCODE_KrausNonTP 21
+    "Matr",			// OPCODE_Matr 22
+    "UNonNorm"		// OPCODE_UNonNorm 23
 };
 
 

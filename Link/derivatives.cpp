@@ -20,7 +20,7 @@
 
 
 /*
- * Kraus map derivative superoperator preparation
+ * Kraus derivatives (in addition to those in extensions.cpp)
  */
 
 #define macro_populateKrausOperatorDeriv(superOp, ops, opDerivs, numOps, opDim) \
@@ -45,66 +45,11 @@
                             - ops[n].imag[i][j]*opDerivs[n].real[k][l]; \
                     }            
 
-void populateKrausSuperOperatorDerivN(ComplexMatrixN* superOp, ComplexMatrixN* ops, ComplexMatrixN* opDerivs, int numOps) {
+void populateKrausSuperOperatorDerivN(
+    ComplexMatrixN* superOp, ComplexMatrixN* ops, ComplexMatrixN* opDerivs, int numOps
+) {
     int opDim = 1 << ops[0].numQubits;
     macro_populateKrausOperatorDeriv(superOp, ops, opDerivs, numOps, opDim);
-}
-
-
-
-/*
- * decoherence derivativess (density matrix only)
- */
-
-void local_mixTwoQubitDephasingDeriv(Qureg qureg, int targ1, int targ2, qreal probDeriv, Qureg workspace) {
-    
-    // TODO: remove workspace via bespoke extensions implementation
-
-    cloneQureg(workspace, qureg);
-
-    mixTwoQubitDephasing(qureg, targ1, targ2, probDeriv/2); // throws
-
-    // qureg -> qureg - workspace
-    Complex zero = {.real=0, .imag=0};
-    Complex one = {.real=1, .imag=0};
-    Complex neg = {.real=-1, .imag=0};
-    setWeightedQureg(neg, workspace, zero, workspace, one, qureg);
-
-    extension_addAdjointToSelf(qureg);
-}
-
-void local_mixDepolarisingDeriv(Qureg qureg, int targ, qreal probDeriv, Qureg workspace) {
-
-    // TODO: remove workspace via bespoke extensions implementation
-
-    cloneQureg(workspace, qureg);
-
-    mixDepolarising(qureg, targ, probDeriv/2); // throws
-
-    // qureg -> qureg - workspace
-    Complex zero = {.real=0, .imag=0};
-    Complex one = {.real=1, .imag=0};
-    Complex neg = {.real=-1, .imag=0};
-    setWeightedQureg(neg, workspace, zero, workspace, one, qureg);
-
-    extension_addAdjointToSelf(qureg);
-}
-
-void local_mixTwoQubitDepolarisingDeriv(Qureg qureg, int targ1, int targ2, qreal probDeriv, Qureg workspace) {
-
-    // TODO: remove workspace via bespoke extensions implementation
-
-    cloneQureg(workspace, qureg);
-
-    mixTwoQubitDepolarising(qureg, targ1, targ2, probDeriv/2); // throws
-
-    // qureg -> qureg - workspace
-    Complex zero = {.real=0, .imag=0};
-    Complex one = {.real=1, .imag=0};
-    Complex neg = {.real=-1, .imag=0};
-    setWeightedQureg(neg, workspace, zero, workspace, one, qureg);
-
-    extension_addAdjointToSelf(qureg);
 }
 
 void local_mixMultiQubitKrausMapDeriv(
@@ -261,10 +206,6 @@ pauliOpType* local_preparePauliCache(pauliOpType pauli, int numPaulis) {
 
 void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
     
-    // TODO: remove workspace via bespoke extensions implementation
-    // (especially because it gets leaked upon error throw)
-    Qureg workspace = createCloneQureg(qureg, env);
-    
     switch(opcode) {
             
         case OPCODE_Rx : {
@@ -338,16 +279,16 @@ void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
             if (numTargs == 1)
                 extension_mixDephasingDeriv(qureg, targs[0], derivParams[0]);
             if (numTargs == 2)
-                local_mixTwoQubitDephasingDeriv(qureg, targs[0], targs[1], derivParams[0], workspace);
+                extension_mixTwoQubitDephasingDeriv(qureg, targs[0], targs[1], derivParams[0]);
             break;
             
         case OPCODE_Depol :
             if (numDerivParams != 1)
                 throw local_wrongNumDerivParamsExcep("Depolarising", numDerivParams, 1); // throws
             if (numTargs == 1)
-                local_mixDepolarisingDeriv(qureg, targs[0], derivParams[0], workspace);
+                extension_mixDepolarisingDeriv(qureg, targs[0], derivParams[0]);
             if (numTargs == 2)
-                local_mixTwoQubitDepolarisingDeriv(qureg, targs[0], targs[1], derivParams[0], workspace);
+                extension_mixTwoQubitDepolarisingDeriv(qureg, targs[0], targs[1], derivParams[0]);
             break;
             
         case OPCODE_Damp :
@@ -402,8 +343,6 @@ void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
             throw QuESTException("", "The circuit contained a parameterised gate which does not "
                 "have a known analytic derivative."); // throws
     }
-
-    destroyQureg(workspace, env);
 }
 
 
@@ -593,7 +532,9 @@ void DerivCircuit::calcGeometricTensorStateVec(qcomp** tensor, Qureg initQureg) 
             tensor[i][j] = 0;
             
     // separate array for the Berry connection terms
-    qcomp* berries = (qcomp*) calloc(numVars, sizeof* berries);
+    qcomp* berries = (qcomp*) malloc(numVars * sizeof *berries);
+    for (int i=0; i<numVars; i++)
+        berries[i] = 0;
     
     try {
         int indOfLastGateOnDiag = -1;
