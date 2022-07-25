@@ -439,13 +439,13 @@
 :Evaluate: QuEST`Private`CalcQuregDerivsInternal::usage = "CalcQuregDerivsInternal[initStateId, quregIds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp] accepts a circuit (complete with rotation angles) and a nominated set of gates (by indices), sets each qureg to be the result of applying the derivative of the circuit w.r.t the nominated gates, upon the initial state."
 
 :Begin:
-:Function:       internal_calcExpecPauliSumDerivs
-:Pattern:        QuEST`Private`CalcExpecPauliSumDerivsInternal[initStateId_Integer, isPureCirc_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, derivOpInds_List, derivVarInds_List, derivParams_List, numDerivParamsPerDerivOp_List, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
+:Function:       internal_calcExpecPauliStringDerivs
+:Pattern:        QuEST`Private`CalcExpecPauliStringDerivsInternal[initStateId_Integer, isPureCirc_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, derivOpInds_List, derivVarInds_List, derivParams_List, numDerivParamsPerDerivOp_List, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
 :Arguments:      { initStateId, isPureCirc, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm }
 :ArgumentTypes:  { Integer, Integer, Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: QuEST`Private`CalcExpecPauliSumDerivsInternal::usage = "CalcExpecPauliSumDerivsInternal[initStateId, isPureCirc, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] accepts a circuit (complete with rotation angles), a derivative specification, and a Hamiltonian, and returns the energy gradient."
+:Evaluate: QuEST`Private`CalcExpecPauliStringDerivsInternal::usage = "CalcExpecPauliStringDerivsInternal[initStateId, isPureCirc, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] accepts a circuit (complete with rotation angles), a derivative specification, and a Hamiltonian, and returns the energy gradient."
 
 :Begin:
 :Function:       internal_calcGeometricTensor
@@ -504,40 +504,31 @@
 :Evaluate: QuEST`Private`ApplyCircuitInternal::usage = "ApplyCircuitInternal[qureg, storeBackup, showProgress, opcodes, ctrls, numCtrlsPerOps, targs, numTargsPerOp, params, numParamsPerOps] applies a circuit (decomposed into codes) to the given qureg."
 
 :Begin:
-:Function:       internal_calcExpecPauliProd
-:Pattern:        QuEST`Private`CalcExpecPauliProdInternal[qureg_Integer, workspace_Integer, paulis_List, targets_List]
-:Arguments:      { qureg, workspace, paulis, targets }
-:ArgumentTypes:  { Integer, Integer, Manual }
-:ReturnType:     Manual
-:End:
-:Evaluate: QuEST`Private`CalcExpecPauliProdInternal::usage = "CalcExpecPauliProdInternal[qureg, workspace, paulis, targets] returns the expected value of the qureg under the given pauli product. workspace must be a Qureg of equal dimensions to qureg."
-
-:Begin:
-:Function:       internal_calcExpecPauliSum
-:Pattern:        QuEST`Private`CalcExpecPauliSumInternal[qureg_Integer, workspace_Integer, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
+:Function:       internal_calcExpecPauliString
+:Pattern:        QuEST`Private`CalcExpecPauliStringInternal[qureg_Integer, workspace_Integer, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
 :Arguments:      { qureg, workspace, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm }
 :ArgumentTypes:  { Integer, Integer, Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: QuEST`Private`CalcExpecPauliSumInternal::usage = "CalcExpecPauliSumInternal[qureg, workspace, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] returns the expected value of the qureg under the given sum of Pauli products, specified as flat lists. workspace must be a Qureg of equal dimensions to qureg."
+:Evaluate: QuEST`Private`CalcExpecPauliStringInternal::usage = "CalcExpecPauliStringInternal[qureg, workspace, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] returns the expected value of the qureg under the given sum of Pauli products, specified as flat lists. workspace must be a Qureg of equal dimensions to qureg."
 
 :Begin:
-:Function:       internal_applyPauliSum
-:Pattern:        QuEST`Private`ApplyPauliSumInternal[inQureg_Integer, outQureg_Integer, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
+:Function:       internal_applyPauliString
+:Pattern:        QuEST`Private`ApplyPauliStringInternal[inQureg_Integer, outQureg_Integer, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
 :Arguments:      { inQureg, outQureg, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm }
 :ArgumentTypes:  { Integer, Integer, Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: QuEST`Private`ApplyPauliSumInternal::usage = "ApplyPauliSumInternal[inQureg, outQureg, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] modifies outQureg under the given sum of Pauli products, specified as flat lists. inQureg and outQureg must have the same type and equal dimensions."
+:Evaluate: QuEST`Private`ApplyPauliStringInternal::usage = "ApplyPauliStringInternal[inQureg, outQureg, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] modifies outQureg under the given sum of Pauli products, specified as flat lists. inQureg and outQureg must have the same type and equal dimensions."
 
 :Begin:
-:Function:       internal_calcPauliSumMatrix
-:Pattern:        QuEST`Private`CalcPauliSumMatrixInternal[numQubits_Integer, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
+:Function:       internal_calcPauliStringMatrix
+:Pattern:        QuEST`Private`CalcPauliStringMatrixInternal[numQubits_Integer, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
 :Arguments:      { numQubits, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm }
 :ArgumentTypes:  { Integer, Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: QuEST`Private`CalcPauliSumMatrixInternal::usage = "CalcPauliSumMatrixInternal[numQubits, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] returns the action of applying the given sum of Pauli products (specified as flat lists) to every basis state."
+:Evaluate: QuEST`Private`CalcPauliStringMatrixInternal::usage = "CalcPauliStringMatrixInternal[numQubits, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] returns the action of applying the given sum of Pauli products (specified as flat lists) to every basis state."
 
 :Begin:
 :Function:       internal_getQuregMatrix
