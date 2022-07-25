@@ -199,7 +199,10 @@ endif
 #
 
 ifeq ($(OS), MACOS)
-    LIBS = -lm -lc++ -lstdc++ $(WSTP_SRC_DIR)/MACOS_libWSTPi4.36.a -framework Foundation
+    LIBS = -lm -lc++ -lstdc++ $(WSTP_SRC_DIR)/MACOS_libWSTPi4.36.a
+    ifeq ($(GPUACCELERATED), 0)
+        LIBS := $(LIBS) -framework Foundation
+    endif
 else ifeq ($(OS), WINDOWS)
     LIBS = kernel32.lib user32.lib gdi32.lib $(WSTP_SRC_DIR)/windows_wstp$(WINDOWS_ARCH)i4.lib $(WSTP_SRC_DIR)/windows_wstp$(WINDOWS_ARCH)i4m.lib $(WSTP_SRC_DIR)/windows_wstp$(WINDOWS_ARCH)i4s.lib
 else ifeq ($(OS), LINUX)
@@ -335,6 +338,8 @@ ifeq ($(GPUACCELERATED), 1)
   # final -o to force NVCC to use '.o' extension even on Windows
   %.o: %.cu
 	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) -ccbin $(COMPILER) $(QUESTLINK_INCLUDE) -o $@ $<
+  %.o: $(LINK_DIR)/%.cu
+	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) -ccbin $(COMPILER) $(QUESTLINK_INCLUDE) -o $@ $<
   %.o: $(QUEST_INNER_DIR)/%.cu
 	$(CUDA_COMPILER) -dc $(CPP_CUDA_FLAGS) -ccbin $(COMPILER) $(QUESTLINK_INCLUDE) -o $@ $<
 
@@ -373,7 +378,7 @@ ifeq ($(GPUACCELERATED), 1)
   endif
 
   all:	$(OBJ)
-	$(CUDA_COMPILER) $(SHUTUP) $(CPP_CUDA_FLAGS) $(OBJ) $(LIBS) $(LINK_FLAGS)
+	$(CUDA_COMPILER) $(SHUTUP) $(CPP_CUDA_FLAGS) -ccbin $(COMPILER) $(OBJ) $(LIBS) $(LINK_FLAGS)
 
 # C and C++
 else

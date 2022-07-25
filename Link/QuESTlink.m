@@ -558,7 +558,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         encodeDerivParams[G[f_], x_] := {D[f,x]}
         encodeDerivParams[Subscript[U|Matr|UNonNorm, __][matr_], x_] := With[
             {dm = D[matr,x]}, Riffle[Re @ Flatten @ dm, Im @ Flatten @ dm]]
-        encodeDerivParams[Subscript[Kraus|KrausNonTP, __][matrs_List], x_] := codifyMatrices @ Table[D[m,x] , {m,matrs}]
+        encodeDerivParams[Subscript[Kraus|KrausNonTP, __][matrs_List], x_] := 
+            (Riffle[Re @ Flatten @ #, Im @ Flatten @ #]&) /@ Table[D[m,x] , {m,matrs}]
         encodeDerivParams[Subscript[C, __][g_], x_] := encodeDerivParams[g, x]
         
         encodeDerivCirc[circuit_, varVals_] := Module[{gateInds, varInds, order, encodedCirc, derivParams},
@@ -599,7 +600,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             derivParams = derivParams /. varVals // N;
             
             (* validate all gate derivatives could be numerically evaluated *)
-            If[Not @ AllTrue[derivParams, NumericQ, 2],
+            If[Not @ AllTrue[Flatten @ derivParams, NumericQ],
                 Throw @ "The circuit contained gate derivatives with parameters which could not be numerically evaluated."];
             
             (* return *)
