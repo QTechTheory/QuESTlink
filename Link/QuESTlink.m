@@ -466,8 +466,19 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          
         pauliCodePatt = X|Y|Z|Id;
         pauliOpPatt = Subscript[pauliCodePatt, _Integer];
-        pauliTensorPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?NumericQ,{0,1}], p:pauliOpPatt .. ] /; (CountDistinct @ {p}[[All,2]] === Length@{p})  ;
+        pauliTensorPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?NumericQ,{0,1}], pauliOpPatt.. ];
         pauliStringPatt = pauliTensorPatt | Verbatim[Plus][ Repeated[0.`,{0,1}], pauliTensorPatt..];
+        
+        areUniqueQubits[qubits_List] :=
+            CountDistinct[qubits] === Length[qubits]
+        
+        isValidPauliString[expr_] := Switch[expr,
+            pauliOpPatt, 
+                True,
+            pauliTensorPatt,
+                areUniqueQubits[Cases[expr, Subscript[_,q_Integer]:>q]],
+            pauliStringPatt,
+                AllTrue[expr, isValidPauliString]]
 
         getEncodedPauliString[ Subscript[op:pauliCodePatt, q_Integer] ] := 
             {{1}, {getOpCode@op}, {q}, {1}}
@@ -684,7 +695,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             {encodedCirc, {gateInds, varInds, derivParams}}]
             
         unpackEncodedDerivCircTerms[{gateInds_, varInds_, derivParams_}] :=
-            Sequence[gateInds-1, varInds-1, Flatten @ derivParams, Length /@ derivParams]
+            Sequence[gateInds-1, varInds-1, Flatten @ derivParams, Length /@ Flatten /@ derivParams]
             
             
             
@@ -713,7 +724,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         isPureCircuit[circuit_] := 
             Boole @ Not @ MemberQ[circuit, Subscript[Damp|Deph|Depol|Kraus|KrausNonTP, __][__]]
         
-        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, paulis:pauliStringPatt] :=
+        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, paulis_?isValidPauliString] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
@@ -722,12 +733,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     Message[CalcExpecPauliStringDerivs::error, ret]; Return @ $Failed];
                 (* send to backend, mapping Mathematica indices to C++ indices *)
                 {encodedCirc, encodedDerivTerms} = ret;
-                CalcExpecPauliStringDerivs[initQureg, isPureCircuit[circuit],
+                CalcExpecPauliStringDerivsInternal[initQureg, isPureCircuit[circuit],
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms,
                     Sequence @@ getEncodedPauliString[paulis]]]
-                    
-        CalcExpecPauliStringDerivs[__] := invalidArgError[CalcExpecPauliStringDerivs]
+
+        CalcExpecPauliStringDerivs[___] := invalidArgError[CalcExpecPauliStringDerivs]
         
         CalcGeometricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}] :=
             Module[
@@ -846,13 +857,13 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             Message[caller::error, "The Pauli string contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; 
             $Failed)
             
-        CalcExpecPauliString[qureg_Integer, paulis:pauliStringPatt, workspace_Integer] :=
+        CalcExpecPauliString[qureg_Integer, paulis_?isValidPauliString, workspace_Integer] :=
             CalcExpecPauliStringInternal[qureg, workspace, Sequence @@ getEncodedPauliString[paulis]]
         CalcExpecPauliString[_Integer, Verbatim[Plus][_?NumericQ, ___], _Integer] := 
             invalidPauliScalarError[CalcExpecPauliString]
         CalcExpecPauliString[___] := invalidArgError[CalcExpecPauliString]
 
-        ApplyPauliString[inQureg_Integer, paulis:pauliStringPatt, outQureg_Integer] :=
+        ApplyPauliString[inQureg_Integer, paulis_?isValidPauliString, outQureg_Integer] :=
             ApplyPauliStringInternal[inQureg, outQureg, Sequence @@ getEncodedPauliString[paulis]]
         ApplyPauliString[_Integer, Verbatim[Plus][_?NumericQ, ___], _Integer] := 
             invalidPauliScalarError[ApplyPauliString]
@@ -878,7 +889,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             CalcPauliExpressionMatrix[hFlat, nQb]]
         CalcPauliExpressionMatrix[___] := invalidArgError[CalcPauliExpressionMatrix]
         
-        CalcPauliStringMatrix[paulis:pauliStringPatt] := With[
+        CalcPauliStringMatrix[paulis_?isValidPauliString] := With[
             {pauliCodes = getEncodedPauliString[paulis]},
             {elems = CalcPauliStringMatrixInternal[1+Max@pauliCodes[[3]], Sequence @@ pauliCodes]},
             If[elems === $Failed, elems, 
