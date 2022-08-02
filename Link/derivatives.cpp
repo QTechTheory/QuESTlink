@@ -371,7 +371,7 @@ void DerivTerm::applyTo(Qureg qureg) {
  * DerivCircuit methods 
  */
 
-void DerivCircuit::applyTo(Qureg* quregs, int numQuregs, Qureg initQureg) {
+void DerivCircuit::applyTo(Qureg* quregs, int numQuregs, Qureg initQureg, Qureg workspace) {
     
     /* A reader may desire to optimise this function by cloning partial states 
      * between the derivQuregs so that no single gate is performed more 
@@ -383,9 +383,7 @@ void DerivCircuit::applyTo(Qureg* quregs, int numQuregs, Qureg initQureg) {
     
     for (int q=0; q<numQuregs; q++)
         initBlankState(quregs[q]);
-    
-    Qureg workspace = createCloneQureg(initQureg, env);
-    
+        
     for (int t=0; t<numTerms; t++) {
         
         DerivTerm term = terms[t];
@@ -401,9 +399,6 @@ void DerivCircuit::applyTo(Qureg* quregs, int numQuregs, Qureg initQureg) {
         Complex one = {.real=1, .imag=0};    
         setWeightedQureg(zero, workspace, one, workspace, one, qureg);
     }
-
-    // clean up
-    destroyQureg(workspace, env);
 }
 
 void DerivCircuit::calcDerivEnergiesStateVec(qreal* eneryGrad, PauliHamil hamil, Qureg initQureg) {
@@ -656,7 +651,7 @@ DerivCircuit::~DerivCircuit() {
  * interfacing
  */
 
-void internal_calcQuregDerivs(int initQuregId) {
+void internal_calcQuregDerivs(int initQuregId, int workspaceId) {
     
     // get qureg ids (one for each var)
     int* quregIds;
@@ -669,32 +664,56 @@ void internal_calcQuregDerivs(int initQuregId) {
     
     // validate quregs (must do so after loading derivCircuit from MMA so those packets are flushed)
     try {
-        local_throwExcepIfQuregNotCreated(initQuregId); // throws
         
+        // validate initial state
+        local_throwExcepIfQuregNotCreated(initQuregId); // throws
         int numQb = quregs[initQuregId].numQubitsRepresented;
         int isDens = quregs[initQuregId].isDensityMatrix;
+        
+        // validate workspace (if pre-allocated)
+        if (workspaceId != -1) {
+            local_throwExcepIfQuregNotCreated(workspaceId); // throws
+            if (workspaceId == initQuregId) 
+                throw QuESTException("", "The initial state qureg must not also be the workspace qureg."); // throws
+            if (quregs[workspaceId].numQubitsRepresented != numQb || quregs[workspaceId].isDensityMatrix != isDens)
+                throw QuESTException("", "The workspace qureg must have the same type and dimension as the initial state qureg"); // throws 
+        }
+            
+        // validate derivative registers
         for (int q=0; q<numQuregs; q++) {
             local_throwExcepIfQuregNotCreated(quregIds[q]); // throws
             if (quregIds[q] == initQuregId)
-                throw QuESTException("", "The initial state qureg must not also be one of the derivative quregs"); // throws 
+                throw QuESTException("", "The initial state qureg must not also be one of the derivative quregs."); // throws
+            if (quregIds[q] == workspaceId)
+                throw QuESTException("", "The workspace qureg must not be one of the derivative quregs."); // throws
             if (quregs[quregIds[q]].numQubitsRepresented != numQb)
                 throw QuESTException("", "All derivative quregs must have the same dimension as the initial state."); // throws
             if (quregs[quregIds[q]].isDensityMatrix != isDens)
                 throw QuESTException("", "Quregs must be all state-vectors or all density-matrices"); // throws
         }
+        
     } catch (QuESTException& err) {
         local_sendErrorAndFail("CalcQuregDerivs", err.message);
+        
+        // safely exit, no memory leaked (destructors auto-called)
         return;
     }
     
     Qureg initQureg = quregs[initQuregId];
+    
+    // optionally create workspace
+    Qureg workspace;
+    if (workspaceId == -1)
+        workspace = createCloneQureg(initQureg, env);
+    else
+        workspace = quregs[workspaceId];
     
     Qureg* derivQuregs = (Qureg*) malloc(numQuregs * sizeof *derivQuregs);
     for (int q=0; q<numQuregs; q++)
         derivQuregs[q] = quregs[quregIds[q]];
         
     try {
-        derivCirc.applyTo(derivQuregs, numQuregs, initQureg); // throws
+        derivCirc.applyTo(derivQuregs, numQuregs, initQureg, workspace); // throws
         
         WSPutInteger(stdlink, initQuregId);
         
@@ -712,6 +731,9 @@ void internal_calcQuregDerivs(int initQuregId) {
     
     // clean-up even in event of error 
     free(derivQuregs);
+    
+    if (workspaceId == -1)
+        destroyQureg(workspace, env);
 }
 
 void internal_calcExpecPauliStringDerivs(int initQuregId, int isPureCirc) {

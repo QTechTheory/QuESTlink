@@ -431,12 +431,12 @@
 
 :Begin:
 :Function:       internal_calcQuregDerivs
-:Pattern:        QuEST`Private`CalcQuregDerivsInternal[initStateId_Integer, quregIds_List, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, derivOpInds_List, derivVarInds_List, derivParams_List, numDerivParamsPerDerivOp_List]
-:Arguments:      { initStateId, quregIds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp }
-:ArgumentTypes:  { Integer, Manual }
+:Pattern:        QuEST`Private`CalcQuregDerivsInternal[initStateId_Integer, workspaceId_Integer, quregIds_List, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, derivOpInds_List, derivVarInds_List, derivParams_List, numDerivParamsPerDerivOp_List]
+:Arguments:      { initStateId, workspaceId, quregIds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp }
+:ArgumentTypes:  { Integer, Integer, Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: QuEST`Private`CalcQuregDerivsInternal::usage = "CalcQuregDerivsInternal[initStateId, quregIds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp] accepts a circuit (complete with rotation angles) and a nominated set of gates (by indices), sets each qureg to be the result of applying the derivative of the circuit w.r.t the nominated gates, upon the initial state."
+:Evaluate: QuEST`Private`CalcQuregDerivsInternal::usage = "CalcQuregDerivsInternal[initStateId, workspaceId, quregIds, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp] accepts a circuit (complete with rotation angles) and a nominated set of gates (by indices), sets each qureg to be the result of applying the derivative of the circuit w.r.t the nominated gates, upon the initial state. workspaceId = -1 will force internal temporary workspace creation."
 
 :Begin:
 :Function:       internal_calcExpecPauliStringDerivs

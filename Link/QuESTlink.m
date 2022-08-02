@@ -55,11 +55,12 @@ Accepts optional arguments WithBackup and ShowProgress."
     ApplyCircuit::error = "`1`"
     
     CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] modifies the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in any continuous gate or decoherence channel.
+CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs, workspaceQureg] uses the given persistent workspace qureg to avoid tediously creating and destroying any internal quregs, for a speedup.
 Variable repetition, multi-parameter gates, variable dependent element-wise matrices, variable dependent channels and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted."
     CalcQuregDerivs::error = "`1`"
     
     CalcExpecPauliStringDerivs::usage = "CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString] returns the gradient vector of the pauliString expected values, as produced by the derivatives of the circuit (with respect to varVals, {var -> value}) acting upon the given initial state.
-This function permits all the freedoms of CalcQuregDerivs[], but with fixed memory overheads, and when performed upon statevectors, will run a factor Length[circuit] faster."
+This function permits all the freedoms of CalcQuregDerivs[] but requires only a fixed memory overhead (in lieu of #varVals quregs), and when performed upon statevectors, will even run a factor Length[circuit] faster."
     CalcExpecPauliStringDerivs::error = "`1`"
     
     CalcGeometricTensor::usage = "CalcGeometricTensor[circuit, initQureg, varVals] returns the geometric tensor of the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}.
@@ -703,7 +704,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          * derivatives
          *)
 
-        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}] :=  
+        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}, workQureg_Integer:-1] :=  
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* check each var corresponds to a deriv qureg *)
@@ -715,10 +716,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     Message[CalcQuregDerivs::error, ret]; Return @ $Failed];
                 (* send to backend, mapping Mathematica indices to C++ indices *)
                 {encodedCirc, encodedDerivTerms} = ret;
-                CalcQuregDerivsInternal[initQureg, derivQuregs, 
+                CalcQuregDerivsInternal[initQureg, workQureg, derivQuregs, 
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms]]
-                    
+        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}, {workQureg_Integer}] :=  
+            CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs, workQureg]
         CalcQuregDerivs[___] := invalidArgError[CalcQuregDerivs]
         
         isPureCircuit[circuit_] := 

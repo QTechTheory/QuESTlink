@@ -125,11 +125,11 @@ class DerivCircuit {
          * @precondition varInds between all terms lie in [0, numQuregs)
          * @precondition numQuregs = number of unique varInd between terms
          * @precondition gateInd between terms is increasing (or repeating)
-         * @precondition all quregs are initialised, and of equal dimension & type
+         * @precondition all quregs are created, and of equal dimension & type
          * @throws QuESTException if the circuit of deriv info is invalid 
          *         (i.e. contains invalid gate details), or if the user aborts
          */
-        void applyTo(Qureg* quregs, int numQuregs, Qureg initQureg);
+        void applyTo(Qureg* quregs, int numQuregs, Qureg initQureg, Qureg workspace);
         
         /** Modifies eneryGrad to be the gradient of the expected energy under
          * the given Hamiltonian, as prescribed by the circuit derivatives.
