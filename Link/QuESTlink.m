@@ -55,7 +55,7 @@ Accepts optional arguments WithBackup and ShowProgress."
     ApplyCircuit::error = "`1`"
     
     CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] modifies the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in any continuous gate or decoherence channel.
-CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs, workspaceQureg] uses the given persistent workspace qureg to avoid tediously creating and destroying any internal quregs, for a speedup.
+CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs, workspaceQureg] uses the given persistent workspace qureg to avoid tediously creating and destroying any internal quregs, for a speedup. For convenience, any number of workspaces can be passed, but only the first is used.
 Variable repetition, multi-parameter gates, variable dependent element-wise matrices, variable dependent channels and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted."
     CalcQuregDerivs::error = "`1`"
     
@@ -704,7 +704,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          * derivatives
          *)
 
-        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}, workQureg_Integer:-1] :=  
+        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}, workQuregs:(_Integer|{__Integer}):-1] :=  
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* check each var corresponds to a deriv qureg *)
@@ -716,11 +716,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     Message[CalcQuregDerivs::error, ret]; Return @ $Failed];
                 (* send to backend, mapping Mathematica indices to C++ indices *)
                 {encodedCirc, encodedDerivTerms} = ret;
-                CalcQuregDerivsInternal[initQureg, workQureg, derivQuregs, 
+                CalcQuregDerivsInternal[initQureg, First@{Sequence@@workQuregs}, derivQuregs, 
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms]]
-        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}, {workQureg_Integer}] :=  
-            CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs, workQureg]
         CalcQuregDerivs[___] := invalidArgError[CalcQuregDerivs]
         
         isPureCircuit[circuit_] := 
