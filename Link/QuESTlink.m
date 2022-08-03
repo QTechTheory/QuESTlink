@@ -60,10 +60,12 @@ Variable repetition, multi-parameter gates, variable dependent element-wise matr
     CalcQuregDerivs::error = "`1`"
     
     CalcExpecPauliStringDerivs::usage = "CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString] returns the gradient vector of the pauliString expected values, as produced by the derivatives of the circuit (with respect to varVals, {var -> value}) acting upon the given initial state.
+CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most three workspaceQuregs are needed.
 This function permits all the freedoms of CalcQuregDerivs[] but requires only a fixed memory overhead (in lieu of #varVals quregs), and when performed upon statevectors, will even run a factor Length[circuit] faster."
     CalcExpecPauliStringDerivs::error = "`1`"
     
     CalcGeometricTensor::usage = "CalcGeometricTensor[circuit, initQureg, varVals] returns the geometric tensor of the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}.
+CalcGeometricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most four workspaceQuregs are needed.
 This quantity relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections."
     CalcGeometricTensor::error = "`1`"
     
@@ -721,10 +723,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     unpackEncodedDerivCircTerms @ encodedDerivTerms]]
         CalcQuregDerivs[___] := invalidArgError[CalcQuregDerivs]
         
-        isPureCircuit[circuit_] := 
-            Boole @ Not @ MemberQ[circuit, Subscript[Damp|Deph|Depol|Kraus|KrausNonTP, __][__]]
-        
-        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, paulis_?isValidPauliString] :=
+        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, paulis_?isValidPauliString, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
@@ -733,14 +732,15 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     Message[CalcExpecPauliStringDerivs::error, ret]; Return @ $Failed];
                 (* send to backend, mapping Mathematica indices to C++ indices *)
                 {encodedCirc, encodedDerivTerms} = ret;
-                CalcExpecPauliStringDerivsInternal[initQureg, isPureCircuit[circuit],
+                CalcExpecPauliStringDerivsInternal[
+                    initQureg, workQuregs,
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms,
                     Sequence @@ getEncodedPauliString[paulis]]]
 
         CalcExpecPauliStringDerivs[___] := invalidArgError[CalcExpecPauliStringDerivs]
         
-        CalcGeometricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}] :=
+        CalcGeometricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms, retArrs},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
@@ -749,7 +749,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     Message[CalcGeometricTensor::error, ret]; Return @ $Failed];
                 (* send to backend, mapping Mathematica indices to C++ indices *)
                 {encodedCirc, encodedDerivTerms} = ret;
-                data = CalcGeometricTensorInternal[initQureg, isPureCircuit[circuit],
+                data = CalcGeometricTensorInternal[
+                    initQureg, workQuregs,
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms];
                 (* reformat output to complex matrix *)
