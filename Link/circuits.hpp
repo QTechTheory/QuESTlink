@@ -118,6 +118,12 @@ class Gate {
          * (such as Rx, H, U, UNonNorm), or not (like M, P, Matr, Damp)
          */
         bool isUnitary();
+        
+        /** Returns whether the gate is pure, i.e. can be performed upon 
+         * statevectors (true), else whether it can only be performed upon 
+         * density matrices (false)
+         */
+        bool isPure();
             
         /** Returns the number of outputs that this gate produces when performed 
          * in a circuit. This is the number of elements added to the outputs array 
@@ -219,6 +225,12 @@ class Circuit {
          * U, UNonNorm, Rx, etc) as opposed to non-unitaries (like Matr, P, M, Damp)
          */
         bool isUnitary();
+        
+        /** Returns whether the circuit contains only pure gates and can hence be 
+         * performed upon  statevectors (true), else whether it can only be performed 
+         * upon density matrices (false)
+         */
+        bool isPure();
         
         /** Modify qureg by sequentially applying every gate within the circuit, 
          * with increasing index. Array outputs is modified to have its first n 

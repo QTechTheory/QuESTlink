@@ -94,10 +94,10 @@ class DerivCircuit {
         
         /** Qureg type-specific implementations of public methods 
          */
-        void calcDerivEnergiesStateVec(qreal* energies, PauliHamil hamil, Qureg initQureg);
-        void calcDerivEnergiesDensMatr(qreal* energies, PauliHamil hamil, Qureg initQureg);
-        void calcGeometricTensorStateVec(qcomp** tensor, Qureg initQureg);
-        void calcGeometricTensorDensMatr(qcomp** tensor, Qureg initQureg);
+        void calcDerivEnergiesStateVec(qreal* energies, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        void calcDerivEnergiesDensMatr(qreal* energies, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        void calcGeometricTensorStateVec(qcomp** tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        void calcGeometricTensorDensMatr(qcomp** tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         
         /** Destroys the MMA arrays shared between DerivTerm instances (derivPArams), 
          * invoked during the destructor. This method is defined in decoders.cpp.
@@ -125,31 +125,40 @@ class DerivCircuit {
          * @precondition varInds between all terms lie in [0, numQuregs)
          * @precondition numQuregs = number of unique varInd between terms
          * @precondition gateInd between terms is increasing (or repeating)
-         * @precondition all quregs are initialised, and of equal dimension & type
+         * @precondition all quregs are created, and of equal dimension & type
          * @throws QuESTException if the circuit of deriv info is invalid 
          *         (i.e. contains invalid gate details), or if the user aborts
          */
-        void applyTo(Qureg* quregs, int numQuregs, Qureg initQureg);
+        void applyTo(Qureg* quregs, int numQuregs, Qureg initQureg, Qureg workspace);
         
         /** Modifies eneryGrad to be the gradient of the expected energy under
          * the given Hamiltonian, as prescribed by the circuit derivatives.
-         * If initQureg is a state-vector, and isPureCirc = true, then this 
+         * If initQureg is a state-vector and the circuit is pure, then this 
          * function uses the O(#parameters) algorithm from arXiv 2009.02823.
          * Otherwise, it uses a O(#parameters^2) method. In both scenarios, 
          * the memory overhead is fixed. 
          * @param energyGrad must be a pre-allocated length-numVars array
-         * @param isPureCirc indicates whether the circuit contains only statevector gates
          */ 
-        void calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg initQureg, bool isPureCirc);
+        void calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         
         /** Modifies tensor to be the quantum geometric tensor prescribed by 
          * the circuit derivatives. This relates to the Fubini-Study metric, 
          * the classical Fisher information metric, and the imaginary-time Li 
          * tensor, and appears in pure-state quantum natural gradient.
          * @param energyGrad must be a pre-allocated 2D length-numVars array
-         * @param isPureCirc indicates whether the circuit contains only statevector gates
          */
-        void calcGeometricTensor(qcomp** tensor, Qureg initQureg, bool isPureCirc);
+        void calcGeometricTensor(qcomp** tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        
+        /** Returns the number of working registers needed to perform the method 
+         * indicated by funcName upon given the initial register.
+         */
+        int getNumNeededWorkQuregsFor(std::string funcName, Qureg initQureg);
+        
+        /** Throws an exception if the workQuregIds are invalid or if there are too 
+         * few for the given method.
+         * @precondition initQuregId must be valid
+         */
+        void validateWorkQuregsFor(std::string methodName, int initQuregId, int* workQuregIds, int numWorkQuregs);
         
         /** Destructor will free the persistent Mathematica arrays accesssed by 
          * the DerivTerm instances, as well as the Circuit. 

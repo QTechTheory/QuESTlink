@@ -137,6 +137,30 @@ bool Gate::isUnitary() {
     }
 }
 
+bool Gate::isPure() {
+    
+    if (isUnitary())
+        return true;
+    
+    switch(opcode) {
+        
+        case OPCODE_M :
+        case OPCODE_P :
+        case OPCODE_Matr :
+            return true;
+        
+        case OPCODE_Deph :
+        case OPCODE_Depol :
+        case OPCODE_Damp :
+        case OPCODE_Kraus :
+        case OPCODE_KrausNonTP :
+            return false;
+                  
+        default:            
+            throw QuESTException("", "an unrecognised gate was queried for purity. This is likely an internal error."); // throws
+    }
+}
+
 void Gate::applyTo(Qureg qureg, qreal* outputs) {
     
     switch(opcode) {
@@ -706,6 +730,15 @@ bool Circuit::isUnitary() {
     
     for (int i=0; i<numGates; i++)
         if (! gates[i].isUnitary())
+            return false;
+            
+    return true;
+}
+
+bool Circuit::isPure() {
+    
+    for (int i=0; i<numGates; i++)
+        if (!gates[i].isPure())
             return false;
             
     return true;
