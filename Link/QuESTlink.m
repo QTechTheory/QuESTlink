@@ -122,9 +122,13 @@ See ?BitEncoding and ?PhaseOverrides."
     CalcPauliStringMatrix::usage = "CalcPauliStringMatrix[pauliString] returns the numerical matrix of the given real-weighted sum of Pauli tensors. The number of qubits is assumed to be the largest Pauli target. This accepts only sums of Pauli products with unique qubits and floating-point coefficients, and is computed numerically."
     CalcPauliStringMatrix::error = "`1`"
     
-    CalcPauliExpressionMatrix::usage = "CalcPauliExpressionMatrix[expr] returns the analytic matrix given by the symbolic expression of Pauli operators, X, Y, Z, Id. The number of qubits is assumed to be the largest Pauli target. Accepts the same inputs as SimplfyPaulis[], and is computed symbolically.
+    CalcPauliExpressionMatrix::usage = "CalcPauliExpressionMatrix[expr] returns the sparse, analytic matrix given by the symbolic expression of Pauli operators, X, Y, Z, Id. The number of qubits is assumed to be the largest Pauli target. Accepts the same inputs as SimplfyPaulis[], and is computed symbolically.
 CalcPauliExpressionMatrix[expr, numQb] overrides the assumed number of qubits."
     CalcPauliExpressionMatrix::error = "`1`"
+    
+    CalcPauliStringMinEigVal::usage = "CalcPauliStringMinEigVal[pauliString] returns the ground-state energy of the given real-weighted sum of Pauli tensors.
+CalcPauliStringMinEigVal[pauliString, MaxIterations -> n] specifies to use at most n iterations in the invoked Arnaldi/Lanczos's method"
+    CalcPauliStringMinEigVal::error = "`1`"
 
     DestroyQureg::usage = "DestroyQureg[qureg] destroys the qureg associated with the given ID. If qureg is a Symbol, it will additionally be cleared."
     DestroyQureg::error = "`1`"
@@ -871,8 +875,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         ApplyPauliString[___] := invalidArgError[ApplyPauliString]
         
         getFullHilbertPauliMatrix[numQ_][Subscript[s_,q_]] := Module[
-        	{m=ConstantArray[IdentityMatrix[2], numQ]},
-        	m[[q+1]] = PauliMatrix[s /. {Id->0, X->1,Y->2,Z->3}];
+        	{m=ConstantArray[SparseArray @ IdentityMatrix[2], numQ]},
+        	m[[q+1]] = SparseArray @ PauliMatrix[s /. {Id->0, X->1,Y->2,Z->3}];
         	If[Length[m]>1, KroneckerProduct @@ (Reverse @ m), First @ m]]
             
         SetAttributes[CalcPauliExpressionMatrix, HoldAll]
@@ -889,6 +893,13 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             {nQb = Max[1 + Cases[{hFlat}, Subscript[(Id|X|Y|Z), q_]:>q, Infinity]]},
             CalcPauliExpressionMatrix[hFlat, nQb]]
         CalcPauliExpressionMatrix[___] := invalidArgError[CalcPauliExpressionMatrix]
+        
+        CalcPauliStringMinEigVal[paulis_?isValidPauliString, MaxIterations -> its_Integer] := With[
+            {matr = CalcPauliExpressionMatrix[paulis]},
+            - Eigenvalues[- matr, 1, Method -> {"Arnoldi", MaxIterations -> its, "Criteria" -> "RealPart"}]]
+        CalcPauliStringMinEigVal[paulis_?isValidPauliString] :=
+            CalcPauliStringMinEigVal[paulis, MaxIterations -> 10^5]
+        CalcPauliStringMinEigVal[___] := invalidArgError[CalcPauliStringMinEigVal]
         
         CalcPauliStringMatrix[paulis_?isValidPauliString] := With[
             {pauliCodes = getEncodedPauliString[paulis]},
