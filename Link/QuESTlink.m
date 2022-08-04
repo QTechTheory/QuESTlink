@@ -2052,6 +2052,13 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         GetCircuitGeneralised[op_] := GetCircuitGeneralised[{op}]
         GetCircuitGeneralised[___] := invalidArgError[GetCircuitGeneralised]
         
+        getChannelAssumps[Subscript[Damp, _][x_]] := (0 <= x < 1)
+        getChannelAssumps[Subscript[Deph, _][x_]] := (0 <= x < 1/2)
+        getChannelAssumps[Subscript[Deph, _,_][x_]] := (0 <= x < 3/4)
+        getChannelAssumps[Subscript[Depol, _][x_]] := (0 <= x < 3/4)
+        getChannelAssumps[Subscript[Depol, _,_][x_]] := (0 <= x < 15/16)
+        getChannelAssumps[_] := Nothing
+        
         shiftInds[q__Integer|{q__Integer}, numQb_] := Sequence @@ (List[q]+numQb)
     
         GetCircuitSuperoperator[circ_List, numQb_] := With[
@@ -2086,9 +2093,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             	(* Kraus channels are turned into superoperators *)
             	Subscript[(Kraus|KrausNonTP), q__Integer|{q__Integer}][matrs_List] :> Subscript[Matr, Sequence @@ Join[{q},{shiftInds[q,numQb]}]][
             		Total[(KroneckerProduct[Conjugate[#], #]&) /@ matrs]],
-            	(* other channels are first converted to Kraus, before recursing *)
+            	(* other channels are first converted to Kraus, before recursing... *)
             	g:Subscript[(Damp|Depol|Deph), q__Integer|{q__Integer}][x_] :> 
-            		GetCircuitSuperoperator[GetCircuitGeneralised[g],numQb],
+            		With[{op = GetCircuitSuperoperator[GetCircuitGeneralised[g], numQb]},
+                        (* and are then simplified by asserting trace-preservation *)
+                        Simplify[op, getChannelAssumps[g]]],
             (* wrap unrecognised gates in dummy Head *)
             	g_ :> unrecognisedGateInSuperopCirc[g]
             (* replace at top level *)
