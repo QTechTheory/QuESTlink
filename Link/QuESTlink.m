@@ -1394,15 +1394,16 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] := {gate, {}, {targs}}
         getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]]] := {Join[{R}, {paulis}[[All,1]]], {}, {paulis}[[All,2]]}
         getSymbCtrlsTargs[R[arg_, Subscript[pauli:(X|Y|Z), targ_Integer]]] := {{R,pauli}, {}, {targ}}
-            (* little hack to enable G[x] in GetCircuitColumns *)
+            (* little hack to enable G[x] and Fac[y] in GetCircuitColumns *)
             getSymbCtrlsTargs[G[x_]] := {G, {}, {}}
+            getSymbCtrlsTargs[Fac[x_]] := {Fac, {}, {}}
 
         (* deciding how to handle gate placement *)
         getQubitInterval[{ctrls___}, {targs___}] :=
         	Interval @ {Min[ctrls,targs],Max[ctrls,targs]}
         getNumQubitsInCircuit[circ_List] :=
-        	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], \[Infinity]],    
-        		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], \[Infinity]]]
+        	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], Infinity],    
+        		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], Infinity]] /. -Infinity -> 1  (* assume G and Fac circuits are 1 qubit *)
         isContiguousBlockGate[(SWAP|M|Rz|Ph|X|R|{R, (X|Y|Z)..})] := False
         isContiguousBlockGate[_] := True
         needsSpecialSwap[label_, _List] /; Not[isContiguousBlockGate[label]] := False
@@ -1479,6 +1480,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         drawGate[{R, rots:(X|Y|Z)..}, {}, targs_List, col_] := {
             Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
             Sequence @@ MapThread[drawGate[#1/.{X->Rx,Y->Ry,Z->Rz}, {}, {#2}, col]&, {{rots}, targs}]}
+        drawGate[G, {}, targs_List, col_] /; (isContiguousBlockGate[label] && Union@Differences@Sort@targs=={1}) := {
+            drawMultiBox[Min[targs], Length[targs], col],
+            Text["e"^"i\[Theta]", {col+.5,Mean[targs]+.5}]}
+        drawGate[Fac, {}, targs_List, col_] /; (isContiguousBlockGate[label] && Union@Differences@Sort@targs=={1}) := {
+            drawMultiBox[Min[targs], Length[targs], col],
+            Text[Rotate["factor",Pi/2], {col+.5,Mean[targs]+.5}]}
         drawGate[label_Symbol, {}, targs_List, col_] /; (isContiguousBlockGate[label] && Union@Differences@Sort@targs=={1}) := {
             drawMultiBox[Min[targs], Length[targs], col],
             Text[SymbolName@label, {col+.5,Mean[targs]+.5}]}
@@ -1583,7 +1590,10 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 
                 (* for each subcircuit... *)
                 Table[
-                    gates = compactCirc[compactFlag][subcirc /. G[_] -> Nothing];
+                    gates = compactCirc[compactFlag][subcirc /. {
+                        (* hackily replace qubit-free gates full-state contiguous gate *)
+                        G[_] -> Subscript[G, Range[0,numQubits-1] ], 
+                        Fac[_] -> Subscript[Fac, Range[0,numQubits-1] ]}];
                     subcircInd++;
                     isFirstGate = True;
                 
