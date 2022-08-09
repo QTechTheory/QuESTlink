@@ -125,6 +125,7 @@ bool Gate::isUnitary() {
         case OPCODE_M :
         case OPCODE_P :
         case OPCODE_Matr : 
+        case OPCODE_Fac :
         case OPCODE_Deph :
         case OPCODE_Depol :
         case OPCODE_Damp :
@@ -147,6 +148,7 @@ bool Gate::isPure() {
         case OPCODE_M :
         case OPCODE_P :
         case OPCODE_Matr :
+        case OPCODE_Fac :
             return true;
         
         case OPCODE_Deph :
@@ -586,6 +588,19 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
         }
             break;
             
+        case OPCODE_Fac : {
+            if (numParams != 2)
+                throw local_wrongNumGateParamsExcep("Factor", numParams, 2); // throws
+            if (numCtrls != 0)
+                throw local_gateUnsupportedExcep("controlled factor"); // throws
+            if (numTargs != 0)
+                throw local_wrongNumGateTargsExcep("Factor", numTargs, "0 targets"); // throws
+            Complex fac;    fac.real = params[0];  fac.imag = params[1];
+            Complex zero;  zero.real = 0;          zero.imag = 0;
+            setWeightedQureg(zero, qureg, zero, qureg, fac, qureg);
+        }
+            break;
+            
         case OPCODE_Id :
             // any numCtrls, numParams and numTargs is valid; all do nothing!
             break;
@@ -649,6 +664,13 @@ void Gate::applyDaggerTo(Qureg qureg) {
             params[0] *= -1;
             applyTo(qureg); // throws (safe to persist params mod)
             params[0] *= -1;
+            break;
+            
+        // fac simply conjugates (params[1] = imaginary component) 
+        case OPCODE_Fac :
+            params[1] *= -1;
+            applyTo(qureg); // throws (safe to persist params mod)
+            params[1] *= -1;
             break;
             
         // gates with transposable matrices

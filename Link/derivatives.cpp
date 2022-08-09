@@ -190,6 +190,13 @@ void local_globalPhaseDeriv(Qureg qureg, qreal phaseDeriv) {
         extension_applyImagFactor(qureg, phaseDeriv);
 }
 
+void local_factorDeriv(Qureg qureg, qreal facDerivRe, qreal facDerivIm) {
+    
+    Complex zero;  zero.real = 0;           zero.imag = 0;
+    Complex fac;    fac.real = facDerivRe;   fac.imag = facDerivIm;
+    setWeightedQureg(zero, qureg, zero, qureg, fac, qureg);
+}
+
 
 
 /*
@@ -324,6 +331,12 @@ void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
             if (numDerivParams != 1)
                 throw local_wrongNumDerivParamsExcep("Global phase", numDerivParams, 1); // throws
             local_globalPhaseDeriv(qureg, derivParams[0]);
+            break;
+            
+        case OPCODE_Fac :
+            if (numDerivParams != 2)
+                throw local_wrongNumDerivParamsExcep("Factor", numDerivParams, 2); // throws
+            local_factorDeriv(qureg, derivParams[0], derivParams[1]);
             break;
             
         case OPCODE_Ph : {
