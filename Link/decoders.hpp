@@ -4,24 +4,11 @@
 #include "QuEST.h"
 #include "QuEST_complex.h"
 
+#include "utilities.hpp"
 
 
-ComplexMatrix2 local_getMatrix2FromFlatList(qreal* list);
 
-ComplexMatrix4 local_getMatrix4FromFlatList(qreal* list);
-
-void local_setMatrixNFromFlatList(qreal* list, ComplexMatrixN m, int numQubits);
-
-void local_createManyMatrixNFromFlatList(qreal* list, ComplexMatrixN* matrs, int numOps, int numQubits);
-
-void local_setFlatListFromMatrixN(qreal* list, ComplexMatrixN m, int numQubits);
-
-void local_setFlatListToMatrixDagger(qreal* list, int numQubits);
-
-long long int local_getNumScalarsToFormMatrix(int numQubits);
-
-void local_sendMatrixToMMA(qcomp** matrix, int dim);
-
+void local_sendMatrixToMMA(qmatrix matrix);
 
 void local_loadEncodedPauliStringFromMMA(
     int* numPaulis, int* numTerms, qreal** termCoeffs, int** allPauliCodes, int** allPauliTargets, int** numPaulisPerTerm);

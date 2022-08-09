@@ -448,13 +448,13 @@
 :Evaluate: QuEST`Private`CalcExpecPauliStringDerivsInternal::usage = "CalcExpecPauliStringDerivsInternal[initStateId, workspaces, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] accepts a circuit (complete with rotation angles), a derivative specification, and a Hamiltonian, and returns the energy gradient. workspaces can be a list of any length"
 
 :Begin:
-:Function:       internal_calcGeometricTensor
-:Pattern:        QuEST`Private`CalcGeometricTensorInternal[initStateId_Integer, workspaces_List, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, derivOpInds_List, derivVarInds_List, derivParams_List, numDerivParamsPerDerivOp_List]
+:Function:       internal_calcMetricTensor
+:Pattern:        QuEST`Private`CalcMetricTensorInternal[initStateId_Integer, workspaces_List, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, derivOpInds_List, derivVarInds_List, derivParams_List, numDerivParamsPerDerivOp_List]
 :Arguments:      { initStateId, workspaces, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp }
 :ArgumentTypes:  { Integer, Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: QuEST`Private`CalcGeometricTensorInternal::usage = "CalcGeometricTensor[initStateId, workspaces, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp] accepts a circuit and derivative terms and returns the corresponding geometric tensor."
+:Evaluate: QuEST`Private`CalcMetricTensorInternal::usage = "CalcMetricTensor[initStateId, workspaces, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp] accepts a circuit and derivative terms and returns the corresponding geometric tensor."
 
 :Begin:
 :Function:       internal_calcInnerProductsMatrix

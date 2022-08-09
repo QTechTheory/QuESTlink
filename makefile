@@ -318,7 +318,7 @@ endif
 #
 
 OBJ = QuEST.o QuEST_validation.o QuEST_common.o QuEST_qasm.o mt19937ar.o
-OBJ += extensions.o circuits.o derivatives.o errors.o decoders.o
+OBJ += extensions.o circuits.o derivatives.o errors.o decoders.o utilities.o
 ifeq ($(GPUACCELERATED), 1)
     OBJ += QuEST_gpu.o
 else

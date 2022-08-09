@@ -64,10 +64,9 @@ CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString, workspaceQu
 This function permits all the freedoms of CalcQuregDerivs[] but requires only a fixed memory overhead (in lieu of #varVals quregs), and when performed upon statevectors, will even run a factor Length[circuit] faster."
     CalcExpecPauliStringDerivs::error = "`1`"
     
-    CalcGeometricTensor::usage = "CalcGeometricTensor[circuit, initQureg, varVals] returns the geometric tensor of the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}.
-CalcGeometricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most four workspaceQuregs are needed.
-This quantity relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections."
-    CalcGeometricTensor::error = "`1`"
+    CalcMetricTensor::usage = "CalcMetricTensor[circuit, initQureg, varVals] returns the natural gradient metric tensor, capturing the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}. For state-vectors, this returns the quantum geometric tensor, which relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections. For density-matrices, this function returns the Hilbert-Schmidt derivative metric, which well approximates the quantum Fisher information matrix.
+CalcMetricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most four workspaceQuregs are needed."
+    CalcMetricTensor::error = "`1`"
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
 CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element CalcInnerProduct[braId, ketIds[i]]."
@@ -747,16 +746,16 @@ The probability of the forced measurement outcome (if hypothetically not forced)
 
         CalcExpecPauliStringDerivs[___] := invalidArgError[CalcExpecPauliStringDerivs]
         
-        CalcGeometricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, workQuregs:{___Integer}:{}] :=
+        CalcMetricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms, retArrs},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
                 ret = Catch @ encodeDerivCirc[circuit, varVals];
                 If[Head@ret === String,
-                    Message[CalcGeometricTensor::error, ret]; Return @ $Failed];
+                    Message[CalcMetricTensor::error, ret]; Return @ $Failed];
                 (* send to backend, mapping Mathematica indices to C++ indices *)
                 {encodedCirc, encodedDerivTerms} = ret;
-                data = CalcGeometricTensorInternal[
+                data = CalcMetricTensorInternal[
                     initQureg, workQuregs,
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms];
@@ -765,7 +764,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     MapThread[#1 + I #2 &, {data[[1]], data[[2]]}], 
                     Length[varVals] {1,1}]]]
                     
-        CalcGeometricTensor[__] := invalidArgError[CalcGeometricTensor]
+        CalcMetricTensor[__] := invalidArgError[CalcMetricTensor]
         
         
         

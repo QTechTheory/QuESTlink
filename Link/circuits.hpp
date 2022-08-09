@@ -124,6 +124,11 @@ class Gate {
          * density matrices (false)
          */
         bool isPure();
+        
+        /** Returns whether the gate can be inverted, and ergo undone from a 
+         * state. 
+         */
+        bool isInvertible();
             
         /** Returns the number of outputs that this gate produces when performed 
          * in a circuit. This is the number of elements added to the outputs array 

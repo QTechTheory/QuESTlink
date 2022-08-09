@@ -14,6 +14,7 @@
 #include "decoders.hpp"
 #include "extensions.hpp"
 #include "circuits.hpp"
+#include "utilities.hpp"
 #include "derivatives.hpp"
 #include "link.hpp"
 
@@ -490,11 +491,11 @@ void DerivCircuit::calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg 
         calcDerivEnergiesDensMatr(energyGrad, hamil, initQureg, workQuregs, numWorkQuregs);
 }
 
-void DerivCircuit::calcGeometricTensorStateVec(qcomp** tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
+void DerivCircuit::calcMetricTensorStateVec(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
     
     if (numWorkQuregs < 4)
         throw QuESTException("", "An internal error occured. Fewer than four working registers were "
-            "passed to DerivCircuit::calcGeometricTensorStateVec, despite prior validation."); // throws
+            "passed to DerivCircuit::calcMetricTensorStateVec, despite prior validation."); // throws
     
     Qureg quregDiag   = workQuregs[0];
     Qureg quregSuffix = workQuregs[1];
@@ -509,91 +510,80 @@ void DerivCircuit::calcGeometricTensorStateVec(qcomp** tensor, Qureg initQureg, 
             tensor[i][j] = 0;
             
     // separate array for the Berry connection terms
-    qcomp* berries = (qcomp*) malloc(numVars * sizeof *berries);
+    qvector berries = local_getQvector(numVars);
     for (int i=0; i<numVars; i++)
         berries[i] = 0;
     
-    try {
-        int indOfLastGateOnDiag = -1;
+    int indOfLastGateOnDiag = -1;
+    
+    for (int t=0; t<numTerms; t++) {
         
-        for (int t=0; t<numTerms; t++) {
-            
-            DerivTerm rowDerivTerm = terms[t];
-            int rowGateInd = rowDerivTerm.getGateInd();
-            int rowVarInd = rowDerivTerm.getVarInd();
+        DerivTerm rowDerivTerm = terms[t];
+        int rowGateInd = rowDerivTerm.getGateInd();
+        int rowVarInd = rowDerivTerm.getVarInd();
 
-            // apply all prior gates to |diag>, such that 
-            // |diag> = U_(r-1) ... U2 U1 |in>
-            circuit->applySubTo(quregDiag, indOfLastGateOnDiag+1, rowGateInd); // throws
-            indOfLastGateOnDiag = rowGateInd-1;
+        // apply all prior gates to |diag>, such that 
+        // |diag> = U_(r-1) ... U2 U1 |in>
+        circuit->applySubTo(quregDiag, indOfLastGateOnDiag+1, rowGateInd); // throws
+        indOfLastGateOnDiag = rowGateInd-1;
+    
+        // |deriv> = (dU_r/dx) U_(r-1) ... U2 U1 |in>
+        cloneQureg(quregDeriv, quregDiag);
+        rowDerivTerm.applyTo(quregDeriv); // throws
         
-            // |deriv> = (dU_r/dx) U_(r-1) ... U2 U1 |in>
-            cloneQureg(quregDeriv, quregDiag);
-            rowDerivTerm.applyTo(quregDeriv); // throws
+        // <deriv|deriv> = || (dU_r/dx) U_(r-1) ... U2 U1 |in> ||^2
+        Complex norm = calcInnerProduct(quregDeriv, quregDeriv);
+        tensor[rowVarInd][rowVarInd] += fromComplex(norm);
+        
+        // <prefix| = <in| U1^ U2^ ... U_(r-1)^ (dU_r/dx)^
+        cloneQureg(quregPrefix, quregDeriv);
+        
+        // |suffix> = U_(r-1) ... U2 U1 |in>
+        cloneQureg(quregSuffix, quregDiag);
+        
+        // aside: compute single Berry connection term (safely modify quregDeriv)
+        cloneQureg(quregDeriv, quregDiag);
+        circuit->applySubTo(quregDeriv, indOfLastGateOnDiag+1, rowGateInd+1);
+        Complex berry = calcInnerProduct(quregPrefix, quregDeriv);
+        berries[rowVarInd] += fromComplex(berry);
+        
+        // mark that prefix needs only gates before U_r (inclusive)
+        int indOfLastGateOnPrefix = rowGateInd+1;   // as added
+        int indOfLastGateOnSuffix = rowGateInd-1;   // as remaining
+        
+        for (int s=t-1; s>=0; s--) {
             
-            // <deriv|deriv> = || (dU_r/dx) U_(r-1) ... U2 U1 |in> ||^2
-            Complex norm = calcInnerProduct(quregDeriv, quregDeriv);
-            tensor[rowVarInd][rowVarInd] += fromComplex(norm);
-            
-            // <prefix| = <in| U1^ U2^ ... U_(r-1)^ (dU_r/dx)^
-            cloneQureg(quregPrefix, quregDeriv);
-            
-            // |suffix> = U_(r-1) ... U2 U1 |in>
-            cloneQureg(quregSuffix, quregDiag);
-            
-            // aside: compute single Berry connection term (safely modify quregDeriv)
-            cloneQureg(quregDeriv, quregDiag);
-            circuit->applySubTo(quregDeriv, indOfLastGateOnDiag+1, rowGateInd+1);
-            Complex berry = calcInnerProduct(quregPrefix, quregDeriv);
-            berries[rowVarInd] += fromComplex(berry);
-            
-            // mark that prefix needs only gates before U_r (inclusive)
-            int indOfLastGateOnPrefix = rowGateInd+1;   // as added
-            int indOfLastGateOnSuffix = rowGateInd-1;   // as remaining
-            
-            for (int s=t-1; s>=0; s--) {
-                
-                DerivTerm colDerivTerm = terms[s];
-                int colGateInd = colDerivTerm.getGateInd();
-                int colVarInd = colDerivTerm.getVarInd();
+            DerivTerm colDerivTerm = terms[s];
+            int colGateInd = colDerivTerm.getGateInd();
+            int colVarInd = colDerivTerm.getVarInd();
 
-                // <prefix| = <in| U1^ U2^ ... U_(r-1)^ (dU_r/dx)^ U_r U_(r-1) ... U_(c+1)                    
-                circuit->applyDaggerSubTo(quregPrefix, colGateInd+1, indOfLastGateOnPrefix);
-                indOfLastGateOnPrefix = colGateInd + 1;
-                
-                // |suffix> = U_(c-1) ... U2 U1 |in>
-                circuit->applyInverseSubTo(quregSuffix, colGateInd, indOfLastGateOnSuffix+1);
-                indOfLastGateOnSuffix = colGateInd - 1;
-                
-                // |deriv> = (dU_c/dx) U_(c-1) ... U2 U1 |in>
-                cloneQureg(quregDeriv, quregSuffix);
-                colDerivTerm.applyTo(quregDeriv);
+            // <prefix| = <in| U1^ U2^ ... U_(r-1)^ (dU_r/dx)^ U_r U_(r-1) ... U_(c+1)                    
+            circuit->applyDaggerSubTo(quregPrefix, colGateInd+1, indOfLastGateOnPrefix);
+            indOfLastGateOnPrefix = colGateInd + 1;
+            
+            // |suffix> = U_(c-1) ... U2 U1 |in>
+            circuit->applyInverseSubTo(quregSuffix, colGateInd, indOfLastGateOnSuffix+1);
+            indOfLastGateOnSuffix = colGateInd - 1;
+            
+            // |deriv> = (dU_c/dx) U_(c-1) ... U2 U1 |in>
+            cloneQureg(quregDeriv, quregSuffix);
+            colDerivTerm.applyTo(quregDeriv);
 
-                // <prefix|deriv> = 
-                // <in| U1^ U2^ ... U_(r-1)^ (dU_r/dx)^ U_r U_(r-1) ... U_(c+1) (dU_c/dx) U_(c-1) ... U2 U1 |in>
-                Complex prod = calcInnerProduct(quregPrefix, quregDeriv);
-                tensor[rowVarInd][colVarInd] += fromComplex(prod);
-                tensor[colVarInd][rowVarInd] += conj(fromComplex(prod));
-            }
+            // <prefix|deriv> = 
+            // <in| U1^ U2^ ... U_(r-1)^ (dU_r/dx)^ U_r U_(r-1) ... U_(c+1) (dU_c/dx) U_(c-1) ... U2 U1 |in>
+            Complex prod = calcInnerProduct(quregPrefix, quregDeriv);
+            tensor[rowVarInd][colVarInd] += fromComplex(prod);
+            tensor[colVarInd][rowVarInd] += conj(fromComplex(prod));
         }
-        
-        // add Berry connections to the geometric tensor
-        for (int r=0; r<numVars; r++)
-            for (int c=0; c<numVars; c++)
-                tensor[r][c] -= berries[r] * conj(berries[c]);
-        
-    } catch (QuESTException& err) {
-        
-        // clean-up and rethrow
-        free(berries);
-        throw;
     }
-
-    // clean-up
-    free(berries);
+    
+    // add Berry connections to the geometric tensor
+    for (int r=0; r<numVars; r++)
+        for (int c=0; c<numVars; c++)
+            tensor[r][c] -= berries[r] * conj(berries[c]);
 }
 
-void DerivCircuit::calcGeometricTensorDensMatr(qcomp** tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
+void DerivCircuit::calcMetricTensorDensMatr(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
     
     /* TODO:
      * Implement quantum Fisher information matrix?
@@ -604,12 +594,12 @@ void DerivCircuit::calcGeometricTensorDensMatr(qcomp** tensor, Qureg initQureg, 
     throw QuESTException("", "This facility is not yet available for channels or density matrices.");
 }
 
-void DerivCircuit::calcGeometricTensor(qcomp** tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
+void DerivCircuit::calcMetricTensor(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
     
     if (circuit->isPure() && !initQureg.isDensityMatrix)
-        calcGeometricTensorStateVec(tensor, initQureg, workQuregs, numWorkQuregs); // throws
+        calcMetricTensorStateVec(tensor, initQureg, workQuregs, numWorkQuregs); // throws
     else
-        calcGeometricTensorDensMatr(tensor, initQureg, workQuregs, numWorkQuregs); // throws
+        calcMetricTensorDensMatr(tensor, initQureg, workQuregs, numWorkQuregs); // throws
 }
 
 int DerivCircuit::getNumNeededWorkQuregsFor(std::string funcName, Qureg initQureg) {
@@ -627,7 +617,7 @@ int DerivCircuit::getNumNeededWorkQuregsFor(std::string funcName, Qureg initQure
             return 2;
     }
     
-    if (funcName == "calcGeometricTensor") {
+    if (funcName == "calcMetricTensor") {
         
         if (circIsPure && !initQureg.isDensityMatrix)
             return 4;
@@ -834,7 +824,7 @@ void internal_calcExpecPauliStringDerivs(int initQuregId) {
     WSReleaseInteger32List(stdlink, workQuregIds, numPassedWorkQuregs);
 }
 
-void internal_calcGeometricTensor(int initQuregId) {
+void internal_calcMetricTensor(int initQuregId) {
     
     // load the any-length workspace list from MMA
     int* workQuregIds;
@@ -850,11 +840,11 @@ void internal_calcGeometricTensor(int initQuregId) {
         local_throwExcepIfQuregNotCreated(initQuregId); // throws
         
         if (numPassedWorkQuregs > 0)
-            derivCirc.validateWorkQuregsFor("calcGeometricTensor", initQuregId, workQuregIds, numPassedWorkQuregs); // throws
+            derivCirc.validateWorkQuregsFor("calcMetricTensor", initQuregId, workQuregIds, numPassedWorkQuregs); // throws
             
     } catch (QuESTException& err) {
         
-        local_sendErrorAndFail("CalcGeometricTensor", err.message);
+        local_sendErrorAndFail("CalcMetricTensor", err.message);
         WSReleaseInteger32List(stdlink, workQuregIds, numPassedWorkQuregs);
         return;
     }
@@ -862,7 +852,7 @@ void internal_calcGeometricTensor(int initQuregId) {
     Qureg initQureg = quregs[initQuregId];
     
     // optionally create work registers
-    int numNeededWorkQuregs = derivCirc.getNumNeededWorkQuregsFor("calcGeometricTensor", initQureg);
+    int numNeededWorkQuregs = derivCirc.getNumNeededWorkQuregsFor("calcMetricTensor", initQureg);
     Qureg* workQuregs = (Qureg*) malloc(numNeededWorkQuregs * sizeof *workQuregs);
     for (int i=0; i<numNeededWorkQuregs; i++)
         if (numPassedWorkQuregs == 0)
@@ -870,19 +860,16 @@ void internal_calcGeometricTensor(int initQuregId) {
         else
             workQuregs[i] = quregs[workQuregIds[i]];
     
-    int tensorDim = derivCirc.getNumVars();
-    qcomp** tensor = (qcomp**) malloc(tensorDim * sizeof *tensor);
-    for (int i=0; i<tensorDim; i++)
-        tensor[i] = (qcomp*) malloc(tensorDim * sizeof **tensor);
+    qmatrix tensor = local_getQmatrix(derivCirc.getNumVars());
     
     try {
-        derivCirc.calcGeometricTensor(tensor, initQureg, workQuregs, numNeededWorkQuregs); // throws
+        derivCirc.calcMetricTensor(tensor, initQureg, workQuregs, numNeededWorkQuregs); // throws
         
-        local_sendMatrixToMMA(tensor, tensorDim);
+        local_sendMatrixToMMA(tensor);
     
     } catch (QuESTException& err) {
         
-        local_sendErrorAndFail("CalcGeometricTensor", err.message);
+        local_sendErrorAndFail("CalcMetricTensor", err.message);
     }
     
     // clean-up, even if error
@@ -890,8 +877,5 @@ void internal_calcGeometricTensor(int initQuregId) {
         for (int i=0; i<numNeededWorkQuregs; i++)
             destroyQureg(workQuregs[i], env);
     free(workQuregs);
-    for (int i=0; i<tensorDim; i++)
-        free(tensor[i]);
-    free(tensor);
     WSReleaseInteger32List(stdlink, workQuregIds, numPassedWorkQuregs);
 }

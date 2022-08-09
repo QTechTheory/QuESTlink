@@ -4,6 +4,8 @@
 
 #include "QuEST_complex.h"
 
+#include "utilities.hpp"
+
 
  
 /** A single term among the partial derivatives of a parameterised circuit, 
@@ -96,8 +98,8 @@ class DerivCircuit {
          */
         void calcDerivEnergiesStateVec(qreal* energies, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         void calcDerivEnergiesDensMatr(qreal* energies, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
-        void calcGeometricTensorStateVec(qcomp** tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
-        void calcGeometricTensorDensMatr(qcomp** tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        void calcMetricTensorStateVec(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        void calcMetricTensorDensMatr(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         
         /** Destroys the MMA arrays shared between DerivTerm instances (derivPArams), 
          * invoked during the destructor. This method is defined in decoders.cpp.
@@ -145,9 +147,8 @@ class DerivCircuit {
          * the circuit derivatives. This relates to the Fubini-Study metric, 
          * the classical Fisher information metric, and the imaginary-time Li 
          * tensor, and appears in pure-state quantum natural gradient.
-         * @param energyGrad must be a pre-allocated 2D length-numVars array
          */
-        void calcGeometricTensor(qcomp** tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        void calcMetricTensor(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         
         /** Returns the number of working registers needed to perform the method 
          * indicated by funcName upon given the initial register.
