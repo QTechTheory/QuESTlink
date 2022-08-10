@@ -270,67 +270,6 @@
     QuEST`Private`ApplyParamNamedPhaseFuncInternal::usage = "ApplyParamNamedPhaseFuncInternal[quregId, qubits, numQubitsPerReg, encoding, phaseFuncName, params, overrideInds, overridePhases] applies a diagonal unitary operator upon the qureg, with elements informed by the multi-variable function implied by phaseFuncName, applied to the state indices informed by {qubits}.";
 
 
-:Begin:
-:Function:       wrapper_mixDepolarising
-:Pattern:        QuEST`MixDepolarising[qureg_Integer, qb_Integer, prob_Real]
-:Arguments:      { qureg, qb, prob }
-:ArgumentTypes:  { Integer, Integer, Real }
-:ReturnType:     Manual
-:End:
-:Evaluate: 
-    QuEST`MixDepolarising::usage = "MixDepolarising[qureg, qubit, prob] adds depolarising noise to density matrix qureg.";
-    QuEST`MixDepolarising::error = "`1`";
-    QuEST`MixDepolarising[___] := QuEST`Private`invalidArgError[MixDepolarising];
-
-:Begin:
-:Function:       wrapper_mixTwoQubitDepolarising
-:Pattern:        QuEST`MixTwoQubitDepolarising[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
-:Arguments:      { qureg, qb1, qb2, prob }
-:ArgumentTypes:  { Integer, Integer, Integer, Real }
-:ReturnType:     Manual
-:End:
-:Evaluate: 
-    QuEST`MixTwoQubitDepolarising::usage = "MixTwoQubitDepolarising[qureg, qb1, qb2 prob] adds depolarising noise to density matrix qureg.";
-    QuEST`MixTwoQubitDepolarising::error = "`1`";
-    QuEST`MixTwoQubitDepolarising[___] := QuEST`Private`invalidArgError[MixTwoQubitDepolarising];
-
-:Begin:
-:Function:       wrapper_mixDephasing
-:Pattern:        QuEST`MixDephasing[qureg_Integer, qb_Integer, prob_Real]
-:Arguments:      { qureg, qb, prob }
-:ArgumentTypes:  { Integer, Integer, Real }
-:ReturnType:     Manual
-:End:
-:Evaluate: 
-    QuEST`MixDephasing::usage = "MixDephasing[qureg, qubit, prob] adds dephasing noise to density matrix qureg.";
-    QuEST`MixDephasing::error = "`1`";
-    QuEST`MixDephasing[___] := QuEST`Private`invalidArgError[MixDephasing];
-
-:Begin:
-:Function:       wrapper_mixTwoQubitDephasing
-:Pattern:        QuEST`MixTwoQubitDephasing[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
-:Arguments:      { qureg, qb1, qb2, prob }
-:ArgumentTypes:  { Integer, Integer, Integer, Real }
-:ReturnType:     Manual
-:End:
-:Evaluate: 
-    QuEST`MixTwoQubitDephasing::usage = "MixTwoQubitDephasing[qureg, qb1, qb2 prob] adds dephasing noise to density matrix qureg.";
-    QuEST`MixTwoQubitDephasing::error = "`1`";
-    QuEST`MixTwoQubitDephasing[___] := QuEST`Private`invalidArgError[MixTwoQubitDephasing];
-
-:Begin:
-:Function:       wrapper_mixDamping
-:Pattern:        QuEST`MixDamping[qureg_Integer, qb_Integer, prob_Real]
-:Arguments:      { qureg, qb, prob }
-:ArgumentTypes:  { Integer, Integer, Real }
-:ReturnType:     Manual
-:End:
-:Evaluate: 
-    QuEST`MixDamping::usage = "MixDamping[qureg, qubit, prob] applies amplitude damping with the given decay probability to density matrix qureg.";
-    QuEST`MixDamping::error = "`1`";
-    QuEST`MixDamping[___] := QuEST`Private`invalidArgError[MixDamping];
-
-
 
 
 :Begin:

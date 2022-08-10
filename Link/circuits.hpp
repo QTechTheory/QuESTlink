@@ -33,8 +33,9 @@
 #define OPCODE_KrausNonTP 21
 #define OPCODE_Matr 22
 #define OPCODE_UNonNorm 23
+#define OPCODE_Fac 24
 
-#define NUM_OPCODES 24
+#define NUM_OPCODES 25
 
 static const std::string opcodeStrings[] = {
     "H",			// OPCODE_H 0
@@ -60,7 +61,8 @@ static const std::string opcodeStrings[] = {
     "Ph",			// OPCODE_Ph 20
     "KrausNonTP",	// OPCODE_KrausNonTP 21
     "Matr",			// OPCODE_Matr 22
-    "UNonNorm"		// OPCODE_UNonNorm 23
+    "UNonNorm",		// OPCODE_UNonNorm 23
+    "Fac",          // OPCODE_Fac 24
 };
 
 
