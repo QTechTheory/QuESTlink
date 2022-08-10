@@ -6,6 +6,7 @@
 
 #include "wstp.h"
 #include "QuEST.h"
+#include "QuEST_internal.h"
 
 #include "circuits.hpp"
 #include "errors.hpp"
@@ -13,6 +14,7 @@
 #include "extensions.hpp"
 #include "link.hpp"
 #include "derivatives.hpp"
+#include "utilities.hpp"
 
 
 
@@ -97,70 +99,7 @@ std::string Gate::getOpcodeStr() {
     if (opcode < NUM_OPCODES)
         return opcodeStrings[opcode];
         
-    throw QuESTException("", "encountered an unrecognised gate."); // throws
-}
-
-bool Gate::isUnitary() {
-    
-    switch(opcode) {
-        
-        case OPCODE_Id :
-        case OPCODE_H :
-        case OPCODE_SWAP :
-        case OPCODE_X :
-        case OPCODE_Y :
-        case OPCODE_Z :
-        case OPCODE_Rx :
-        case OPCODE_Ry :
-        case OPCODE_Rz :
-        case OPCODE_R :
-        case OPCODE_G :
-        case OPCODE_S :
-        case OPCODE_T :
-        case OPCODE_Ph :
-        case OPCODE_U :
-        case OPCODE_UNonNorm : 
-            return true;
-
-        case OPCODE_M :
-        case OPCODE_P :
-        case OPCODE_Matr : 
-        case OPCODE_Fac :
-        case OPCODE_Deph :
-        case OPCODE_Depol :
-        case OPCODE_Damp :
-        case OPCODE_Kraus :
-        case OPCODE_KrausNonTP :
-            return false;
-                  
-        default:            
-            throw QuESTException("", "an unrecognised gate was queried for unitarity. This is likely an internal error."); // throws
-    }
-}
-
-bool Gate::isPure() {
-    
-    if (isUnitary())
-        return true;
-    
-    switch(opcode) {
-        
-        case OPCODE_M :
-        case OPCODE_P :
-        case OPCODE_Matr :
-        case OPCODE_Fac :
-            return true;
-        
-        case OPCODE_Deph :
-        case OPCODE_Depol :
-        case OPCODE_Damp :
-        case OPCODE_Kraus :
-        case OPCODE_KrausNonTP :
-            return false;
-                  
-        default:            
-            throw QuESTException("", "an unrecognised gate was queried for purity. This is likely an internal error."); // throws
-    }
+    return "opcode: " + std::to_string(opcode);
 }
 
 void Gate::applyTo(Qureg qureg, qreal* outputs) {
@@ -631,7 +570,7 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
             break;
             
         default:            
-            throw QuESTException("", "circuit contained an unknown gate."); // throws
+            throw QuESTException("", "circuit contained an unknown gate (" + getOpcodeStr() + ")."); // throws
     }
 }
 
@@ -678,7 +617,7 @@ void Gate::applyDaggerTo(Qureg qureg) {
         case OPCODE_UNonNorm :
         case OPCODE_Matr :
             local_setFlatListToMatrixDagger(params, numTargs);
-            applyTo(qureg);
+            applyTo(qureg); // throws (safe to persist params mod)
             local_setFlatListToMatrixDagger(params, numTargs);
             break;
         
@@ -695,24 +634,183 @@ void Gate::applyDaggerTo(Qureg qureg) {
             break;
                         
         default:
-            std::string badop = getOpcodeStr(); // throws (if gate unrecognised)
-            throw QuESTException("", "The dagger operator was attempted upon an operator with no known conjugate-transpose "
-                "(" + badop + ")."); // throws
+            throw QuESTException("", "The dagger (conjugate transpose) of an operator (" + getOpcodeStr() + ") with no known dagger was requested."); // throws
+    }
+}
+
+bool Gate::isUnitary() {
+    
+    switch(opcode) {
+        
+        case OPCODE_Id :
+        case OPCODE_H :
+        case OPCODE_SWAP :
+        case OPCODE_X :
+        case OPCODE_Y :
+        case OPCODE_Z :
+        case OPCODE_Rx :
+        case OPCODE_Ry :
+        case OPCODE_Rz :
+        case OPCODE_R :
+        case OPCODE_G :
+        case OPCODE_S :
+        case OPCODE_T :
+        case OPCODE_Ph :
+        case OPCODE_U :
+        case OPCODE_UNonNorm : 
+            return true;
+
+        case OPCODE_M :
+        case OPCODE_P :
+        case OPCODE_Matr : 
+        case OPCODE_Deph :
+        case OPCODE_Depol :
+        case OPCODE_Damp :
+        case OPCODE_Kraus :
+        case OPCODE_KrausNonTP :
+            return false;
+                  
+        default:            
+            throw QuESTException("", "an unrecognised gate (" + getOpcodeStr() + ") was queried for unitarity. This is likely an internal error."); // throws
+    }
+}
+
+bool Gate::isPure() {
+    
+    if (isUnitary())
+        return true;
+    
+    switch(opcode) {
+        
+        case OPCODE_M :
+        case OPCODE_P :
+        case OPCODE_Matr :
+            return true;
+        
+        case OPCODE_Deph :
+        case OPCODE_Depol :
+        case OPCODE_Damp :
+        case OPCODE_Kraus :
+        case OPCODE_KrausNonTP :
+            return false;
+                  
+        default:            
+            throw QuESTException("", "an unrecognised gate (" + getOpcodeStr() + ") was queried for purity. This is likely an internal error."); // throws
+    }
+}
+
+bool Gate::isInvertible() {
+    
+    if (isUnitary())
+        return true;
+        
+    switch(opcode) {
+        
+        case OPCODE_P :
+        case OPCODE_M :
+            return false;
+        
+        case OPCODE_Matr :
+            return local_isInvertible( local_getQmatrixFromFlatList(params, 1<<numTargs) );
+        
+        case OPCODE_Deph :
+            if (numTargs == 1)
+                return local_isNonZero(1 - 2*params[0]);
+            if (numTargs == 2)
+                return local_isNonZero(3 - 4*params[0]);
+        
+        case OPCODE_Depol :
+            if (numTargs == 1)
+                return local_isNonZero(3 - 4*params[0]);
+            if (numTargs == 2)
+                return local_isNonZero(15 - 16*params[0]);
+        
+        case OPCODE_Damp :
+            if (numTargs == 1)
+                return local_isNonZero(1 - params[0]);
+        
+        case OPCODE_Kraus :
+        case OPCODE_KrausNonTP :
+            return local_isInvertible( local_getKrausSuperoperatorFromFlatList(params, numTargs) );
+                  
+        default:            
+            throw QuESTException("", "an unrecognised gate (" + getOpcodeStr() + ") was queried for invertibility. This is likely an internal error."); // throws
     }
 }
 
 void Gate::applyInverseTo(Qureg qureg) {
     
-    if (opcode == OPCODE_Matr)
-        throw QuESTException("", "The Matr gate cannot be inverted (due to a present technical limitation). "
-            "If your matrix is intended to be treated as unitary (such that its inverse is its conjugate transpose), "
-            "please use UNonNorm"); // throws
+    if (!isInvertible())
+        throw QuESTException("", "The inverse of a non-invertible operator (" + getOpcodeStr() + ") was requested. " 
+            "This may be because the operator is always non-invertible (like a projector), or only non-invertible with "
+            "its given parameters (for instance, because it is a maximally mixing channel)."); // throws
     
-    else if (isUnitary())
+    if (isUnitary()) {
         applyDaggerTo(qureg);
+        return;
+    }
+    
+    /* Below performs no validation because currently applyInverseTo is always 
+     * internally called subsequent to applyTo() of the same gate, preconditioning 
+     * gate validity. This may change in the future, requiring explicit re-validation.
+     */
         
-    else
-        throw QuESTException("", "A gate with no known inverse was attemptedly inverted."); // throws
+    switch (opcode) {
+        
+        case OPCODE_Matr : { ;
+            qmatrix matr = local_getQmatrixFromFlatList(params, 1<<numTargs);
+            qmatrix matrInv = local_getInverse(matr);
+            
+            local_setFlatListFromQmatrix(params, matrInv);
+            applyTo(qureg); // throws (param mod doesn't matter)
+            local_setFlatListFromQmatrix(params, matr);
+        }
+            return;
+        
+        case OPCODE_Deph :
+            if (numTargs == 1) {
+                qreal invParam = params[0] / (2*params[0] - 1);
+                densmatr_mixDephasing(qureg, targs[0], 2*invParam);
+            } else if (numTargs == 2) {
+                qreal invParam = 3*params[0] / (4*params[0] - 3);
+                ensureIndsIncrease(&targs[0], &targs[1]);
+                densmatr_mixTwoQubitDephasing(qureg, targs[0], targs[1], (4*invParam)/3.);
+            }
+            return;
+        
+        case OPCODE_Depol :
+            if (numTargs == 1) {
+                qreal invParam = 3*params[0] / (4*params[0] - 3);
+                densmatr_mixDepolarising(qureg, targs[0], (4*invParam)/3.);
+            } else if (numTargs == 2) {
+                qreal invParam = 15*params[0] / (16*params[0] - 15);
+                ensureIndsIncrease(&targs[0], &targs[1]);
+                densmatr_mixTwoQubitDepolarising(qureg, targs[0], targs[1], (16*invParam)/15.);
+            }
+            return;
+        
+        case OPCODE_Damp :
+            if (numTargs == 1) {
+                qreal invParam = params[0] / (params[0] - 1);
+                densmatr_mixDamping(qureg, targs[0], invParam);
+            }
+            return;
+                
+        case OPCODE_Kraus :
+        case OPCODE_KrausNonTP : { ;
+            qmatrix superOp = local_getKrausSuperoperatorFromFlatList(params, numTargs);
+            qmatrix superInv = local_getInverse(superOp);
+            ComplexMatrixN superCM = createComplexMatrixN(2*numTargs);
+            local_setMatrixNFromQmatrix(superCM, superInv);
+            
+            densmatr_applyMultiQubitKrausSuperoperator(qureg, targs, numTargs, superCM);
+            destroyComplexMatrixN(superCM);
+        }
+            return;
+                  
+        default:            
+            throw QuESTException("", "an internal error occurred. The inverse of an known invertible and non-unitary operator (" + getOpcodeStr() + ") could not be found."); // throws
+    }
 }
 
 

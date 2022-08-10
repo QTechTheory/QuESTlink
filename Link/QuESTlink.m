@@ -40,10 +40,9 @@ CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString, workspaceQu
 This function permits all the freedoms of CalcQuregDerivs[] but requires only a fixed memory overhead (in lieu of #varVals quregs), and when performed upon statevectors, will even run a factor Length[circuit] faster."
     CalcExpecPauliStringDerivs::error = "`1`"
     
-    CalcGeometricTensor::usage = "CalcGeometricTensor[circuit, initQureg, varVals] returns the geometric tensor of the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}.
-CalcGeometricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most four workspaceQuregs are needed.
-This quantity relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections."
-    CalcGeometricTensor::error = "`1`"
+    CalcMetricTensor::usage = "CalcMetricTensor[circuit, initQureg, varVals] returns the natural gradient metric tensor, capturing the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}. For state-vectors, this returns the quantum geometric tensor, which relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections. For density-matrices, this function returns the Hilbert-Schmidt derivative metric, which well approximates the quantum Fisher information matrix.
+CalcMetricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most four workspaceQuregs are needed."
+    CalcMetricTensor::error = "`1`"
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
 CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element CalcInnerProduct[braId, ketIds[i]]."
@@ -167,14 +166,15 @@ DrawCircuitTopology additionally accepts DistinguishedStyles and all options of 
     CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic matrix for the given unitary circuit, which may contain symbolic parameters. The number of qubits is inferred from the circuit indices (0 to maximum specified).
 CalcCircuitMatrix[circuit] returns an analytic superoperator for the given non-unitary circuit, expressed as a matrix upon twice as many qubits. The result can be multiplied upon a column-flattened density matrix.
 CalcCircuitMatrix[circuit, numQubits] forces the number of present qubits.
-CalcCircuitMatrix accepts optional argument AsSuperoperator->True to obtain a superoperator from a unitary circuit."
+CalcCircuitMatrix accepts optional argument AsSuperoperator and AssertValidChannels."
     CalcCircuitMatrix::error = "`1`"
     
     GetCircuitGeneralised::usage = "GetCircuitGeneralised[circuit] returns an equivalent circuit composed only of general unitaries (and Matr operators) and Kraus operators of analytic matrices."
     GetCircuitGeneralised::error = "`1`"
     
     GetCircuitSuperoperator::usage = "GetCircuitSuperoperator[circuit] returns the corresponding superoperator circuit upon doubly-many qubits as per the Choi–Jamiolkowski isomorphism. Decoherence channels become Matr[] superoperators.
-GetCircuitSuperoperator[circuit, numQubits] forces the circuit to be assumed size numQubits, so that the output superoperator circuit is of size 2*numQubits."
+GetCircuitSuperoperator[circuit, numQubits] forces the circuit to be assumed size numQubits, so that the output superoperator circuit is of size 2*numQubits.
+GetCircuitSuperoperator accepts optional argument AssertValidChannels."
     GetCircuitSuperoperator::error = "`1`"
     
     PlotDensityMatrix::usage = "PlotDensityMatrix[matrix] (accepts id or numeric matrix) plots a component (default is magnitude) of the given matrix as a 3D bar plot.
@@ -297,6 +297,8 @@ BitEncoding -> \"Unsigned\" (default) interprets basis states as natural numbers
 BitEncoding -> \"TwosComplement\" interprets basis states as two's complement signed numbers, {0, ... 2^(numQubits-1)-1} and {-1, -2, ... -2^(numQubits-1)}. The last qubit in a sub-register list is assumed the sign bit."
 
     AsSuperoperator::usage = "Optional argument to CalcCircuitMatrix (default Automatic), specifying whether the output should be a 2^N by 2^N unitary matrix (False), or a 2^2N by 2^2N superoperator matrix (True). The latter can capture decoherence, and be multiplied upon column-flattened 2^2N vectors."
+    
+    AssertValidChannels::usage = "Optional argument to CalcCircuitMatrix and GetCircuitSuperoperator (default True), specifying whether to simplify their outputs by asserting that all channels therein are completely-positive and trace-preserving. For example, this asserts that the argument to a damping channel lies between 0 and 1."
     
     EndPackage[]
     
@@ -795,16 +797,16 @@ The probability of the forced measurement outcome (if hypothetically not forced)
 
         CalcExpecPauliStringDerivs[___] := invalidArgError[CalcExpecPauliStringDerivs]
         
-        CalcGeometricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, workQuregs:{___Integer}:{}] :=
+        CalcMetricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms, retArrs},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
                 ret = Catch @ encodeDerivCirc[circuit, varVals];
                 If[Head@ret === String,
-                    Message[CalcGeometricTensor::error, ret]; Return @ $Failed];
+                    Message[CalcMetricTensor::error, ret]; Return @ $Failed];
                 (* send to backend, mapping Mathematica indices to C++ indices *)
                 {encodedCirc, encodedDerivTerms} = ret;
-                data = CalcGeometricTensorInternal[
+                data = CalcMetricTensorInternal[
                     initQureg, workQuregs,
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms];
@@ -813,7 +815,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     MapThread[#1 + I #2 &, {data[[1]], data[[2]]}], 
                     Length[varVals] {1,1}]]]
                     
-        CalcGeometricTensor[__] := invalidArgError[CalcGeometricTensor]
+        CalcMetricTensor[__] := invalidArgError[CalcMetricTensor]
         
         
         
@@ -2024,23 +2026,23 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getAnalGateTargets[Subscript[_, t__]] := {t}
         getAnalGateTargets[Subscript[_, t__][_]] := {t}
         
-        (* declaring optional args to ApplyCircuit *)
         Options[CalcCircuitMatrix] = {
-            AsSuperoperator -> Automatic
+            AsSuperoperator -> Automatic,
+            AssertValidChannels -> True
         };
         
         (* convert a symbolic circuit channel into an analytic matrix *)
         CalcCircuitMatrix[gates_List, numQb_Integer, OptionsPattern[]] /; MemberQ[gates, Subscript[Damp|Deph|Depol|Kraus|KrausNonTP, __][__]] := 
             If[OptionValue[AsSuperoperator] =!= True && OptionValue[AsSuperoperator] =!= Automatic,
                 (Message[CalcCircuitMatrix::error, "The input circuit contains decoherence channels and must be calculated as a superoperator."]; $Failed),
-                With[{superops = GetCircuitSuperoperator[gates, numQb]},
+                With[{superops = GetCircuitSuperoperator[gates, numQb, AssertValidChannels -> OptionValue[AssertValidChannels]]},
                     If[superops === $Failed,
                     (Message[CalcCircuitMatrix::error, "Could not prepare superoperator, as per the above error."]; $Failed),
                     CalcCircuitMatrix[superops, 2*numQb]]]]
         (* convert a symbolic pure circuit into an analytic matrix *)
         CalcCircuitMatrix[gates_List, numQb_Integer, OptionsPattern[]] := 
             If[OptionValue[AsSuperoperator] === True,
-                With[{superops = GetCircuitSuperoperator[gates, numQb]},
+                With[{superops = GetCircuitSuperoperator[gates, numQb, AssertValidChannels -> OptionValue[AssertValidChannels]]},
                     If[superops === $Failed,
                     (Message[CalcCircuitMatrix::error, "Could not prepare superoperator, as per the above error."]; $Failed),
                     CalcCircuitMatrix[superops, 2*numQb]]],
@@ -2123,8 +2125,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getChannelAssumps[_] := Nothing
         
         shiftInds[q__Integer|{q__Integer}, numQb_] := Sequence @@ (List[q]+numQb)
+        
+        Options[GetCircuitSuperoperator] = {
+            AssertValidChannels -> True
+        };
     
-        GetCircuitSuperoperator[circ_List, numQb_] := With[
+        GetCircuitSuperoperator[circ_List, numQb_Integer, OptionsPattern[]] := With[
             {superops = Flatten @ Replace[circ, {
             (* qubit-agnostic gates *)
                 G[x_] :> Nothing,
@@ -2161,7 +2167,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             	g:Subscript[(Damp|Depol|Deph), q__Integer|{q__Integer}][x_] :> 
             		With[{op = GetCircuitSuperoperator[GetCircuitGeneralised[g], numQb]},
                         (* and are then simplified by asserting trace-preservation *)
-                        Simplify[op, getChannelAssumps[g]]],
+                        If[ OptionValue[AssertValidChannels], 
+                            Simplify[op, getChannelAssumps[g]], op]],
             (* wrap unrecognised gates in dummy Head *)
             	g_ :> unrecognisedGateInSuperopCirc[g]
             (* replace at top level *)
@@ -2171,8 +2178,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 (Message[GetCircuitSuperoperator::error, "Circuit contained an unrecognised or unsupported gate: " <> 
                     ToString @ StandardForm @ First @ Cases[superops, unrecognisedGateInSuperopCirc[g_] :> g, Infinity]];
                     $Failed)]]
-        GetCircuitSuperoperator[circ_List] := 
-            GetCircuitSuperoperator[circ, getNumQubitsInCircuit[circ]]
+        GetCircuitSuperoperator[circ_List, opts:OptionsPattern[]] := 
+            GetCircuitSuperoperator[circ, getNumQubitsInCircuit[circ], opts]
         GetCircuitSuperoperator[___] := invalidArgError[GetCircuitSuperoperator]
         
         
