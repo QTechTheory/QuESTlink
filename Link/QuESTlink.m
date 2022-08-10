@@ -212,7 +212,7 @@ InsertCircuitNoise accepts optional argument ReplaceAliases.
 InsertCircuitNoise can handle gates with time-dependent noise operators and durations."
     InsertCircuitNoise::error = "`1`"
     
-    ExtractCircuit::usage = "ExtractCircuit[] returns the ultimate circuit from the outputs of InsertCircuitNoise[], GetCircuitSchedule[] and GetCircuitSchedule[]."
+    ExtractCircuit::usage = "ExtractCircuit[] returns the prescribed circuit from the outputs of InsertCircuitNoise[], GetCircuitSchedule[] and GetCircuitColumns[]."
     ExtractCircuit::error = "`1`"
     
     ViewCircuitSchedule::usage = "ViewCircuitSchedule[schedule] displays a table form of the given circuit schedule, as output by InsertCircuitNoise[] or GetCircuitSchedule[].
@@ -439,6 +439,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
     ApplyPauliSum::usage = "This function is deprecated. Please instead use ApplyPauliString."
     CalcPauliSumMatrix::usage = "This function is deprecated. Please instead use CalcPauliStringMatrix."
     GetPauliSumFromCoeffs::usage = "This function is deprecated. Please instead use GetPauliStringFromCoeffs."
+    MixDamping::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Damp."
+    MixDephasing::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Deph."
+    MixDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
+    MixTwoQubitDephasing::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Deph."
+    MixTwoQubitDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
     
     EndPackage[]
  
@@ -457,23 +462,44 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          *)
          
         CalcExpecPauliProd[args___] := (
-            Message[CalcExpecPauliString::error, "The function CalcExpecPauliProd[] is being deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
+            Message[CalcExpecPauliString::error, "The function CalcExpecPauliProd[] is deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
             CalcExpecPauliString[args])
         CalcExpecPauliSum[args___] := (
-            Message[CalcExpecPauliString::error, "The function CalcExpecPauliSum[] is being deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
+            Message[CalcExpecPauliString::error, "The function CalcExpecPauliSum[] is deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
             CalcExpecPauliString[args])
         ApplyPauliSum[args___] := (
-            Message[ApplyPauliString::error, "The function ApplyPauliSum[] is being deprecated. Use ApplyPauliString[] or temporarily hide this message using Quiet[]."]; 
+            Message[ApplyPauliString::error, "The function ApplyPauliSum[] is deprecated, though has still been performed. In future, please use ApplyPauliString[] or temporarily hide this message using Quiet[]."]; 
             ApplyPauliString[args])
         CalcPauliSumMatrix[args___] := (
-            Message[CalcPauliStringMatrix::error, "The function CalcPauliSumMatrix[] is being deprecated. Use CalcPauliStringMatrix[] or temporarily hide this message using Quiet[]."]; 
+            Message[CalcPauliStringMatrix::error, "The function CalcPauliSumMatrix[] is deprecated. Use CalcPauliStringMatrix[] or temporarily hide this message using Quiet[]."]; 
             CalcPauliStringMatrix[args])
         GetPauliSumFromCoeffs[args___] := (
-            Message[GetPauliStringFromCoeffs::error, "The function GetPauliSumFromCoeffs[] is being deprecated. Use GetPauliStringFromCoeffs[] or temporarily hide this message using Quiet[]."]; 
+            Message[GetPauliStringFromCoeffs::error, "The function GetPauliSumFromCoeffs[] is deprecated. Use GetPauliStringFromCoeffs[] or temporarily hide this message using Quiet[]."]; 
             GetPauliStringFromCoeffs[args])
             
+        MixDamping[qureg_Integer, qb_Integer, prob_Real] := (
+            Message[ApplyCircuit::error, "The function MixDamping[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Damp[] gate instead, or temporarily hide this message using Quiet[]."];
+            ApplyCircuit[qureg, Subscript[Damp,qb][prob]];
+            qureg)
+        MixDephasing[qureg_Integer, qb_Integer, prob_Real] := (
+            Message[ApplyCircuit::error, "The function MixDephasing[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Deph[] gate instead, or temporarily hide this message using Quiet[]."];
+            ApplyCircuit[qureg, Subscript[Deph,qb][prob]];
+            qureg)
+        MixDepolarising[qureg_Integer, qb_Integer, prob_Real] := (
+            Message[ApplyCircuit::error, "The function MixDepolarising[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Depol[] gate instead, or temporarily hide this message using Quiet[]."];
+            ApplyCircuit[qureg, Subscript[Depol,qb][prob]];
+            qureg)
+        MixTwoQubitDephasing[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real] := (
+            Message[ApplyCircuit::error, "The function MixTwoQubitDephasing[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Deph[] gate instead, or temporarily hide this message using Quiet[]."];
+            ApplyCircuit[qureg, Subscript[Deph,qb1,qb2][prob]];
+            qureg)
+        MixTwoQubitDepolarising[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real] := (
+            Message[ApplyCircuit::error, "The function MixTwoQubitDepolarising[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Depol[] gate instead, or temporarily hide this message using Quiet[]."];
+            ApplyCircuit[qureg, Subscript[Depol,qb1,qb2][prob]];
+            qureg)
             
             
+        
         (*
          * global convenience functions
          *)

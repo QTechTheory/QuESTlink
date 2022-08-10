@@ -483,69 +483,6 @@ void internal_setAmp(int quregID, double ampRe, double ampIm) {
 
 
 
-
-/*
- * DECOHERENCE
- */
-
-void wrapper_mixDephasing(int id, int qb1, qreal prob) {
-    try {
-        local_throwExcepIfQuregNotCreated(id); // throws
-        mixDephasing(quregs[id], qb1, prob); // throws
-        WSPutInteger(stdlink, id);
-        
-    } catch( QuESTException& err) {
-        local_sendErrorAndFail("MixDephasing", err.message);
-    }
-}
-
-void wrapper_mixTwoQubitDephasing(int id, int qb1, int qb2, qreal prob) {
-    try {
-        local_throwExcepIfQuregNotCreated(id); // throws
-        mixTwoQubitDephasing(quregs[id], qb1, qb2, prob); // throws
-        WSPutInteger(stdlink, id);
-        
-    } catch( QuESTException& err) {
-        local_sendErrorAndFail("MixTwoQubitDephasing", err.message);
-    }
-}
-
-void wrapper_mixDepolarising(int id, int qb1, qreal prob) {
-    try {
-        local_throwExcepIfQuregNotCreated(id); // throws
-        mixDepolarising(quregs[id], qb1, prob); // throws
-        WSPutInteger(stdlink, id);
-        
-    } catch( QuESTException& err) {
-        local_sendErrorAndFail("MixDepolarising", err.message);
-    }
-}
-
-void wrapper_mixTwoQubitDepolarising(int id, int qb1, int qb2, qreal prob) {
-    try {
-        local_throwExcepIfQuregNotCreated(id); // throws
-        mixTwoQubitDepolarising(quregs[id], qb1, qb2, prob); // throws
-        WSPutInteger(stdlink, id);
-        
-    } catch( QuESTException& err) {
-        local_sendErrorAndFail("MixTwoQubitDepolarising", err.message);
-    }
-}
-
-void wrapper_mixDamping(int id, int qb, qreal prob) {
-    try {
-        local_throwExcepIfQuregNotCreated(id); // throws
-        mixDamping(quregs[id], qb, prob); // throws
-        WSPutInteger(stdlink, id);
-        
-    } catch( QuESTException& err) {
-        local_sendErrorAndFail("MixDamping", err.message);
-    }
-}
-
-
-
-
 /*
  * CALCULATIONS
  */
