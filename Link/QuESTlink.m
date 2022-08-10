@@ -8,31 +8,7 @@
  * @author Tyson Jones
  *)
 
-BeginPackage["QuEST`"]
-
-
-
-    (* 
-     * deprecated
-     *)
-     
-    CalcExpecPauliProd[args___] := (
-        Message[CalcExpecPauliString::error, "The function CalcExpecPauliProd[] is being deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
-        CalcExpecPauliString[args])
-    CalcExpecPauliSum[args___] := (
-        Message[CalcExpecPauliString::error, "The function CalcExpecPauliSum[] is being deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
-        CalcExpecPauliString[args])
-    ApplyPauliSum[args___] := (
-        Message[ApplyPauliString::error, "The function ApplyPauliSum[] is being deprecated. Use ApplyPauliString[] or temporarily hide this message using Quiet[]."]; 
-        ApplyPauliString[args])
-    CalcPauliSumMatrix[args___] := (
-        Message[CalcPauliStringMatrix::error, "The function CalcPauliSumMatrix[] is being deprecated. Use CalcPauliStringMatrix[] or temporarily hide this message using Quiet[]."]; 
-        CalcPauliStringMatrix[args])
-    GetPauliSumFromCoeffs[args___] := (
-        Message[GetPauliStringFromCoeffs::error, "The function GetPauliSumFromCoeffs[] is being deprecated. Use GetPauliStringFromCoeffs[] or temporarily hide this message using Quiet[]."]; 
-        GetPauliStringFromCoeffs[args])
-    
-    
+BeginPackage["QuEST`"]    
     
     (* 
      * Note additional functions and their usage messages are fetched when CreateRemoteQuESTEnv is called.
@@ -449,19 +425,63 @@ The probability of the forced measurement outcome (if hypothetically not forced)
     UpdateVariables::usage = "The function to call after each active gate or processed passive noise, to update circuit variables (optional)."
     
     EndPackage[]
+    
+    
+    
+    (*
+     * deprecated but backwards-compatible API 
+     *)
+     
+    BeginPackage["`Deprecated`"]
+    
+    CalcExpecPauliProd::usage = "This function is deprecated. Please instead use CalcExpecPauliString."
+    CalcExpecPauliSum::usage = "This function is deprecated. Please instead use CalcExpecPauliString."
+    ApplyPauliSum::usage = "This function is deprecated. Please instead use ApplyPauliString."
+    CalcPauliSumMatrix::usage = "This function is deprecated. Please instead use CalcPauliStringMatrix."
+    GetPauliSumFromCoeffs::usage = "This function is deprecated. Please instead use GetPauliStringFromCoeffs."
+    
+    EndPackage[]
  
  
+ 
+    (* 
+     * internal private functions, and definitions of public API
+     *)
  
     Begin["`Private`"]
     
     
+        
+        (*
+         * deprecated definitions
+         *)
+         
+        CalcExpecPauliProd[args___] := (
+            Message[CalcExpecPauliString::error, "The function CalcExpecPauliProd[] is being deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
+            CalcExpecPauliString[args])
+        CalcExpecPauliSum[args___] := (
+            Message[CalcExpecPauliString::error, "The function CalcExpecPauliSum[] is being deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
+            CalcExpecPauliString[args])
+        ApplyPauliSum[args___] := (
+            Message[ApplyPauliString::error, "The function ApplyPauliSum[] is being deprecated. Use ApplyPauliString[] or temporarily hide this message using Quiet[]."]; 
+            ApplyPauliString[args])
+        CalcPauliSumMatrix[args___] := (
+            Message[CalcPauliStringMatrix::error, "The function CalcPauliSumMatrix[] is being deprecated. Use CalcPauliStringMatrix[] or temporarily hide this message using Quiet[]."]; 
+            CalcPauliStringMatrix[args])
+        GetPauliSumFromCoeffs[args___] := (
+            Message[GetPauliStringFromCoeffs::error, "The function GetPauliSumFromCoeffs[] is being deprecated. Use GetPauliStringFromCoeffs[] or temporarily hide this message using Quiet[]."]; 
+            GetPauliStringFromCoeffs[args])
+            
+            
+            
+        (*
+         * global convenience functions
+         *)
     
         (* report a generic error that the function was passed with bad args (did not evaluate) *)
         invalidArgError[func_Symbol] := (
             Message[func::error, "Invalid arguments. See ?" <> ToString[func]];
             $Failed)
-               
-               
                
         (* opcodes which correlate with the global IDs in circuits.hpp *)
         getOpCode[gate_] :=
@@ -3118,3 +3138,4 @@ Needs["QuEST`Gate`"]
 
 Needs["QuEST`DeviceSpec`"]
 
+Needs["QuEST`Deprecated`"]
