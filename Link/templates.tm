@@ -433,6 +433,7 @@
 
 
 
+
 :Begin:
 :Function:       internal_applyCircuit
 :Pattern:        QuEST`Private`ApplyCircuitInternal[qureg_Integer, storeBackup_Integer, showProgress_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List]
@@ -468,6 +469,18 @@
 :ReturnType:     Manual
 :End:
 :Evaluate: QuEST`Private`CalcPauliStringMatrixInternal::usage = "CalcPauliStringMatrixInternal[numQubits, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] returns the action of applying the given sum of Pauli products (specified as flat lists) to every basis state."
+
+:Begin:
+:Function:       internal_sampleExpecPauliString
+:Pattern:        QuEST`Private`SampleExpecPauliStringInternal[showProgress_Integer, initQuregId_Integer, workId1_Integer, workId2_Integer, numSamples_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
+:Arguments:      { showProgress, initQuregId, workId1, workId2, numSamples, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm }
+:ArgumentTypes:  { Integer, Integer, Integer, Integer, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`SampleExpecPauliStringInternal::usage = "SampleExpecPauliStringInternal[showProgress, initQuregId, workId1, workId2, numSamples, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] estimates the expectation value of the given Hamiltonian and noisy channel through repeated sampling via state-vector simulation."
+
+
+
 
 :Begin:
 :Function:       internal_getQuregMatrix

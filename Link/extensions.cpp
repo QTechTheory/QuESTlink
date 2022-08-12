@@ -87,6 +87,31 @@ void extension_applyImagFactor(Qureg qureg, qreal imagFac) {
     }
 }
 
+void extension_applyRealFactor(Qureg qureg, qreal realFac) {
+    
+    long long int numTasks = qureg.numAmpsPerChunk;
+    
+    qreal* vecRe = qureg.stateVec.real;
+    qreal* vecIm = qureg.stateVec.imag;
+    
+    long long int i;
+# ifdef _OPENMP
+# pragma omp parallel \
+    default  (none) \
+    shared   (numTasks, vecRe,vecIm, realFac) \
+    private  (i)
+# endif
+    {
+# ifdef _OPENMP
+# pragma omp for schedule (static)
+# endif
+        for (i=0LL; i<numTasks; i++) {
+            vecRe[i] *= realFac;
+            vecIm[i] *= realFac;
+        }  
+    }
+}
+
 void extension_mixDephasingDeriv(Qureg qureg, int targetQubit, qreal probDeriv) {
     
     validateDensityMatrQureg(qureg, "Deph (derivative)");

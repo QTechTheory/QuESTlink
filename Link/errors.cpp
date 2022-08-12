@@ -58,17 +58,41 @@ void local_sendErrorAndWait(std::string funcName, std::string errMsg) {
     
     // a new packet is now expected; caller MUST send something else
 }
+
 void local_sendErrorAndFail(std::string funcName, std::string errMsg) {
     local_sendErrorAndWait(funcName, errMsg);
     WSPutSymbol(stdlink, "$Failed");
     
     // this closes the pipe; no further WSPut's should follow before control flow returns
 }
+
 void local_sendErrorAndAbort(std::string funcName, std::string errMsg) {
     local_sendErrorAndWait(funcName, errMsg);
     WSPutFunction(stdlink, "Abort", 0);
     
     // this closes the pipe; no further WSPut's should follow before control flow returns
+}
+
+void local_sendWarningAndContinue(std::string funcName, std::string warnMsg) {
+    
+    // send error to Mathematica
+    WSPutFunction(stdlink, "EvaluatePacket", 1);
+
+    // Message[myFunc::errormsg, err]
+    WSPutFunction(stdlink, "Message", 2);
+
+        // myFunc::errormsg = MessageName[myFunc, "errormsg"]
+        WSPutFunction(stdlink, "MessageName", 2);
+        WSPutSymbol(stdlink, funcName.c_str());
+        WSPutString(stdlink, "error");              // TODO: maybe this changes too??
+
+        WSPutString(stdlink, warnMsg.c_str());
+
+    WSEndPacket(stdlink);
+    WSNextPacket(stdlink);
+    WSNewPacket(stdlink);
+    
+    // a new packet is now expected; caller MUST send something else
 }
 
 void local_throwExcepIfQuregNotCreated(int id) {

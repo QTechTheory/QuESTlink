@@ -1,10 +1,60 @@
 
+#include <random>
+
 #include "QuEST_precision.h"
 #include "QuEST_complex.h"
 
 #include "utilities.hpp"
 
+
+
 #define MIN_NON_ZERO_EPS_FAC 1E4
+
+
+
+/* 
+ * RNG 
+ */
+ 
+std::mt19937 randGen(std::random_device{}()); // auto-seeds
+std::uniform_real_distribution<qreal> randDist(0,1);
+ 
+int local_getRandomIndex(qreal* weights, int numInds) {
+    
+    //weights are assumed in [0,1] and normalised to sum to 1
+    
+    qreal r = randDist(randGen);
+    
+    qreal weightSum = 0;
+    
+    for (int i=0; i<numInds; i++) {
+        
+        weightSum += weights[i];
+        if (r <= weightSum)
+            return i;
+    }
+    
+    // this should never happen, unless we got exceptionally unlucky with rounding error
+    return numInds-1;
+}
+
+int local_getRandomIndex(int numInds) {
+    
+    qreal r = randDist(randGen);
+    
+    qreal weight = 1/(qreal) numInds;
+    qreal weightSum = 0;
+
+    for (int i=0; i<numInds; i++) {
+        
+        weightSum += weight;
+        if (r <= weightSum)
+            return i;
+    }
+    
+    // this should never happen, unless we got exceptionally unlucky with rounding error
+    return numInds-1;
+}
 
 
 
@@ -34,12 +84,46 @@ ComplexMatrix4 local_getMatrix4FromFlatList(qreal* list) {
     return m;
 }
 
+ComplexMatrix2 local_getMatrix2FromFlatListAtIndex(qreal* list, int n) {
+    int dim = 2;
+    int len = 2*dim*dim;
+    ComplexMatrix2 m;
+    for (int r=0; r<dim; r++)
+        for (int c=0; c<dim; c++) {
+            m.real[r][c] = list[len*n + 2*(dim*r+c)];
+            m.imag[r][c] = list[len*n + 2*(dim*r+c)+1];
+        }
+    return m;
+}
+
+ComplexMatrix4 local_getMatrix4FromFlatListAtIndex(qreal* list, int n) {
+    int dim = 4;
+    int len = 2*dim*dim;
+    ComplexMatrix4 m;
+    for (int r=0; r<dim; r++)
+        for (int c=0; c<dim; c++) {
+            m.real[r][c] = list[len*n + 2*(dim*r+c)];
+            m.imag[r][c] = list[len*n + 2*(dim*r+c)+1];
+        }
+    return m;
+}
+
 void local_setMatrixNFromFlatList(qreal* list, ComplexMatrixN m, int numQubits) {
     long long int dim = (1LL << numQubits);
     for (long long int r=0; r<dim; r++)
         for (long long int c=0; c<dim; c++) {
             m.real[r][c] = list[2*(dim*r+c)];
             m.imag[r][c] = list[2*(dim*r+c)+1];
+        }
+}
+
+void local_setMatrixNFromFlatListAtIndex(qreal* list, ComplexMatrixN m, int numQubits, int n) {
+    long long int dim = (1LL << numQubits);
+    long long int len = 2*dim*dim;
+    for (long long int r=0; r<dim; r++)
+        for (long long int c=0; c<dim; c++) {
+            m.real[r][c] = list[len*n + 2*(dim*r+c)];
+            m.imag[r][c] = list[len*n + 2*(dim*r+c)+1];
         }
 }
 
@@ -94,6 +178,33 @@ void local_createManyMatrixNFromFlatList(qreal* list, ComplexMatrixN* matrs, int
 long long int local_getNumScalarsToFormMatrix(int numQubits) {
     long long int dim = (1LL << numQubits);
     return dim*dim*2; // fac 2 for separate real and imag cmoponents
+}
+
+void local_setComplexMatrix2RealFactor(ComplexMatrix2 *matr, qreal fac) {
+    int dim = 2;
+    for (int r=0; r<dim; r++)
+        for (int c=0; c<dim; c++) {
+            matr->real[r][c] *= fac;
+            matr->imag[r][c] *= fac;
+        }
+}
+
+void local_setComplexMatrix4RealFactor(ComplexMatrix4 *matr, qreal fac) {
+    int dim = 4;
+    for (int r=0; r<dim; r++)
+        for (int c=0; c<dim; c++) {
+            matr->real[r][c] *= fac;
+            matr->imag[r][c] *= fac;
+        }
+}
+
+void local_setComplexMatrixToRealFactor(ComplexMatrixN matr, qreal fac) {
+    long long int dim = (1LL << matr.numQubits);
+    for (long long int r=0; r<dim; r++)
+        for (long long int c=0; c<dim; c++) {
+            matr.real[r][c] *= fac;
+            matr.imag[r][c] *= fac;
+        }
 }
 
 
@@ -225,3 +336,4 @@ qmatrix local_getInverse(qmatrix matr) {
     
     return inv;
 }
+

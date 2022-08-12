@@ -9,6 +9,11 @@
 
 
 
+int local_getRandomIndex(qreal* weights, int numInds);
+
+int local_getRandomIndex(int numInds);
+
+
 typedef std::vector<qcomp> qvector;
 
 typedef std::vector<std::vector<qcomp>> qmatrix;
@@ -35,6 +40,12 @@ void local_setMatrixNFromFlatList(qreal* list, ComplexMatrixN m, int numQubits);
 
 void local_createManyMatrixNFromFlatList(qreal* list, ComplexMatrixN* matrs, int numOps, int numQubits);
 
+ComplexMatrix2 local_getMatrix2FromFlatListAtIndex(qreal* list, int n);
+
+ComplexMatrix4 local_getMatrix4FromFlatListAtIndex(qreal* list, int n);
+
+void local_setMatrixNFromFlatListAtIndex(qreal* list, ComplexMatrixN m, int numQubits, int n);
+
 
 void local_setFlatListFromMatrixN(qreal* list, ComplexMatrixN m, int numQubits);
 
@@ -43,6 +54,12 @@ void local_setFlatListToMatrixDagger(qreal* list, int numQubits);
 void local_setFlatListFromQmatrix(qreal* list, qmatrix m);
 
 void local_setMatrixNFromQmatrix(ComplexMatrixN cm, qmatrix qm);
+
+void local_setComplexMatrix2RealFactor(ComplexMatrix2 *m, qreal fac);
+
+void local_setComplexMatrix4RealFactor(ComplexMatrix4 *m, qreal fac);
+
+void local_setComplexMatrixToRealFactor(ComplexMatrixN matr, qreal fac);
 
 
 bool local_isInvertible(qmatrix matr);

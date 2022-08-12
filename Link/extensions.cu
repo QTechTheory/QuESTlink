@@ -91,6 +91,26 @@ void extension_applyImagFactor(Qureg qureg, qreal imagFac) {
 
 
 
+__global__ void extension_applyRealFactorKernel(Qureg qureg, qreal realFac) {
+    
+    // each thread modifies one value (blegh)
+    long long int numTasks = qureg.numAmpsPerChunk;
+    long long int thisTask = blockIdx.x*blockDim.x + threadIdx.x;
+    if (thisTask >= numTasks) return;
+
+    qureg.deviceStateVec.real[thisTask] *= realFac;
+    qureg.deviceStateVec.imag[thisTask] *= realFac;
+}
+
+void extension_applyRealFactor(Qureg qureg, qreal realFac) {
+    
+    int threadsPerCUDABlock = 128;
+    int CUDABlocks = ceil(qureg.numAmpsPerChunk/ (qreal) threadsPerCUDABlock);
+    extension_applyRealFactorKernel<<<CUDABlocks, threadsPerCUDABlock>>>(qureg, realFac);
+}
+
+
+
 __global__ void extension_mixDephasingDerivKernel(Qureg qureg, int targ, qreal probDeriv) {
 
     // each thread modifies one value (blegh)

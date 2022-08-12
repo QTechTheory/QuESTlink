@@ -259,6 +259,12 @@ See SampleExpecPauliString[] to sample such circuits in order to efficiently app
     See SampleExpecPauliString[] to sample such circuits in order to efficiently approximate the effect of decoherence on an expectation value."
     GetRandomCircuitFromChannel::error = "`1`"
     
+    SampleExpecPauliString::usage = "SampleExpecPauliString[initQureg, channel, pauliString, numSamples] estimates the expected value of pauliString under the given channel (a circuit including decoherence) upon the state-vector initQureg, through Monte Carlo sampling. This avoids the quadratically greater memory costs of density-matrix simulation, but may need many samples to be accurate.
+SampleExpecPauliString[initQureg, channel, pauliString, All] deterministically samples each channel decomposition once.
+SampleExpecPauliString[initQureg, channel, pauliString, numSamples, {workQureg1, workQureg2}] uses the given persistent working registers to avoid their internal creation and destruction.
+Use option ShowProgress to monitor the progress of sampling."
+    SampleExpecPauliString::error = "`1`"
+    
     
     
     (*
@@ -269,7 +275,7 @@ See SampleExpecPauliString[] to sample such circuits in order to efficiently app
 
     WithBackup::usage = "Optional argument to ApplyCircuit, indicating whether to create a backup during circuit evaluation to restore the input state in case of a circuit error. This incurs additional memory (default True). If the circuit contains no error, this option has no effect besides wasting memory."
     
-    ShowProgress::usage = "Optional argument to ApplyCircuit, indicating whether to show a progress bar during circuit evaluation (default False). This slows evaluation slightly."
+    ShowProgress::usage = "Optional argument to ApplyCircuit and SampleExpecPauliString, indicating whether to show a progress bar during circuit evaluation (default False). This slows evaluation slightly."
     
     PlotComponent::Usage = "Optional argument to PlotDensityMatrix, to plot the \"Real\", \"Imaginary\" component of the matrix, or its \"Magnitude\" (default)."
     
@@ -672,9 +678,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         applyCircuitInner[qureg_, withBackup_, showProgress:1, circCodes__] :=
             Monitor[
                 (* local private variable, updated by backend *)
-                circuitProgressVar = 0;
+                calcProgressVar = 0;
                 ApplyCircuitInternal[qureg, withBackup, showProgress, circCodes],
-                ProgressIndicator[circuitProgressVar]
+                ProgressIndicator[calcProgressVar]
             ]
         ApplyCircuit[qureg_Integer, {}, OptionsPattern[ApplyCircuit]] :=
             {}
@@ -1096,6 +1102,35 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         ]
         GetRandomCircuitFromChannel[___] := invalidArgError[GetRandomCircuitFromChannel]
         
+        Options[SampleExpecPauliString] = {
+            ShowProgress -> False
+        };
+        
+        sampleExpecPauliStringInner[True, args__] :=
+            Monitor[
+                (* local private variable, updated by backend *)
+                calcProgressVar = 0;
+                SampleExpecPauliStringInternal[1, args],
+                ProgressIndicator[calcProgressVar]]
+        sampleExpecPauliStringInner[False, args__] :=
+            SampleExpecPauliStringInternal[0, args]
+         
+        SampleExpecPauliString[qureg_Integer, channel_?isCircuitFormat, paulis_?isValidPauliString, numSamples:(_Integer|All), {work1_Integer, work2_Integer}, OptionsPattern[]] /; (work1 === work2 === -1 || And[work1 =!= -1, work2 =!= -1]) :=
+            If[numSamples =!= All && numSamples >= 2^63, 
+                Message[SampleExpecPauliString::error, "The requested number of samples is too large, and exceeds the maximum C long integer (2^63)."]; $Failed,
+                With[{codes = codifyCircuit[channel]},
+                    If[
+                        Not @ AllTrue[codes[[4]], Internal`RealValuedNumericQ, 2],
+                        Message[SampleExpecPauliString::error, "Circuit contains non-numerical or non-real parameters!"]; $Failed,
+                        sampleExpecPauliStringInner[
+                            OptionValue[ShowProgress],
+                            qureg, work1, work2, numSamples /. (All -> -1),
+                            unpackEncodedCircuit[codes],
+                            Sequence @@ getEncodedPauliString[paulis]]]]]
+        SampleExpecPauliString[qureg_Integer, channel_?isCircuitFormat, paulis_?isValidPauliString, numSamples:(_Integer|All), opts:OptionsPattern[]] :=
+            SampleExpecPauliString[qureg, channel, paulis, numSamples, {-1, -1}, opts]
+        SampleExpecPauliString[___] := invalidArgError[SampleExpecPauliString]
+    
         
         (*
          * QuESTEnv management 

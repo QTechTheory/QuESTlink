@@ -3,6 +3,8 @@
  *
  * @author Tyson Jones
  */
+ 
+#include <math.h>
 
 #include "wstp.h"
 #include "QuEST.h"
@@ -28,7 +30,7 @@
 /*
  * Codes for dynamically updating kernel variables, to indicate progress 
  */
-#define CIRC_PROGRESS_VAR "QuEST`Private`circuitProgressVar"
+#define CALC_PROGRESS_VAR "QuEST`Private`calcProgressVar"
 
 
 
@@ -44,7 +46,7 @@ int* local_prepareCtrlCache(int* ctrls, int numCtrls, int addTarg) {
 
 
 
-/* updates the CIRC_PROGRESS_VAR in the front-end with the new passed value 
+/* updates the CALC_PROGRESS_VAR in the front-end with the new passed value 
  * which must lie in [0, 1]. This can be used to indicate progress of a long 
  * evaluation to the user 
  */
@@ -55,7 +57,7 @@ void local_updateCircuitProgress(qreal progress) {
 
     // echo the message
     WSPutFunction(stdlink, "Set", 2);
-    WSPutSymbol(stdlink, CIRC_PROGRESS_VAR);
+    WSPutSymbol(stdlink, CALC_PROGRESS_VAR);
     WSPutReal64(stdlink, progress);
 
     WSEndPacket(stdlink);
@@ -823,6 +825,212 @@ void Gate::applyInverseTo(Qureg qureg) {
     }
 }
 
+int Gate::getNumDecomps() {
+    
+    if (isPure())
+        return 1;
+        
+    validate(); // throws
+        
+    switch(opcode) {
+        
+        case OPCODE_Damp : 
+            return 2;
+            
+        case OPCODE_Deph :
+            if (numTargs == 1)
+                return 2;
+            if (numTargs == 2)
+                return 4;
+                
+        case OPCODE_Depol : 
+            if (numTargs == 1)
+                return 4;
+            if (numTargs == 2)
+                return 16;
+        
+        case OPCODE_Kraus :
+        case OPCODE_KrausNonTP :
+            return (int) params[0];
+            
+        default:
+            throw QuESTException("", "An unrecognised gate (" + getOpcodeStr() + ") was queried for its number of decompositions into coherent operators.");
+    }
+}
+
+qreal Gate::applyDecompTo(Qureg qureg, int decompInd) {
+    
+    if (qureg.isDensityMatrix)
+        throw QuESTException("", "an internal error occurred. applyDecompTo() was called upon a density matrix."); // throws
+                
+    bool isRand = (decompInd == -1);    
+    if (!isRand && decompInd >= getNumDecomps())
+        throw QuESTException("", "an internal error occurred. applyDecompTo() was called with too large a decomposition index."); // throws
+
+    if (isPure()) {
+        applyTo(qureg); // throws
+        return 1;
+    }
+    
+    validate(); // throws
+    
+    switch(opcode) {
+        
+        case OPCODE_Damp : { ;
+            
+            if (params[0] < 0 || params[0] > 1)
+                throw QuESTException("", "The probability of " + getOpcodeStr() + " is invalid.");
+            
+            int r = (isRand)? local_getRandomIndex(2) : decompInd;
+            qreal s = sqrt(2.);
+
+            // create one of the damping Kraus operators, times sqrt(2) (prob renormalising)
+            ComplexMatrix2 m;
+            m.real[0][0] = r*s;  m.real[0][1] = (!r)*s*sqrt(params[0]);
+            m.real[1][0] = 0;    m.real[1][1] = r*s*sqrt(1-params[0]);
+            m.imag[0][0] = 0;    m.imag[0][1] = 0;
+            m.imag[1][0] = 0;    m.imag[1][1] = 0;
+            
+            applyMatrix2(qureg, targs[0], m); // throws
+            return 1/2.;
+        }
+            
+        case OPCODE_Deph : { ;
+            qreal p = params[0];
+            
+            if (numTargs == 1) {
+                
+                if (p < 0)
+                    throw QuESTException("", "The probability of 1-qubit " + getOpcodeStr() + " was negative."); // throws
+                if (p > 1/2.)
+                    throw QuESTException("", "The probability of 1-qubit " + getOpcodeStr() + " exceeded 1/2, at which maximal mixing occurs."); // throws
+                
+                // apply I or Z
+                qreal probs[] = {1-p, p};
+                int r = (isRand)? local_getRandomIndex(probs, 2) : decompInd;
+                if (r == 1)
+                    pauliZ(qureg, targs[0]); // throws
+                    
+                return probs[r];
+            }
+            else if (numTargs == 2) {
+                
+                if (p < 0)
+                    throw QuESTException("", "The probability of 2-qubit " + getOpcodeStr() + " was negative."); // throws
+                if (p > 3/4.)
+                    throw QuESTException("", "The probability of 2-qubit " + getOpcodeStr() + " exceeded 3/4, at which maximal mixing occurs."); // throws
+    
+                // apply I, Z1, Z2, or Z1 Z2
+                qreal probs[] = {1-p, p/3, p/3, p/3};
+                int r = (isRand)? local_getRandomIndex(probs, 4) : decompInd;
+                if (r == 1)
+                    pauliZ(qureg, targs[0]); // throws
+                if (r == 2)
+                    pauliZ(qureg, targs[1]); // throws
+                if (r == 3) {
+                    pauliZ(qureg, targs[0]); // throws
+                    pauliZ(qureg, targs[1]); // throws
+                }
+                
+                return probs[r];
+            }
+        }
+            break;
+            
+        case OPCODE_Depol : {
+            qreal p = params[0];
+            
+            if (numTargs == 1) {
+                
+                if (p < 0)
+                    throw QuESTException("", "The probability of 1-qubit " + getOpcodeStr() + " was negative."); // throws
+                if (p > 3/4.)
+                    throw QuESTException("", "The probability of 1-qubit " + getOpcodeStr() + " exceeded 3/4, at which maximal mixing occurs."); // throws
+                
+                // apply I, X, Y or Z
+                qreal probs[] = {1-p, p/3, p/3, p/3};
+                int r = (isRand)? local_getRandomIndex(probs, 4) : decompInd;
+                if (r == 1)
+                    pauliX(qureg, targs[0]); // throws
+                if (r == 2)
+                    pauliY(qureg, targs[0]); // throws
+                if (r == 3)
+                    pauliZ(qureg, targs[0]); // throws
+                    
+                return probs[r];
+            }
+            else if (numTargs == 2) {
+                
+                if (p < 0)
+                    throw QuESTException("", "The probability of 2-qubit " + getOpcodeStr() + " was negative."); // throws
+                if (p > 15/16.)
+                    throw QuESTException("", "The probability of 2-qubit " + getOpcodeStr() + " exceeded 15/16, at which maximal mixing occurs."); // throws
+                
+                // apply I, X, Y or Z to either qubit (but I I has a different prob)
+                qreal probs[16];
+                probs[0] = 1-p;
+                for (int i=1; i<16; i++)
+                    probs[i] = p/15;
+                    
+                int r = (isRand)? local_getRandomIndex(probs, 16) : decompInd;
+                int r0 = r / 4;
+                int r1 = r % 4;
+                
+                if (r0 == 1)
+                    pauliX(qureg, targs[0]); // throws
+                if (r0 == 2)
+                    pauliY(qureg, targs[0]); // throws
+                if (r0 == 3)
+                    pauliZ(qureg, targs[0]); // throws
+                    
+                if (r1 == 1)
+                    pauliX(qureg, targs[1]); // throws
+                if (r1 == 2)
+                    pauliY(qureg, targs[1]); // throws
+                if (r1 == 3)
+                    pauliZ(qureg, targs[1]); // throws
+                    
+                return probs[r];
+            }
+        }
+            break;
+        
+        case OPCODE_Kraus :
+        case OPCODE_KrausNonTP : { ;
+            int numOps = (int) params[0];
+            int r = (isRand)? local_getRandomIndex(numOps) : decompInd;
+            qreal fac = sqrt((qreal) numOps);
+            
+            // apply one of the Kraus maps, scaled by uniform probability
+            if (numTargs == 1) {
+                ComplexMatrix2 m = local_getMatrix2FromFlatListAtIndex(&params[1], r);
+                local_setComplexMatrix2RealFactor(&m, fac);
+                applyMatrix2(qureg, targs[0], m); // throws
+                
+            } else if (numTargs == 2) {
+                ComplexMatrix4 m = local_getMatrix4FromFlatListAtIndex(&params[1], r);
+                local_setComplexMatrix4RealFactor(&m, fac);
+                applyMatrix4(qureg, targs[0], targs[1], m); // throws
+            
+            } else {
+                ComplexMatrixN op = createComplexMatrixN(numTargs); // throws
+                local_setMatrixNFromFlatListAtIndex(&params[1], op, numTargs, r);
+                local_setComplexMatrixToRealFactor(op, fac);
+                applyMatrixN(qureg, targs, numTargs, op); // throws
+                destroyComplexMatrixN(op);
+            }
+            
+            return 1/(qreal) numOps;
+        }
+            break;
+            
+        default:
+            throw QuESTException("", "An unrecognised gate (" + getOpcodeStr() + ") was attemptedly applied through sampling.");
+    }
+    
+    throw QuESTException("", "An internal error occurred during applyDecompTo(), likely relating to validation.");
+}
+
 
 
 /*
@@ -899,10 +1107,6 @@ void Circuit::applyTo(Qureg qureg, qreal* outputs, bool showProgress) {
         local_updateCircuitProgress(1);
 }
 
-void Circuit::applyTo(Qureg qureg) {
-    applyTo(qureg, NULL, false);
-}
-
 void Circuit::applySubTo(Qureg qureg, int startGateInd, int endGateInd) {
     
     for (int gateInd=startGateInd; gateInd < endGateInd; gateInd++)
@@ -919,6 +1123,50 @@ void Circuit::applyInverseSubTo(Qureg qureg, int startGateInd, int endGateInd) {
     
     for (int gateInd = endGateInd-1; gateInd >= startGateInd; gateInd--)
         gates[gateInd].applyInverseTo(qureg); // throws
+}
+
+qreal Circuit::applyDecompTo(Qureg qureg, long decompInd) {
+
+    if (decompInd == -1) {
+        
+        for (int gateInd=0; gateInd < numGates; gateInd++)
+            gates[gateInd].applyDecompTo(qureg); // throws
+        
+        return 0;
+
+    } else {
+        
+        qreal prob = 1;
+
+        for (int gateInd=0; gateInd < numGates; gateInd++) {
+            Gate gate = gates[gateInd];
+            int numDecomps = gate.getNumDecomps(); // throws
+            
+            prob *= gate.applyDecompTo(qureg, (int) (decompInd % numDecomps)); // throws
+            decompInd /= (long) numDecomps;
+        }
+        
+        return prob;
+    }
+}
+
+long Circuit::getNumDecomps() {
+    
+    long numDecomps = 1;
+    qreal logNumDecomps = 0;
+    
+    for (int gateInd = 0; gateInd < numGates; gateInd++) {
+        
+        int n = gates[gateInd].getNumDecomps(); // throws
+        logNumDecomps += log2((qreal) n);
+        
+        if ((int) ceil(logNumDecomps) >= 63)    // bits in long
+            throw QuESTException("", "overflow"); 
+            
+        numDecomps *= (long) n;
+    }
+    
+    return numDecomps;
 }
 
 Circuit::~Circuit() {
@@ -993,4 +1241,159 @@ void internal_applyCircuit(int id, int storeBackup, int showProgress) {
     free(outputs);
     if (storeBackup)
         destroyQureg(backup, env);
+}
+
+void internal_sampleExpecPauliString(int showProgress, int initQuregId, int workId1, int workId2) {
+    
+    // precondition: both or neither of workId1 and workId2 are -1, 
+    //      to indicate no working registers were passed
+    
+    
+    // samples is a positive integer, or a flag to instead use deterministic method
+    long numSamples;
+    WSGetLongInteger(stdlink, &numSamples);
+    bool useAllDecomps = (numSamples == -1);
+    
+    // load circuit description (local so no need to explicitly delete)
+    Circuit circ;
+    circ.loadFromMMA();
+    
+    // load Hamiltonian from MMA (and also validate quregId), must later free
+    PauliHamil hamil;
+    try {
+        hamil = local_loadPauliHamilForQuregFromMMA(initQuregId); // throws
+    
+    } catch (QuESTException& err) {
+        
+        local_sendErrorAndFail("SampleExpecPauliString", err.message);
+        return;
+    }
+        
+    // fetch quregs
+    Qureg initQureg = quregs[initQuregId];
+    int numQb = initQureg.numQubitsRepresented;
+    
+    Qureg workState1;
+    Qureg workHamil2;
+    
+    long maxNeededSamples;
+    bool maxNeededOverflowed;
+    
+    // validate quregs, circuit and other params
+    try {
+        if (!useAllDecomps && numSamples <= 0)
+            throw QuESTException("", "The number of samples must be a positive integer."); // throws
+        
+        if (initQureg.isDensityMatrix)
+            throw QuESTException("", "The initial qureg must be a state-vector."); // throws
+        
+        // optionally create new working registers
+        if (workId1 == -1) {
+            workState1 = createQureg(initQureg.numQubitsRepresented, env);
+            workHamil2 = createQureg(initQureg.numQubitsRepresented, env);
+        }
+        
+        // otherwise validate given registers
+        else {
+            if (workId1 == workId2 || workId1 == initQuregId || workId2 == initQuregId)
+                throw QuESTException("", "The working quregs must be unique, and cannot be the initial qureg."); // throws
+            
+            local_throwExcepIfQuregNotCreated(workId1); // throws
+            local_throwExcepIfQuregNotCreated(workId2); // throws
+            workState1 = quregs[workId1];
+            workHamil2 = quregs[workId2];
+            
+            if (workState1.isDensityMatrix || workHamil2.isDensityMatrix)
+                throw QuESTException("", "The working quregs must be statevectors."); // throws
+
+            if (workState1.numQubitsRepresented != numQb || workHamil2.numQubitsRepresented != numQb)
+                throw QuESTException("", "The working quregs must have the same number of qubits as the initial qureg."); // throws
+        }
+        
+        // if above is successful, obtain num messages needed
+        try {
+            maxNeededSamples = circ.getNumDecomps(); // throws
+            maxNeededOverflowed = false;
+        }
+        catch (QuESTException& err) {
+            // but if we overflowed, attempt to gracefully continue
+            if (err.message == "overflow") {
+                maxNeededSamples = -1;
+                maxNeededOverflowed = true;
+                if (useAllDecomps)
+                    throw QuESTException("", "The number of unique circuit decompositions is too large to be enumerated (exceeds 2^63). A smaller number of samples must be specified."); // throws
+            }
+            // and rethrow all other errors (triggered by circuit validation)
+            else {
+                throw;
+            }
+        }
+        
+    } catch (QuESTException& err) {
+    
+        local_sendErrorAndFail("SampleExpecPauliString", err.message);
+        local_freePauliHamil(hamil);
+        return;
+    }
+    
+    // if gratuitously many samples requested, switch to deterministic simulation
+    if (!useAllDecomps &&!maxNeededOverflowed && numSamples >= maxNeededSamples) {
+        local_sendWarningAndContinue("SampleExpecPauliString",
+            "As many or more samples were requested than there are unique decompositions of the circuit "
+            "(of which there are " + std::to_string(maxNeededSamples) + "). "
+            "Proceeding instead with deterministic simulation of each decomposition in-turn. "
+            "Hide this warning by setting the number of samples to All, or using Quiet[].");
+        
+        useAllDecomps = true;
+    }
+    
+    if (useAllDecomps)
+        numSamples = maxNeededSamples;
+    
+    // attempt to sample the expected value
+    try {
+        qreal expecValSum = 0;
+        qreal compen = 0;
+        
+        for (long n=0; n<numSamples; n++) {
+            
+            // halt if the user has tried to abort (casues ~x5 slowdown)
+            local_throwExcepIfUserAborted(); // throws
+            
+            // display progress to the user
+            if (showProgress)
+                local_updateCircuitProgress(n / (qreal) numSamples);
+            
+            cloneQureg(workState1, initQureg);
+
+            qreal fac = 1;
+            if (useAllDecomps)
+                fac = circ.applyDecompTo(workState1, n); // throws
+            else
+                circ.applyDecompTo(workState1); // throws
+                            
+            qreal sample = fac * calcExpecPauliHamil(workState1, hamil, workHamil2); // throws
+            
+            // aggregate through Kahan summation, to mitigate numerical error
+            qreal tmp1 = sample - compen;
+            qreal tmp2 = expecValSum + tmp1;
+            compen = (tmp2 - expecValSum) - tmp1;
+            expecValSum = tmp2;
+        }
+        
+        // output average energy (if random), else determined energy
+        qreal expecVal = expecValSum / ((useAllDecomps)? 1 : numSamples);
+        WSPutReal64(stdlink, expecVal);
+        
+    } catch (QuESTException& err) {
+    
+        local_sendErrorAndFail("SampleExpecPauliString", err.message);
+    } 
+    
+    // clean-up even if above errors
+    local_freePauliHamil(hamil);
+    if (workId1 == -1) {
+        destroyQureg(workState1, env);
+        destroyQureg(workHamil2, env);
+    }
 }
