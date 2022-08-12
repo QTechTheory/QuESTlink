@@ -255,6 +255,10 @@ See GetRandomCircuitFromChannel[] to randomly select one of these circuits, weig
 See SampleExpecPauliString[] to sample such circuits in order to efficiently approximate the effect of decoherence on an expectation value."
     GetCircuitsFromChannel::error = "`1`"
     
+    GetRandomCircuitFromChannel::usage = "GetCircuitsFromChannel[channel] returns a pure, random circuit from the coherent decomposition of the input channel (a circuit including decoherence), weighted by its probability. The average of the expected values of the circuits returned by this function approaches the expected value of the noise channel.
+    See SampleExpecPauliString[] to sample such circuits in order to efficiently approximate the effect of decoherence on an expectation value."
+    GetRandomCircuitFromChannel::error = "`1`"
+    
     
     
     (*
@@ -1061,7 +1065,37 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	       Flatten /@ Tuples[choices]]]
         GetCircuitsFromChannel[___] := invalidArgError[GetCircuitsFromChannel]
         
+        GetRandomCircuitFromChannel[ channel_?isCircuitFormat ] := With[
 
+        	(* get circuit decompositions of each  operator *)
+        	{circs = convertOpToPureCircs /@ channel},
+        	
+        	(* infer the probabilities from Fac[] in coherent noise, and assert uniform incoherent noise *)
+        	{probs = Table[
+        		Times @@ (Cases[choice, Fac[x_]:>Abs[x]^2] /. {}->{1/N@Length@choices}), 
+        		{choices, circs}, {choice, choices}]},
+        	
+        	(* validate probabilities *)
+        	If[ Not[And @@ Table[
+        		VectorQ[probset, Internal`RealValuedNumericQ] &&
+        		AllTrue[probset, (0 <= # <= 1&)] &&
+        		Abs[Total[probset] - 1] < 10^6 $MachineEpsilon, 
+        		{probset, probs}]],
+        			Message[GetRandomCircuitFromChannel::error, "The probabilities of a decomposition of a decoherence operator were invalid and/or unnormalised."];
+        			Return[$Failed]];
+
+        	(* randomly select a pure circuit from each channel decomposition *)
+        	Flatten @ MapThread[
+        		With[{choice=RandomChoice[#1 -> #2]}, 
+        			(* we must multiply the matrices of incoherent noise with the asserted uniform probability *)
+        			If[ Length[#1]>1 && Not @ MemberQ[choice, Fac[_]],
+        				(* which we can equivalently perform with a Fac gate *)
+        				Join[{Fac[Sqrt@N@Length[#1]], choice}],
+        				choice /. Fac[_]->Nothing]] &,
+        		{probs, circs}]
+        ]
+        GetRandomCircuitFromChannel[___] := invalidArgError[GetRandomCircuitFromChannel]
+        
         
         (*
          * QuESTEnv management 
