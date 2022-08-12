@@ -125,6 +125,13 @@ SetAmp[qureg, row, col, amp] modifies the indexed (row, col) amplitude of the de
     GetPauliStringFromCoeffs::usage = "GetPauliStringFromCoeffs[addr] opens or downloads the file at addr (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes, converting this to a symbolic weighted sum of Pauli tensors. Each line of the file is a separate term (a Pauli product), with format {coeff code1 code2 ... codeN} (exclude braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z term in the product respectively), for an N-qubit operator. Each line must have N+1 terms (including the real decimal coefficient at the beginning)."
     GetPauliStringFromCoeffs::error = "`1`"
     
+    GetRandomPauliString::usage = "GetRandomPauliString[numQubits, numTerms, {minCoeff, maxCoeff}] generates a random Pauli string with unique Pauli tensors.
+GetRandomPauliString[numQubits, All, {minCoeff, maxCoeff}] will generate all 4^numQubits unique Pauli tensors.
+GetRandomPauliString[numQubits, {minCoeff, maxCoeff}] will generate 4 numQubits^4 unique terms / Pauli tensors, unless this exceeds the maximum of 4^numQubits.
+GetRandomPauliString[numQubits] will generate random coefficients in [-1, 1].
+All combinations of optional arguments are possible."
+    GetRandomPauliString::error = "`1`"
+    
     CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[ip, port1, port2] connects to a remote QuESTlink server at ip, at the given ports, and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
     CreateRemoteQuESTEnv::error = "`1`"
     
@@ -523,8 +530,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          
         pauliCodePatt = X|Y|Z|Id;
         pauliOpPatt = Subscript[pauliCodePatt, _Integer];
-        pauliTensorPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?NumericQ,{0,1}], pauliOpPatt.. ];
-        pauliStringPatt = pauliTensorPatt | Verbatim[Plus][ Repeated[0.`,{0,1}], pauliTensorPatt..];
+        pauliTensorPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?Internal`RealValuedNumericQ,{0,1}], pauliOpPatt.. ];
         
         areUniqueQubits[qubits_List] :=
             CountDistinct[qubits] === Length[qubits]
@@ -534,18 +540,26 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 True,
             pauliTensorPatt,
                 areUniqueQubits[Cases[expr, Subscript[_,q_Integer]:>q]],
-            pauliStringPatt,
-                AllTrue[expr, isValidPauliString]]
+            _Plus,
+                AllTrue[expr, (MatchQ[#, pauliTensorPatt]&) ]]
 
+        (* X1 *)
         getEncodedPauliString[ Subscript[op:pauliCodePatt, q_Integer] ] := 
             {{1}, {getOpCode@op}, {q}, {1}}
+        (* .1 X1 *)
         getEncodedPauliString[ Verbatim[Times][c:_?NumericQ, p:pauliOpPatt.. ] ] := 
-            {{c}, getOpCode/@{p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
-        getEncodedPauliString[ Verbatim[Times][p:pauliOpPatt.. ] ] := 
-            {{1}, getOpCode/@{p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
-        getEncodedPauliString[ s:Verbatim[Plus][ pauliTensorPatt.. ] ] := 
+            {{c}, getOpCode /@ {p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
+        (* X1 X2 *)
+        getEncodedPauliString[ Verbatim[Times][p:pauliOpPatt.. ] ] :=
+            {{1}, getOpCode /@ {p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
+        (* .1 X1 X2 *)
+        getEncodedPauliString[ p:pauliTensorPatt ] :=
+            {p[[1]], getOpCode /@ Rest[List@@p][[All,1]], Rest[List@@p][[All,2]], Length[p]-1}
+        (* .5 X1 X2 + X1 X2 + X1 + .5 X1 *)
+        getEncodedPauliString[ s_Plus ] /; AllTrue[List@@s, MatchQ[pauliTensorPatt]] :=
             Join @@@ Transpose[getEncodedPauliString /@ (List @@ s)]
-        getEncodedPauliString[ s:Verbatim[Plus][ 0.`, pauliTensorPatt..] ] := 
+        (* 0.` X1 ... *)
+        getEncodedPauliString[ s:Verbatim[Plus][ 0.`, pauliTensorPatt..] ] :=
             getEncodedPauliString @ s[[2;;]]
         
         
@@ -659,8 +673,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	With[
         		{codes = codifyCircuit[circuit]},
         		Which[
-        			Not @ AllTrue[codes[[4]], NumericQ, 2],
-                    Message[ApplyCircuit::error, "Circuit contains non-numerical parameters!"]; $Failed,
+        			Not @ AllTrue[codes[[4]], Internal`RealValuedNumericQ, 2],
+                    Message[ApplyCircuit::error, "Circuit contains non-numerical or non-real parameters!"]; $Failed,
                     Not @ Or[OptionValue[WithBackup] === True, OptionValue[WithBackup] === False],
                     Message[ApplyCircuit::error, "Option WithBackup must be True or False."]; $Failed,
                     Not @ Or[OptionValue[ShowProgress] === True, OptionValue[ShowProgress] === False],
@@ -732,8 +746,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             encodedCirc = codifyCircuit[(circuit /. varVals)];
             
             (* validate the circuit contains no unspecified variables *)
-            If[Not @ AllTrue[encodedCirc[[4]], NumericQ, 2],
-                Throw @ "The circuit contained variables which were not assigned values!"];
+            If[Not @ AllTrue[encodedCirc[[4]], Internal`RealValuedNumericQ, 2],
+                Throw @ "The circuit contained variables which were not assigned real values!"];
 
             (* differentiate gate args, and pack for backend (without yet making numerical) *)
             derivParams = MapThread[encodeDerivParams, 
@@ -763,7 +777,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          * derivatives
          *)
 
-        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}, workQuregs:(_Integer|{__Integer}):-1] :=  
+        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, derivQuregs:{__Integer}, workQuregs:(_Integer|{__Integer}):-1] :=  
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* check each var corresponds to a deriv qureg *)
@@ -780,7 +794,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     unpackEncodedDerivCircTerms @ encodedDerivTerms]]
         CalcQuregDerivs[___] := invalidArgError[CalcQuregDerivs]
         
-        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, paulis_?isValidPauliString, workQuregs:{___Integer}:{}] :=
+        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, paulis_?isValidPauliString, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
@@ -797,7 +811,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
 
         CalcExpecPauliStringDerivs[___] := invalidArgError[CalcExpecPauliStringDerivs]
         
-        CalcMetricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, workQuregs:{___Integer}:{}] :=
+        CalcMetricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms, retArrs},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
@@ -949,7 +963,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         
         CalcPauliStringMinEigVal[paulis_?isValidPauliString, MaxIterations -> its_Integer] := With[
             {matr = CalcPauliExpressionMatrix[paulis]},
-            - Eigenvalues[- matr, 1, Method -> {"Arnoldi", MaxIterations -> its, "Criteria" -> "RealPart"}]]
+            - First @ Eigenvalues[- matr, 1, Method -> {"Arnoldi", MaxIterations -> its, "Criteria" -> "RealPart"}]]
         CalcPauliStringMinEigVal[paulis_?isValidPauliString] :=
             CalcPauliStringMinEigVal[paulis, MaxIterations -> 10^5]
         CalcPauliStringMinEigVal[___] := invalidArgError[CalcPauliStringMinEigVal]
@@ -974,6 +988,36 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     ]
                 ] &) /@ ReadList[addr, Number, RecordLists -> True];
         GetPauliStringFromCoeffs[___] := invalidArgError[GetPauliStringFromCoeffs]
+        
+        GetRandomPauliString[
+            numQubits_Integer?Positive, numTerms:(_Integer?Positive|Automatic|All):Automatic, 
+            {minCoeff_?Internal`RealValuedNumericQ, maxCoeff_?Internal`RealValuedNumericQ}
+        ] := With[
+            {numUniqueTensors = 4^numQubits},
+            (* give warning if too many terms requested *)
+            If[ NumericQ[numTerms] && numTerms > numUniqueTensors,
+                Message[GetRandomPauliString::error, "More terms were requested than there are unique Pauli tensors. Hide this warning with Quiet[]."]]; 
+            With[
+                {strings = Table[
+                    (* generate uniformly random coefficients *)
+                    RandomReal[{minCoeff,maxCoeff}] * 
+                    Times @@ (
+                        (* generate uniformly random but unique Pauli tensors *)
+                        MapThread[Subscript[#1, #2]&, {
+                            IntegerDigits[tensorInd, 4, numQubits] /. {0->Id,1->X,2->Y,3->Z},
+                            Range[0,numQubits-1]}
+                            ] /. Subscript[Id, _]->Nothing /. {} -> {Subscript[Id, 0]}),
+                        {tensorInd, RandomSample[0;;(numUniqueTensors-1), 
+                    (* potentially override the number of terms/tensors *)
+                    Min[numTerms /. {Automatic -> 4 numQubits^4, All -> numUniqueTensors}, numUniqueTensors]]}]},
+                (* append an Id with max target qubits on the ened for user convenience, if not already a max target  *)
+                Plus @@ If[
+                    FreeQ[ Last @ strings, Subscript[_Symbol, numQubits-1]],
+                    Append[Most @ strings, (Last @ strings) Subscript[Id,numQubits-1]],
+                    strings]]]
+        GetRandomPauliString[numQubits_Integer?Positive, numTerms:(_Integer?Positive|Automatic|All):Automatic] :=
+            GetRandomPauliString[numQubits, numTerms, {-1,1}]
+        GetRandomPauliString[___] := invalidArgError[GetRandomPauliString]
         
 
         
