@@ -250,6 +250,11 @@ GetKnownCircuit[\"LowDepthAnsatz\", reps, paramSymbol, qubits]
     (https://arxiv.org/pdf/1801.01053.pdf)"
     GetKnownCircuit::error = "`1`"
     
+    GetCircuitsFromChannel::usage = "GetCircuitsFromChannel[channel] returns a list of all pure, analytic circuits which are admitted as possible errors of the input channel (a circuit including decoherence). Coherent noise channels become unitaries weighted by a non-unitary Fac[] operator, while incoherent noise channels become non-trace-preserving Matr[] operators. The sum of the expected values of the (potentially unnormalised) state-vectors output by the returned circuits is equivalent to the expected value of the input channel.
+See GetRandomCircuitFromChannel[] to randomly select one of these circuits, weighted by its probability.
+See SampleExpecPauliString[] to sample such circuits in order to efficiently approximate the effect of decoherence on an expectation value."
+    GetCircuitsFromChannel::error = "`1`"
+    
     
     
     (*
@@ -1018,6 +1023,43 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         GetRandomPauliString[numQubits_Integer?Positive, numTerms:(_Integer?Positive|Automatic|All):Automatic] :=
             GetRandomPauliString[numQubits, numTerms, {-1,1}]
         GetRandomPauliString[___] := invalidArgError[GetRandomPauliString]
+        
+        
+        
+        (*
+         * Analytic and numerical channel decompositions for statevector simulation
+         *)
+         
+        convertOpToPureCircs[Subscript[(Kraus|KrausNonTP), q__][matrs:{ __?MatrixQ }]] := 
+        	Circuit /@ Subscript[Matr, q] /@ matrs
+        convertOpToPureCircs[Subscript[Deph, q_][x_]] := {
+        	Circuit[ Fac@Sqrt[1-x] ],
+        	Circuit[ Fac@Sqrt[x] Subscript[Z, q] ] }
+        convertOpToPureCircs[Subscript[Deph, q1_,q2_][x_]] := {
+        	Circuit[ Fac@Sqrt[1-x] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q1] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q2] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q1] Subscript[Z, q2] ]}
+        convertOpToPureCircs[Subscript[Depol, q_][x_]] := {
+        	Circuit[ Fac@Sqrt[1-x] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[X, q] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[Y, q] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q] ]}
+        convertOpToPureCircs[Subscript[Depol, q1_,q2_][x_]] := 
+        	Join[{{Fac@Sqrt[1-x]}}, Rest @ Flatten[
+        		Table[{Fac@Sqrt[x/15], Subscript[a, q1], Subscript[b, q2]}, {a,{Id,X,Y,Z}}, {b,{Id,X,Y,Z}}] /. Subscript[Id, _] -> Nothing, 1]]
+        convertOpToPureCircs[g:Subscript[Damp, q_][x_]] :=
+        	convertOpToPureCircs @ First @ GetCircuitGeneralised @ g
+        convertOpToPureCircs[g_] :=
+        	{{g}} (* non-decoherence ops have no alternatives *)
+            
+        GetCircuitsFromChannel[circ_?isCircuitFormat ] := With[
+            {choices = convertOpToPureCircs /@ circ},
+            {numCircs = Times @@ Length /@ choices},
+            If[Ceiling @ Log2[numCircs] > $SystemWordLength,
+                Message[GetCircuitsFromChannel::error, "The number of unique circuit decompositions exceeds 2^$SystemWordLength and cannot be enumerated."]; $Failed,
+        	       Flatten /@ Tuples[choices]]]
+        GetCircuitsFromChannel[___] := invalidArgError[GetCircuitsFromChannel]
         
 
         
