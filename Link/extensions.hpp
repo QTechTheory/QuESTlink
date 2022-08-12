@@ -8,6 +8,8 @@ void extension_addAdjointToSelf(Qureg qureg);
 
 void extension_applyImagFactor(Qureg qureg, qreal imagFac);
 
+void extension_applyRealFactor(Qureg qureg, qreal realFac);
+
 void extension_mixDephasingDeriv(Qureg qureg, int targetQubit, qreal probDeriv);
 
 void extension_mixTwoQubitDephasingDeriv(Qureg qureg, int t1, int t2, qreal probDeriv);

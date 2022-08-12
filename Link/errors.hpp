@@ -24,6 +24,8 @@ void local_sendErrorAndFail(std::string funcName, std::string errMsg);
 
 void local_sendErrorAndAbort(std::string funcName, std::string errMsg);
 
+void local_sendWarningAndContinue(std::string funcName, std::string warnMsg);
+
 void local_throwExcepIfQuregNotCreated(int id);
 
 void local_throwExcepIfUserAborted();

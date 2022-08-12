@@ -33,8 +33,9 @@
 #define OPCODE_KrausNonTP 21
 #define OPCODE_Matr 22
 #define OPCODE_UNonNorm 23
+#define OPCODE_Fac 24
 
-#define NUM_OPCODES 24
+#define NUM_OPCODES 25
 
 static const std::string opcodeStrings[] = {
     "H",			// OPCODE_H 0
@@ -60,7 +61,8 @@ static const std::string opcodeStrings[] = {
     "Ph",			// OPCODE_Ph 20
     "KrausNonTP",	// OPCODE_KrausNonTP 21
     "Matr",			// OPCODE_Matr 22
-    "UNonNorm"		// OPCODE_UNonNorm 23
+    "UNonNorm",		// OPCODE_UNonNorm 23
+    "Fac",          // OPCODE_Fac 24
 };
 
 
@@ -94,6 +96,8 @@ class Gate {
         int* targs;         int numTargs;
         qreal* params;      int numParams;
         
+        void validate();
+        
         std::string getOpcodeStr();
     
     public:
@@ -124,6 +128,11 @@ class Gate {
          * density matrices (false)
          */
         bool isPure();
+        
+        /** Returns whether the gate can be inverted, and ergo undone from a 
+         * state. 
+         */
+        bool isInvertible();
             
         /** Returns the number of outputs that this gate produces when performed 
          * in a circuit. This is the number of elements added to the outputs array 
@@ -131,19 +140,13 @@ class Gate {
          */
         int getNumOutputs();
         
-        /** Perform this gate upon the given qureg, modifying qureg, ignoring 
-         * any outputs. This is equivalent to applyTo(qureg, NULL). 
-         * @throws if the gate details are invalid
-         */
-        void applyTo(Qureg qureg);
-        
         /** Perform this gate upon the given qureg, capturing any outputs to the 
          * front of the given outputs array (unless it is NULL). Although cast to 
          * qreal, some outputs may be integers (like the results of measurement)
          * needing later recasting.
          * @throws if the gate details are invalid
          */
-        void applyTo(Qureg qureg, qreal* outputs);
+        void applyTo(Qureg qureg, qreal* outputs=NULL);
         
         /** Apply the conjugate transpose of this gate upon the qureg.
          * @throws if the gate details are invalid
@@ -166,6 +169,22 @@ class Gate {
          * @throws if derivParams are invalid
          */
         void applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams);
+        
+        /** Applies one of the statevector-operator decompositions of the gate to qureg,
+         * and returns the probability of the chosen decomposition.
+         * If decompInd = -1 (default), the decomposition is randomly chosen, 
+         * weighted by the operator's probability. If decompInd is determined, 
+         * the returned probability is unchanged.
+         * This is used in Monte Carlo statevector estimation of a channel.
+         * @throws if the gate details are invalid
+         */
+        qreal applyDecompTo(Qureg qureg, int decompInd=-1);
+        
+        /** Returns the number of operators in the decomposition of the gate into 
+         * coherent (state-vector compatible) operations. This counts the 
+         * number of possible distinct operations effected by applyDecompTo()
+         */
+        int getNumDecomps();
 };
 
 
@@ -239,8 +258,7 @@ class Circuit {
          * If showProgress = true, a front-end loading bar will display the progress 
          * of the circuit simulation (via local_updateCircuitProgress()).
          */
-        void applyTo(Qureg qureg, qreal* outputs, bool showProgress);
-        void applyTo(Qureg qureg);
+        void applyTo(Qureg qureg, qreal* outputs=NULL, bool showProgress=false);
         
         /** Apply only a contiguous subset of the circuit gates to qureg, starting 
          * at index startGateInd (inclusive) and ending with endGateInd (exclusive).
@@ -261,6 +279,24 @@ class Circuit {
          * inverse applied. 
          */
         void applyInverseSubTo(Qureg qureg, int startGateInd, int endGateInd);
+        
+        /** Decomposes every decoherence channel in the circuit into state-vector 
+         * compatible operators, and applies the one identified by decompInd, 
+         * a mixed-radix index (base given by gate.getNumDecomps), onto the 
+         * given statevector. If decompInd=-1, then one of the decompositions is 
+         * randomly chosen (weighted by their probabilities), and the function returns 
+         * zero. In contrast, when decompInd is fixed so that the circuit decomposition
+         * is pre-determined, the probability of the forced decomposition is returned.
+         * A subsequent observable measurement would be a sample of a Monte Carlo 
+         * estimation of that observable under the input channel.
+         */
+        qreal applyDecompTo(Qureg qureg, long decompInd=-1);
+        
+        /** Returns the total number of circuit decompositions. This describes the 
+         * number of unique circuits effected by applyDecompTo(), or equivalently 
+         * its maximum decompInd.
+         */
+        long getNumDecomps();
         
         /** Send the given list of outputs (which must have been produced from 
          * this circuit instance via applyCircuit()) to Mathematica, formatting 

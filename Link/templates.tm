@@ -270,67 +270,6 @@
     QuEST`Private`ApplyParamNamedPhaseFuncInternal::usage = "ApplyParamNamedPhaseFuncInternal[quregId, qubits, numQubitsPerReg, encoding, phaseFuncName, params, overrideInds, overridePhases] applies a diagonal unitary operator upon the qureg, with elements informed by the multi-variable function implied by phaseFuncName, applied to the state indices informed by {qubits}.";
 
 
-:Begin:
-:Function:       wrapper_mixDepolarising
-:Pattern:        QuEST`MixDepolarising[qureg_Integer, qb_Integer, prob_Real]
-:Arguments:      { qureg, qb, prob }
-:ArgumentTypes:  { Integer, Integer, Real }
-:ReturnType:     Manual
-:End:
-:Evaluate: 
-    QuEST`MixDepolarising::usage = "MixDepolarising[qureg, qubit, prob] adds depolarising noise to density matrix qureg.";
-    QuEST`MixDepolarising::error = "`1`";
-    QuEST`MixDepolarising[___] := QuEST`Private`invalidArgError[MixDepolarising];
-
-:Begin:
-:Function:       wrapper_mixTwoQubitDepolarising
-:Pattern:        QuEST`MixTwoQubitDepolarising[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
-:Arguments:      { qureg, qb1, qb2, prob }
-:ArgumentTypes:  { Integer, Integer, Integer, Real }
-:ReturnType:     Manual
-:End:
-:Evaluate: 
-    QuEST`MixTwoQubitDepolarising::usage = "MixTwoQubitDepolarising[qureg, qb1, qb2 prob] adds depolarising noise to density matrix qureg.";
-    QuEST`MixTwoQubitDepolarising::error = "`1`";
-    QuEST`MixTwoQubitDepolarising[___] := QuEST`Private`invalidArgError[MixTwoQubitDepolarising];
-
-:Begin:
-:Function:       wrapper_mixDephasing
-:Pattern:        QuEST`MixDephasing[qureg_Integer, qb_Integer, prob_Real]
-:Arguments:      { qureg, qb, prob }
-:ArgumentTypes:  { Integer, Integer, Real }
-:ReturnType:     Manual
-:End:
-:Evaluate: 
-    QuEST`MixDephasing::usage = "MixDephasing[qureg, qubit, prob] adds dephasing noise to density matrix qureg.";
-    QuEST`MixDephasing::error = "`1`";
-    QuEST`MixDephasing[___] := QuEST`Private`invalidArgError[MixDephasing];
-
-:Begin:
-:Function:       wrapper_mixTwoQubitDephasing
-:Pattern:        QuEST`MixTwoQubitDephasing[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real]
-:Arguments:      { qureg, qb1, qb2, prob }
-:ArgumentTypes:  { Integer, Integer, Integer, Real }
-:ReturnType:     Manual
-:End:
-:Evaluate: 
-    QuEST`MixTwoQubitDephasing::usage = "MixTwoQubitDephasing[qureg, qb1, qb2 prob] adds dephasing noise to density matrix qureg.";
-    QuEST`MixTwoQubitDephasing::error = "`1`";
-    QuEST`MixTwoQubitDephasing[___] := QuEST`Private`invalidArgError[MixTwoQubitDephasing];
-
-:Begin:
-:Function:       wrapper_mixDamping
-:Pattern:        QuEST`MixDamping[qureg_Integer, qb_Integer, prob_Real]
-:Arguments:      { qureg, qb, prob }
-:ArgumentTypes:  { Integer, Integer, Real }
-:ReturnType:     Manual
-:End:
-:Evaluate: 
-    QuEST`MixDamping::usage = "MixDamping[qureg, qubit, prob] applies amplitude damping with the given decay probability to density matrix qureg.";
-    QuEST`MixDamping::error = "`1`";
-    QuEST`MixDamping[___] := QuEST`Private`invalidArgError[MixDamping];
-
-
 
 
 :Begin:
@@ -448,13 +387,13 @@
 :Evaluate: QuEST`Private`CalcExpecPauliStringDerivsInternal::usage = "CalcExpecPauliStringDerivsInternal[initStateId, workspaces, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] accepts a circuit (complete with rotation angles), a derivative specification, and a Hamiltonian, and returns the energy gradient. workspaces can be a list of any length"
 
 :Begin:
-:Function:       internal_calcGeometricTensor
-:Pattern:        QuEST`Private`CalcGeometricTensorInternal[initStateId_Integer, workspaces_List, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, derivOpInds_List, derivVarInds_List, derivParams_List, numDerivParamsPerDerivOp_List]
+:Function:       internal_calcMetricTensor
+:Pattern:        QuEST`Private`CalcMetricTensorInternal[initStateId_Integer, workspaces_List, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, derivOpInds_List, derivVarInds_List, derivParams_List, numDerivParamsPerDerivOp_List]
 :Arguments:      { initStateId, workspaces, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp }
 :ArgumentTypes:  { Integer, Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: QuEST`Private`CalcGeometricTensorInternal::usage = "CalcGeometricTensor[initStateId, workspaces, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp] accepts a circuit and derivative terms and returns the corresponding geometric tensor."
+:Evaluate: QuEST`Private`CalcMetricTensorInternal::usage = "CalcMetricTensor[initStateId, workspaces, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, derivOpInds, derivVarInds, derivParams, numDerivParamsPerDerivOp] accepts a circuit and derivative terms and returns the corresponding geometric tensor."
 
 :Begin:
 :Function:       internal_calcInnerProductsMatrix
@@ -494,6 +433,7 @@
 
 
 
+
 :Begin:
 :Function:       internal_applyCircuit
 :Pattern:        QuEST`Private`ApplyCircuitInternal[qureg_Integer, storeBackup_Integer, showProgress_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List]
@@ -529,6 +469,18 @@
 :ReturnType:     Manual
 :End:
 :Evaluate: QuEST`Private`CalcPauliStringMatrixInternal::usage = "CalcPauliStringMatrixInternal[numQubits, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] returns the action of applying the given sum of Pauli products (specified as flat lists) to every basis state."
+
+:Begin:
+:Function:       internal_sampleExpecPauliString
+:Pattern:        QuEST`Private`SampleExpecPauliStringInternal[showProgress_Integer, initQuregId_Integer, workId1_Integer, workId2_Integer, numSamples_Integer, opcodes_List, ctrls_List, numCtrlsPerOp_List, targs_List, numTargsPerOp_List, params_List, numParamsPerOp_List, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
+:Arguments:      { showProgress, initQuregId, workId1, workId2, numSamples, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm }
+:ArgumentTypes:  { Integer, Integer, Integer, Integer, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`SampleExpecPauliStringInternal::usage = "SampleExpecPauliStringInternal[showProgress, initQuregId, workId1, workId2, numSamples, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] estimates the expectation value of the given Hamiltonian and noisy channel through repeated sampling via state-vector simulation."
+
+
+
 
 :Begin:
 :Function:       internal_getQuregMatrix

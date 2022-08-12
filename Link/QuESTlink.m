@@ -8,31 +8,7 @@
  * @author Tyson Jones
  *)
 
-BeginPackage["QuEST`"]
-
-
-
-    (* 
-     * deprecated
-     *)
-     
-    CalcExpecPauliProd[args___] := (
-        Message[CalcExpecPauliString::error, "The function CalcExpecPauliProd[] is being deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
-        CalcExpecPauliString[args])
-    CalcExpecPauliSum[args___] := (
-        Message[CalcExpecPauliString::error, "The function CalcExpecPauliSum[] is being deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
-        CalcExpecPauliString[args])
-    ApplyPauliSum[args___] := (
-        Message[ApplyPauliString::error, "The function ApplyPauliSum[] is being deprecated. Use ApplyPauliString[] or temporarily hide this message using Quiet[]."]; 
-        ApplyPauliString[args])
-    CalcPauliSumMatrix[args___] := (
-        Message[CalcPauliStringMatrix::error, "The function CalcPauliSumMatrix[] is being deprecated. Use CalcPauliStringMatrix[] or temporarily hide this message using Quiet[]."]; 
-        CalcPauliStringMatrix[args])
-    GetPauliSumFromCoeffs[args___] := (
-        Message[GetPauliStringFromCoeffs::error, "The function GetPauliSumFromCoeffs[] is being deprecated. Use GetPauliStringFromCoeffs[] or temporarily hide this message using Quiet[]."]; 
-        GetPauliStringFromCoeffs[args])
-    
-    
+BeginPackage["QuEST`"]    
     
     (* 
      * Note additional functions and their usage messages are fetched when CreateRemoteQuESTEnv is called.
@@ -64,10 +40,9 @@ CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString, workspaceQu
 This function permits all the freedoms of CalcQuregDerivs[] but requires only a fixed memory overhead (in lieu of #varVals quregs), and when performed upon statevectors, will even run a factor Length[circuit] faster."
     CalcExpecPauliStringDerivs::error = "`1`"
     
-    CalcGeometricTensor::usage = "CalcGeometricTensor[circuit, initQureg, varVals] returns the geometric tensor of the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}.
-CalcGeometricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most four workspaceQuregs are needed.
-This quantity relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections."
-    CalcGeometricTensor::error = "`1`"
+    CalcMetricTensor::usage = "CalcMetricTensor[circuit, initQureg, varVals] returns the natural gradient metric tensor, capturing the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}. For state-vectors, this returns the quantum geometric tensor, which relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections. For density-matrices, this function returns the Hilbert-Schmidt derivative metric, which well approximates the quantum Fisher information matrix.
+CalcMetricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most four workspaceQuregs are needed."
+    CalcMetricTensor::error = "`1`"
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
 CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element CalcInnerProduct[braId, ketIds[i]]."
@@ -150,6 +125,13 @@ SetAmp[qureg, row, col, amp] modifies the indexed (row, col) amplitude of the de
     GetPauliStringFromCoeffs::usage = "GetPauliStringFromCoeffs[addr] opens or downloads the file at addr (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes, converting this to a symbolic weighted sum of Pauli tensors. Each line of the file is a separate term (a Pauli product), with format {coeff code1 code2 ... codeN} (exclude braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z term in the product respectively), for an N-qubit operator. Each line must have N+1 terms (including the real decimal coefficient at the beginning)."
     GetPauliStringFromCoeffs::error = "`1`"
     
+    GetRandomPauliString::usage = "GetRandomPauliString[numQubits, numTerms, {minCoeff, maxCoeff}] generates a random Pauli string with unique Pauli tensors.
+GetRandomPauliString[numQubits, All, {minCoeff, maxCoeff}] will generate all 4^numQubits unique Pauli tensors.
+GetRandomPauliString[numQubits, {minCoeff, maxCoeff}] will generate 4 numQubits^4 unique terms / Pauli tensors, unless this exceeds the maximum of 4^numQubits.
+GetRandomPauliString[numQubits] will generate random coefficients in [-1, 1].
+All combinations of optional arguments are possible."
+    GetRandomPauliString::error = "`1`"
+    
     CreateRemoteQuESTEnv::usage = "CreateRemoteQuESTEnv[ip, port1, port2] connects to a remote QuESTlink server at ip, at the given ports, and defines several QuEST functions, returning a link object. This should be called once. The QuEST function defintions can be cleared with DestroyQuESTEnv[link]."
     CreateRemoteQuESTEnv::error = "`1`"
     
@@ -191,14 +173,15 @@ DrawCircuitTopology additionally accepts DistinguishedStyles and all options of 
     CalcCircuitMatrix::usage = "CalcCircuitMatrix[circuit] returns an analytic matrix for the given unitary circuit, which may contain symbolic parameters. The number of qubits is inferred from the circuit indices (0 to maximum specified).
 CalcCircuitMatrix[circuit] returns an analytic superoperator for the given non-unitary circuit, expressed as a matrix upon twice as many qubits. The result can be multiplied upon a column-flattened density matrix.
 CalcCircuitMatrix[circuit, numQubits] forces the number of present qubits.
-CalcCircuitMatrix accepts optional argument AsSuperoperator->True to obtain a superoperator from a unitary circuit."
+CalcCircuitMatrix accepts optional argument AsSuperoperator and AssertValidChannels."
     CalcCircuitMatrix::error = "`1`"
     
     GetCircuitGeneralised::usage = "GetCircuitGeneralised[circuit] returns an equivalent circuit composed only of general unitaries (and Matr operators) and Kraus operators of analytic matrices."
     GetCircuitGeneralised::error = "`1`"
     
     GetCircuitSuperoperator::usage = "GetCircuitSuperoperator[circuit] returns the corresponding superoperator circuit upon doubly-many qubits as per the Choi–Jamiolkowski isomorphism. Decoherence channels become Matr[] superoperators.
-GetCircuitSuperoperator[circuit, numQubits] forces the circuit to be assumed size numQubits, so that the output superoperator circuit is of size 2*numQubits."
+GetCircuitSuperoperator[circuit, numQubits] forces the circuit to be assumed size numQubits, so that the output superoperator circuit is of size 2*numQubits.
+GetCircuitSuperoperator accepts optional argument AssertValidChannels."
     GetCircuitSuperoperator::error = "`1`"
     
     PlotDensityMatrix::usage = "PlotDensityMatrix[matrix] (accepts id or numeric matrix) plots a component (default is magnitude) of the given matrix as a 3D bar plot.
@@ -236,7 +219,7 @@ InsertCircuitNoise accepts optional argument ReplaceAliases.
 InsertCircuitNoise can handle gates with time-dependent noise operators and durations."
     InsertCircuitNoise::error = "`1`"
     
-    ExtractCircuit::usage = "ExtractCircuit[] returns the ultimate circuit from the outputs of InsertCircuitNoise[], GetCircuitSchedule[] and GetCircuitSchedule[]."
+    ExtractCircuit::usage = "ExtractCircuit[] returns the prescribed circuit from the outputs of InsertCircuitNoise[], GetCircuitSchedule[] and GetCircuitColumns[]."
     ExtractCircuit::error = "`1`"
     
     ViewCircuitSchedule::usage = "ViewCircuitSchedule[schedule] displays a table form of the given circuit schedule, as output by InsertCircuitNoise[] or GetCircuitSchedule[].
@@ -267,6 +250,21 @@ GetKnownCircuit[\"LowDepthAnsatz\", reps, paramSymbol, qubits]
     (https://arxiv.org/pdf/1801.01053.pdf)"
     GetKnownCircuit::error = "`1`"
     
+    GetCircuitsFromChannel::usage = "GetCircuitsFromChannel[channel] returns a list of all pure, analytic circuits which are admitted as possible errors of the input channel (a circuit including decoherence). Coherent noise channels become unitaries weighted by a non-unitary Fac[] operator, while incoherent noise channels become non-trace-preserving Matr[] operators. The sum of the expected values of the (potentially unnormalised) state-vectors output by the returned circuits is equivalent to the expected value of the input channel.
+See GetRandomCircuitFromChannel[] to randomly select one of these circuits, weighted by its probability.
+See SampleExpecPauliString[] to sample such circuits in order to efficiently approximate the effect of decoherence on an expectation value."
+    GetCircuitsFromChannel::error = "`1`"
+    
+    GetRandomCircuitFromChannel::usage = "GetCircuitsFromChannel[channel] returns a pure, random circuit from the coherent decomposition of the input channel (a circuit including decoherence), weighted by its probability. The average of the expected values of the circuits returned by this function approaches the expected value of the noise channel.
+    See SampleExpecPauliString[] to sample such circuits in order to efficiently approximate the effect of decoherence on an expectation value."
+    GetRandomCircuitFromChannel::error = "`1`"
+    
+    SampleExpecPauliString::usage = "SampleExpecPauliString[initQureg, channel, pauliString, numSamples] estimates the expected value of pauliString under the given channel (a circuit including decoherence) upon the state-vector initQureg, through Monte Carlo sampling. This avoids the quadratically greater memory costs of density-matrix simulation, but may need many samples to be accurate.
+SampleExpecPauliString[initQureg, channel, pauliString, All] deterministically samples each channel decomposition once.
+SampleExpecPauliString[initQureg, channel, pauliString, numSamples, {workQureg1, workQureg2}] uses the given persistent working registers to avoid their internal creation and destruction.
+Use option ShowProgress to monitor the progress of sampling."
+    SampleExpecPauliString::error = "`1`"
+    
     
     
     (*
@@ -277,7 +275,7 @@ GetKnownCircuit[\"LowDepthAnsatz\", reps, paramSymbol, qubits]
 
     WithBackup::usage = "Optional argument to ApplyCircuit, indicating whether to create a backup during circuit evaluation to restore the input state in case of a circuit error. This incurs additional memory (default True). If the circuit contains no error, this option has no effect besides wasting memory."
     
-    ShowProgress::usage = "Optional argument to ApplyCircuit, indicating whether to show a progress bar during circuit evaluation (default False). This slows evaluation slightly."
+    ShowProgress::usage = "Optional argument to ApplyCircuit and SampleExpecPauliString, indicating whether to show a progress bar during circuit evaluation (default False). This slows evaluation slightly."
     
     PlotComponent::Usage = "Optional argument to PlotDensityMatrix, to plot the \"Real\", \"Imaginary\" component of the matrix, or its \"Magnitude\" (default)."
     
@@ -321,6 +319,8 @@ BitEncoding -> \"Unsigned\" (default) interprets basis states as natural numbers
 BitEncoding -> \"TwosComplement\" interprets basis states as two's complement signed numbers, {0, ... 2^(numQubits-1)-1} and {-1, -2, ... -2^(numQubits-1)}. The last qubit in a sub-register list is assumed the sign bit."
 
     AsSuperoperator::usage = "Optional argument to CalcCircuitMatrix (default Automatic), specifying whether the output should be a 2^N by 2^N unitary matrix (False), or a 2^2N by 2^2N superoperator matrix (True). The latter can capture decoherence, and be multiplied upon column-flattened 2^2N vectors."
+    
+    AssertValidChannels::usage = "Optional argument to CalcCircuitMatrix and GetCircuitSuperoperator (default True), specifying whether to simplify their outputs by asserting that all channels therein are completely-positive and trace-preserving. For example, this asserts that the argument to a damping channel lies between 0 and 1."
     
     EndPackage[]
     
@@ -406,6 +406,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
     Matr::usage = "Matr[matrix] is an arbitrary operator with any number of target qubits, specified as a completely general (even non-unitary) square complex matrix. Unlike UNonNorm, the given matrix is not internally assumed unitary. It is hence only left-multiplied onto density matrices."
     Protect[Matr]
     
+    Fac::usage = "Fac[scalar] is a non-physical operator which multiplies the given complex scalar onto every amplitude of the quantum state. This is directly multiplied onto state-vectors and density-matrices, and may break state normalisation."
+    
     (* overriding Mathematica's doc for C[i] as i-th default constant *)
     C::usage = "C is a declaration of control qubits (subscript), which can wrap other gates to conditionally/controlled apply them."
     Protect[C]
@@ -447,23 +449,93 @@ The probability of the forced measurement outcome (if hypothetically not forced)
     UpdateVariables::usage = "The function to call after each active gate or processed passive noise, to update circuit variables (optional)."
     
     EndPackage[]
+    
+    
+    
+    (*
+     * deprecated but backwards-compatible API 
+     *)
+     
+    BeginPackage["`Deprecated`"]
+    
+    CalcExpecPauliProd::usage = "This function is deprecated. Please instead use CalcExpecPauliString."
+    CalcExpecPauliSum::usage = "This function is deprecated. Please instead use CalcExpecPauliString."
+    ApplyPauliSum::usage = "This function is deprecated. Please instead use ApplyPauliString."
+    CalcPauliSumMatrix::usage = "This function is deprecated. Please instead use CalcPauliStringMatrix."
+    GetPauliSumFromCoeffs::usage = "This function is deprecated. Please instead use GetPauliStringFromCoeffs."
+    MixDamping::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Damp."
+    MixDephasing::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Deph."
+    MixDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
+    MixTwoQubitDephasing::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Deph."
+    MixTwoQubitDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
+    
+    EndPackage[]
  
  
+ 
+    (* 
+     * internal private functions, and definitions of public API
+     *)
  
     Begin["`Private`"]
     
     
+        
+        (*
+         * deprecated definitions
+         *)
+         
+        CalcExpecPauliProd[args___] := (
+            Message[CalcExpecPauliString::error, "The function CalcExpecPauliProd[] is deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
+            CalcExpecPauliString[args])
+        CalcExpecPauliSum[args___] := (
+            Message[CalcExpecPauliString::error, "The function CalcExpecPauliSum[] is deprecated. Use CalcExpecPauliString[] or temporarily hide this message using Quiet[]."]; 
+            CalcExpecPauliString[args])
+        ApplyPauliSum[args___] := (
+            Message[ApplyPauliString::error, "The function ApplyPauliSum[] is deprecated, though has still been performed. In future, please use ApplyPauliString[] or temporarily hide this message using Quiet[]."]; 
+            ApplyPauliString[args])
+        CalcPauliSumMatrix[args___] := (
+            Message[CalcPauliStringMatrix::error, "The function CalcPauliSumMatrix[] is deprecated. Use CalcPauliStringMatrix[] or temporarily hide this message using Quiet[]."]; 
+            CalcPauliStringMatrix[args])
+        GetPauliSumFromCoeffs[args___] := (
+            Message[GetPauliStringFromCoeffs::error, "The function GetPauliSumFromCoeffs[] is deprecated. Use GetPauliStringFromCoeffs[] or temporarily hide this message using Quiet[]."]; 
+            GetPauliStringFromCoeffs[args])
+            
+        MixDamping[qureg_Integer, qb_Integer, prob_Real] := (
+            Message[ApplyCircuit::error, "The function MixDamping[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Damp[] gate instead, or temporarily hide this message using Quiet[]."];
+            ApplyCircuit[qureg, Subscript[Damp,qb][prob]];
+            qureg)
+        MixDephasing[qureg_Integer, qb_Integer, prob_Real] := (
+            Message[ApplyCircuit::error, "The function MixDephasing[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Deph[] gate instead, or temporarily hide this message using Quiet[]."];
+            ApplyCircuit[qureg, Subscript[Deph,qb][prob]];
+            qureg)
+        MixDepolarising[qureg_Integer, qb_Integer, prob_Real] := (
+            Message[ApplyCircuit::error, "The function MixDepolarising[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Depol[] gate instead, or temporarily hide this message using Quiet[]."];
+            ApplyCircuit[qureg, Subscript[Depol,qb][prob]];
+            qureg)
+        MixTwoQubitDephasing[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real] := (
+            Message[ApplyCircuit::error, "The function MixTwoQubitDephasing[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Deph[] gate instead, or temporarily hide this message using Quiet[]."];
+            ApplyCircuit[qureg, Subscript[Deph,qb1,qb2][prob]];
+            qureg)
+        MixTwoQubitDepolarising[qureg_Integer, qb1_Integer, qb2_Integer, prob_Real] := (
+            Message[ApplyCircuit::error, "The function MixTwoQubitDepolarising[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Depol[] gate instead, or temporarily hide this message using Quiet[]."];
+            ApplyCircuit[qureg, Subscript[Depol,qb1,qb2][prob]];
+            qureg)
+            
+            
+        
+        (*
+         * global convenience functions
+         *)
     
         (* report a generic error that the function was passed with bad args (did not evaluate) *)
         invalidArgError[func_Symbol] := (
             Message[func::error, "Invalid arguments. See ?" <> ToString[func]];
             $Failed)
                
-               
-               
         (* opcodes which correlate with the global IDs in circuits.hpp *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,Matr->22,UNonNorm->23,_->-1}
+	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,Matr->22,UNonNorm->23,Fac->24,_->-1}
         
         
         
@@ -473,8 +545,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          
         pauliCodePatt = X|Y|Z|Id;
         pauliOpPatt = Subscript[pauliCodePatt, _Integer];
-        pauliTensorPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?NumericQ,{0,1}], pauliOpPatt.. ];
-        pauliStringPatt = pauliTensorPatt | Verbatim[Plus][ Repeated[0.`,{0,1}], pauliTensorPatt..];
+        pauliTensorPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?Internal`RealValuedNumericQ,{0,1}], pauliOpPatt.. ];
         
         areUniqueQubits[qubits_List] :=
             CountDistinct[qubits] === Length[qubits]
@@ -484,18 +555,26 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 True,
             pauliTensorPatt,
                 areUniqueQubits[Cases[expr, Subscript[_,q_Integer]:>q]],
-            pauliStringPatt,
-                AllTrue[expr, isValidPauliString]]
+            _Plus,
+                AllTrue[expr, (MatchQ[#, pauliTensorPatt]&) ]]
 
+        (* X1 *)
         getEncodedPauliString[ Subscript[op:pauliCodePatt, q_Integer] ] := 
             {{1}, {getOpCode@op}, {q}, {1}}
+        (* .1 X1 *)
         getEncodedPauliString[ Verbatim[Times][c:_?NumericQ, p:pauliOpPatt.. ] ] := 
-            {{c}, getOpCode/@{p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
-        getEncodedPauliString[ Verbatim[Times][p:pauliOpPatt.. ] ] := 
-            {{1}, getOpCode/@{p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
-        getEncodedPauliString[ s:Verbatim[Plus][ pauliTensorPatt.. ] ] := 
+            {{c}, getOpCode /@ {p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
+        (* X1 X2 *)
+        getEncodedPauliString[ Verbatim[Times][p:pauliOpPatt.. ] ] :=
+            {{1}, getOpCode /@ {p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
+        (* .1 X1 X2 *)
+        getEncodedPauliString[ p:pauliTensorPatt ] :=
+            {p[[1]], getOpCode /@ Rest[List@@p][[All,1]], Rest[List@@p][[All,2]], Length[p]-1}
+        (* .5 X1 X2 + X1 X2 + X1 + .5 X1 *)
+        getEncodedPauliString[ s_Plus ] /; AllTrue[List@@s, MatchQ[pauliTensorPatt]] :=
             Join @@@ Transpose[getEncodedPauliString /@ (List @@ s)]
-        getEncodedPauliString[ s:Verbatim[Plus][ 0.`, pauliTensorPatt..] ] := 
+        (* 0.` X1 ... *)
+        getEncodedPauliString[ s:Verbatim[Plus][ 0.`, pauliTensorPatt..] ] :=
             getEncodedPauliString @ s[[2;;]]
         
         
@@ -552,7 +631,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}] :> 
                 {getOpCode[gate], {}, {targs}, {}},
             G[arg_] :> 
-                {getOpCode[G], {}, {}, {arg}}
+                {getOpCode[G], {}, {}, {arg}},
+            Fac[arg_] :>
+                {getOpCode[Fac], {}, {}, {Re @ N @ arg, Re @ Im @ arg}}
         };
 
         (* converting gate sequence to code lists: {opcodes, ctrls, targs, params} *)
@@ -565,7 +646,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         isGateFormat[Subscript[_Symbol, (__Integer)|{__Integer}]] := True
         isGateFormat[Subscript[_Symbol, (__Integer)|{__Integer}][__]] := True
         isGateFormat[R[_, (pauliOpPatt|{pauliOpPatt..}|Verbatim[Times][pauliOpPatt..])]] := True
-        isGateFormat[G[_]] := True
+        isGateFormat[(G|Fac)[_]] := True
         isGateFormat[___] := False
         isCircuitFormat[circ_List] := AllTrue[circ,isGateFormat]
         isCircuitFormat[circ_?isGateFormat] := True
@@ -597,9 +678,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         applyCircuitInner[qureg_, withBackup_, showProgress:1, circCodes__] :=
             Monitor[
                 (* local private variable, updated by backend *)
-                circuitProgressVar = 0;
+                calcProgressVar = 0;
                 ApplyCircuitInternal[qureg, withBackup, showProgress, circCodes],
-                ProgressIndicator[circuitProgressVar]
+                ProgressIndicator[calcProgressVar]
             ]
         ApplyCircuit[qureg_Integer, {}, OptionsPattern[ApplyCircuit]] :=
             {}
@@ -607,8 +688,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	With[
         		{codes = codifyCircuit[circuit]},
         		Which[
-        			Not @ AllTrue[codes[[4]], NumericQ, 2],
-                    Message[ApplyCircuit::error, "Circuit contains non-numerical parameters!"]; $Failed,
+        			Not @ AllTrue[codes[[4]], Internal`RealValuedNumericQ, 2],
+                    Message[ApplyCircuit::error, "Circuit contains non-numerical or non-real parameters!"]; $Failed,
                     Not @ Or[OptionValue[WithBackup] === True, OptionValue[WithBackup] === False],
                     Message[ApplyCircuit::error, "Option WithBackup must be True or False."]; $Failed,
                     Not @ Or[OptionValue[ShowProgress] === True, OptionValue[ShowProgress] === False],
@@ -651,6 +732,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         encodeDerivParams[Subscript[Rx|Ry|Rz|Ph|Damp|Deph|Depol, __][f_], x_] := {D[f,x]}
         encodeDerivParams[R[f_,_], x_] := {D[f,x]}
         encodeDerivParams[G[f_], x_] := {D[f,x]}
+        encodeDerivParams[Fac[f_], x_] := With[{df=D[f,x]}, {Re@N@df, Im@N@df}]
         encodeDerivParams[Subscript[U|Matr|UNonNorm, __][matr_], x_] := With[
             {dm = D[matr,x]}, Riffle[Re @ Flatten @ dm, Im @ Flatten @ dm]]
         encodeDerivParams[Subscript[Kraus|KrausNonTP, __][matrs_List], x_] := 
@@ -679,8 +761,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             encodedCirc = codifyCircuit[(circuit /. varVals)];
             
             (* validate the circuit contains no unspecified variables *)
-            If[Not @ AllTrue[encodedCirc[[4]], NumericQ, 2],
-                Throw @ "The circuit contained variables which were not assigned values!"];
+            If[Not @ AllTrue[encodedCirc[[4]], Internal`RealValuedNumericQ, 2],
+                Throw @ "The circuit contained variables which were not assigned real values!"];
 
             (* differentiate gate args, and pack for backend (without yet making numerical) *)
             derivParams = MapThread[encodeDerivParams, 
@@ -710,7 +792,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          * derivatives
          *)
 
-        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, derivQuregs:{__Integer}, workQuregs:(_Integer|{__Integer}):-1] :=  
+        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, derivQuregs:{__Integer}, workQuregs:(_Integer|{__Integer}):-1] :=  
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* check each var corresponds to a deriv qureg *)
@@ -727,7 +809,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     unpackEncodedDerivCircTerms @ encodedDerivTerms]]
         CalcQuregDerivs[___] := invalidArgError[CalcQuregDerivs]
         
-        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, paulis_?isValidPauliString, workQuregs:{___Integer}:{}] :=
+        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, paulis_?isValidPauliString, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
@@ -744,16 +826,16 @@ The probability of the forced measurement outcome (if hypothetically not forced)
 
         CalcExpecPauliStringDerivs[___] := invalidArgError[CalcExpecPauliStringDerivs]
         
-        CalcGeometricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?NumericQ) ..}, workQuregs:{___Integer}:{}] :=
+        CalcMetricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms, retArrs},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
                 ret = Catch @ encodeDerivCirc[circuit, varVals];
                 If[Head@ret === String,
-                    Message[CalcGeometricTensor::error, ret]; Return @ $Failed];
+                    Message[CalcMetricTensor::error, ret]; Return @ $Failed];
                 (* send to backend, mapping Mathematica indices to C++ indices *)
                 {encodedCirc, encodedDerivTerms} = ret;
-                data = CalcGeometricTensorInternal[
+                data = CalcMetricTensorInternal[
                     initQureg, workQuregs,
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms];
@@ -762,7 +844,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     MapThread[#1 + I #2 &, {data[[1]], data[[2]]}], 
                     Length[varVals] {1,1}]]]
                     
-        CalcGeometricTensor[__] := invalidArgError[CalcGeometricTensor]
+        CalcMetricTensor[__] := invalidArgError[CalcMetricTensor]
         
         
         
@@ -896,7 +978,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         
         CalcPauliStringMinEigVal[paulis_?isValidPauliString, MaxIterations -> its_Integer] := With[
             {matr = CalcPauliExpressionMatrix[paulis]},
-            - Eigenvalues[- matr, 1, Method -> {"Arnoldi", MaxIterations -> its, "Criteria" -> "RealPart"}]]
+            - First @ Eigenvalues[- matr, 1, Method -> {"Arnoldi", MaxIterations -> its, "Criteria" -> "RealPart"}]]
         CalcPauliStringMinEigVal[paulis_?isValidPauliString] :=
             CalcPauliStringMinEigVal[paulis, MaxIterations -> 10^5]
         CalcPauliStringMinEigVal[___] := invalidArgError[CalcPauliStringMinEigVal]
@@ -922,7 +1004,133 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 ] &) /@ ReadList[addr, Number, RecordLists -> True];
         GetPauliStringFromCoeffs[___] := invalidArgError[GetPauliStringFromCoeffs]
         
+        GetRandomPauliString[
+            numQubits_Integer?Positive, numTerms:(_Integer?Positive|Automatic|All):Automatic, 
+            {minCoeff_?Internal`RealValuedNumericQ, maxCoeff_?Internal`RealValuedNumericQ}
+        ] := With[
+            {numUniqueTensors = 4^numQubits},
+            (* give warning if too many terms requested *)
+            If[ NumericQ[numTerms] && numTerms > numUniqueTensors,
+                Message[GetRandomPauliString::error, "More terms were requested than there are unique Pauli tensors. Hide this warning with Quiet[]."]]; 
+            With[
+                {strings = Table[
+                    (* generate uniformly random coefficients *)
+                    RandomReal[{minCoeff,maxCoeff}] * 
+                    Times @@ (
+                        (* generate uniformly random but unique Pauli tensors *)
+                        MapThread[Subscript[#1, #2]&, {
+                            IntegerDigits[tensorInd, 4, numQubits] /. {0->Id,1->X,2->Y,3->Z},
+                            Range[0,numQubits-1]}
+                            ] /. Subscript[Id, _]->Nothing /. {} -> {Subscript[Id, 0]}),
+                        {tensorInd, RandomSample[0;;(numUniqueTensors-1), 
+                    (* potentially override the number of terms/tensors *)
+                    Min[numTerms /. {Automatic -> 4 numQubits^4, All -> numUniqueTensors}, numUniqueTensors]]}]},
+                (* append an Id with max target qubits on the ened for user convenience, if not already a max target  *)
+                Plus @@ If[
+                    FreeQ[ Last @ strings, Subscript[_Symbol, numQubits-1]],
+                    Append[Most @ strings, (Last @ strings) Subscript[Id,numQubits-1]],
+                    strings]]]
+        GetRandomPauliString[numQubits_Integer?Positive, numTerms:(_Integer?Positive|Automatic|All):Automatic] :=
+            GetRandomPauliString[numQubits, numTerms, {-1,1}]
+        GetRandomPauliString[___] := invalidArgError[GetRandomPauliString]
+        
+        
+        
+        (*
+         * Analytic and numerical channel decompositions for statevector simulation
+         *)
+         
+        convertOpToPureCircs[Subscript[(Kraus|KrausNonTP), q__][matrs:{ __?MatrixQ }]] := 
+        	Circuit /@ Subscript[Matr, q] /@ matrs
+        convertOpToPureCircs[Subscript[Deph, q_][x_]] := {
+        	Circuit[ Fac@Sqrt[1-x] ],
+        	Circuit[ Fac@Sqrt[x] Subscript[Z, q] ] }
+        convertOpToPureCircs[Subscript[Deph, q1_,q2_][x_]] := {
+        	Circuit[ Fac@Sqrt[1-x] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q1] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q2] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q1] Subscript[Z, q2] ]}
+        convertOpToPureCircs[Subscript[Depol, q_][x_]] := {
+        	Circuit[ Fac@Sqrt[1-x] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[X, q] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[Y, q] ],
+        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q] ]}
+        convertOpToPureCircs[Subscript[Depol, q1_,q2_][x_]] := 
+        	Join[{{Fac@Sqrt[1-x]}}, Rest @ Flatten[
+        		Table[{Fac@Sqrt[x/15], Subscript[a, q1], Subscript[b, q2]}, {a,{Id,X,Y,Z}}, {b,{Id,X,Y,Z}}] /. Subscript[Id, _] -> Nothing, 1]]
+        convertOpToPureCircs[g:Subscript[Damp, q_][x_]] :=
+        	convertOpToPureCircs @ First @ GetCircuitGeneralised @ g
+        convertOpToPureCircs[g_] :=
+        	{{g}} (* non-decoherence ops have no alternatives *)
+            
+        GetCircuitsFromChannel[circ_?isCircuitFormat ] := With[
+            {choices = convertOpToPureCircs /@ circ},
+            {numCircs = Times @@ Length /@ choices},
+            If[Ceiling @ Log2[numCircs] > $SystemWordLength,
+                Message[GetCircuitsFromChannel::error, "The number of unique circuit decompositions exceeds 2^$SystemWordLength and cannot be enumerated."]; $Failed,
+        	       Flatten /@ Tuples[choices]]]
+        GetCircuitsFromChannel[___] := invalidArgError[GetCircuitsFromChannel]
+        
+        GetRandomCircuitFromChannel[ channel_?isCircuitFormat ] := With[
 
+        	(* get circuit decompositions of each  operator *)
+        	{circs = convertOpToPureCircs /@ channel},
+        	
+        	(* infer the probabilities from Fac[] in coherent noise, and assert uniform incoherent noise *)
+        	{probs = Table[
+        		Times @@ (Cases[choice, Fac[x_]:>Abs[x]^2] /. {}->{1/N@Length@choices}), 
+        		{choices, circs}, {choice, choices}]},
+        	
+        	(* validate probabilities *)
+        	If[ Not[And @@ Table[
+        		VectorQ[probset, Internal`RealValuedNumericQ] &&
+        		AllTrue[probset, (0 <= # <= 1&)] &&
+        		Abs[Total[probset] - 1] < 10^6 $MachineEpsilon, 
+        		{probset, probs}]],
+        			Message[GetRandomCircuitFromChannel::error, "The probabilities of a decomposition of a decoherence operator were invalid and/or unnormalised."];
+        			Return[$Failed]];
+
+        	(* randomly select a pure circuit from each channel decomposition *)
+        	Flatten @ MapThread[
+        		With[{choice=RandomChoice[#1 -> #2]}, 
+        			(* we must multiply the matrices of incoherent noise with the asserted uniform probability *)
+        			If[ Length[#1]>1 && Not @ MemberQ[choice, Fac[_]],
+        				(* which we can equivalently perform with a Fac gate *)
+        				Join[{Fac[Sqrt@N@Length[#1]], choice}],
+        				choice /. Fac[_]->Nothing]] &,
+        		{probs, circs}]
+        ]
+        GetRandomCircuitFromChannel[___] := invalidArgError[GetRandomCircuitFromChannel]
+        
+        Options[SampleExpecPauliString] = {
+            ShowProgress -> False
+        };
+        
+        sampleExpecPauliStringInner[True, args__] :=
+            Monitor[
+                (* local private variable, updated by backend *)
+                calcProgressVar = 0;
+                SampleExpecPauliStringInternal[1, args],
+                ProgressIndicator[calcProgressVar]]
+        sampleExpecPauliStringInner[False, args__] :=
+            SampleExpecPauliStringInternal[0, args]
+         
+        SampleExpecPauliString[qureg_Integer, channel_?isCircuitFormat, paulis_?isValidPauliString, numSamples:(_Integer|All), {work1_Integer, work2_Integer}, OptionsPattern[]] /; (work1 === work2 === -1 || And[work1 =!= -1, work2 =!= -1]) :=
+            If[numSamples =!= All && numSamples >= 2^63, 
+                Message[SampleExpecPauliString::error, "The requested number of samples is too large, and exceeds the maximum C long integer (2^63)."]; $Failed,
+                With[{codes = codifyCircuit[channel]},
+                    If[
+                        Not @ AllTrue[codes[[4]], Internal`RealValuedNumericQ, 2],
+                        Message[SampleExpecPauliString::error, "Circuit contains non-numerical or non-real parameters!"]; $Failed,
+                        sampleExpecPauliStringInner[
+                            OptionValue[ShowProgress],
+                            qureg, work1, work2, numSamples /. (All -> -1),
+                            unpackEncodedCircuit[codes],
+                            Sequence @@ getEncodedPauliString[paulis]]]]]
+        SampleExpecPauliString[qureg_Integer, channel_?isCircuitFormat, paulis_?isValidPauliString, numSamples:(_Integer|All), opts:OptionsPattern[]] :=
+            SampleExpecPauliString[qureg, channel, paulis, numSamples, {-1, -1}, opts]
+        SampleExpecPauliString[___] := invalidArgError[SampleExpecPauliString]
+    
         
         (*
          * QuESTEnv management 
@@ -1381,24 +1589,25 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          *)
          
         (* convert symbolic gate form to {symbol, ctrls, targets} *)
-        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]] ]] := {Join[{R}, {paulis}[[All,1]]], {ctrls}, {paulis}[[All,2]]}
-        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Subscript[pauli:(X|Y|Z), targ_Integer]] ]] := {{R,pauli}, {ctrls}, {targ}}
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Verbatim[Times][paulis:Subscript[pauliCodePatt, _Integer]..]] ]] := {Join[{R}, {paulis}[[All,1]]], {ctrls}, {paulis}[[All,2]]}
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Subscript[pauli:pauliCodePatt, targ_Integer]] ]] := {{R,pauli}, {ctrls}, {targ}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] := {gate, {},{targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] := {gate, {}, {targs}}
-        getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]]] := {Join[{R}, {paulis}[[All,1]]], {}, {paulis}[[All,2]]}
+        getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:Subscript[pauliCodePatt, _Integer]..]]] := {Join[{R}, {paulis}[[All,1]]], {}, {paulis}[[All,2]]}
         getSymbCtrlsTargs[R[arg_, Subscript[pauli:(X|Y|Z), targ_Integer]]] := {{R,pauli}, {}, {targ}}
-            (* little hack to enable G[x] in GetCircuitColumns *)
+            (* little hack to enable G[x] and Fac[y] in GetCircuitColumns *)
             getSymbCtrlsTargs[G[x_]] := {G, {}, {}}
+            getSymbCtrlsTargs[Fac[x_]] := {Fac, {}, {}}
 
         (* deciding how to handle gate placement *)
         getQubitInterval[{ctrls___}, {targs___}] :=
         	Interval @ {Min[ctrls,targs],Max[ctrls,targs]}
         getNumQubitsInCircuit[circ_List] :=
-        	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], \[Infinity]],    
-        		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], \[Infinity]]]
-        isContiguousBlockGate[(SWAP|M|Rz|Ph|X|R|{R, (X|Y|Z)..})] := False
+        	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], Infinity],    
+        		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], Infinity]] /. -Infinity -> 1  (* assume G and Fac circuits are 1 qubit *)
+        isContiguousBlockGate[(SWAP|M|Rz|Ph|X|R|{R, pauliCodePatt..})] := False
         isContiguousBlockGate[_] := True
         needsSpecialSwap[label_, _List] /; Not[isContiguousBlockGate[label]] := False
         needsSpecialSwap[label_Symbol, targs_List] :=
@@ -1451,6 +1660,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         (* single qubit gate graphics *)
         drawGate[Id, {}, {targs___}, col_] :=
             {}
+        drawGate[visibleId, {}, {targ_}, col_] := {
+            drawSingleBox[targ, col],
+            Text["\[DoubleStruckOne]", {col+.5,targ+.5}]
+        }
+        drawGate[visibleId, {}, {targs___}, col_] :=
+            drawGate[visibleId, {}, #, col]& /@ {targs}
         drawGate[M, {}, {targs___}, col_] :=
         	Table[{
         		drawSingleBox[targ,col],
@@ -1471,9 +1686,15 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         drawGate[Rz, {}, targs_List, col_] := {
             Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
             Sequence @@ (drawGate[Rz, {}, {#1}, col]& /@ targs)}
-        drawGate[{R, rots:(X|Y|Z)..}, {}, targs_List, col_] := {
+        drawGate[{R, rots:pauliCodePatt..}, {}, targs_List, col_] := {
             Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
-            Sequence @@ MapThread[drawGate[#1/.{X->Rx,Y->Ry,Z->Rz}, {}, {#2}, col]&, {{rots}, targs}]}
+            Sequence @@ MapThread[drawGate[#1/.{X->Rx,Y->Ry,Z->Rz,Id->visibleId}, {}, {#2}, col]&, {{rots}, targs}]}
+        drawGate[G, {}, targs_List, col_] /; (isContiguousBlockGate[label] && Union@Differences@Sort@targs=={1}) := {
+            drawMultiBox[Min[targs], Length[targs], col],
+            Text["e"^"i\[Theta]", {col+.5,Mean[targs]+.5}]}
+        drawGate[Fac, {}, targs_List, col_] /; (isContiguousBlockGate[label] && Union@Differences@Sort@targs=={1}) := {
+            drawMultiBox[Min[targs], Length[targs], col],
+            Text[Rotate["factor",Pi/2], {col+.5,Mean[targs]+.5}]}
         drawGate[label_Symbol, {}, targs_List, col_] /; (isContiguousBlockGate[label] && Union@Differences@Sort@targs=={1}) := {
             drawMultiBox[Min[targs], Length[targs], col],
             Text[SymbolName@label, {col+.5,Mean[targs]+.5}]}
@@ -1578,7 +1799,10 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 
                 (* for each subcircuit... *)
                 Table[
-                    gates = compactCirc[compactFlag][subcirc /. G[_] -> Nothing];
+                    gates = compactCirc[compactFlag][subcirc /. {
+                        (* hackily replace qubit-free gates full-state contiguous gate *)
+                        G[_] -> Subscript[G, Range[0,numQubits-1] ], 
+                        Fac[_] -> Subscript[Fac, Range[0,numQubits-1] ]}];
                     subcircInd++;
                     isFirstGate = True;
                 
@@ -1938,6 +2162,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getAnalGateMatrix[Subscript[U|Matr|UNonNorm, __][m_]] = m;
         getAnalGateMatrix[Subscript[Ph, t__][a_]] = DiagonalMatrix[ Append[ConstantArray[1, 2^Length[{t}] - 1], Exp[I a]] ];
         getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
+        getAnalGateMatrix[Fac[a_]] := a {{1,0},{0,1}}; (* will not be conjugated for density matrices *)
         getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]]; (* KroneckerProduct doesn't have a one-arg identity overload?? Bah *)
         getAnalGateMatrix[Subscript[Ry, _][a_]] = MatrixExp[-I a/2 PauliMatrix[2]];
         getAnalGateMatrix[Subscript[Rz, _][a_]] = MatrixExp[-I a/2 PauliMatrix[3]];
@@ -1962,23 +2187,23 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getAnalGateTargets[Subscript[_, t__]] := {t}
         getAnalGateTargets[Subscript[_, t__][_]] := {t}
         
-        (* declaring optional args to ApplyCircuit *)
         Options[CalcCircuitMatrix] = {
-            AsSuperoperator -> Automatic
+            AsSuperoperator -> Automatic,
+            AssertValidChannels -> True
         };
         
         (* convert a symbolic circuit channel into an analytic matrix *)
         CalcCircuitMatrix[gates_List, numQb_Integer, OptionsPattern[]] /; MemberQ[gates, Subscript[Damp|Deph|Depol|Kraus|KrausNonTP, __][__]] := 
             If[OptionValue[AsSuperoperator] =!= True && OptionValue[AsSuperoperator] =!= Automatic,
                 (Message[CalcCircuitMatrix::error, "The input circuit contains decoherence channels and must be calculated as a superoperator."]; $Failed),
-                With[{superops = GetCircuitSuperoperator[gates, numQb]},
+                With[{superops = GetCircuitSuperoperator[gates, numQb, AssertValidChannels -> OptionValue[AssertValidChannels]]},
                     If[superops === $Failed,
                     (Message[CalcCircuitMatrix::error, "Could not prepare superoperator, as per the above error."]; $Failed),
                     CalcCircuitMatrix[superops, 2*numQb]]]]
         (* convert a symbolic pure circuit into an analytic matrix *)
         CalcCircuitMatrix[gates_List, numQb_Integer, OptionsPattern[]] := 
             If[OptionValue[AsSuperoperator] === True,
-                With[{superops = GetCircuitSuperoperator[gates, numQb]},
+                With[{superops = GetCircuitSuperoperator[gates, numQb, AssertValidChannels -> OptionValue[AssertValidChannels]]},
                     If[superops === $Failed,
                     (Message[CalcCircuitMatrix::error, "Could not prepare superoperator, as per the above error."]; $Failed),
                     CalcCircuitMatrix[superops, 2*numQb]]],
@@ -2022,8 +2247,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             			(* the PauliMatrix[0] Kraus operator is duplicated, insignificantly *)
             			If[n1===0 && n2===0, Nothing, Sqrt[p/15] KroneckerProduct[PauliMatrix[n1], PauliMatrix[n2]]],
             			{n1,{0,1,2,3}}, {n2,{0,1,2,3}}], 1]]],
-            	(* global phase becomes a fac*identity on the first qubit *)
-            	G[x_] :> Subscript[U, 0][ Exp[I x] IdentityMatrix[2]],
+            	(* global phase and fac become a fac*identity on the first qubit *)
+                G[x_] :> Subscript[U, 0][ Exp[I x] IdentityMatrix[2] ],
+                Fac[x_] :> Subscript[Matr, 0][ x IdentityMatrix[2] ],  (* will not be conjugated for density matrices *)
                 (* Matr and UNonNorm gates remain the same *)
                 g:(Subscript[Matr|UNonNorm, q__Integer|{q__Integer}][m_]) :> g,
             	(* controlled gates are turned into U of identities with bottom-right submatrix *)
@@ -2060,12 +2286,17 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getChannelAssumps[_] := Nothing
         
         shiftInds[q__Integer|{q__Integer}, numQb_] := Sequence @@ (List[q]+numQb)
+        
+        Options[GetCircuitSuperoperator] = {
+            AssertValidChannels -> True
+        };
     
-        GetCircuitSuperoperator[circ_List, numQb_] := With[
+        GetCircuitSuperoperator[circ_List, numQb_Integer, OptionsPattern[]] := With[
             {superops = Flatten @ Replace[circ, {
+            (* qubit-agnostic gates *)
+                G[x_] :> Nothing,
+                Fac[x_] :> {Fac[x]},
             (* unitaries *)
-            	(* global phase does nothing! *)
-            	G[x_] :> Nothing,
             	(* real gates (self conjugate) *)
             	Subscript[(g:H|X|Z), q__Integer|{q__Integer}] :> {Subscript[g, q], Subscript[g, shiftInds[q,numQb]]},
             	g:Subscript[P, q__Integer|{q__Integer}][v_] :> {g, Subscript[P, shiftInds[q,numQb]][v]},
@@ -2097,7 +2328,14 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             	g:Subscript[(Damp|Depol|Deph), q__Integer|{q__Integer}][x_] :> 
             		With[{op = GetCircuitSuperoperator[GetCircuitGeneralised[g], numQb]},
                         (* and are then simplified by asserting trace-preservation *)
-                        Simplify[op, getChannelAssumps[g]]],
+                        If[ OptionValue[AssertValidChannels], 
+                            With[{assumps = Quiet @ Check[getChannelAssumps[g], False]},
+                                (* although if CPTP is impossible, default to unsimplified, with warning *)
+                                If[ assumps =!= False, 
+                                    Simplify[op, assumps],
+                                    Message[GetCircuitSuperoperator::error, "The channels could not be asserted as completely positive trace-preserving maps and hence were not simplified. Hide this warning with AssertValidChannels -> False, or use Quiet[]."];
+                                    op]], 
+                            op]],
             (* wrap unrecognised gates in dummy Head *)
             	g_ :> unrecognisedGateInSuperopCirc[g]
             (* replace at top level *)
@@ -2107,8 +2345,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 (Message[GetCircuitSuperoperator::error, "Circuit contained an unrecognised or unsupported gate: " <> 
                     ToString @ StandardForm @ First @ Cases[superops, unrecognisedGateInSuperopCirc[g_] :> g, Infinity]];
                     $Failed)]]
-        GetCircuitSuperoperator[circ_List] := 
-            GetCircuitSuperoperator[circ, getNumQubitsInCircuit[circ]]
+        GetCircuitSuperoperator[circ_List, opts:OptionsPattern[]] := 
+            GetCircuitSuperoperator[circ, getNumQubitsInCircuit[circ], opts]
         GetCircuitSuperoperator[___] := invalidArgError[GetCircuitSuperoperator]
         
         
@@ -2816,6 +3054,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getInverseGate[Subscript[T, q_]] := Subscript[Ph, q][-Pi/4]
         getInverseGate[Subscript[S, q_]] := Subscript[Ph, q][-Pi/2]
         getInverseGate[G[x_]] := G[-x]
+        getInverseGate[Fac[x_]] := Fac[1/x]
         getInverseGate[Subscript[(g:U|UNonNorm), q__][m_?MatrixQ]] := Subscript[g, q][ConjugateTranspose[m]]
         getInverseGate[Subscript[Matr, q__][m_?MatrixQ]] := Subscript[Matr, q][Inverse[m]]
         getInverseGate[g:Subscript[C, c__][h_]] := With[
@@ -2917,6 +3156,18 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         					{ {a___, G[x_], b___, G[y_], c___} } :> {G[x+y//Simplify], a, b, c},
         					{ {a___, G[x_], b___}, infix___, {c___, G[y_], d___} } :> Sequence[{G[x+y//Simplify],a,b}, infix, {c,d}]
         				},
+                        (* merge all factors *)
+                        {
+        					{ {a___, Fac[x_], b___, Fac[y_], c___} } :> {Fac[x y //Simplify], a, b, c},
+        					{ {a___, Fac[x_], b___}, infix___, {c___, Fac[y_], d___} } :> Sequence[{Fac[x y //Simplify],a,b}, infix, {c,d}]
+        				},
+                        (* merge factors and global phases *)
+                        {
+                            { {a___, Fac[x_], b___, G[y_], c___} } :> {Fac[x Exp[y I] //Simplify], a, b, c},
+                            { {a___, G[y_], b___, Fac[x_], c___} } :> {Fac[x Exp[y I] //Simplify], a, b, c},
+        					{ {a___, Fac[x_], b___}, infix___, {c___, G[y_], d___} } :> Sequence[{Fac[x Exp[y I] //Simplify],a,b}, infix, {c,d}],
+                            { {a___, G[y_], b___}, infix___, {c___, Fac[x_], d___} } :> Sequence[{Fac[x Exp[y I] //Simplify],a,b}, infix, {c,d}]
+                        },
         				(* merge adjacent Pauli operators *)
         				{
         					{ {a___, Subscript[X, q__], b___}, {c___, Subscript[Y, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[Z, q],b},{c,d}],
@@ -2951,6 +3202,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         				Subscript[(Ph|Rx|Ry|Rz|Damp|Deph|Depol), __][0] -> Nothing,
         				R[0,_] -> Nothing,
         				G[0] -> Nothing,
+                        Fac[1|1.] -> Nothing,
+                        Fac[x_ /; (Abs[x] === 1)] -> G[ ArcTan[Re@x, Im@x] ],
         				(* remove identity matrices (qubits are sorted) *)
         				Subscript[U|Matr|UNonNorm, q__][m_] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
         				(* simplify known parameters to within their periods *)
@@ -3074,6 +3327,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                         reps]]]
         GetKnownCircuit["LowDepthAnsatz", reps_Integer, paramSymbol_Symbol, numQubits_Integer] :=
             GetKnownCircuit["LowDepthAnsatz", reps, paramSymbol, Range[0,numQubits-1]]
+            
+        GetKnownCircuit[___] := invalidArgError[GetKnownCircuit]
 
     End[ ]
                                        
@@ -3085,3 +3340,4 @@ Needs["QuEST`Gate`"]
 
 Needs["QuEST`DeviceSpec`"]
 
+Needs["QuEST`Deprecated`"]

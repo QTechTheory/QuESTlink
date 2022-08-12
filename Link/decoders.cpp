@@ -21,101 +21,21 @@
 
 
 /*
- * matrix formatters
- */
- 
-ComplexMatrix2 local_getMatrix2FromFlatList(qreal* list) {
-    int dim = 2;
-    ComplexMatrix2 m;
-    for (int r=0; r<dim; r++)
-        for (int c=0; c<dim; c++) {
-            m.real[r][c] = list[2*(dim*r+c)];
-            m.imag[r][c] = list[2*(dim*r+c)+1];
-        }
-    return m;
-}
-
-ComplexMatrix4 local_getMatrix4FromFlatList(qreal* list) {
-    int dim = 4;
-    ComplexMatrix4 m;
-    for (int r=0; r<dim; r++)
-        for (int c=0; c<dim; c++) {
-            m.real[r][c] = list[2*(dim*r+c)];
-            m.imag[r][c] = list[2*(dim*r+c)+1];
-        }
-    return m;
-}
-
-void local_setMatrixNFromFlatList(qreal* list, ComplexMatrixN m, int numQubits) {
-    long long int dim = (1LL << numQubits);
-    for (long long int r=0; r<dim; r++)
-        for (long long int c=0; c<dim; c++) {
-            m.real[r][c] = list[2*(dim*r+c)];
-            m.imag[r][c] = list[2*(dim*r+c)+1];
-        }
-}
-
-void local_setFlatListFromMatrixN(qreal* list, ComplexMatrixN m, int numQubits) {
-    long long int dim = (1LL << numQubits);
-    for (long long int r=0; r<dim; r++)
-        for (long long int c=0; c<dim; c++) {
-            list[2*(dim*r+c)]   = m.real[r][c];
-            list[2*(dim*r+c)+1] = m.imag[r][c];
-        }
-}
-
-void local_setFlatListToMatrixDagger(qreal* list, int numQubits) {
-    
-    int dim = (1 << numQubits);
-    
-    for (int r=0; r<dim; r++) {
-        for (int c=0; c<r; c++) {
-            
-            qreal tmpRe = list[2*dim*r + 2*c];
-            qreal tmpIm = list[2*dim*r + 2*c + 1];
-            
-            list[2*dim*r + 2*c]     =   list[2*dim*c + 2*r];
-            list[2*dim*r + 2*c + 1] = - list[2*dim*c + 2*r + 1];
-            
-            list[2*dim*c + 2*r]     =   tmpRe;
-            list[2*dim*c + 2*r + 1] = - tmpIm;
-        }
-    }
-    
-    for (int r=0; r<dim; r++)
-        list[2*dim*r + 2*r + 1] *= -1;
-}
-
-void local_createManyMatrixNFromFlatList(qreal* list, ComplexMatrixN* matrs, int numOps, int numQubits) {
-    long long int dim = (1LL << numQubits);
-    for (int i=0; i<numOps; i++) {
-        matrs[i] = createComplexMatrixN(numQubits);
-        local_setMatrixNFromFlatList(&list[2*dim*dim*i], matrs[i], numQubits);
-    }
-}
-
-long long int local_getNumScalarsToFormMatrix(int numQubits) {
-    long long int dim = (1LL << numQubits);
-    return dim*dim*2; // fac 2 for separate real and imag cmoponents
-}
-
-
-
-/*
  * Matrix sending 
  */
 
-void local_sendMatrixToMMA(qcomp** matrix, int dim) {
+void local_sendMatrixToMMA(qmatrix matrix) {
     
     // must store in heap, not stack, to avoid overflows
-    int len = dim*dim;
+    size_t dim = matrix.size();
+    size_t len = dim*dim;
     qreal* matrRe = (qreal*) malloc(len * sizeof *matrRe);
     qreal* matrIm = (qreal*) malloc(len * sizeof *matrIm);
     
     // unpack matrix into separate flat arrays
-    int i=0;
-    for (int r=0; r<dim; r++) {
-        for (int c=0; c<dim; c++) {
+    size_t i=0;
+    for (size_t r=0; r<dim; r++) {
+        for (size_t c=0; c<dim; c++) {
             matrRe[i] = real(matrix[r][c]);
             matrIm[i] = imag(matrix[r][c]);
             i++;
