@@ -1478,13 +1478,13 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          *)
          
         (* convert symbolic gate form to {symbol, ctrls, targets} *)
-        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]] ]] := {Join[{R}, {paulis}[[All,1]]], {ctrls}, {paulis}[[All,2]]}
-        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Subscript[pauli:(X|Y|Z), targ_Integer]] ]] := {{R,pauli}, {ctrls}, {targ}}
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Verbatim[Times][paulis:Subscript[pauliCodePatt, _Integer]..]] ]] := {Join[{R}, {paulis}[[All,1]]], {ctrls}, {paulis}[[All,2]]}
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Subscript[pauli:pauliCodePatt, targ_Integer]] ]] := {{R,pauli}, {ctrls}, {targ}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] := {gate, {},{targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] := {gate, {}, {targs}}
-        getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:Subscript[(X|Y|Z), _Integer]..]]] := {Join[{R}, {paulis}[[All,1]]], {}, {paulis}[[All,2]]}
+        getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:Subscript[pauliCodePatt, _Integer]..]]] := {Join[{R}, {paulis}[[All,1]]], {}, {paulis}[[All,2]]}
         getSymbCtrlsTargs[R[arg_, Subscript[pauli:(X|Y|Z), targ_Integer]]] := {{R,pauli}, {}, {targ}}
             (* little hack to enable G[x] and Fac[y] in GetCircuitColumns *)
             getSymbCtrlsTargs[G[x_]] := {G, {}, {}}
@@ -1496,7 +1496,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getNumQubitsInCircuit[circ_List] :=
         	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], Infinity],    
         		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], Infinity]] /. -Infinity -> 1  (* assume G and Fac circuits are 1 qubit *)
-        isContiguousBlockGate[(SWAP|M|Rz|Ph|X|R|{R, (X|Y|Z)..})] := False
+        isContiguousBlockGate[(SWAP|M|Rz|Ph|X|R|{R, pauliCodePatt..})] := False
         isContiguousBlockGate[_] := True
         needsSpecialSwap[label_, _List] /; Not[isContiguousBlockGate[label]] := False
         needsSpecialSwap[label_Symbol, targs_List] :=
@@ -1549,6 +1549,12 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         (* single qubit gate graphics *)
         drawGate[Id, {}, {targs___}, col_] :=
             {}
+        drawGate[visibleId, {}, {targ_}, col_] := {
+            drawSingleBox[targ, col],
+            Text["\[DoubleStruckOne]", {col+.5,targ+.5}]
+        }
+        drawGate[visibleId, {}, {targs___}, col_] :=
+            drawGate[visibleId, {}, #, col]& /@ {targs}
         drawGate[M, {}, {targs___}, col_] :=
         	Table[{
         		drawSingleBox[targ,col],
@@ -1569,9 +1575,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         drawGate[Rz, {}, targs_List, col_] := {
             Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
             Sequence @@ (drawGate[Rz, {}, {#1}, col]& /@ targs)}
-        drawGate[{R, rots:(X|Y|Z)..}, {}, targs_List, col_] := {
+        drawGate[{R, rots:pauliCodePatt..}, {}, targs_List, col_] := {
             Line[{{col+.5,Min[targs]+.5},{col+.5,Max[targs]+.5}}],
-            Sequence @@ MapThread[drawGate[#1/.{X->Rx,Y->Ry,Z->Rz}, {}, {#2}, col]&, {{rots}, targs}]}
+            Sequence @@ MapThread[drawGate[#1/.{X->Rx,Y->Ry,Z->Rz,Id->visibleId}, {}, {#2}, col]&, {{rots}, targs}]}
         drawGate[G, {}, targs_List, col_] /; (isContiguousBlockGate[label] && Union@Differences@Sort@targs=={1}) := {
             drawMultiBox[Min[targs], Length[targs], col],
             Text["e"^"i\[Theta]", {col+.5,Mean[targs]+.5}]}
