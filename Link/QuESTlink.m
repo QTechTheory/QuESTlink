@@ -2218,7 +2218,13 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             		With[{op = GetCircuitSuperoperator[GetCircuitGeneralised[g], numQb]},
                         (* and are then simplified by asserting trace-preservation *)
                         If[ OptionValue[AssertValidChannels], 
-                            Simplify[op, getChannelAssumps[g]], op]],
+                            With[{assumps = Quiet @ Check[getChannelAssumps[g], False]},
+                                (* although if CPTP is impossible, default to unsimplified, with warning *)
+                                If[ assumps =!= False, 
+                                    Simplify[op, assumps],
+                                    Message[GetCircuitSuperoperator::error, "The channels could not be asserted as completely positive trace-preserving maps and hence were not simplified. Hide this warning with AssertValidChannels -> False, or use Quiet[]."];
+                                    op]], 
+                            op]],
             (* wrap unrecognised gates in dummy Head *)
             	g_ :> unrecognisedGateInSuperopCirc[g]
             (* replace at top level *)
@@ -3210,6 +3216,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                         reps]]]
         GetKnownCircuit["LowDepthAnsatz", reps_Integer, paramSymbol_Symbol, numQubits_Integer] :=
             GetKnownCircuit["LowDepthAnsatz", reps, paramSymbol, Range[0,numQubits-1]]
+            
+        GetKnownCircuit[___] := invalidArgError[GetKnownCircuit]
 
     End[ ]
                                        
