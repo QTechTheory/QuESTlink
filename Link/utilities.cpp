@@ -63,10 +63,10 @@ void local_setFlatListFromQmatrix(qreal* list, qmatrix m) {
 
 void local_setFlatListToMatrixDagger(qreal* list, int numQubits) {
     
-    int dim = (1 << numQubits);
+    long long int dim = (1LL << numQubits);
     
-    for (int r=0; r<dim; r++) {
-        for (int c=0; c<r; c++) {
+    for (long long int r=0; r<dim; r++) {
+        for (long long int c=0; c<r; c++) {
             
             qreal tmpRe = list[2*dim*r + 2*c];
             qreal tmpIm = list[2*dim*r + 2*c + 1];
@@ -79,7 +79,7 @@ void local_setFlatListToMatrixDagger(qreal* list, int numQubits) {
         }
     }
     
-    for (int r=0; r<dim; r++)
+    for (long long int r=0; r<dim; r++)
         list[2*dim*r + 2*r + 1] *= -1;
 }
 
@@ -127,7 +127,7 @@ qvector local_getQvector(int dim) {
 qmatrix local_getQmatrix(int dim) {
     
     qmatrix matr = qmatrix(dim);
-    for (size_t i=0; i<dim; i++)
+    for (int i=0; i<dim; i++)
         matr[i].resize(dim);
         
     return matr;
@@ -138,8 +138,8 @@ qmatrix local_getQmatrixFromFlatList(qreal* flatElems, int dim) {
     qmatrix matr = local_getQmatrix(dim);
         
     int n = 0;
-    for (size_t i=0; i<dim; i++)
-        for (size_t j=0; j<dim; j++) {
+    for (int i=0; i<dim; i++)
+        for (int j=0; j<dim; j++) {
             matr[i][j] = qcomp(flatElems[n], flatElems[n+1]);
             n += 2;
         }
@@ -181,7 +181,7 @@ qmatrix local_getConjugate(qmatrix m) {
 qmatrix local_getKrausSuperoperatorFromFlatList(qreal* flatElems, int numQubits) {
     
     int numOps = (int) flatElems[0];
-    long long int numCols = (1 << numQubits); // = numRows
+    long long int numCols = (1LL << numQubits); // = numRows
     
     qmatrix superOp = local_getQmatrix(numCols*numCols);
 

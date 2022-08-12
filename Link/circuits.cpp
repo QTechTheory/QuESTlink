@@ -102,25 +102,195 @@ std::string Gate::getOpcodeStr() {
     return "opcode: " + std::to_string(opcode);
 }
 
-void Gate::applyTo(Qureg qureg, qreal* outputs) {
+void Gate::validate() {
+    
+    /* This function only validates the meta-gate conventions like number of 
+     * targets and parameters. It does not validate whether a qubit is in bounds,
+     * or whether the parameter values are normalised, or other run-time validations 
+     * performed by the QuEST backend. 
+     */
     
     switch(opcode) {
         
+        case OPCODE_G :
+            if (numParams != 1)
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 1); // throws
+            if (numCtrls != 0)
+                throw local_gateUnsupportedExcep("controlled " + getOpcodeStr()); // throws
+            if (numTargs != 0)
+                throw local_wrongNumGateTargsExcep(getOpcodeStr(), numTargs, "0 targets"); // throws
+            return;
+            
+        case OPCODE_Fac :
+            if (numParams != 2)
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 2); // throws
+            if (numCtrls != 0)
+                throw local_gateUnsupportedExcep("controlled " + getOpcodeStr()); // throws
+            if (numTargs != 0)
+                throw local_wrongNumGateTargsExcep(getOpcodeStr(), numTargs, "0 targets"); // throws
+            return;
+            
+        case OPCODE_Id :
+        case OPCODE_X : 
+            if (numParams != 0)
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 0); // throws
+            return;
+                
         case OPCODE_H :
             if (numParams != 0)
-                throw local_wrongNumGateParamsExcep("Hadamard", numParams, 0); // throws
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 0); // throws
             if (numCtrls != 0)
-                throw local_gateUnsupportedExcep("controlled Hadamard"); // throws
+                throw local_gateUnsupportedExcep("controlled " + getOpcodeStr()); // throws
             if (numTargs != 1)
-                throw local_wrongNumGateTargsExcep("Hadamard", numTargs, "1 target"); // throws
+                throw local_wrongNumGateTargsExcep(getOpcodeStr(), numTargs, "1 target"); // throws
+            return;
+            
+        case OPCODE_S :
+        case OPCODE_T :
+            if (numParams != 0)
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 0); // throws
+            if (numTargs != 1)
+                throw local_wrongNumGateTargsExcep(getOpcodeStr(), numTargs, "1 target"); // throws
+            return;
+                    
+        case OPCODE_Ph :
+            if (numParams != 1)
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 1); // throws
+            if (numCtrls + numTargs < 1)
+                throw local_wrongNumGateTargsExcep(getOpcodeStr(), numCtrls + numTargs, "at least 1 qubit (between control and target qubits)"); // throws
+            return;
+
+        case OPCODE_Y :
+            if (numParams != 0)
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 0); // throws
+            if (numTargs != 1)
+                throw local_wrongNumGateTargsExcep(getOpcodeStr(), numTargs, "1 target"); // throws
+            if (numCtrls > 1)
+                throw local_gateUnsupportedExcep("multi-controlled " + getOpcodeStr()); // throws
+            return;
+            
+        case OPCODE_Z :
+            if (numParams != 0)
+                throw local_wrongNumGateParamsExcep("Z", numParams, 0); // throws
+            if (numTargs != 1)
+                throw local_wrongNumGateTargsExcep("Z", numTargs, "1 target"); // throws
+            return;
+    
+        case OPCODE_Rx :
+        case OPCODE_Rz :
+        case OPCODE_Ry :
+            if (numParams != 1)
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 1); // throws
+            return;
+            
+        case OPCODE_R:
+            if (numTargs != numParams-1)
+                throw QuESTException("", 
+                    std::string("An internel error in " + getOpcodeStr() + " occured! ") +
+                    "The quest_link process received an unequal number of Pauli codes " + 
+                    "(" + std::to_string(numParams-1) + ") and target qubits " + 
+                    "(" + std::to_string(numTargs) + ")!"); // throws
+            return;
+        
+        case OPCODE_U :
+        case OPCODE_UNonNorm : 
+        case OPCODE_Matr : { ;
+            long long int dim = (1LL << numTargs);
+            if (numParams != 2 * dim*dim)
+                throw QuESTException("", std::to_string(numTargs) + "-qubit " + getOpcodeStr() + 
+                   " accepts only " + std::to_string(dim) + "x" +  std::to_string(dim) + " matrices."); // throws
+        }
+            return;
+
+        case OPCODE_Deph :
+        case OPCODE_Depol :
+            if (numParams != 1)
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 1); // throws
+            if (numCtrls != 0)
+                throw local_gateUnsupportedExcep("controlled " + getOpcodeStr()); // throws
+            if (numTargs != 1 && numTargs != 2)
+                throw local_wrongNumGateTargsExcep(getOpcodeStr(), numTargs, "1 or 2 targets"); // throws
+            return;
+            
+        case OPCODE_Damp :
+            if (numParams != 1)
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 1); // throws
+            if (numCtrls != 0)
+                throw local_gateUnsupportedExcep("controlled " + getOpcodeStr()); // throws
+            if (numTargs != 1)
+                throw local_wrongNumGateTargsExcep(getOpcodeStr(), numTargs, "1 target"); // throws
+            return;
+            
+        case OPCODE_SWAP :
+            if (numParams != 0)
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 0); // throws
+            if (numTargs != 2)
+                throw local_wrongNumGateTargsExcep(getOpcodeStr(), numTargs, "2 targets"); // throws
+            return;
+            
+        case OPCODE_M :
+            if (numParams != 0)
+                throw local_wrongNumGateParamsExcep(getOpcodeStr(), numParams, 0); // throws
+            if (numCtrls != 0)
+                throw local_gateUnsupportedExcep("controlled " + getOpcodeStr()); // throws
+            return;
+        
+        case OPCODE_P:
+            if (numParams != 1 && numParams != numTargs)
+                throw QuESTException("", 
+                    std::string(getOpcodeStr() + " gate specified a different number of binary outcomes ") + 
+                    "(" + std::to_string(numParams) + ") than target qubits  " +
+                    "(" + std::to_string(numTargs) + ")!"); // throws
+            if (numCtrls != 0)
+                throw local_gateUnsupportedExcep("controlled " + getOpcodeStr()); // throws
+            if (numParams == 1 && params[0] >= (1LL << numTargs))
+                throw QuESTException("",
+                    "The argument (" + std::to_string((int) params[0]) + 
+                    ") to gate " + getOpcodeStr() + " exceeded the maximum binary "
+                    "value (" + std::to_string(1LL << numTargs) + ") of the " +
+                    std::to_string(numTargs) + " targeted qubits."); // throws
+            return;
+            
+        case OPCODE_Kraus :
+        case OPCODE_KrausNonTP : { ;
+            int numKrausOps = (int) params[0];
+            if (numCtrls != 0)
+                throw local_gateUnsupportedExcep("controlled " + getOpcodeStr()); // throws
+            if (numTargs != 1 && numTargs != 2)
+                throw local_wrongNumGateTargsExcep(getOpcodeStr(), numTargs, "1 or 2 targets"); // throws
+            if ((numKrausOps < 1) ||
+                (numTargs == 1 && numKrausOps > 4 ) ||
+                (numTargs == 2 && numKrausOps > 16))
+                throw QuESTException("", 
+                    std::to_string(numKrausOps) + " operators were passed to " +
+                    std::to_string(numTargs) +  "-qubit Kraus[ops], which accepts only >0 and <=" + 
+                    std::to_string((numTargs==1)? 4:16) + " operators!"); // throws
+            if (numTargs == 1 && (numParams-1) != 2*2*2*numKrausOps)
+                throw QuESTException("", "one-qubit Kraus expects 2-by-2 matrices!"); // throws
+            if (numTargs == 2 && (numParams-1) != 4*4*2*numKrausOps)
+                throw QuESTException("", "two-qubit Kraus expects 4-by-4 matrices!"); // throws
+        }
+            return;
+            
+        default:            
+            throw QuESTException("", "circuit contained an unknown gate (" + getOpcodeStr() + ")."); // throws
+    }
+}
+
+void Gate::applyTo(Qureg qureg, qreal* outputs) {
+    
+    validate(); // throws
+    
+    switch(opcode) {
+        
+        case OPCODE_Id :
+            break;
+        
+        case OPCODE_H :
             hadamard(qureg, targs[0]); // throws
             break;
             
         case OPCODE_S :
-            if (numParams != 0)
-                throw local_wrongNumGateParamsExcep("S gate", numParams, 0); // throws
-            if (numTargs != 1)
-                throw local_wrongNumGateTargsExcep("S gate", numTargs, "1 target"); // throws
             if (numCtrls == 0)
                 sGate(qureg, targs[0]); // throws
             else {
@@ -129,23 +299,16 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
             }
             break;
             
-        case OPCODE_T : {
-            if (numParams != 0)
-                throw local_wrongNumGateParamsExcep("T gate", numParams, 0); // throws
-            if (numTargs != 1)
-                throw local_wrongNumGateTargsExcep("T gate", numTargs, "1 target"); // throws
+        case OPCODE_T :
             if (numCtrls == 0)
                 tGate(qureg, targs[0]); // throws
             else {
                 int* ctrlCache = local_prepareCtrlCache(ctrls, numCtrls, targs[0]);
                 multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, M_PI/4); // throws
             }
-        }
             break;
     
-        case OPCODE_X : {
-            if (numParams != 0)
-                throw local_wrongNumGateParamsExcep("X", numParams, 0); // throws
+        case OPCODE_X :
             if (numCtrls == 0 && numTargs == 1)
                 pauliX(qureg, targs[0]); // throws
             else if (numCtrls == 1 && numTargs == 1)
@@ -154,39 +317,25 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
                 multiQubitNot(qureg, targs, numTargs); // throws
             else
                 multiControlledMultiQubitNot(qureg, ctrls, numCtrls, targs, numTargs); // throws
-        }
             break;
             
         case OPCODE_Y :
-            if (numParams != 0)
-                throw local_wrongNumGateParamsExcep("Y", numParams, 0); // throws
-            if (numTargs != 1)
-                throw local_wrongNumGateTargsExcep("Y", numTargs, "1 target"); // throws
             if (numCtrls == 0)
                 pauliY(qureg, targs[0]); // throws
             else if (numCtrls == 1)
                 controlledPauliY(qureg, ctrls[0], targs[0]); // throws
-            else
-                throw local_gateUnsupportedExcep("controlled Y"); // throws
             break;
             
-        case OPCODE_Z : {
-            if (numParams != 0)
-                throw local_wrongNumGateParamsExcep("Z", numParams, 0); // throws
-            if (numTargs != 1)
-                throw local_wrongNumGateTargsExcep("Z", numTargs, "1 target"); // throws
+        case OPCODE_Z :
             if (numCtrls == 0)
                 pauliZ(qureg, targs[0]); // throws
             else {
                 int* ctrlCache = local_prepareCtrlCache(ctrls, numCtrls, targs[0]);
                 multiControlledPhaseFlip(qureg, ctrlCache, numCtrls+1); // throws
             }
-        }
             break;
     
         case OPCODE_Rx :
-            if (numParams != 1)
-                throw local_wrongNumGateParamsExcep("Rx", numParams, 1); // throws
             if (numCtrls == 0 && numTargs == 1)
                 rotateX(qureg, targs[0], params[0]); // throws
             else if (numCtrls == 1 && numTargs == 1)
@@ -203,8 +352,6 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
             break;
 
         case OPCODE_Ry :
-            if (numParams != 1)
-                throw local_wrongNumGateParamsExcep("Ry", numParams, 1); // throws
             if (numCtrls == 0 && numTargs == 1)
                 rotateY(qureg, targs[0], params[0]); // throws
             else if (numCtrls == 1 && numTargs == 1)
@@ -221,8 +368,6 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
             break;
             
         case OPCODE_Rz :
-            if (numParams != 1)
-                throw local_wrongNumGateParamsExcep("Rz", numParams, 1); // throws
             if (numCtrls == 0 && numTargs == 1)
                 rotateZ(qureg, targs[0], params[0]); // throws
             else if (numCtrls == 1 && numTargs == 1)
@@ -233,14 +378,7 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
                 multiControlledMultiRotateZ(qureg, ctrls, numCtrls, targs, numTargs, params[0]); // throws
             break;
             
-        case OPCODE_R: {
-            if (numTargs != numParams-1) {
-                throw QuESTException("", 
-                    std::string("An internel error in R occured! ") +
-                    "The quest_link received an unequal number of Pauli codes " + 
-                    "(" + std::to_string(numParams-1) + ") and target qubits " + 
-                    "(" + std::to_string(numTargs) + ")!"); // throws
-            }
+        case OPCODE_R: { ;
             enum pauliOpType paulis[MAX_NUM_TARGS_CTRLS]; 
             for (int p=0; p < numTargs; p++)
                 paulis[p] = (pauliOpType) ((int) params[1+p]);
@@ -251,16 +389,7 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
         }
             break;
         
-        case OPCODE_U : {
-            ; // empty post-label statement, courtesy of weird C99 standard.
-            // this was added when QuESTlink was already refactored for C++11,
-            // however the quirk of being unable to define a variable on the first 
-            // line of a switch case in C99 is so strange, I carry on the tradition anyway
-            long long int dim = (1 << numTargs);
-            if (numParams != 2 * dim*dim)
-                throw QuESTException("", std::to_string(numTargs) + "-qubit U accepts only " + 
-                    std::to_string(dim) + "x" +  std::to_string(dim) + " matrices."); // throws
-            
+        case OPCODE_U :
             if (numTargs == 1) {
                 ComplexMatrix2 u = local_getMatrix2FromFlatList(params);
                 if (numCtrls == 0)
@@ -286,17 +415,9 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
                 // memory leak if above throws :^)
                 destroyComplexMatrixN(u);
             }
-        }
             break;
             
-        case OPCODE_UNonNorm : {
-            ;
-            long long int dim = (1 << numTargs);
-            if (numParams != 2 * dim*dim)
-                throw QuESTException("", std::to_string(numTargs) + "-qubit Matr accepts only " + 
-                    std::to_string(dim) + "x" +  std::to_string(dim) + " matrices."); // throws
-            
-            // this is wastefully(?) allocating and deallocating memory on the fly!
+        case OPCODE_UNonNorm : { ;
             ComplexMatrixN m = createComplexMatrixN(numTargs);
             local_setMatrixNFromFlatList(params, m, numTargs);
             if (numCtrls == 0)
@@ -305,18 +426,10 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
                 applyMultiControlledGateMatrixN(qureg, ctrls, numCtrls, targs, numTargs, m); // throws
             // memory leak if above throws :^)
             destroyComplexMatrixN(m);
-            
         }
             break;
             
-        case OPCODE_Matr : {
-            ;
-            long long int dim = (1 << numTargs);
-            if (numParams != 2 * dim*dim)
-                throw QuESTException("", std::to_string(numTargs) + "-qubit Matr accepts only " + 
-                    std::to_string(dim) + "x" +  std::to_string(dim) + " matrices."); // throws
-            
-            // this is wastefully(?) allocating and deallocating memory on the fly!
+        case OPCODE_Matr : { ;
             ComplexMatrixN m = createComplexMatrixN(numTargs);
             local_setMatrixNFromFlatList(params, m, numTargs);
             if (numCtrls == 0)
@@ -325,19 +438,12 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
                 applyMultiControlledMatrixN(qureg, ctrls, numCtrls, targs, numTargs, m); // throws
             // memory leak if above throws :^)
             destroyComplexMatrixN(m);
-            
         }
             break;
             
         case OPCODE_Deph :
-            if (numParams != 1)
-                throw local_wrongNumGateParamsExcep("Dephasing", numParams, 1); // throws
-            if (numCtrls != 0)
-                throw local_gateUnsupportedExcep("controlled dephasing"); // throws
-            if (numTargs != 1 && numTargs != 2)
-                throw local_wrongNumGateTargsExcep("Dephasing", numTargs, "1 or 2 targets"); // throws
             if (params[0] == 0)
-                break; // allows zero-prob decoherence to act on state-vectors
+                break; // permit zero-prob decoherence to act on state-vectors
             if (numTargs == 1)
                 mixDephasing(qureg, targs[0], params[0]); // throws
             if (numTargs == 2)
@@ -345,14 +451,8 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
             break;
             
         case OPCODE_Depol :
-            if (numParams != 1)
-                throw local_wrongNumGateParamsExcep("Depolarising", numParams, 1); // throws
-            if (numCtrls != 0)
-                throw local_gateUnsupportedExcep("controlled depolarising"); // throws
-            if (numTargs != 1 && numTargs != 2)
-                throw local_wrongNumGateTargsExcep("Depolarising", numTargs, "1 or 2 targets"); // throws
             if (params[0] == 0)
-                break; // allows zero-prob decoherence to act on state-vectors
+                break; // permit zero-prob decoherence to act on state-vectors
             if (numTargs == 1)
                 mixDepolarising(qureg, targs[0], params[0]); // throws
             if (numTargs == 2)
@@ -360,25 +460,15 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
             break;
             
         case OPCODE_Damp :
-            if (numParams != 1)
-                throw local_wrongNumGateParamsExcep("Damping", numParams, 1); // throws
-            if (numCtrls != 0)
-                throw local_gateUnsupportedExcep("controlled damping"); // throws
-            if (numTargs != 1)
-                throw local_wrongNumGateTargsExcep("Damping", numTargs, "1 target"); // throws
             if (params[0] == 0)
-                break; // allows zero-prob decoherence to act on state-vectors
+                break; // permit zero-prob decoherence to act on state-vectors
             mixDamping(qureg, targs[0], params[0]); // throws
             break;
             
-        case OPCODE_SWAP: {
-            if (numParams != 0)
-                throw local_wrongNumGateParamsExcep("SWAP", numParams, 0); // throws
-            if (numTargs != 2)
-                throw local_wrongNumGateTargsExcep("Depolarising", numTargs, "2 targets"); // throws
-            if (numCtrls == 0) {
+        case OPCODE_SWAP:
+            if (numCtrls == 0)
                 swapGate(qureg, targs[0], targs[1]); // throws
-            } else {    
+            else {    
                 // core-QuEST doesn't yet support multiControlledSwapGate, 
                 // so we construct SWAP from 3 CNOT's, and add additional controls
                 ComplexMatrix2 u;
@@ -393,30 +483,17 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
                 ctrlCache[numCtrls] = targs[0];
                 multiControlledUnitary(qureg, ctrlCache, numCtrls+1, targs[1], u);
             }
-        }
             break;
             
-        case OPCODE_M: {
-            if (numParams != 0)
-                throw local_wrongNumGateParamsExcep("M", numParams, 0); // throws
-            if (numCtrls != 0)
-                throw local_gateUnsupportedExcep("controlled measurement"); // throws
+        case OPCODE_M:
             for (int q=0; q < numTargs; q++) {
                 int outcome = measure(qureg, targs[q]);
                 if (outputs != NULL)
                     outputs[q] = (qreal) outcome;
             }
-        }
             break;
         
         case OPCODE_P:
-            if (numParams != 1 && numParams != numTargs)
-                throw QuESTException("", 
-                    std::string("P[outcomes] specified a different number of binary outcomes ") + 
-                    "(" + std::to_string(numParams) + ") than target qubits  " +
-                    "(" + std::to_string(numTargs) + ")!"); // throws
-            if (numCtrls != 0)
-                throw local_gateUnsupportedExcep("controlled projector"); // throws
             if (numParams > 1) {
                 qreal prob = 1;
                 for (int q=0; q < numParams; q++)
@@ -425,12 +502,6 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
                     outputs[0] = prob;
             }
             else {
-                // check value isn't impossibly high
-                if (params[0] >= (1LL << numTargs))
-                    throw QuESTException("",
-                        "P[ " + std::to_string((int) params[0]) + "] was applied to " +
-                        std::to_string(numTargs) + " qubits and exceeds their maximum represented " +
-                        "value of " + std::to_string(1LL << numTargs) + "."); // throws
                 // work out each bit outcome and apply; right most (least significant) bit acts on right-most target
                 qreal prob = 1;
                 for (int q=0; q < numTargs; q++)
@@ -440,25 +511,8 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
             }
             break;
             
-        case OPCODE_Kraus: {
-            ; // empty post-label statement, courtesy of weird C99 standard
+        case OPCODE_Kraus: { ;
             int numKrausOps = (int) params[0];
-            if (numCtrls != 0)
-                throw local_gateUnsupportedExcep("controlled Kraus map"); // throws
-            if (numTargs != 1 && numTargs != 2)
-                throw local_wrongNumGateTargsExcep("Kraus map", numTargs, "1 or 2 targets"); // throws
-            if ((numKrausOps < 1) ||
-                (numTargs == 1 && numKrausOps > 4 ) ||
-                (numTargs == 2 && numKrausOps > 16))
-                throw QuESTException("", 
-                    std::to_string(numKrausOps) + " operators were passed to " +
-                    std::to_string(numTargs) +  "-qubit Kraus[ops], which accepts only >0 and <=" + 
-                    std::to_string((numTargs==1)? 4:16) + " operators!"); // throws
-            if (numTargs == 1 && (numParams-1) != 2*2*2*numKrausOps)
-                throw QuESTException("", "one-qubit Kraus expects 2-by-2 matrices!"); // throws
-            if (numTargs == 2 && (numParams-1) != 4*4*2*numKrausOps)
-                throw QuESTException("", "two-qubit Kraus expects 4-by-4 matrices!"); // throws
-
             if (numTargs == 1) {
                 ComplexMatrix2 krausOps[4];
                 for (int n=0; n < numKrausOps; n++)
@@ -474,25 +528,8 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
         }
             break;
             
-        case OPCODE_KrausNonTP: {
-            ; // empty post-label statement, courtesy of weird C99 standard
+        case OPCODE_KrausNonTP: { ;
             int numKrausOps = (int) params[0];
-            if (numCtrls != 0)
-                throw local_gateUnsupportedExcep("controlled non-trace-preserving Kraus map"); // throws
-            if (numTargs != 1 && numTargs != 2)
-                throw local_wrongNumGateTargsExcep("non-trace-preserving Kraus map", numTargs, "1 or 2 targets"); // throws
-            if ((numKrausOps < 1) ||
-                (numTargs == 1 && numKrausOps > 4 ) ||
-                (numTargs == 2 && numKrausOps > 16))
-                throw QuESTException("", 
-                    std::to_string(numKrausOps) + " operators were passed to " +
-                    std::to_string(numTargs) +  "-qubit KrausNonTP[ops], which accepts only >0 and <=" + 
-                    std::to_string((numTargs==1)? 4:16) + " operators!"); // throws
-            if (numTargs == 1 && (numParams-1) != 2*2*2*numKrausOps)
-                throw QuESTException("", "one-qubit non-trace-preserving Kraus expects 2-by-2 matrices!"); // throws
-            if (numTargs == 2 && (numParams-1) != 4*4*2*numKrausOps)
-                throw QuESTException("", "two-qubit non-trace-preserving Kraus expects 4-by-4 matrices!"); // throws
-
             if (numTargs == 1) {
                 ComplexMatrix2 krausOps[4];
                 for (int n=0; n < numKrausOps; n++)
@@ -508,58 +545,35 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
         }
             break;
             
-        case OPCODE_G : {
-            if (numParams != 1)
-                throw local_wrongNumGateParamsExcep("Global phase", numParams, 1); // throws
-            if (numCtrls != 0)
-                throw local_gateUnsupportedExcep("controlled global phase"); // throws
-            if (numTargs != 0)
-                throw local_wrongNumGateTargsExcep("Global phase", numTargs, "0 targets"); // throws
-            if (params[0] == 0)
-                break;
-            // phase does not change density matrices
-            if (!qureg.isDensityMatrix) {
+        case OPCODE_G :
+            if (!qureg.isDensityMatrix && params[0] != 0) {
                  // create factor exp(i param)
                 Complex zero; zero.real=0; zero.imag=0;
                 Complex fac; fac.real=cos(params[0]); fac.imag=sin(params[0]);
                 setWeightedQureg(zero, qureg, zero, qureg, fac, qureg); // throws
             }
-        }
             break;
             
-        case OPCODE_Fac : {
-            if (numParams != 2)
-                throw local_wrongNumGateParamsExcep("Factor", numParams, 2); // throws
-            if (numCtrls != 0)
-                throw local_gateUnsupportedExcep("controlled factor"); // throws
-            if (numTargs != 0)
-                throw local_wrongNumGateTargsExcep("Factor", numTargs, "0 targets"); // throws
+        case OPCODE_Fac : { ;
             Complex fac;    fac.real = params[0];  fac.imag = params[1];
             Complex zero;  zero.real = 0;          zero.imag = 0;
-            setWeightedQureg(zero, qureg, zero, qureg, fac, qureg);
+            if (fac.real == 0)
+                extension_applyImagFactor(qureg, fac.imag);
+            else if (fac.imag == 0)
+                extension_applyRealFactor(qureg, fac.real);
+            else
+                setWeightedQureg(zero, qureg, zero, qureg, fac, qureg);
         }
             break;
             
-        case OPCODE_Id :
-            // any numCtrls, numParams and numTargs is valid; all do nothing!
-            break;
-            
-        case OPCODE_Ph : {
-            if (numParams != 1)
-                throw local_wrongNumGateParamsExcep("Ph", numParams, 1); // throws
-            int numQubits = numCtrls + numTargs;
-            if (numQubits < 1)
-                throw local_wrongNumGateTargsExcep("Ph", numQubits, "at least 1 qubit (between control and target qubits)"); // throws
-            if (params[0] == 0)
-                break;
-                
+        case OPCODE_Ph : { ;
             // unpack all controls and targets (since symmetric)
             // (ctrlCache has length [MAX_NUM_TARGS_CTRLS], so it can fit all targs)
             int* qubitCache = local_prepareCtrlCache(ctrls, numCtrls, -1);
             for (int i=0; i<numTargs; i++)
                 qubitCache[numCtrls+i] = targs[i];
-            
-            // attempt optimisations first
+            // but attempt optimisations first
+            int numQubits = numCtrls + numTargs;
             if (numQubits == 1)
                 phaseShift(qureg, qubitCache[0], params[0]);
             else if (numQubits == 2)
@@ -574,12 +588,9 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
     }
 }
 
-void Gate::applyTo(Qureg qureg) {
-    
-    applyTo(qureg, NULL);
-}
-
 void Gate::applyDaggerTo(Qureg qureg) {
+    
+    // validation performed within switch (often within inner applyTo call)
     
     switch(opcode) {
         
@@ -623,11 +634,13 @@ void Gate::applyDaggerTo(Qureg qureg) {
         
         // name -> phase
         case OPCODE_S : { ;
+            validate();
             int* ctrlCache = local_prepareCtrlCache(ctrls, numCtrls, targs[0]);
             multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, -M_PI/2); // throws
         }   
             break;
         case OPCODE_T : { ;
+            validate();
             int* ctrlCache = local_prepareCtrlCache(ctrls, numCtrls, targs[0]);
             multiControlledPhaseShift(qureg, ctrlCache, numCtrls+1, -M_PI/4); // throws
         }
@@ -711,7 +724,7 @@ bool Gate::isInvertible() {
             return false;
         
         case OPCODE_Matr :
-            return local_isInvertible( local_getQmatrixFromFlatList(params, 1<<numTargs) );
+            return local_isInvertible( local_getQmatrixFromFlatList(params, 1LL<<numTargs) );
         
         case OPCODE_Deph :
             if (numTargs == 1)
@@ -746,19 +759,16 @@ void Gate::applyInverseTo(Qureg qureg) {
             "its given parameters (for instance, because it is a maximally mixing channel)."); // throws
     
     if (isUnitary()) {
-        applyDaggerTo(qureg);
+        applyDaggerTo(qureg); // throws
         return;
     }
     
-    /* Below performs no validation because currently applyInverseTo is always 
-     * internally called subsequent to applyTo() of the same gate, preconditioning 
-     * gate validity. This may change in the future, requiring explicit re-validation.
-     */
+    validate(); // throws
         
     switch (opcode) {
         
         case OPCODE_Matr : { ;
-            qmatrix matr = local_getQmatrixFromFlatList(params, 1<<numTargs);
+            qmatrix matr = local_getQmatrixFromFlatList(params, 1LL<<numTargs);
             qmatrix matrInv = local_getInverse(matr);
             
             local_setFlatListFromQmatrix(params, matrInv);

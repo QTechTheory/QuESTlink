@@ -33,9 +33,9 @@ void local_sendMatrixToMMA(qmatrix matrix) {
     qreal* matrIm = (qreal*) malloc(len * sizeof *matrIm);
     
     // unpack matrix into separate flat arrays
-    int i=0;
-    for (int r=0; r<dim; r++) {
-        for (int c=0; c<dim; c++) {
+    size_t i=0;
+    for (size_t r=0; r<dim; r++) {
+        for (size_t c=0; c<dim; c++) {
             matrRe[i] = real(matrix[r][c]);
             matrIm[i] = imag(matrix[r][c]);
             i++;

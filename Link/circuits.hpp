@@ -96,6 +96,8 @@ class Gate {
         int* targs;         int numTargs;
         qreal* params;      int numParams;
         
+        void validate();
+        
         std::string getOpcodeStr();
     
     public:
