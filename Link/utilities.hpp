@@ -66,7 +66,7 @@ bool local_isInvertible(qmatrix matr);
 
 bool local_isNonZero(qreal scalar);
 
-qmatrix local_getInverse(qmatrix matr);
+qmatrix local_getInverse(qmatrix matr); // throws
 
 
 

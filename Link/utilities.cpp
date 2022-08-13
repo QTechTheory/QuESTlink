@@ -5,6 +5,7 @@
 #include "QuEST_complex.h"
 
 #include "utilities.hpp"
+#include "errors.hpp"
 
 
 
@@ -305,34 +306,133 @@ qmatrix local_getKrausSuperoperatorFromFlatList(qreal* flatElems, int numQubits)
     return superOp;
 }
 
-qreal local_getDeterminant(qmatrix m) {
-    
-    if (m.size() == 2)
-        return abs(m[0][0])*abs(m[1][1]) - abs(m[0][1])*abs(m[1][0]);
-        
-    return 0;
-    
-    // TODO!
-}
-
 bool local_isNonZero(qreal scalar) {
     
     return (abs(scalar) > MIN_NON_ZERO_EPS_FAC * REAL_EPS);
 }
 
+qmatrix local_decomposeLU(qmatrix matr, std::vector<int>& pivots, int *numPivots) {
+    
+    size_t dim = matr.size();
+    for (size_t i=0; i<dim; i++)
+        pivots[i] = i;
+        
+    *numPivots = 0;
+        
+    for (size_t i=0; i<dim; i++) {
+        
+        // get maximum-sized elem of ith column
+        qreal maxAbs = 0;
+        size_t maxInd = i;
+        for (size_t k=i; k<dim; k++) {
+            qreal elemAbs = abs(matr[k][i]);
+            if (elemAbs > maxAbs) {
+                maxAbs = elemAbs;
+                maxInd = k;
+            }
+        }
+        
+        // halt if singularity detected
+        if (!local_isNonZero(maxAbs))
+            throw QuESTException("", "Attempted LU decomposition of a non-invertible matrix.");
+            
+        // perform pivot if necessary
+        if (maxInd != i) {
+            (*numPivots)++;
+            
+            // pivot rows of matr (swap row i and maxInd)
+            for (size_t c=0; c<dim; c++) {
+                qcomp tmp = matr[i][c];
+                matr[i][c] = matr[maxInd][c];
+                matr[maxInd][c] = tmp;
+            }
+            
+            // record pivot
+            size_t tmpInd = pivots[i];
+            pivots[i] = pivots[maxInd];
+            pivots[maxInd] = tmpInd;
+        }
+        
+        // triangularize
+        for (size_t j=i+1; j<dim; j++) {
+            matr[j][i] /= matr[i][i];
+            
+            for (size_t k=i+1; k<dim; k++)
+                matr[j][k] -= matr[j][i] * matr[i][k];
+        }
+    }
+    
+    return matr;
+}
+
+qcomp local_getDeterminant(qmatrix m) {
+    
+    /* This function is not currently used, because the determinant is not a 
+     * reliable predictor of matrix invertibility. For instance, when matrix is that 
+     * describing Depol(0,3)[.5], the determinant is 10^(-80) due to the 2^6-sized 
+     * sparse matrix, yet it is precisely invertible (by quasi-probability). So instead, 
+     * we will duck-type, whereby local_decomposeLU() (and hence local_getInverse())
+     * will throw an exception upon encountering row degeneracy (implying non-invertibility).
+     */
+    
+    if (m.size() == 1)
+        return m[0][0];
+        
+    if (m.size() == 2)
+        return m[0][0]*m[1][1] - m[0][1]*m[1][0];
+    
+    int numPivots;
+    std::vector<int> pivots(m.size()); // ignored
+    qmatrix lu = local_decomposeLU(m, pivots, &numPivots); // throws
+    
+    qcomp det = 1;
+    for (size_t i=0; i<lu.size(); i++)
+        det *= lu[i][i];
+    
+    if ((numPivots - (int) m.size()) % 2)
+        det *= -1;
+    
+    return det;
+}
+
 bool local_isInvertible(qmatrix matr) {
     
-    qreal det = abs(local_getDeterminant(matr));
-    return local_isNonZero(det);
+    /* see local_getDeterminant() for rant about avoiding determinant 
+     * calculation
+      */
+
+    try {
+        local_getInverse(matr); // throws
+        return true;
+    } catch (QuESTException& err) {
+        return false;
+    }
 }
 
 qmatrix local_getInverse(qmatrix matr) {
     
-    // assume matr is numerically invertible
-    
-    qmatrix inv = local_getQmatrix(matr.size());
-    
-    // TODO!
+    // get LU decomposition
+    int dim = (int) matr.size();
+    std::vector<int> pivots(dim);
+    int numPivots; // ignored
+    qmatrix lu = local_decomposeLU(matr, pivots, &numPivots); // throws
+    qmatrix inv = local_getQmatrix(dim);
+
+    // populate inverse
+    for (int j=0; j<dim; j++) {
+        
+        for (int i=0; i<dim; i++) {
+            inv[i][j] = (pivots[i] == j)? 1 : 0;
+            for (int k=0; k<i; k++)
+                inv[i][j] -= lu[i][k] * inv[k][j];
+        }
+        
+        for (int i=dim-1; i>=0; i--) {
+            for (int k=i+1; k<dim; k++)
+                inv[i][j] -= lu[i][k] * inv[k][j];
+            inv[i][j] /= lu[i][i];
+        }
+    }
     
     return inv;
 }
