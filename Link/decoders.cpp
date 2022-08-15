@@ -21,6 +21,84 @@
 
 
 /*
+ * Expression parsing 
+ */
+ 
+std::string local_getCommaSep(int* elems, int len) {
+    std::string form = "";
+    for (int i=0; i<len; i++)
+        form += std::to_string(elems[i]) + ((i<len-1)? "," : "");
+    return form;
+}
+
+std::string local_getCommaSep(qreal* elems, int len) {
+    std::string form = "";
+    for (int i=0; i<len; i++) {
+        qreal elem = elems[i];
+        if (elem == trunc(elem))
+            form += std::to_string(trunc(elem));
+        else
+            form += std::to_string(elem);
+        form += (i<len-1)? "," : "";
+    } 
+    return form;
+}
+
+std::string local_qcompToStr(qcomp s) {
+    return std::to_string(real(s)) + " + I(" + std::to_string(imag(s)) + ")";
+}
+
+std::string local_getCommaSep(qcomp* elems, int len) {
+    std::string form = "";
+    for (int i=0; i<len; i++)
+        form += local_qcompToStr(elems[i]) + ((i<len-1)? "," : "");
+    return form;
+}
+
+std::string local_qmatrixToStr(qmatrix m) {
+    std::string form = "{";
+    for (size_t r=0; r<m.size(); r++) {
+        form += "{";
+        for (size_t c=0; c<m.size(); c++)
+            form += local_qcompToStr(m[r][c]) + ((c<m.size()-1)? ", " : "}");
+        form += (r<m.size()-1)? ", " : "}";
+    }
+    return form;
+}
+ 
+std::string local_getStandardFormFromMMA(std::string expr) {
+    
+    WSPutFunction(stdlink, "EvaluatePacket", 1);
+
+    WSPutFunction(stdlink, "ToString", 1);
+    WSPutFunction(stdlink, "StandardForm", 1);
+    WSPutFunction(stdlink, "ToExpression", 1);
+    WSPutString(stdlink, expr.c_str());
+    WSEndPacket(stdlink);
+    
+    long success;
+    WSCheckFunction(stdlink, "ReturnPacket", &success);
+    if (!success)
+        throw QuESTException("", "An internal error occurred. local_getStandardFormFromMMA() queried "
+            "Mathematica for an expression's StandardForm string but did not receive a single-arg "
+            "ReturnPacket[] back."); // throws
+    
+    const char* response;
+    WSGetString(stdlink, &response);
+    std::string ret = std::string(response);
+    WSReleaseString(stdlink, response);
+    
+    /* The above can still fail, e.g. due to a syntax error in expr, and response will be 
+     * a (boxed, formatted) $Failed string. My efforts to detect this and throw an 
+     * internal exception have so far been futile!
+     */
+    
+    return ret;
+}
+
+
+
+/*
  * Matrix sending 
  */
 

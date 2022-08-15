@@ -104,6 +104,202 @@ std::string Gate::getOpcodeStr() {
     return "opcode: " + std::to_string(opcode);
 }
 
+std::string Gate::getName() {
+    
+    // base name 
+    std::string baseLabel = "";
+    if (opcode < NUM_OPCODES)
+        baseLabel = opcodeNames[opcode];
+    else
+        baseLabel = "unrecognised-operator";
+
+    // multi-target, multi-qubit, many-target, many-qubit
+    std::string targLabel = "";
+    switch (opcode) {
+        
+        // requiredly two-qubit
+        case OPCODE_SWAP :
+            if (numTargs == 0)
+                targLabel = "zero-target ";
+            if (numTargs == 1)
+                targLabel = "single-target ";
+            if (numTargs > 2)
+                targLabel = "many-qubit ";
+            break;
+        
+        // provisionally one-qubit
+        case OPCODE_R :
+            if (numTargs == 0)
+                targLabel = "zero-target ";
+            if (numTargs == 2)
+                targLabel = "two-qubit ";
+            if (numTargs > 2)
+                targLabel = "many-qubit ";
+            break;
+            
+        // requiredly zero-qubit
+        case OPCODE_Fac : 
+        case OPCODE_G :
+            if (numTargs > 0)
+                targLabel = "targeted ";
+            break;
+        
+        // provisionally (and some, requiredly) one-qubit
+        case OPCODE_Id :
+        case OPCODE_H :
+        case OPCODE_X :
+        case OPCODE_Y :
+        case OPCODE_Z :
+        case OPCODE_Rx :
+        case OPCODE_Ry :
+        case OPCODE_Rz :
+        case OPCODE_S :
+        case OPCODE_T :
+        case OPCODE_Ph :
+            if (numTargs == 0)
+                targLabel = "zero-target ";
+            if (numTargs > 1)
+                targLabel = "multi-qubit ";
+            break;
+
+        // number of qubits unimportant
+        case OPCODE_M :
+        case OPCODE_P :
+            break;
+            
+        // explicit number of qubits
+        case OPCODE_U :
+        case OPCODE_UNonNorm :
+        case OPCODE_Matr : 
+        case OPCODE_Deph :
+        case OPCODE_Depol :
+        case OPCODE_Damp :
+        case OPCODE_Kraus :
+        case OPCODE_KrausNonTP :
+            if (numTargs == 0)
+                targLabel = "zero-target ";
+            if (numTargs == 1)
+                targLabel = "single-qubit ";
+            if (numTargs == 2)
+                targLabel = "two-qubit ";
+            if (numTargs > 2)
+                targLabel = "many-qubit ";
+            break;
+            
+        // default handled above
+    }
+    
+    // controlled and multi-controlled
+    std::string ctrlLabel = "";
+    if (numCtrls == 1)
+        ctrlLabel = "controlled ";
+    if (numCtrls == 2)
+        ctrlLabel = "multi-controlled ";
+    if (numCtrls > 2)
+        ctrlLabel = "many-controlled ";
+        
+    return ctrlLabel + targLabel + baseLabel;
+}
+
+std::string Gate::getSyntax() {
+    
+    // get gate symbol
+    std::string opStr = (opcode < NUM_OPCODES)? getOpcodeStr() : "Unknown";
+    std::string form = opStr;
+    
+    // format target qubits
+    if (numTargs != 0) {
+        
+        switch (opcode) {
+            
+            // and for this annoying special case, params too
+            case OPCODE_R :
+                if (numParams < 1 || numTargs != numParams-1)
+                    form = opStr + "[uninterpretable]";
+                else {
+                    form = opStr + "[" + std::to_string(params[0]) + ", ";
+                    for (int t=0; t<numTargs; t++) {
+                        std::string paulis[] = {"Id", "X", "Y", "Z"};
+                        std::string pauliStr = paulis[(int) params[t+1]];
+                        form += "Subscript[" + pauliStr + ", " + std::to_string(targs[t]) + "]";
+                    }
+                    form += "]";
+                }
+                break;
+                
+            default:
+                form = "Subscript[" + opStr + ", " + local_getCommaSep(targs, numTargs) + "]";
+                break;
+        }
+    }
+        
+    // format parameters
+    if (numParams != 0) {
+        
+        switch(opcode) {
+            
+            // skip (handled above)
+            case OPCODE_R : 
+                break;
+            
+            // complex matrix
+            case OPCODE_U :
+            case OPCODE_UNonNorm :
+            case OPCODE_Matr : { ;
+                int dim = (1<<numTargs);
+                if (numParams < 2*2*2 || numParams != 2*dim*dim)
+                    form += "[uninterpretable]";
+                else {
+                    qmatrix matr = local_getQmatrixFromFlatList(params, dim);
+                    form += "[ MatrixForm @ " + local_qmatrixToStr(matr) + " ]";
+                }
+            }
+                break;
+                
+            // complex matrices
+            case OPCODE_Kraus :
+            case OPCODE_KrausNonTP : { ;
+                int numOps = (int) params[0];
+                int dim = (1<<numTargs);
+                if (numOps < 1 || numParams != 1 + 2*dim*dim*numOps)
+                    form += "[uninterpretable]";
+                else {        
+                    form += "[ MatrixForm /@ { ";
+                    for (int n=0; n < numOps; n++) {
+                        qmatrix op = local_getQmatrixFromFlatList(&params[1 + 2*dim*dim*n], dim);
+                        form += local_qmatrixToStr(op) + ((n<numOps-1)? ", " : "}]");
+                    }
+                }
+            }
+                break;
+                
+            // complex scalar
+            case OPCODE_Fac :
+                if (numParams%2)
+                    form += "[uninterpretable]";
+                else {
+                    form += "[";
+                    for (int i=0; i<numParams; i+=2)
+                        form += local_qcompToStr( qcomp(params[i],params[i+1]) ) + ((i<numParams-2)? "," : "]");
+                }
+                break;
+            
+            // real or integer scalars
+            default: { ;
+                form += "[" + local_getCommaSep(params, numParams) + "]";
+            }
+                break;
+        }
+    }
+    
+    // format control qubits
+    if (numCtrls > 0)
+        form = "Subscript[C," + local_getCommaSep(ctrls, numCtrls) + "][" + form + "]";
+        
+    // convert to Mathematica front-end graphics markup
+    return local_getStandardFormFromMMA(form);
+}
+
 void Gate::validate() {
     
     /* This function only validates the meta-gate conventions like number of 

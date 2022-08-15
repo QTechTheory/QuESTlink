@@ -4,9 +4,20 @@
 #include "QuEST.h"
 #include "QuEST_complex.h"
 
+#include <string>
+
 #include "utilities.hpp"
 
 
+
+std::string local_getCommaSep(int*   elems, int len);
+std::string local_getCommaSep(qreal* elems, int len);
+std::string local_getCommaSep(qcomp* elems, int len);
+
+std::string local_qcompToStr(qcomp s);
+std::string local_qmatrixToStr(qmatrix m);
+
+std::string local_getStandardFormFromMMA(std::string expr);
 
 void local_sendMatrixToMMA(qmatrix matrix);
 

@@ -6,7 +6,11 @@
 
 
 /*
- * Codes for Mathematica gate symbols 
+ * Codes for Mathematica gate symbols.
+ *
+ * Yes, I absolutely hate the duplication below. But alas, it seems impossible 
+ * to make all compilers happy with a better-practise method. For instance, 
+ * MSVC won't let me initialise with { [OPCODE_H] = "H", ...}. Have mercy.
  */
 
 #define OPCODE_H 0
@@ -65,6 +69,34 @@ static const std::string opcodeStrings[] = {
     "Fac",          // OPCODE_Fac 24
 };
 
+static const std::string opcodeNames[] = {
+    "Hadamard",                         // OPCODE_H 0
+    "Pauli X",                          // OPCODE_X 1
+    "Pauli Y",                          // OPCODE_Y 2
+    "Pauli Z",                          // OPCODE_Z 3
+    "x-rotation",                       // OPCODE_Rx 4
+    "y-rotation",                       // OPCODE_Ry 5
+    "z-rotation",                       // OPCODE_Rz 6
+    "Pauli gadget",                     // OPCODE_R 7
+    "S-gate",                           // OPCODE_S 8
+    "T-gate",                           // OPCODE_T 9
+    "general unitary",                  // OPCODE_U 10
+    "dephasing",                        // OPCODE_Deph 11
+    "depolarising",                     // OPCODE_Depol 12
+    "amplitude damping",                // OPCODE_Damp 13
+    "SWAP-gate",                        // OPCODE_SWAP 14
+    "measurement",                      // OPCODE_M 15
+    "projection",                       // OPCODE_P 16
+    "Kraus map",                        // OPCODE_Kraus 17
+    "global phase",                     // OPCODE_G 18
+    "identity",                         // OPCODE_Id 19
+    "phase-shfit",                      // OPCODE_Ph 20
+    "non-trace-preserving Kraus map",   // OPCODE_KrausNonTP 21
+    "general matrix",                   // OPCODE_Matr 22
+    "unnormalised general unitary",     // OPCODE_UNonNorm 23
+    "factor",                           // OPCODE_Fac 24
+};
+
 
 
 /*
@@ -117,6 +149,20 @@ class Gate {
         int* getCtrlsAddr() { return ctrls; }
         int* getTargsAddr() { return targs; }
         qreal* getParamsAddr() { return params; }
+        
+        /** Generates a phrase which describes the gate, such as "many-controlled 
+         * multi-qubit general unitary". This function does not require nor invoke 
+         * validation, and hence can describe invalid and unsupported gates. 
+         */
+        std::string getName();
+        
+        /** Generates a Mathematica-parsable string which can be concatenated with 
+         * generic strings, but will be rendered by the front-end as graphical entities 
+         * resembling the originally input gate syntax. This function does not need 
+         * nor perform validation, and can hence reproduce invalid input gates. 
+         * Invocation involves a C++ and MMA communication.
+         */
+        std::string getSyntax();
         
         /** Returns whether the gate is (at least, intended) unitary 
          * (such as Rx, H, U, UNonNorm), or not (like M, P, Matr, Damp)
