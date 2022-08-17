@@ -762,7 +762,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             
             (* validate the circuit contains no unspecified variables *)
             If[Not @ AllTrue[encodedCirc[[4]], Internal`RealValuedNumericQ, 2],
-                Throw @ "The circuit contained variables which were not assigned real values!"];
+                Throw @ "The circuit contained variables which were not assigned real values."];
 
             (* differentiate gate args, and pack for backend (without yet making numerical) *)
             derivParams = MapThread[encodeDerivParams, 
@@ -770,8 +770,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 
             (* validate all gates with diff variables have known derivatives *)
             If[MemberQ[derivParams, encodeDerivParams[_,_]],
-                Throw["The circuit contained the following variable gate which could not be differentiated: " <> 
-                    ToString @ StandardForm @ First @ Cases[derivParams, encodeDerivParams[g_,_] :> g]]];
+                Throw["Cannot differentiate operator " <> 
+                    ToString @ StandardForm @ First @ Cases[derivParams, encodeDerivParams[g_,_] :> g] <> "."]];
             
             (* convert packed diff gate args to numerical *)
             derivParams = derivParams /. varVals // N;

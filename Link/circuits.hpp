@@ -109,6 +109,10 @@ static const std::string opcodeNames[] = {
 
 int* local_prepareCtrlCache(int* ctrls, int numCtrls, int addTarg);
 
+pauliOpType* local_preparePauliCache(pauliOpType pauli, int numPaulis);
+
+pauliOpType* local_preparePauliCache(qreal* paulis, int numPaulis);
+
 
 
 /** A single quantum gate or decoherence operator.
@@ -128,9 +132,20 @@ class Gate {
         int* targs;         int numTargs;
         qreal* params;      int numParams;
         
+        /* Validates the meta-gate conventions like number of targets and parameters. 
+         * It does not validate whether a qubit is in bounds of a given Qureg, 
+         * or whether the parameter values are normalised, or other run-time validations 
+         * performed by the QuEST backend. If a gate is determined invalid, a 
+         * QuESTException is thrown with 'thrower' set to the gate's Mathematica
+         * syntax (as can best be inferred by gate.getSyntax()).
+         * @throws if the gate is superficially invalid
+         */
         void validate();
         
-        std::string getOpcodeStr();
+        /* Returns the gate's Mathematica symbol is the gate's opcode is recognised, 
+         * otherwise returning the opcode integer (with string "opcode : " prepended)
+         */
+        std::string getSymb();
     
     public:
         

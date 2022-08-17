@@ -44,6 +44,8 @@ ComplexMatrix2 local_getMatrix2FromFlatListAtIndex(qreal* list, int n);
 
 ComplexMatrix4 local_getMatrix4FromFlatListAtIndex(qreal* list, int n);
 
+ComplexMatrix2 local_getZeroComplexMatrix2();
+
 void local_setMatrixNFromFlatListAtIndex(qreal* list, ComplexMatrixN m, int numQubits, int n);
 
 
@@ -67,6 +69,12 @@ bool local_isInvertible(qmatrix matr);
 bool local_isNonZero(qreal scalar);
 
 qmatrix local_getInverse(qmatrix matr); // throws
+
+qmatrix local_getDagger(qmatrix matr);
+
+bool local_isSquareMatrix(int numFlatReals);
+
+bool local_isInt(qreal num);
 
 
 
