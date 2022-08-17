@@ -95,6 +95,16 @@ void local_sendWarningAndContinue(std::string funcName, std::string warnMsg) {
     // a new packet is now expected; caller MUST send something else
 }
 
+void local_sendErrorAndFailOrAbortFromExcep(std::string funcName, std::string excepThrower, std::string errMsg) {
+
+    if (excepThrower == "")
+        local_sendErrorAndFail(funcName, errMsg);
+    else if (excepThrower == "Abort")
+        local_sendErrorAndAbort(funcName, errMsg);
+    else 
+        local_sendErrorAndFail(funcName, "Cannot simulate " + excepThrower + ". " + errMsg);
+}
+
 void local_throwExcepIfQuregNotCreated(int id) {
     if (id < 0)
         throw QuESTException("", "qureg id " + std::to_string(id) + " is invalid (must be >= 0).");
@@ -102,28 +112,47 @@ void local_throwExcepIfQuregNotCreated(int id) {
         throw QuESTException("", "qureg (with id " + std::to_string(id) + ") has not been created");
 }
 
-QuESTException local_gateUnsupportedExcep(std::string gate) {
-    return QuESTException("", "the gate '" + gate + "' is not supported.");    
+QuESTException local_gateUnsupportedExcep(std::string gateSyntax, std::string gateName) {
+    return QuESTException(gateSyntax, "The implied operation \\\"" + gateName + "\\\" is not supported.");    
+} 
+
+QuESTException local_wrongNumGateParamsExcep(std::string gateSyntax, std::string gateSymb, int wrongNumParams, int rightNumParams) {
+    return QuESTException(gateSyntax, 
+        "Operator " + gateSymb + " accepts " + std::to_string(rightNumParams) + " parameter" +  ((rightNumParams==1)? "":"s") + 
+        ", but " + std::to_string(wrongNumParams) + " " + ((wrongNumParams==1)? "was":"were") + " passed.");
 }
 
-QuESTException local_wrongNumGateParamsExcep(std::string gate, int wrongNumParams, int rightNumParams) {
-    return QuESTException("", 
-        "the gate '" + gate + "' accepts " + std::to_string(rightNumParams) + 
-        " parameters, but " + std::to_string(wrongNumParams) + " were passed.");
+QuESTException local_wrongNumGateTargsExcep(std::string gateSyntax, std::string gateSymb, int wrongNumTargs, int rightNumTargs) {
+    return QuESTException(gateSyntax,
+        "Operator " + gateSymb + " accepts " + std::to_string(rightNumTargs) + " target qubit" + ((rightNumTargs==1)? "":"s") + 
+        ", but " + std::to_string(wrongNumTargs) + " " + ((wrongNumTargs==1)? "was":"were") + " passed.");
 }
 
-QuESTException local_wrongNumGateTargsExcep(std::string gate, int wrongNumTargs, std::string rightNumTargs) {
-    // rightNumTargs is a string so that it can be multiple e.g. "1 or 2"
-    return QuESTException("",
-        "the gate '" + gate + "' accepts " + rightNumTargs + ", but " +
-         std::to_string(wrongNumTargs) + " were passed.");
+QuESTException local_wrongNumGateTargsExcep(std::string gateSyntax, std::string gateSymb, int wrongNumTargs, int rightNumA, int rightNumB) {
+    return QuESTException(gateSyntax,
+        "Operator " + gateSymb + " accepts " + std::to_string(rightNumA) + " or " +  std::to_string(rightNumB) + 
+        " target qubits, but " + std::to_string(wrongNumTargs) + " " + ((wrongNumTargs==1)? "was":"were") + " passed.");
 }
 
 QuESTException local_wrongNumDerivParamsExcep(std::string gate, int wrongNumParams, int rightNumParams) {
     return QuESTException("",
         "An internal error has occurred. The QuESTlink backend expected to receive " + std::to_string(rightNumParams) + 
         " 'derivative' scalars in order to effect the derivative of gate " + gate + ", but instead " +
-        "received " + std::to_string(wrongNumParams) + ". Please report this problem to the QuESTlink team.");
+        "received " + std::to_string(wrongNumParams) + ".");
+}
+
+QuESTException local_unrecognisedGateExcep(std::string gateSyntax, int opcode, const char* caller) {
+    throw QuESTException(gateSyntax, 
+        "An internal error has occurred. The operator (opcode " + std::to_string(opcode) + 
+        ") was not recognised by internal function Gate::" + std::string(caller) + "().");
+}
+
+QuESTException local_invalidProbExcep(std::string gateName, qreal prob, std::string maxProb) {
+    if (prob < 0)
+        return QuESTException("", "The error probability is negative and ergo invalid.");
+    return QuESTException("", 
+        "The error probability exceeds the maximum of " + maxProb +
+        " for which " + gateName + " is maximally mixing."); // throws
 }
 
 void local_throwExcepIfUserAborted() {

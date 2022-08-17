@@ -31,21 +31,21 @@ std::string local_getCommaSep(int* elems, int len) {
     return form;
 }
 
+std::string local_qrealToStr(qreal r) {
+    if (r == trunc(r))
+        return std::to_string((int) r);
+    return std::to_string(r);
+}
+
 std::string local_getCommaSep(qreal* elems, int len) {
     std::string form = "";
-    for (int i=0; i<len; i++) {
-        qreal elem = elems[i];
-        if (elem == trunc(elem))
-            form += std::to_string(trunc(elem));
-        else
-            form += std::to_string(elem);
-        form += (i<len-1)? "," : "";
-    } 
+    for (int i=0; i<len; i++)
+        form += local_qrealToStr(elems[i]) + ((i<len-1)? "," : "");
     return form;
 }
 
 std::string local_qcompToStr(qcomp s) {
-    return std::to_string(real(s)) + " + I(" + std::to_string(imag(s)) + ")";
+    return local_qrealToStr(real(s)) + " + I(" + local_qrealToStr(imag(s)) + ")";
 }
 
 std::string local_getCommaSep(qcomp* elems, int len) {

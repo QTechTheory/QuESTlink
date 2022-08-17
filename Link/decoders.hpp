@@ -14,6 +14,7 @@ std::string local_getCommaSep(int*   elems, int len);
 std::string local_getCommaSep(qreal* elems, int len);
 std::string local_getCommaSep(qcomp* elems, int len);
 
+std::string local_qrealToStr(qreal r);
 std::string local_qcompToStr(qcomp s);
 std::string local_qmatrixToStr(qmatrix m);
 

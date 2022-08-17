@@ -208,6 +208,17 @@ void local_setComplexMatrixToRealFactor(ComplexMatrixN matr, qreal fac) {
         }
 }
 
+ComplexMatrix2 local_getZeroComplexMatrix2() {
+    
+    ComplexMatrix2 m;
+    for (int i=0; i<2; i++)
+        for (int j=0; j<2; j++) {
+            m.real[i][j] = 0;
+            m.imag[i][j] = 0;
+        }
+    return m;
+}
+
 
 
 /* 
@@ -241,6 +252,11 @@ qmatrix local_getQmatrix(int dim) {
     qmatrix matr = qmatrix(dim);
     for (int i=0; i<dim; i++)
         matr[i].resize(dim);
+        
+    // clear
+    for (int i=0; i<dim; i++)
+        for (int j=0; j<dim; j++)
+            matr[i][j] = 0;
         
     return matr;
 }
@@ -437,3 +453,27 @@ qmatrix local_getInverse(qmatrix matr) {
     return inv;
 }
 
+qmatrix local_getDagger(qmatrix matr) {
+    
+    qmatrix dag = local_getQmatrix(matr.size());
+    
+    for (size_t i=0; i<matr.size(); i++)
+        for (size_t j=0; j<matr.size(); j++)
+            dag[i][j] = conj(matr[j][i]);
+    
+    return dag;
+}
+
+bool local_isSquareMatrix(int numFlatReals) {
+    
+    if (numFlatReals % 2)
+        return false;
+        
+    int dim = round(sqrt(numFlatReals/2));
+    bool flag = (2*dim*dim == numFlatReals);
+    return flag;
+}
+
+bool local_isInt(qreal num) {
+    return num == trunc(num);
+}
