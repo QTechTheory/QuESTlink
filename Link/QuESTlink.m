@@ -48,8 +48,10 @@ CalcMetricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given pe
 CalcInnerProducts[braId, ketIds] returns a complex vector with i-th element CalcInnerProduct[braId, ketIds[i]]."
     CalcInnerProducts::error = "`1`"
 
-    CalcDensityInnerProducts::usage = "CalcDensityInnerProducts[quregIds] returns a real, symmetric matrix with i-th j-th element CalcDensityInnerProduct[quregIds[i], quregIds[j]].
-CalcDensityInnerProducts[rhoId, omegaIds] returns a real vector with i-th element CalcDensityInnerProduct[rhoId, omegaIds[i]]."
+    CalcDensityInnerProducts::usage = "CalcDensityInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcDensityInnerProduct[quregIds[i], quregIds[j]].
+CalcDensityInnerProducts[rhoId, omegaIds] returns a vector with i-th element CalcDensityInnerProduct[rhoId, omegaIds[i]].
+If all quregs are valid density matrices, the resulting tensors are real, though may have tiny non-zero imaginary components due to numerical imprecision.
+For unnormalised density matrices, the tensors may contain complex scalars."
     CalcDensityInnerProducts::error = "`1`"
     
     Circuit::usage = "Circuit[gates] converts a product of gates into a left-to-right circuit, preserving order."
@@ -874,12 +876,16 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         (* compute a real symmetric matrix of density inner products *)
         CalcDensityInnerProducts[quregIds:{__Integer}] :=
             ArrayReshape[
-                CalcDensityInnerProductsMatrixInternal[quregIds],
+                MapThread[
+                    #1 + I #2 &,
+                    CalcDensityInnerProductsMatrixInternal[quregIds]],
                 {Length @ quregIds, Length @ quregIds}
             ]
         (* compute a real vector of density innere products *)
         CalcDensityInnerProducts[rhoId_Integer, omegaIds:{__Integer}] :=
-            CalcDensityInnerProductsVectorInternal[rhoId, omegaIds]
+            MapThread[
+                #1 + I #2 &,
+                CalcDensityInnerProductsVectorInternal[rhoId, omegaIds]]
         (* error for bad args *)
         CalcDensityInnerProducts[___] := invalidArgError[CalcDensityInnerProducts]
         

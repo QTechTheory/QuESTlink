@@ -20,6 +20,7 @@
 
 #include "wstp.h"
 #include "QuEST.h"
+#include "QuEST_internal.h"
 
 #include "link.hpp"
 #include "errors.hpp"
@@ -547,8 +548,19 @@ void wrapper_calcDensityInnerProduct(int id1, int id2) {
     try {
         local_throwExcepIfQuregNotCreated(id1); // throws
         local_throwExcepIfQuregNotCreated(id2); // throws
-        qreal res = calcDensityInnerProduct(quregs[id1], quregs[id2]); // throws
-        WSPutReal64(stdlink, res);
+        
+        // previously, we called calcDensityInnerProduct(), though this returns a 
+        // strictly real quantity and is ergo only correct/descriptive when the 
+        // input registers are Hermitian (ergo valid density matrices). Otherwise, 
+        // Tr(dagger(id1)id2) = <id1|id2> is a complex scalar
+        Complex prod = statevec_calcInnerProduct(quregs[id1], quregs[id2]);
+                
+        if (local_isNonZero(prod.imag)) {
+            WSPutFunction(stdlink, "Complex", 2);
+            WSPutReal64(stdlink, prod.real);
+            WSPutReal64(stdlink, prod.imag);
+        } else
+            WSPutReal64(stdlink, prod.real);
         
     } catch( QuESTException& err) {
         local_sendErrorAndFail("CalcDensityInnerProduct", err.message);
@@ -595,7 +607,8 @@ void wrapper_calcHilbertSchmidtDistance(int id1, int id2) {
 void internal_calcDensityInnerProductsVector(int rhoId, int* omegaIds, long numOmegas) {
     
     // init to null so we can check whether it needs cleanup
-    qreal* prods = NULL;
+    qreal* prodsRe = NULL;
+    qreal* prodsIm = NULL;
     
     try {
         local_throwExcepIfQuregNotCreated(rhoId); // throws
@@ -603,23 +616,28 @@ void internal_calcDensityInnerProductsVector(int rhoId, int* omegaIds, long numO
             local_throwExcepIfQuregNotCreated(omegaIds[i]); // throws
         
         // calculate inner products (must free this)
-        prods = (qreal*) malloc(numOmegas * sizeof *prods);
-        for (int i=0; i<numOmegas; i++)
-            prods[i] = calcDensityInnerProduct(quregs[rhoId], quregs[omegaIds[i]]); // throws
+        prodsRe = (qreal*) malloc(numOmegas * sizeof *prodsRe);
+        prodsIm = (qreal*) malloc(numOmegas * sizeof *prodsIm);
+        for (int i=0; i<numOmegas; i++) {
+            // Tr(dagger(rho)omega) = <rho|omega>
+            Complex prod = statevec_calcInnerProduct(quregs[rhoId], quregs[omegaIds[i]]);
+            prodsRe[i] = prod.real;
+            prodsIm[i] = prod.imag;
+        }
             
         // send result to MMA
-        WSPutReal64List(stdlink, prods, numOmegas);
-        
-        // and clean-up
-        free(prods);
+        WSPutFunction(stdlink, "List", 2);
+        WSPutReal64List(stdlink, prodsRe, numOmegas);
+        WSPutReal64List(stdlink, prodsIm, numOmegas);
     
     } catch (QuESTException& err) {
-        
-        // may still need to clean-up
-        if (prods != NULL)
-            free(prods);
-        
         local_sendErrorAndFail("CalcDensityInnerProducts", err.message);
+    }
+    
+    // clean up, even if above errors
+    if (prodsRe != NULL) {
+        free(prodsRe);
+        free(prodsIm);
     }
 }
 
@@ -670,43 +688,24 @@ void internal_calcInnerProductsVector(int braId, int* ketIds, long numKets) {
 /* returns real, symmetric matrix with ith jth element calcDensityInnerProduct(quregs[quregIds[i]], qureg[qurgIds[j]]) */
 void internal_calcDensityInnerProductsMatrix(int* quregIds, long numQuregs) {
     
-    // init to NULL so we can later check if it needs cleanup
-    qreal* matr = NULL;
+    qmatrix matr = local_getQmatrix(numQuregs);
     
     try {
-        // check all quregs are created
         for (int i=0; i<numQuregs; i++)
             local_throwExcepIfQuregNotCreated(quregIds[i]); // throws
             
-        // store real matrix as `nested pointers`
-        long len = numQuregs * numQuregs;
-        matr = (qreal*) malloc(len * sizeof *matr);
-        
-        // compute matrix (exploiting matrix is symmetric)
-        for (int r=0; r<numQuregs; r++) {
-            for (int c=0; c<numQuregs; c++) {
+        for (int r=0; r<numQuregs; r++)
+            for (int c=0; c<numQuregs; c++)
                 if (c >= r) {
-                    qreal val = calcDensityInnerProduct(quregs[quregIds[r]], quregs[quregIds[c]]); // throws
-                    matr[r*numQuregs + c] = val;
-                } else {
-                    matr[r*numQuregs + c] = matr[c*numQuregs + r];
-                }
-            }
-        }
+                    // compute Tr(dagger(r) c) = <r|c>
+                    Complex prod = statevec_calcInnerProduct(quregs[quregIds[r]], quregs[quregIds[c]]);
+                    matr[r][c] = fromComplex(prod);
+                } else
+                    matr[r][c] = conj(matr[c][r]); 
+                    
+        local_sendMatrixToMMA(matr);
         
-        // return
-        WSPutReal64List(stdlink, matr, len);
-        
-        // clean-up
-        free(matr);
-        
-    } catch (QuESTException& err) {
-        
-        // may still need clean-up
-        if (matr != NULL)
-            free(matr);
-            
-        // send error and exit
+    } catch (QuESTException& err) {    
         local_sendErrorAndFail("CalcDensityInnerProducts", err.message);
     }
 }

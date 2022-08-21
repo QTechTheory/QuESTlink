@@ -328,7 +328,7 @@
 :ReturnType:     Manual
 :End:
 :Evaluate: 
-    QuEST`CalcDensityInnerProduct::usage = "CalcDensityInnerProduct[qureg1, qureg2] returns the real Hilbert schmidt scalar product between two given density matrices.";
+    QuEST`CalcDensityInnerProduct::usage = "CalcDensityInnerProduct[qureg1, qureg2] returns the the Hilbert schmidt scalar product between two given density matrices. If both quregs are valid/normalised, the result will be a real scalar, though may have a tiny non-zero imaginary component due to numerical imprecision. If either qureg is not a valid density matrix, the result may be a complex scalar.";
     QuEST`CalcDensityInnerProduct::error = "`1`";
     QuEST`CalcDensityInnerProduct[___] := QuEST`Private`invalidArgError[CalcDensityInnerProduct];
 
