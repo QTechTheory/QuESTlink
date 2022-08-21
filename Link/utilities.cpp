@@ -277,6 +277,9 @@ qmatrix local_getQmatrixFromFlatList(qreal* flatElems, int dim) {
 
 void local_setMatrixNFromQmatrix(ComplexMatrixN cm, qmatrix qm) {
     size_t dim = qm.size();
+    if ((long long int) dim != (1LL<<cm.numQubits))
+        throw QuESTException("", "An internal error occurred. local_setMatrixNFromQmatrix() called with incompatibly-sized matrices.");
+    
     for (size_t r=0; r<dim; r++)
         for (size_t c=0; c<dim; c++) {
             cm.real[r][c] = real(qm[r][c]);

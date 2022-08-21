@@ -194,6 +194,14 @@ class Gate {
          * state. 
          */
         bool isInvertible();
+        
+        /** Returns whether the gate is trace-preserving, as is determined by the 
+         * type of the gate (and NOT its arguments). Ergo, U and UNonNorm are both 
+         * trace preserving, but Matr and Fac are not. Note that somewhat whimsically,
+         * KrausNonTP is assumed trace-preserving, expecting to deviate from CPTP  
+         * only by a small numerical error.
+         */
+        bool isTracePreserving();
             
         /** Returns the number of outputs that this gate produces when performed 
          * in a circuit. This is the number of elements added to the outputs array 
@@ -311,6 +319,20 @@ class Circuit {
          * upon density matrices (false)
          */
         bool isPure();
+        
+        /** Returns whether the circuit is invertible, which consulting both the 
+         * type of gate (returning false for measurements and projections), but also 
+         * the parameters (whether Kraus superoperators are non-invertible).
+         */
+        bool isInvertible();
+        
+        /** Returns whether the circuit contains only trace-preserving gates, as
+         * determined solely by the type of the gate (and NOT its arguments). 
+         * Ergo, U and UNonNorm are both trace preserving, but Matr and Fac are not. 
+         * Note that somewhat whimsically, KrausNonTP is assumed trace-preserving, 
+         * expecting to deviate from CPTP by only a small numerical error.
+         */
+        bool isTracePreserving();
         
         /** Modify qureg by sequentially applying every gate within the circuit, 
          * with increasing index. Array outputs is modified to have its first n 

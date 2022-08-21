@@ -32,16 +32,20 @@ Accepts optional arguments WithBackup and ShowProgress."
     
     CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] modifies the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in any continuous gate or decoherence channel.
 CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs, workspaceQureg] uses the given persistent workspace qureg to avoid tediously creating and destroying any internal quregs, for a speedup. For convenience, any number of workspaces can be passed, but only the first is used.
-Variable repetition, multi-parameter gates, variable dependent element-wise matrices, variable dependent channels and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted."
+Variable repetition, multi-parameter gates, variable dependent element-wise matrices, variable dependent channels, and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted."
     CalcQuregDerivs::error = "`1`"
     
     CalcExpecPauliStringDerivs::usage = "CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString] returns the gradient vector of the pauliString expected values, as produced by the derivatives of the circuit (with respect to varVals, {var -> value}) acting upon the given initial state.
 CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most three workspaceQuregs are needed.
-This function permits all the freedoms of CalcQuregDerivs[] but requires only a fixed memory overhead (in lieu of #varVals quregs), and when performed upon statevectors, will even run a factor Length[circuit] faster."
+This function permits all the freedoms of CalcQuregDerivs[] but requires only a fixed memory overhead (in lieu of \[NumberSign]varVals quregs) and when performed upon statevectors, will even run a factor Length[circuit] faster."
     CalcExpecPauliStringDerivs::error = "`1`"
     
-    CalcMetricTensor::usage = "CalcMetricTensor[circuit, initQureg, varVals] returns the natural gradient metric tensor, capturing the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}. For state-vectors, this returns the quantum geometric tensor, which relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections. For density-matrices, this function returns the Hilbert-Schmidt derivative metric, which well approximates the quantum Fisher information matrix.
-CalcMetricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most four workspaceQuregs are needed."
+    CalcMetricTensor::usage = "CalcMetricTensor[circuit, initQureg, varVals] returns the natural gradient metric tensor, capturing the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}.
+    \[Bullet] For state-vectors and pure circuits, this returns the quantum geometric tensor, which relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections.
+    \[Bullet] For density-matrices and noisy channels, this function returns the Hilbert-Schmidt derivative metric, which well approximates the quantum Fisher information matrix, though is a more experimentally relevant minimisation metric (https://arxiv.org/abs/1912.08660).
+    \[Bullet] Variable repetition, multi-parameter gates, variable-dependent element-wise matrices, variable-dependent channels, and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted.
+CalcMetricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most four workspaceQuregs are needed.
+This function uses a bespoke algorithm to evaluate the metric tensor in O(1) memory and O(\[NumberSign]parameters^2) time."
     CalcMetricTensor::error = "`1`"
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
@@ -390,7 +394,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
     Protect[Kraus]
     
-    KrausNonTP::usage = "Kraus[ops] applies a one or two-qubit non-trace-preserving Kraus map (given as a list of matrix operators) to a density matrix."
+    KrausNonTP::usage = "KrausNonTP[ops] is equivalent to Kraus[ops] but does not explicitly check that the map is trace-presering. It is still assumed a completely-positive trace-preserving map for internal algorithms, but will tolerate numerical imperfection."
     Protect[KrausNonTP]
     
     G::usage = "G[\[Theta]] applies a global phase rotation of phi, by premultiplying Exp[\[ImaginaryI] \[Theta]]."

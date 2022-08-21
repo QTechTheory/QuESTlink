@@ -500,7 +500,10 @@ void DerivCircuit::calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg 
         calcDerivEnergiesDensMatr(energyGrad, hamil, initQureg, workQuregs, numWorkQuregs); // throws
 }
 
-void DerivCircuit::calcMetricTensorStateVec(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
+qmatrix DerivCircuit::calcMetricTensorStateVec(Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
+    
+    if (!circuit->isInvertible())
+        throw QuESTException("", "The circuit must only contain invertible operators, and hence cannot contain measurements or projections.");
     
     if (numWorkQuregs < 4)
         throw QuESTException("", "An internal error occured. Fewer than four working registers were "
@@ -514,6 +517,7 @@ void DerivCircuit::calcMetricTensorStateVec(qmatrix tensor, Qureg initQureg, Qur
     cloneQureg(quregDiag, initQureg);
     
     // clear tensor
+    qmatrix tensor = local_getQmatrix(numVars);
     for (int i=0; i<numVars; i++)
         for (int j=0; j<numVars; j++)
             tensor[i][j] = 0;
@@ -590,25 +594,100 @@ void DerivCircuit::calcMetricTensorStateVec(qmatrix tensor, Qureg initQureg, Qur
     for (int r=0; r<numVars; r++)
         for (int c=0; c<numVars; c++)
             tensor[r][c] -= berries[r] * conj(berries[c]);
+            
+    return tensor;
 }
 
-void DerivCircuit::calcMetricTensorDensMatr(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
+qmatrix DerivCircuit::calcMetricTensorDensMatr(Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
     
-    /* TODO:
-     * Implement quantum Fisher information matrix?
-     * - Thm 1 https://arxiv.org/pdf/1801.00945.pdf gives QFI in terms of inv(rho) and d rho/dx
-     * - inv(rho) could be estimated with https://arxiv.org/pdf/cs/0412107.pdf
-     */
+    if (!circuit->isInvertible())
+        throw QuESTException("", "The circuit must only contain invertible operators, and hence cannot contain measurements or projections.");
+        
+    if (!circuit->isTracePreserving())
+        throw QuESTException("", "The circuit must be trace-preserving and hence cannot contain operators like Fac[] and Matr[]. Please instead use KrausNonTP which tolerates numerical non-CPTP.");
     
-    throw QuESTException("", "This facility is not yet available for channels or density matrices.");
+     if (numWorkQuregs < 4)
+         throw QuESTException("", "An internal error occured. Fewer than four working registers were "
+             "passed to DerivCircuit::calcMetricTensorDensMatr, despite prior validation."); // throws
+    
+    Qureg diagQureg = workQuregs[0];
+    Qureg leftQureg = workQuregs[1];
+    Qureg rightQureg = workQuregs[2];
+    Qureg derivQureg = workQuregs[3];
+    
+    qmatrix tensor = local_getQmatrix(numVars);
+    for (int i=0; i<numVars; i++)
+        for (int j=0; j<numVars; j++)
+            tensor[i][j] = 0;
+    
+    // set ||diagQureg>> = Phi_(finalDerivInd -1) ... Phi_0 ||in>>
+    cloneQureg(diagQureg, initQureg);
+    int finDerGateInd = terms[numTerms-1].getGateInd();
+    circuit->applySubTo(diagQureg, 0, finDerGateInd); // throws
+    int indOfLastGateOnDiag = finDerGateInd-1;
+
+    for (int t=numTerms-1; t>=0; t--) {
+        
+        DerivTerm leftDerivTerm = terms[t];
+        int leftVarInd = leftDerivTerm.getVarInd();
+        int leftGateInd = leftDerivTerm.getGateInd(); // ordered
+            
+        // create ||diag>> = Phi_(leftInd-1) ... Phi_0 ||in>>
+        circuit->applyInverseSubTo(diagQureg, leftGateInd, indOfLastGateOnDiag+1);        
+        indOfLastGateOnDiag = leftGateInd-1;
+
+        // set <<left|| = <<in|| Phi_0^ ... deriv(Phi_leftInd)^ ... Phi_last^
+        cloneQureg(leftQureg, diagQureg);
+        leftDerivTerm.applyTo(leftQureg); // throws
+        circuit->applySubTo(leftQureg, leftGateInd+1, circuit->getNumGates()); // throws
+        
+        // compute diagonal element, via Tr(dagger(left)right) = <left|right>
+        cloneQureg(rightQureg, leftQureg);
+        Complex prod = statevec_calcInnerProduct(leftQureg, rightQureg);
+        tensor[leftVarInd][leftVarInd] += fromComplex(prod); // real
+        
+        // set ||right>> = Phi_(leftInd-1) ... Phi_0 ||in>>
+        cloneQureg(rightQureg, diagQureg);
+        
+        int indOfLastGateOnLeft = circuit->getNumGates();
+        int indOfLastGateOnRight = leftGateInd - 1;
+        
+        for (int s=t-1; s>=0; s--) {
+            
+            DerivTerm rightDerivTerm = terms[s];
+            int rightGateInd = rightDerivTerm.getGateInd();
+            int rightVarInd = rightDerivTerm.getVarInd();
+    
+            // set <<left|| = <<in|| Phi_0^ ... deriv(Phi_leftInd)^ ... Phi_last^ Phi_last ... Phi_(rightInd + 1)
+            // (on the first iteration, this performs O(numVars) gates, but O(1) subsequently)
+            circuit->applyDaggerSubTo(leftQureg, rightGateInd+1, indOfLastGateOnLeft); // throws
+            indOfLastGateOnLeft = rightGateInd+1;
+            
+            // set ||right>> = Phi_(rightInd-1) ... Phi_0 ||in>> 
+            circuit->applyInverseSubTo(rightQureg, rightGateInd, indOfLastGateOnRight+1); // throws
+            indOfLastGateOnRight = rightGateInd - 1;
+            
+            // set ||deriv>> = deriv(Phi_rightInd) Phi_(rightInd-1) ... Phi_0 ||in>> 
+            cloneQureg(derivQureg, rightQureg);
+            rightDerivTerm.applyTo(derivQureg);
+        
+            // HS(left,right) = <<left||right>> = 
+            // <<in|| Phi_0^ ... deriv(Phi_leftInd)^ ... Phi_last^ Phi_last ... deriv(Phi_rightInd) ... Phi_0 ||in>> 
+            prod = statevec_calcInnerProduct(leftQureg, derivQureg);
+            tensor[leftVarInd][rightVarInd] += fromComplex(prod);
+            tensor[rightVarInd][leftVarInd] += conj(fromComplex(prod));
+        }
+    }
+
+    return tensor;
 }
 
-void DerivCircuit::calcMetricTensor(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
+qmatrix DerivCircuit::calcMetricTensor(Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
     
-    if (circuit->isPure() && !initQureg.isDensityMatrix)
-        calcMetricTensorStateVec(tensor, initQureg, workQuregs, numWorkQuregs); // throws
+    if (circuit->isPure() && !initQureg.isDensityMatrix) // throws
+        return calcMetricTensorStateVec(initQureg, workQuregs, numWorkQuregs); // throws
     else
-        calcMetricTensorDensMatr(tensor, initQureg, workQuregs, numWorkQuregs); // throws
+        return calcMetricTensorDensMatr(initQureg, workQuregs, numWorkQuregs); // throws
 }
 
 int DerivCircuit::getNumNeededWorkQuregsFor(std::string funcName, Qureg initQureg) {
@@ -631,7 +710,7 @@ int DerivCircuit::getNumNeededWorkQuregsFor(std::string funcName, Qureg initQure
         if (circIsPure && !initQureg.isDensityMatrix)
             return 4;
         else
-            return 0; // TODO: update this when density matrix version implemented
+            return 4;
     }
     
     local_sendErrorAndFail("CalcQuregDerivs", "An irrevocable internal error occured (DerivCircuit::getNumNeededWorkQuregsFor() " 
@@ -838,7 +917,7 @@ void internal_calcMetricTensor(int initQuregId) {
     try {
         local_throwExcepIfQuregNotCreated(initQuregId); // throws
         if (numPassedWorkQuregs > 0)
-            derivCirc.validateWorkQuregsFor(apiFuncName, initQuregId, workQuregIds, numPassedWorkQuregs); // throws
+            derivCirc.validateWorkQuregsFor("calcMetricTensor", initQuregId, workQuregIds, numPassedWorkQuregs); // throws
             
     } catch (QuESTException& err) {
         local_sendErrorAndFail(apiFuncName, err.message);

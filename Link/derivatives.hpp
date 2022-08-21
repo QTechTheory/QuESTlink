@@ -98,8 +98,8 @@ class DerivCircuit {
          */
         void calcDerivEnergiesStateVec(qreal* energies, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         void calcDerivEnergiesDensMatr(qreal* energies, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
-        void calcMetricTensorStateVec(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
-        void calcMetricTensorDensMatr(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        qmatrix calcMetricTensorStateVec(Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        qmatrix calcMetricTensorDensMatr(Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         
         /** Destroys the MMA arrays shared between DerivTerm instances (derivPArams), 
          * invoked during the destructor. This method is defined in decoders.cpp.
@@ -143,12 +143,22 @@ class DerivCircuit {
          */ 
         void calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         
-        /** Modifies tensor to be the quantum geometric tensor prescribed by 
-         * the circuit derivatives. This relates to the Fubini-Study metric, 
-         * the classical Fisher information metric, and the imaginary-time Li 
-         * tensor, and appears in pure-state quantum natural gradient.
+        /** Returns a derivative metric tensor which can be used for quantum 
+         * natural gradient. If initQureg is a state-vector and the circuit is pure, 
+         * then this function computes the quantum geometric tensor; a complex matrix,
+         * related to the Fubini-Study metric, the classical Fisher information matrix, 
+         * and the imaginary-time Li tensor plus Berry connections. If initQureg 
+         * is a density matrix and/or the circuit contains decoherence channels, this 
+         * function computes the Hilbert-Schmidt distance between the derivatives 
+         * of the output states, HS_ij = Tr(d rho/di d rho/dj), which is a real matrix 
+         * which approximates (a scaling of) the (also real) quantum Fisher information 
+         * matrix in typical NISQ settings (such as when modellable as global depolarisation,
+         * see https://arxiv.org/abs/1912.08660). In both scenarios, the metric tensor 
+         * is computed in O(#parameters^2) time and O(1) memory, using my algorithm 
+         * from https://arxiv.org/abs/2011.02991 and a density-matrix adaptation.
+         * @throws exception when numWorkQuregs != 4
          */
-        void calcMetricTensor(qmatrix tensor, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        qmatrix calcMetricTensor(Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         
         /** Returns the number of working registers needed to perform the method 
          * indicated by funcName upon given the initial register.

@@ -919,7 +919,7 @@ void Gate::applyDaggerTo(Qureg qureg) {
             superOpDag[3][3] = 1-prob;
             superOpDag[3][0] = prob;
             
-            ComplexMatrixN superCM = createComplexMatrixN(4);
+            ComplexMatrixN superCM = createComplexMatrixN(2);
             local_setMatrixNFromQmatrix(superCM, superOpDag);
             densmatr_applyMultiQubitKrausSuperoperator(qureg, targs, numTargs, superCM);
             destroyComplexMatrixN(superCM);
@@ -1036,6 +1036,42 @@ bool Gate::isInvertible() {
     }
 }
 
+bool Gate::isTracePreserving() {
+    
+    if (isUnitary()) // throws
+        return true;
+    
+    switch(opcode) {
+        
+        // These are not TP because they are not applied as operators U rho dagger(U),
+        // but are instead as U rho, and hence are generally invalid channels.
+        case OPCODE_Matr :
+        case OPCODE_Fac :
+            return false;
+        
+        // non-unitary but TP
+        case OPCODE_P :
+        case OPCODE_M :
+            return true;
+            
+        // TP channels
+        case OPCODE_Damp :
+        case OPCODE_Deph : 
+        case OPCODE_Depol :
+        case OPCODE_Kraus :
+            return true;
+            
+        // While this operator accepts unnormalised and hence numerically non-TP
+        // channels, it is still performed upon a state in the format of a TP 
+        // channel (sum_i U rho dagger(U_i)). 
+        case OPCODE_KrausNonTP :
+            return true;
+        
+        default:            
+            throw local_unrecognisedGateExcep(getSyntax(), opcode, __func__); // throws
+    }
+}
+
 void Gate::applyInverseTo(Qureg qureg) {
     
     if (!isInvertible()) // throws
@@ -1073,6 +1109,7 @@ void Gate::applyInverseTo(Qureg qureg) {
             params[0] = real(orig);
             params[1] = imag(orig);
         }
+            return;
         
         case OPCODE_Deph :
             if (numTargs == 1) {
@@ -1382,6 +1419,24 @@ bool Circuit::isPure() {
     
     for (int i=0; i<numGates; i++)
         if (!gates[i].isPure())
+            return false;
+            
+    return true;
+}
+
+bool Circuit::isInvertible() {
+    
+    for (int i=0; i<numGates; i++)
+        if (!gates[i].isInvertible())
+            return false;
+            
+    return true;
+}
+
+bool Circuit::isTracePreserving() {
+    
+    for (int i=0; i<numGates; i++)
+        if (!gates[i].isTracePreserving())
             return false;
             
     return true;
