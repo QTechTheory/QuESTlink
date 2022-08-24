@@ -1186,10 +1186,13 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         CreateRemoteQuESTEnv[ip_String, port1_Integer, port2_Integer] := Install @ getRemoteLink[ip, port1, port2]
         CreateRemoteQuESTEnv[___] := invalidArgError[CreateRemoteQuESTEnv]
                     
-        CreateLocalQuESTEnv[fn_:"quest_link"] := If[
-            FileExistsQ[fn], 
-            Install[fn],  
-            Message[CreateLocalQuESTEnv::error, "Local quest_link executable not found!"]; $Failed]
+        CreateLocalQuESTEnv[arg_:"quest_link"] := With[
+            {fn = arg <> If[$OperatingSystem === "Windows", ".exe", ""]},
+            If[
+                FileExistsQ[fn], 
+                Install[fn],  
+                Message[CreateLocalQuESTEnv::error, "Local quest_link executable not found!"]; $Failed]
+            ]
         CreateLocalQuESTEnv[__] := invalidArgError[CreateLocalQuESTEnv] (* no args is valid *)
             
         getExecFn["MacOS"|"MacOSX"] = "macos_quest_link";
