@@ -32,20 +32,24 @@ Accepts optional arguments WithBackup and ShowProgress."
     
     CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] modifies the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in any continuous gate or decoherence channel.
 CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs, workspaceQureg] uses the given persistent workspace qureg to avoid tediously creating and destroying any internal quregs, for a speedup. For convenience, any number of workspaces can be passed, but only the first is used.
-Variable repetition, multi-parameter gates, variable dependent element-wise matrices, variable dependent channels, and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted."
+    \[Bullet] Variable repetition, multi-parameter gates, variable-dependent element-wise matrices, variable-dependent channels, and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted."
     CalcQuregDerivs::error = "`1`"
     
     CalcExpecPauliStringDerivs::usage = "CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString] returns the gradient vector of the pauliString expected values, as produced by the derivatives of the circuit (with respect to varVals, {var -> value}) acting upon the given initial state.
-CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most three workspaceQuregs are needed.
-This function permits all the freedoms of CalcQuregDerivs[] but requires only a fixed memory overhead (in lieu of \[NumberSign]varVals quregs) and when performed upon statevectors, will even run a factor Length[circuit] faster."
+CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliQureg] accepts a Qureg pre-initialised as a pauli string via SetQuregToPauliString[] to speedup density-matrix simulation.
+CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliStringOrQureg, workspaceQuregs] uses the given persistent workspace in lieu of creating them internally, and should be used for optimum performance. At most four workspaceQuregs are needed.
+    \[Bullet] Variable repetition, multi-parameter gates, variable-dependent element-wise matrices, variable-dependent channels, and operators whose parameters are (numerically evaluable) functions of variables are all permitted. 
+    \[Bullet] All operators must be invertible, trace-preserving and deterministic, else an error is thrown. 
+    \[Bullet] This function runs asymptotically faster than CalcQuregDerivs[] and requires only a fixed memory overhead."
     CalcExpecPauliStringDerivs::error = "`1`"
     
     CalcMetricTensor::usage = "CalcMetricTensor[circuit, initQureg, varVals] returns the natural gradient metric tensor, capturing the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}.
+    CalcMetricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs in lieu of creating them internally, and should be used for optimum performance. At most four workspaceQuregs are needed.
     \[Bullet] For state-vectors and pure circuits, this returns the quantum geometric tensor, which relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections.
     \[Bullet] For density-matrices and noisy channels, this function returns the Hilbert-Schmidt derivative metric, which well approximates the quantum Fisher information matrix, though is a more experimentally relevant minimisation metric (https://arxiv.org/abs/1912.08660).
-    \[Bullet] Variable repetition, multi-parameter gates, variable-dependent element-wise matrices, variable-dependent channels, and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted.
-CalcMetricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs for a small speedup. At most four workspaceQuregs are needed.
-This function uses a bespoke algorithm to evaluate the metric tensor in O(1) memory and O(\[NumberSign]parameters^2) time."
+    \[Bullet] Variable repetition, multi-parameter gates, variable-dependent element-wise matrices, variable-dependent channels, and operators whose parameters are (numerically evaluable) functions of variables are all permitted. 
+    \[Bullet] All operators must be invertible, trace-preserving and deterministic, else an error is thrown. 
+    \[Bullet] This function runs asymptotically faster than CalcQuregDerivs[] and requires only a fixed memory overhead."
     CalcMetricTensor::error = "`1`"
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
@@ -834,6 +838,20 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     unpackEncodedDerivCircTerms @ encodedDerivTerms,
                     Sequence @@ getEncodedPauliString[paulis]]]
 
+        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, hamilQureg_Integer, workQuregs:{___Integer}:{}] :=
+            Module[
+                {ret, encodedCirc, encodedDerivTerms},
+                (* encode deriv circuit for backend, throwing any parsing errors *)
+                ret = Catch @ encodeDerivCirc[circuit, varVals];
+                If[Head@ret === String,
+                    Message[CalcExpecPauliStringDerivs::error, ret]; Return @ $Failed];
+                (* send to backend, mapping Mathematica indices to C++ indices *)
+                {encodedCirc, encodedDerivTerms} = ret;
+                CalcExpecPauliStringDerivsDenseHamilInternal[
+                    initQureg, hamilQureg, workQuregs,
+                    unpackEncodedCircuit @ encodedCirc, 
+                    unpackEncodedDerivCircTerms @ encodedDerivTerms]]
+            
         CalcExpecPauliStringDerivs[___] := invalidArgError[CalcExpecPauliStringDerivs]
         
         CalcMetricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, workQuregs:{___Integer}:{}] :=

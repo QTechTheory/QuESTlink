@@ -97,7 +97,7 @@ class DerivCircuit {
         /** Qureg type-specific implementations of public methods 
          */
         void calcDerivEnergiesStateVec(qreal* energies, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
-        void calcDerivEnergiesDensMatr(qreal* energies, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        void calcDerivEnergiesDensMatr(qreal* energyGrad, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         qmatrix calcMetricTensorStateVec(Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         qmatrix calcMetricTensorDensMatr(Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         
@@ -135,13 +135,20 @@ class DerivCircuit {
         
         /** Modifies eneryGrad to be the gradient of the expected energy under
          * the given Hamiltonian, as prescribed by the circuit derivatives.
-         * If initQureg is a state-vector and the circuit is pure, then this 
-         * function uses the O(#parameters) algorithm from arXiv 2009.02823.
-         * Otherwise, it uses a O(#parameters^2) method. In both scenarios, 
-         * the memory overhead is fixed. 
-         * @param energyGrad must be a pre-allocated length-numVars array
+         * This function uses the bespoke O(#parameters) time and O(1) memory 
+         * algorithm from  arXiv 2009.02823, using a novel adaptation
+         * for density matrices. Note that the density-matrix version involves 
+         * populating one of the workQuregs with a dense representation of the 
+         * hamil; use calcDerivEnergiesDenseHamil() to pre-prepare this qureg.
+         * @param energyGrad must be a pre-allocated length-numVars array.
          */ 
         void calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
+        
+        /** This is a density-matrix only version of calcDerivEnergies(), where 
+         * hamilQureg has been pre-prepared to be a matrix form of a PauliHamil,
+         * via setQuregToPauliString().
+         */
+        void calcDerivEnergiesDenseHamil(qreal* energyGrad, Qureg hamilQureg, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);
         
         /** Returns a derivative metric tensor which can be used for quantum 
          * natural gradient. If initQureg is a state-vector and the circuit is pure, 
