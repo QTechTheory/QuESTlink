@@ -512,6 +512,15 @@
     QuEST`CollapseToOutcome::error = "`1`";
     QuEST`CollapseToOutcome[___] := QuEST`Private`invalidArgError[CollapseToOutcome];
     
+:Begin:
+:Function:       internal_setQuregToPauliString
+:Pattern:        QuEST`Private`SetQuregToPauliStringInternal[qureg_Integer, termCoeffs_List, allPauliCodes_List, allPauliTargets_List, numPaulisPerTerm_List]
+:Arguments:      { qureg, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm }
+:ArgumentTypes:  { Integer, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`SetQuregToPauliStringInternal::usage = "SetQuregToPauliStringInternal[qureg, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] modifies density-matrix qureg to become the Hamiltonian as a matrix."
+
 
 
 :Begin:

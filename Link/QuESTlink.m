@@ -128,6 +128,10 @@ SetAmp[qureg, row, col, amp] modifies the indexed (row, col) amplitude of the de
     SetQuregMatrix::usage = "SetQuregMatrix[qureg, matr] modifies qureg, overwriting its statevector or density matrix with that passed."
     SetQuregMatrix::error = "`1`"
     
+    SetQuregToPauliString::usage = "SetQuregToPauliString[qureg, pauliString] overwrites the given density matrix to become a dense matrix representation of the given pauli string.
+The state is likely no longer a valid density matrix but is useful as a persistent Z-basis representation of the pauli string, to be used in functions like CalcDensityInnerProduct[] and CalcExpecPauliStringDerivs[]."
+    SetQuregToPauliString::error = "`1`"
+    
     GetPauliStringFromCoeffs::usage = "GetPauliStringFromCoeffs[addr] opens or downloads the file at addr (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes, converting this to a symbolic weighted sum of Pauli tensors. Each line of the file is a separate term (a Pauli product), with format {coeff code1 code2 ... codeN} (exclude braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z term in the product respectively), for an N-qubit operator. Each line must have N+1 terms (including the real decimal coefficient at the beginning)."
     GetPauliStringFromCoeffs::error = "`1`"
     
@@ -944,6 +948,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	]
         SetQuregMatrix[___] := invalidArgError[SetQuregMatrix]
         
+        SetQuregToPauliString[qureg_Integer, hamil_?isValidPauliString] :=
+            SetQuregToPauliStringInternal[qureg, Sequence @@ getEncodedPauliString[hamil]]
+        SetQuregToPauliString[___] := invalidArgError[SetQuregToPauliString]
         
         
         (*
