@@ -169,6 +169,31 @@ void callable_createDensityQuregs(int numQubits, int numQuregs) {
         free(ids);
 }
 
+void internal_setQuregToPauliString(int quregId) {
+    const std::string apiFuncName = "SetQuregToPauliString";
+    
+    // load Hamiltonian from MMA (and also validate quregId)
+    PauliHamil hamil;
+    try {
+        hamil = local_loadPauliHamilForQuregFromMMA(quregId); // throws
+    } catch (QuESTException& err) {
+        local_sendErrorAndFail(apiFuncName, err.message);
+        return;
+    }
+    
+    // modify the qureg
+    try {
+        setQuregToPauliHamil(quregs[quregId], hamil); // throws
+        
+        WSPutInteger(stdlink, quregId);
+        
+    } catch (QuESTException& err) {
+        local_sendErrorAndFail(apiFuncName, err.message);
+    }
+    
+    // clean-up even if above errors 
+    local_freePauliHamil(hamil);
+}
 
 
 
