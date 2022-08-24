@@ -456,40 +456,81 @@ void DerivCircuit::calcDerivEnergiesStateVec(qreal* eneryGrad, PauliHamil hamil,
     }
 }
 
-void DerivCircuit::calcDerivEnergiesDensMatr(qreal* energyGrad, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
+void DerivCircuit::calcDerivEnergiesDenseHamil(qreal* energyGrad, Qureg hamilQureg, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
     
-    if (numWorkQuregs < 2)
-        throw QuESTException("", "An internal error occured. Fewer than two working registers were "
-            "passed to DerivCircuit::calcDerivEnergiesDensMatr, despite prior validation."); // throws
+    if (!circuit->isInvertible()) // throws
+        throw QuESTException("", "The circuit must only contain invertible operators, and hence cannot "
+            "contain measurements or projections. It is otherwise possible a general operator (like "
+            "U or Kraus) was non-invertible for its particular parameter values. Please instead use CalcQuregDerivs[].");
+        
+    if (!circuit->isTracePreserving()) // throws
+        throw QuESTException("", "The circuit must be trace-preserving and hence cannot contain operators "
+            "like Fac[] and Matr[]. Please instead use KrausNonTP which tolerates numerical non-CPTP.");
     
-    Qureg qureg     = workQuregs[0];
-    Qureg workspace = workQuregs[1];
+     if (numWorkQuregs < 3)
+         throw QuESTException("", "An internal error occured. Fewer than three working registers were "
+             "passed to DerivCircuit::calcDerivEnergiesDenseHamil, despite prior validation."); // throws
+
+    Qureg leftQureg  = workQuregs[0];
+    Qureg rightQureg = workQuregs[1];
+    Qureg derivQureg = workQuregs[2];
     
     // clear energies
     for (int i=0; i<numVars; i++)
         energyGrad[i] = 0;
         
-    // iterate each differential term (those produced after chain-rule expansion)
-    for (int t=0; t<numTerms; t++) {
+    // an optimisation to avoid applying then undoing gates beyond the final deriv
+    int lastDerGateInd = terms[numTerms-1].getGateInd();
+
+    // prepare ||right>> = Phi_(lastDerGateInd-1) ... Phi_0 ||in>>
+    cloneQureg(rightQureg, initQureg);
+    circuit->applySubTo(rightQureg, 0, lastDerGateInd);
+    int indOfLastGateOnRight = lastDerGateInd - 1;
+
+    // prepare <<left|| = <<hamil|| Phi_N ... Phi_(lastDerGateInd+1)
+    cloneQureg(leftQureg, hamilQureg);
+    circuit->applyDaggerSubTo(leftQureg, lastDerGateInd+1, circuit->getNumGates());
+    int indOfLastGateOnLeft = lastDerGateInd+1;
         
-        DerivTerm term = terms[t];
-        int gateInd = term.getGateInd();
-        int varInd = term.getVarInd();
+    for (int t=numTerms-1; t>=0; t--) {
         
-        // set qureg = initQureg
-        if (initQureg.isDensityMatrix)
-            cloneQureg(qureg, initQureg);
-        else
-            initPureState(qureg, initQureg);
+        DerivTerm derivTerm = terms[t];
+        int gateInd = derivTerm.getGateInd();
+        int varInd = derivTerm.getVarInd();
         
-        // produce a single term of (d circuit(qureg) / d var)
-        circuit->applySubTo(qureg, 0, gateInd); // throws
-        term.applyTo(qureg); // throws
-        circuit->applySubTo(qureg, gateInd+1, circuit->getNumGates()); // throws
+        // set ||right>> = Phi_(gateInd-1) ... Phi_0 ||in>>  (by gate 'undoing')
+        circuit->applyInverseSubTo(rightQureg, gateInd, indOfLastGateOnRight+1);
+        indOfLastGateOnRight = gateInd - 1;
         
-        // add this term to (d circuit(qureg) / d var)
-        energyGrad[varInd] += calcExpecPauliHamil(qureg, hamil, workspace);
+        // set <<left|| = <<hamil|| Phi_N ... Phi_(gateInd+1) (by adding daggers)
+        circuit->applyDaggerSubTo(leftQureg, gateInd+1, indOfLastGateOnLeft);
+        indOfLastGateOnLeft = gateInd + 1;
+        
+        // set ||deriv>> = (d Phi_(gateInd)/dx) Phi_(gateInd-1) ... Phi_0 ||in>>
+        cloneQureg(derivQureg, rightQureg);
+        derivTerm.applyTo(derivQureg);
+        
+        // add <<left||qureg>> = Tr(hamil drho/dx)
+        Complex energy = statevec_calcInnerProduct(leftQureg, derivQureg);
+        if (local_isNonZero(energy.imag))
+            throw QuESTException("", "The energy had a non-real component (" + local_qcompToStr(fromComplex(energy)) + 
+                ") likely due to a non-trace-preserving operator (KrausNonTP) or an "
+                "invalidly initialised pauli string Qureg (see ?SetQuregToPauliString).");
+        
+        energyGrad[varInd] += energy.real;
     }
+}
+
+void DerivCircuit::calcDerivEnergiesDensMatr(qreal* energyGrad, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
+    
+    if (numWorkQuregs < 4)
+        throw QuESTException("", "An internal error occured. Fewer than four working registers were "
+            "passed to DerivCircuit::calcDerivEnergiesDensMatr (receiving PauliHamil, and hence "
+            "intending to populate a register to a pauli string), despite prior validation."); // throws
+    
+    Qureg hamilQureg = workQuregs[3];
+    setQuregToPauliHamil(hamilQureg, hamil);
+    calcDerivEnergiesDenseHamil(energyGrad, hamilQureg, initQureg, workQuregs, 3);
 }
 
 void DerivCircuit::calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
@@ -502,8 +543,9 @@ void DerivCircuit::calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg 
 
 qmatrix DerivCircuit::calcMetricTensorStateVec(Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
     
-    if (!circuit->isInvertible())
-        throw QuESTException("", "The circuit must only contain invertible operators, and hence cannot contain measurements or projections.");
+    if (!circuit->isInvertible()) // throws
+        throw QuESTException("", "The circuit must only contain invertible operators, and hence cannot "
+            "contain measurements or projections. Please instead use CalcQuregDerivs[]"); // throws
     
     if (numWorkQuregs < 4)
         throw QuESTException("", "An internal error occured. Fewer than four working registers were "
@@ -600,11 +642,14 @@ qmatrix DerivCircuit::calcMetricTensorStateVec(Qureg initQureg, Qureg* workQureg
 
 qmatrix DerivCircuit::calcMetricTensorDensMatr(Qureg initQureg, Qureg* workQuregs, int numWorkQuregs) {
     
-    if (!circuit->isInvertible())
-        throw QuESTException("", "The circuit must only contain invertible operators, and hence cannot contain measurements or projections.");
+    if (!circuit->isInvertible()) // throws
+        throw QuESTException("", "The circuit must only contain invertible operators, and hence cannot "
+            "contain measurements or projections. It is otherwise possible a general operator (like "
+            "U or Kraus) was non-invertible for its particular parameter values. Please instead use CalcQuregDerivs[].");
         
-    if (!circuit->isTracePreserving())
-        throw QuESTException("", "The circuit must be trace-preserving and hence cannot contain operators like Fac[] and Matr[]. Please instead use KrausNonTP which tolerates numerical non-CPTP.");
+    if (!circuit->isTracePreserving()) // throws
+        throw QuESTException("", "The circuit must be trace-preserving and hence cannot contain operators "
+            "like Fac[] and Matr[]. Please instead use KrausNonTP which tolerates numerical non-CPTP.");
     
      if (numWorkQuregs < 4)
          throw QuESTException("", "An internal error occured. Fewer than four working registers were "
@@ -702,7 +747,12 @@ int DerivCircuit::getNumNeededWorkQuregsFor(std::string funcName, Qureg initQure
         if (circIsPure && !initQureg.isDensityMatrix)
             return 3;
         else
-            return 2;
+            return 4;
+    }
+    
+    if (funcName == "calcDerivEnergiesDenseHamil") {
+        
+        return 3;
     }
     
     if (funcName == "calcMetricTensor") {
@@ -898,6 +948,77 @@ void internal_calcExpecPauliStringDerivs(int initQuregId) {
     free(workQuregs);
     free(energyGrad);
     local_freePauliHamil(hamil);
+    WSReleaseInteger32List(stdlink, workQuregIds, numPassedWorkQuregs);
+}
+
+void internal_calcExpecPauliStringDerivsDenseHamil(int initQuregId, int hamilQuregId) {
+    const std::string apiFuncName = "CalcExpecPauliStringDerivs";
+    
+    // load the any-length workspace list from MMA
+    int* workQuregIds;
+    int numPassedWorkQuregs;
+    WSGetInteger32List(stdlink, &workQuregIds, &numPassedWorkQuregs);
+    
+    // load the circuit and deriv spec from MMA
+    DerivCircuit derivCirc;
+    derivCirc.loadFromMMA(); // local, so desconstructor automatic
+    
+    Qureg initQureg, hamilQureg;
+    
+    // validate registers 
+    try {
+        local_throwExcepIfQuregNotCreated(initQuregId); // throws
+        local_throwExcepIfQuregNotCreated(hamilQuregId); // throws
+        
+        initQureg = quregs[initQuregId];
+        hamilQureg = quregs[hamilQuregId];
+        
+        if ( ! (initQureg.isDensityMatrix && hamilQureg.isDensityMatrix) )
+            throw QuESTException("", "When passing a Hamiltonian encoded into a Qureg, "
+                "both that Qureg and the initial state must be density matrices.");
+                
+        if ( initQureg.numQubitsRepresented != hamilQureg.numQubitsRepresented )
+            throw QuESTException("", "The initial state Qureg and the Hamiltonian encoded into a "
+                "qureg must be of equal dimensions.");
+        
+        if (numPassedWorkQuregs > 0)
+            derivCirc.validateWorkQuregsFor("calcDerivEnergiesDenseHamil", initQuregId, workQuregIds, numPassedWorkQuregs); // throws
+        
+    } catch (QuESTException& err) {
+        local_sendErrorAndFail(apiFuncName, err.message);
+        WSReleaseInteger32List(stdlink, workQuregIds, numPassedWorkQuregs);
+        return;
+    }
+    
+    // optionally create work registers
+    int numNeededWorkQuregs = derivCirc.getNumNeededWorkQuregsFor("calcDerivEnergiesDenseHamil", initQureg);
+    Qureg* workQuregs = (Qureg*) malloc(numNeededWorkQuregs * sizeof *workQuregs);
+    for (int i=0; i<numNeededWorkQuregs; i++)
+        if (numPassedWorkQuregs == 0)
+            workQuregs[i] = createCloneQureg(initQureg, env);
+        else
+            workQuregs[i] = quregs[workQuregIds[i]];
+    
+    // prepare energy grad vector (malloc onto heap to avoid stack size limits)
+    int numDerivs = derivCirc.getNumVars();
+    qreal* energyGrad = (qreal*) malloc(numDerivs * sizeof *energyGrad);
+    
+    // attempt to compute and return energy grad
+    try {    
+        derivCirc.calcDerivEnergiesDenseHamil(energyGrad, hamilQureg, initQureg, workQuregs, numNeededWorkQuregs); // throws
+
+        WSPutReal64List(stdlink, energyGrad, numDerivs);
+        
+    } catch (QuESTException& err) {
+        local_sendErrorAndFailOrAbortFromExcep(apiFuncName, err.thrower,  err.message);
+    }
+
+    // clean-up even despite errors
+    if (numPassedWorkQuregs == 0)
+        for (int i=0; i<numNeededWorkQuregs; i++)
+            destroyQureg(workQuregs[i], env);
+    free(workQuregs);
+    free(energyGrad);
     WSReleaseInteger32List(stdlink, workQuregIds, numPassedWorkQuregs);
 }
 
