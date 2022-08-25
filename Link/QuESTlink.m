@@ -30,26 +30,28 @@ ApplyCircuit[inQureg, circuit, outQureg] leaves inQureg unchanged, but modifies 
 Accepts optional arguments WithBackup and ShowProgress."
     ApplyCircuit::error = "`1`"
     
-    CalcQuregDerivs::usage = "CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs] modifies the given list of (deriv)quregs to be the result of applying derivatives of the parameterised circuit to the initial state. The derivQuregs are ordered by the varVals, which should be in the format {param -> value}, where param is featured in any continuous gate or decoherence channel.
-CalcQuregDerivs[circuit, initQureg, varVals, derivQuregs, workspaceQureg] uses the given persistent workspace qureg to avoid tediously creating and destroying any internal quregs, for a speedup. For convenience, any number of workspaces can be passed, but only the first is used.
-    \[Bullet] Variable repetition, multi-parameter gates, variable-dependent element-wise matrices, variable-dependent channels, and operators whose parameters are (numerically evaluable) functions of variables are all permitted. In effect, every continuously-parameterised circuit or channel is permitted."
-    CalcQuregDerivs::error = "`1`"
+    ApplyCircuitDerivs::usage = "ApplyCircuitDerivs[inQureg, circuit, varVals, outQuregs] modifies outQuregs to be the result of applying the derivatives (with respect to variables in varVals) of the given symbolic circuit to inQureg (which remains unmodified).
+    \[Bullet] varVals is a list {symbol -> value, ...} of all variables present in the circuit parameters.
+    \[Bullet] outQuregs is a list of quregs to set to the respective derivative of circuit upon inQureg, according to the order of vars.
+    \[Bullet] Variable repetition, multi-parameter gates, variable-dependent element-wise matrices, variable-dependent channels, and operators whose parameters are (numerically evaluable) functions of variables are all permitted within the circuit. In effect, every continuously-parameterised circuit or channel is permitted.
+ApplyCircuitDerivs[inQureg, circuit, varVals, outQuregs, workQuregs] use the given persistent workspace quregs to avoid tediously creating and destroying any internal quregs, for a speedup. For convenience, any number of workspaces can be passed, but only the first is needed and used."
+    ApplyCircuitDerivs::error = "`1`"
     
-    CalcExpecPauliStringDerivs::usage = "CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliString] returns the gradient vector of the pauliString expected values, as produced by the derivatives of the circuit (with respect to varVals, {var -> value}) acting upon the given initial state.
-CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliQureg] accepts a Qureg pre-initialised as a pauli string via SetQuregToPauliString[] to speedup density-matrix simulation.
-CalcExpecPauliStringDerivs[circuit, initQureg, varVals, pauliStringOrQureg, workspaceQuregs] uses the given persistent workspace in lieu of creating them internally, and should be used for optimum performance. At most four workspaceQuregs are needed.
+    CalcExpecPauliStringDerivs::usage = "CalcExpecPauliStringDerivs[inQureg, circuit, varVals, pauliString] returns the gradient vector of the pauliString expected values, as produced by the derivatives of the circuit (with respect to varVals, {var -> value}) acting upon the given initial state (inQureg).
+CalcExpecPauliStringDerivs[inQureg, circuit, varVals, pauliQureg] accepts a Qureg pre-initialised as a pauli string via SetQuregToPauliString[] to speedup density-matrix simulation.
+CalcExpecPauliStringDerivs[inQureg, circuit, varVals, pauliStringOrQureg, workQuregs] uses the given persistent workspaces (workQuregs) in lieu of creating them internally, and should be used for optimum performance. At most four workQuregs are needed.
     \[Bullet] Variable repetition, multi-parameter gates, variable-dependent element-wise matrices, variable-dependent channels, and operators whose parameters are (numerically evaluable) functions of variables are all permitted. 
     \[Bullet] All operators must be invertible, trace-preserving and deterministic, else an error is thrown. 
-    \[Bullet] This function runs asymptotically faster than CalcQuregDerivs[] and requires only a fixed memory overhead."
+    \[Bullet] This function runs asymptotically faster than ApplyCircuitDerivs[] and requires only a fixed memory overhead."
     CalcExpecPauliStringDerivs::error = "`1`"
     
-    CalcMetricTensor::usage = "CalcMetricTensor[circuit, initQureg, varVals] returns the natural gradient metric tensor, capturing the circuit derivatives (produced from initial state initQureg) with respect to varVals, specified with values {var -> value, ...}.
-    CalcMetricTensor[circuit, initQureg, varVals, workspaceQuregs] uses the given persistent workspace quregs in lieu of creating them internally, and should be used for optimum performance. At most four workspaceQuregs are needed.
+    CalcMetricTensor::usage = "CalcMetricTensor[inQureg, circuit, varVals] returns the natural gradient metric tensor, capturing the circuit derivatives (produced from initial state inQureg) with respect to varVals, specified with values {var -> value, ...}.
+    CalcMetricTensor[inQureg, circuit, varVals, workQuregs] uses the given persistent workspace quregs (workQuregs) in lieu of creating them internally, and should be used for optimum performance. At most four workQuregs are needed.
     \[Bullet] For state-vectors and pure circuits, this returns the quantum geometric tensor, which relates to the Fubini-Study metric, the classical Fisher information matrix, and the variational imaginary-time Li tensor with Berry connections.
     \[Bullet] For density-matrices and noisy channels, this function returns the Hilbert-Schmidt derivative metric, which well approximates the quantum Fisher information matrix, though is a more experimentally relevant minimisation metric (https://arxiv.org/abs/1912.08660).
     \[Bullet] Variable repetition, multi-parameter gates, variable-dependent element-wise matrices, variable-dependent channels, and operators whose parameters are (numerically evaluable) functions of variables are all permitted. 
     \[Bullet] All operators must be invertible, trace-preserving and deterministic, else an error is thrown. 
-    \[Bullet] This function runs asymptotically faster than CalcQuregDerivs[] and requires only a fixed memory overhead."
+    \[Bullet] This function runs asymptotically faster than ApplyCircuitDerivs[] and requires only a fixed memory overhead."
     CalcMetricTensor::error = "`1`"
     
     CalcInnerProducts::usage = "CalcInnerProducts[quregIds] returns a Hermitian matrix with i-th j-th element CalcInnerProduct[quregIds[i], quregIds[j]].
@@ -482,6 +484,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
     MixDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
     MixTwoQubitDephasing::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Deph."
     MixTwoQubitDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
+    CalcQuregDerivs::usage = "This function is deprecated. Please instead use ApplyCircuitDerivs."
     
     EndPackage[]
  
@@ -535,6 +538,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             Message[ApplyCircuit::error, "The function MixTwoQubitDepolarising[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Depol[] gate instead, or temporarily hide this message using Quiet[]."];
             ApplyCircuit[qureg, Subscript[Depol,qb1,qb2][prob]];
             qureg)
+            
+        CalcQuregDerivs[circuit_, initQureg_, varVals_, derivQuregs_, workQuregs:_:-1] := (
+            Message[ApplyCircuitDerivs::error, "The function CalcQuregDerivs[] is deprecated, though has still been attemptedly performed. In future, please use ApplyCircuitDerivs[], or temporarily hide this message using Quiet[]."];
+            ApplyCircuitDerivs[initQureg, circuit, varVals, derivQuregs, workQuregs])
+            
             
             
         
@@ -805,25 +813,27 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         (*
          * derivatives
          *)
-
-        CalcQuregDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, derivQuregs:{__Integer}, workQuregs:(_Integer|{__Integer}):-1] :=  
+         
+        ApplyCircuitDerivs[inQureg_Integer, circuit_?isCircuitFormat, vars:{(_ -> _?Internal`RealValuedNumericQ) ..}, outQuregs:{__Integer}, workQuregs:(_Integer|{__Integer}):-1] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
-                (* check each var corresponds to a deriv qureg *)
-                If[Length[varVals] =!= Length[derivQuregs],
-                    Message[CalcQuregDerivs::error, "An equal number of variables and derivQuregs must be passed."]; Return@$Failed];
+                (* check each var corresponds to an out qureg *)
+                If[Length[vars] =!= Length[outQuregs],
+                    Message[ApplyCircuitDerivs::error, "An equal number of variables and ouptut quregs must be passed."]; Return@$Failed];
                 (* encode deriv circuit for backend, throwing any parsing errors *)
-                ret = Catch @ encodeDerivCirc[circuit, varVals];
+                ret = Catch @ encodeDerivCirc[circuit, vars];
                 If[Head@ret === String,
-                    Message[CalcQuregDerivs::error, ret]; Return @ $Failed];
-                (* send to backend, mapping Mathematica indices to C++ indices *)
+                    Message[ApplyCircuitDerivs::error, ret]; Return @ $Failed];
+                (* dispatch states, circuit and derivative circuit to backlend *)
                 {encodedCirc, encodedDerivTerms} = ret;
-                CalcQuregDerivsInternal[initQureg, First@{Sequence@@workQuregs}, derivQuregs, 
+                ApplyCircuitDerivsInternal[
+                    inQureg, First@{Sequence@@workQuregs}, outQuregs, 
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms]]
-        CalcQuregDerivs[___] := invalidArgError[CalcQuregDerivs]
+                    
+        ApplyCircuitDerivs[___] := invalidArgError[ApplyCircuitDerivs]  
         
-        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, paulis_?isValidPauliString, workQuregs:{___Integer}:{}] :=
+        CalcExpecPauliStringDerivs[initQureg_Integer, circuit_?isCircuitFormat, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, paulis_?isValidPauliString, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
@@ -838,7 +848,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                     unpackEncodedDerivCircTerms @ encodedDerivTerms,
                     Sequence @@ getEncodedPauliString[paulis]]]
 
-        CalcExpecPauliStringDerivs[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, hamilQureg_Integer, workQuregs:{___Integer}:{}] :=
+        CalcExpecPauliStringDerivs[initQureg_Integer, circuit_?isCircuitFormat, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, hamilQureg_Integer, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
@@ -854,7 +864,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             
         CalcExpecPauliStringDerivs[___] := invalidArgError[CalcExpecPauliStringDerivs]
         
-        CalcMetricTensor[circuit_?isCircuitFormat, initQureg_Integer, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, workQuregs:{___Integer}:{}] :=
+        CalcMetricTensor[initQureg_Integer, circuit_?isCircuitFormat, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms, retArrs},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
@@ -880,7 +890,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
          * inner products 
          *)
             
-        (* compute a matrix of inner products; this is used in tandem with CalcQuregDerivs to populate the Li matrix *)
+        (* compute a matrix of inner products; this can be used in tandem with ApplyCircuitDerivs to populate the Li matrix *)
         CalcInnerProducts[quregIds:{__Integer}] := 
             With[
                 {data=CalcInnerProductsMatrixInternal[quregIds],

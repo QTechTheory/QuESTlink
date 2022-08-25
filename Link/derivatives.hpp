@@ -139,7 +139,7 @@ class DerivCircuit {
          * algorithm from  arXiv 2009.02823, using a novel adaptation
          * for density matrices. Note that the density-matrix version involves 
          * populating one of the workQuregs with a dense representation of the 
-         * hamil; use calcDerivEnergiesDenseHamil() to pre-prepare this qureg.
+         * hamil; use calcDerivEnergiesDenseHamil() to use a pre-prepared qureg.
          * @param energyGrad must be a pre-allocated length-numVars array.
          */ 
         void calcDerivEnergies(qreal* energyGrad, PauliHamil hamil, Qureg initQureg, Qureg* workQuregs, int numWorkQuregs);

@@ -416,7 +416,7 @@ void DerivCircuit::calcDerivEnergiesStateVec(qreal* eneryGrad, PauliHamil hamil,
     if (!circuit->isUnitary()) // throws
         throw QuESTException("", "The given circuit must be composed strictly of unitary gates "
             "(and ergo exclude gates like Matr[] and P[]) in order to return a valid real "
-            "observable gradient. For non-unitary circuits, use CalcQuregDerivs[]."); // throws
+            "observable gradient. For non-unitary circuits, use ApplyCircuitDerivs[]."); // throws
     
     if (numWorkQuregs < 3)
         throw QuESTException("", "An internal error occured. Fewer than three working registers were "
@@ -461,7 +461,7 @@ void DerivCircuit::calcDerivEnergiesDenseHamil(qreal* energyGrad, Qureg hamilQur
     if (!circuit->isInvertible()) // throws
         throw QuESTException("", "The circuit must only contain invertible operators, and hence cannot "
             "contain measurements or projections. It is otherwise possible a general operator (like "
-            "U or Kraus) was non-invertible for its particular parameter values. Please instead use CalcQuregDerivs[].");
+            "U or Kraus) was non-invertible for its particular parameter values. Please instead use ApplyCircuitDerivs[].");
         
     if (!circuit->isTracePreserving()) // throws
         throw QuESTException("", "The circuit must be trace-preserving and hence cannot contain operators "
@@ -545,7 +545,7 @@ qmatrix DerivCircuit::calcMetricTensorStateVec(Qureg initQureg, Qureg* workQureg
     
     if (!circuit->isInvertible()) // throws
         throw QuESTException("", "The circuit must only contain invertible operators, and hence cannot "
-            "contain measurements or projections. Please instead use CalcQuregDerivs[]"); // throws
+            "contain measurements or projections. Please instead use ApplyCircuitDerivs[]"); // throws
     
     if (numWorkQuregs < 4)
         throw QuESTException("", "An internal error occured. Fewer than four working registers were "
@@ -645,7 +645,7 @@ qmatrix DerivCircuit::calcMetricTensorDensMatr(Qureg initQureg, Qureg* workQureg
     if (!circuit->isInvertible()) // throws
         throw QuESTException("", "The circuit must only contain invertible operators, and hence cannot "
             "contain measurements or projections. It is otherwise possible a general operator (like "
-            "U or Kraus) was non-invertible for its particular parameter values. Please instead use CalcQuregDerivs[].");
+            "U or Kraus) was non-invertible for its particular parameter values. Please instead use ApplyCircuitDerivs[].");
         
     if (!circuit->isTracePreserving()) // throws
         throw QuESTException("", "The circuit must be trace-preserving and hence cannot contain operators "
@@ -763,7 +763,7 @@ int DerivCircuit::getNumNeededWorkQuregsFor(std::string funcName, Qureg initQure
             return 4;
     }
     
-    local_sendErrorAndFail("CalcQuregDerivs", "An irrevocable internal error occured (DerivCircuit::getNumNeededWorkQuregsFor() " 
+    local_sendErrorAndFail("ApplyCircuitDerivs", "An irrevocable internal error occured (DerivCircuit::getNumNeededWorkQuregsFor() " 
         "was given an unrecognised funcName: " + funcName + ") and the QuESTlink process must crash.");
     throw QuESTException("", "An internal error occurred; the function named passed to getNumNeededWorkQuregsFor() was unrecognised."); // throws
 }
@@ -807,8 +807,8 @@ DerivCircuit::~DerivCircuit() {
  * interfacing
  */
 
-void internal_calcQuregDerivs(int initQuregId, int workspaceId) {
-    const std::string apiFuncName = "CalcQuregDerivs";
+void internal_applyCircuitDerivs(int initQuregId, int workspaceId) {
+    const std::string apiFuncName = "ApplyCircuitDerivs";
     
     // get qureg ids (one for each var)
     int* quregIds;
