@@ -488,6 +488,15 @@
 :End:
 :Evaluate: QuEST`Private`SampleExpecPauliStringInternal::usage = "SampleExpecPauliStringInternal[showProgress, initQuregId, workId1, workId2, numSamples, opcodes, ctrls, numCtrlsPerOp, targs, numTargsPerOp, params, numParamsPerOp, termCoeffs, allPauliCodes, allPauliTargets, numPaulisPerTerm] estimates the expectation value of the given Hamiltonian and noisy channel through repeated sampling via state-vector simulation."
 
+:Begin:
+:Function:       internal_sampleClassicalShadow
+:Pattern:        QuEST`Private`SampleClassicalShadowStateInternal[quregId_Integer, numSamples_Integer]
+:Arguments:      { quregId, numSamples }
+:ArgumentTypes:  { Integer, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`SampleClassicalShadowStateInternal::usage = "SampleClassicalShadowStateInternal[quregId, numSamples] blah."
+
 
 
 

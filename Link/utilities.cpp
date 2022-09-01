@@ -57,6 +57,26 @@ int local_getRandomIndex(int numInds) {
     return numInds-1;
 }
 
+void local_lazyShuffle(std::vector<int> &array) {
+    
+    // this is a monstrously poor shuffle; merely swapping random elements a
+    // fixed number of times. It should only be used when the array doesn't *really*
+    // need to be shuffled, just mucked about a little for numerical reasons,
+    // in runtime-performance critical code
+    
+    int len = (int) array.size();
+    
+    for (int n=0; n<len; n++) {
+        
+        int i = local_getRandomIndex(len);
+        int j = local_getRandomIndex(len);
+        
+        int tmp = array[i];
+        array[i] = array[j];
+        array[j] = tmp;
+    }
+}
+
 
 
 /*
@@ -467,6 +487,12 @@ qmatrix local_getDagger(qmatrix matr) {
     return dag;
 }
 
+
+
+/* 
+ * property checkers
+ */
+ 
 bool local_isSquareMatrix(int numFlatReals) {
     
     if (numFlatReals % 2)
