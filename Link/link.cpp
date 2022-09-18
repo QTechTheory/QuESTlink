@@ -1214,6 +1214,15 @@ void internal_sampleClassicalShadow(int quregId) {
     for (int q=0; q<numQubits; q++)
         targs[q] = q;
         
+    // prepare Ry(-PI/2) (maps Z -> X) and Rx(PI/2) (maps Z to Y) operators
+    qreal v = 1/sqrt(2.);
+    ComplexMatrix2 ry = local_getZeroComplexMatrix2();
+    ry.real[0][0] =  v;  ry.real[0][1] = v;
+    ry.real[1][0] = -v;  ry.real[1][1] = v;
+    ComplexMatrix2 rx = local_getZeroComplexMatrix2();
+    rx.real[0][0] =  v;  rx.imag[0][1] = -v;
+    rx.imag[1][0] = -v;  rx.real[1][1] = v;
+        
     for (long n=0; n<numSamples; n++) {
         
         // shuffle qubit-collapse order, just for numerical safety
@@ -1226,9 +1235,9 @@ void internal_sampleClassicalShadow(int quregId) {
             
             // rotate measurement basis
             if (pauli == 1)
-                rotateY(tmp, q, -M_PI/2); // Z -> X
+                unitary(tmp, q, ry); // Z -> X
             if (pauli == 2)
-                rotateX(tmp, q, M_PI/2); // Z -> Y    
+                unitary(tmp, q, rx); // Z -> Y    
             
             // record operation, collapse state and record outcome
             long long int ind = n*numQubits + q;
