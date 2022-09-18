@@ -281,6 +281,10 @@ SampleExpecPauliString[initQureg, channel, pauliString, numSamples, {workQureg1,
 Use option ShowProgress to monitor the progress of sampling."
     SampleExpecPauliString::error = "`1`"
     
+    SampleClassicalShadow::usage = "SampleClassicalShadow[qureg, numSamples] returns a sequence of pseudorandom measurement bases (X, Y and Z) and their outcomes (as bits) when performed on all qubits of the given input state.
+\[Bullet] The output has structure { {bases, outcomes}, ...} where bases is a list of Pauli bases (encoded as 1=X, 2=Y, 3=Z) specified per-qubit, and outcomes are the corresponding classical qubit outcomes (0 or 1)."
+    SampleClassicalShadow::error = "`1`"
+    
     
     
     (*
@@ -1175,6 +1179,19 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         SampleExpecPauliString[qureg_Integer, channel_?isCircuitFormat, paulis_?isValidPauliString, numSamples:(_Integer|All), opts:OptionsPattern[]] :=
             SampleExpecPauliString[qureg, channel, paulis, numSamples, {-1, -1}, opts]
         SampleExpecPauliString[___] := invalidArgError[SampleExpecPauliString]
+        
+        SampleClassicalShadow[qureg_Integer, numSamples_Integer] /; (numSamples >= 2^63) := (
+            Message[SampleClassicalShadow::error, "The requested number of samples is too large, and exceeds the maximum C long integer (2^63)."];
+            $Failed)
+        SampleClassicalShadow[qureg_Integer, numSamples_Integer] := 
+            With[
+                {data = SampleClassicalShadowStateInternal[qureg, numSamples]},
+                If[data === $Failed, data, 
+                    Transpose[{
+                        Partition[ data[[2]], data[[1]]],
+                        Partition[ data[[3]], data[[1]]]}]]]
+        SampleClassicalShadow[___] := invalidArgError[SampleClassicalShadow]
+    
     
         
         (*

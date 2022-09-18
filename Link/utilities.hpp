@@ -13,6 +13,8 @@ int local_getRandomIndex(qreal* weights, int numInds);
 
 int local_getRandomIndex(int numInds);
 
+void local_lazyShuffle(std::vector<int> &array);
+
 
 typedef std::vector<qcomp> qvector;
 

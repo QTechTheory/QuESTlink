@@ -1177,6 +1177,85 @@ void wrapper_applyFullQFT(int id) {
 
 
 
+/* 
+ * CLASSICAL SHADOWS
+ */
+
+void internal_sampleClassicalShadow(int quregId) {
+    std::string apiFuncName = "SampleClassicalShadow";
+    
+    long numSamples;
+    WSGetLongInteger(stdlink, &numSamples);
+  
+    // validate inputs
+    try {
+        local_throwExcepIfQuregNotCreated(quregId); // throws
+        
+        if (numSamples <= 0)
+            throw QuESTException("", "The number of samples must be a positive integer."); // throws
+            
+    } catch( QuESTException& err) {
+        
+        local_sendErrorAndFail(apiFuncName, err.message);
+        return;
+    }
+    
+    Qureg qureg = quregs[quregId];
+    Qureg tmp = createCloneQureg(qureg, env);
+    int numQubits = qureg.numQubitsRepresented;
+    
+    // prepare the output structures
+    long long int outputLens = numQubits * (long long int) numSamples;
+    std::vector<int> allPauliCodes(outputLens);
+    std::vector<int> allBitOutcomes(outputLens);
+    
+    // prepare a to-be-shuffled list of targets
+    std::vector<int> targs(numQubits);
+    for (int q=0; q<numQubits; q++)
+        targs[q] = q;
+        
+    // prepare Ry(-PI/2) (maps Z -> X) and Rx(PI/2) (maps Z to Y) operators
+    qreal v = 1/sqrt(2.);
+    ComplexMatrix2 ry = local_getZeroComplexMatrix2();
+    ry.real[0][0] =  v;  ry.real[0][1] = v;
+    ry.real[1][0] = -v;  ry.real[1][1] = v;
+    ComplexMatrix2 rx = local_getZeroComplexMatrix2();
+    rx.real[0][0] =  v;  rx.imag[0][1] = -v;
+    rx.imag[1][0] = -v;  rx.real[1][1] = v;
+        
+    for (long n=0; n<numSamples; n++) {
+        
+        // shuffle qubit-collapse order, just for numerical safety
+        cloneQureg(tmp, qureg);
+        local_lazyShuffle(targs);
+        
+        for (int i=0; i<numQubits; i++) {
+            int q = targs[i];
+            int pauli = 1 + local_getRandomIndex(3); // returns one of {1,2,3}
+            
+            // rotate measurement basis
+            if (pauli == 1)
+                unitary(tmp, q, ry); // Z -> X
+            if (pauli == 2)
+                unitary(tmp, q, rx); // Z -> Y    
+            
+            // record operation, collapse state and record outcome
+            long long int ind = n*numQubits + q;
+            allPauliCodes[ind] = pauli;
+            allBitOutcomes[ind] = measure(tmp, q);
+        }
+    }
+    
+    WSPutFunction(stdlink, "List", 3);
+    WSPutInteger(stdlink, numQubits);
+    WSPutIntegerList(stdlink, allPauliCodes.data(), outputLens);
+    WSPutIntegerList(stdlink, allBitOutcomes.data(), outputLens);
+    
+    destroyQureg(tmp, env);
+}
+
+
+
 /*
  * WSTP LAUNCH
  */
