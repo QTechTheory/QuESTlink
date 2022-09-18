@@ -20,6 +20,13 @@ void extension_mixTwoQubitDepolarisingDeriv(Qureg qureg, int t1, int t2, qreal p
 
 void extension_mixDampingDeriv(Qureg qureg, int targ, qreal prob, qreal probDeriv);
 
+void extension_calcExpecPauliProdsFromClassicalShadow(
+    std::vector<qreal> &prodExpecVals, long numProds,
+    int* sampleBases, int* sampleOutcomes, int numQb, long numSamples,
+    int* pauliCodes, int* pauliTargs, int* numPaulisPerProd,
+    int numBatches
+); // throws
+
 
 
 #endif // EXTENSIONS_H

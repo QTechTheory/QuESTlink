@@ -282,9 +282,15 @@ Use option ShowProgress to monitor the progress of sampling."
     SampleExpecPauliString::error = "`1`"
     
     SampleClassicalShadow::usage = "SampleClassicalShadow[qureg, numSamples] returns a sequence of pseudorandom measurement bases (X, Y and Z) and their outcomes (as bits) when performed on all qubits of the given input state.
-\[Bullet] The output has structure { {bases, outcomes}, ...} where bases is a list of Pauli bases (encoded as 1=X, 2=Y, 3=Z) specified per-qubit, and outcomes are the corresponding classical qubit outcomes (0 or 1)."
+\[Bullet] The output has structure { {bases, outcomes}, ...} where bases is a list of Pauli bases (encoded as 1=X, 2=Y, 3=Z) specified per-qubit, and outcomes are the corresponding classical qubit outcomes (0 or 1).
+\[Bullet] Both lists are ordered with least significant qubit (index 0) first.
+\[Bullet] The output shadow is useful for efficient experimental estimation of quantum state properties, as per Nat. Phys. 16, 1050–1057 (2020)."
     SampleClassicalShadow::error = "`1`"
     
+    CalcExpecPauliProdsFromClassicalShadow::usage = "CalcExpecPauliProdsFromClassicalShadow[shadow, prods] returns a list of expected values of each Pauli product, as prescribed by the given classical shadow (e.g. output from SampleClassicalShadow[]).
+CalcExpecPauliProdsFromClassicalShadow[shadow, prods, numBatches] divides the shadow into batches, computes the expected values of each, then returns their medians. This may suppress measurement errors. The default numBatches is 10. 
+This is the procedure outlined in Nat. Phys. 16, 1050–1057 (2020)."
+    CalcExpecPauliProdsFromClassicalShadow::error = "`1`"
     
     
     (*
@@ -1192,6 +1198,25 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                         Partition[ data[[3]], data[[1]]]}]]]
         SampleClassicalShadow[___] := invalidArgError[SampleClassicalShadow]
     
+        CalcExpecPauliProdsFromClassicalShadow[shadow_List, prods:{__:pauliTensorPatt}, numBatches_Integer:10] := 
+            If[
+                Not @ MatchQ[Dimensions[shadow], {nSamps_, 2, nQb_}],
+                (Message[CalcExpecPauliProdsFromClassicalShadow::error, "The classical shadow input must be a list " <>
+                    "(length equal to the number of samples) of length-2 sublists, each of length equal to the number 
+                    of qubits. This is the format {{{bases,outcomes}},...}, matching that output by SampleClassicalShadow[]."];
+                    $Failed),
+                With[
+                    {ops = (List @@@ prods) /. {p_:pauliCodePatt, q_Integer} :> {Subscript[p, q]}},
+                    {numQb = Length @ First @ First @ shadow,
+                     prodPaulis = ops[[All, All, 1]] /. {X->1,Y->2,Z->3},
+                     prodQubits = ops[[All, All, 2]]},
+                    CalcExpecPauliProdsFromClassicalShadowInternal[
+                        numQb, numBatches, Length[shadow], Flatten @ shadow[[All,1]], Flatten @ shadow[[All,2]],
+                        Flatten @ prodPaulis, Flatten @ prodQubits, Length /@ prodPaulis]
+                ]
+            ]    
+         CalcExpecPauliProdsFromClassicalShadow[___] := invalidArgError[CalcExpecPauliProdsFromClassicalShadow]
+
     
         
         (*
