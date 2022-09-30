@@ -402,12 +402,11 @@ __global__ void local_prepareShadowSampleBitseqsKernel(
     outcomeBitseqs[s] = seqOuts;
 }
 
-
 #define MAX_NUM_SHADOW_BATCHES 200
     
 __global__ void extension_calcExpecPauliProdsFromClassicalShadowKernel(
     qreal* prodExpecVals,
-    int numProds, int numSamples, int numBatches, long batchSize, 
+    int numProds, int numSamples, int numBatches,
     int* numPaulisPerProd,
     unsigned long long *baseBitseqs, unsigned long long *pauliTargBitseqs, 
     unsigned long long *pauliBitseqs, unsigned long long *outcomeBitseqs, 
@@ -462,7 +461,6 @@ __global__ void extension_calcExpecPauliProdsFromClassicalShadowKernel(
     else 
         prodExpecVals[p] = fac * .5 * (batchVals[numBatches/2] + batchVals[numBatches/2 + 1]);
 }
-    
 
 void extension_calcExpecPauliProdsFromClassicalShadow(
     std::vector<qreal> &prodExpecVals, long numProds,
@@ -482,7 +480,8 @@ void extension_calcExpecPauliProdsFromClassicalShadow(
         
     // prepare device copy of output structure
     qreal* d_prodExpecVals;
-    cudaMalloc(&d_prodExpecVals, numProds * sizeof *d_prodExpecVals);
+    size_t memExpecVals = numProds * sizeof *d_prodExpecVals;
+    cudaMalloc(&d_prodExpecVals, memExpecVals);
         
     // prepare device copies of input structures
     unsigned long long numTotalPaulis = pauliIndOffset[numProds-1] + numPaulisPerProd[numProds-1];
@@ -534,30 +533,16 @@ void extension_calcExpecPauliProdsFromClassicalShadow(
             numQb, numSamples, d_sampleBases, d_sampleOutcomes);
             
         // evaluate shadow expec values
-        
-        /*
-        unsigned long long* pauliBitseqs, unsigned long long* pauliTargBitseqs, unsigned long long* outcomeTargBitseqs,
-        long numProds, int* numPaulisPerProd, int* pauliIndOffset, int* pauliCodes, int* pauliTargs
-        */
-        
+        extension_calcExpecPauliProdsFromClassicalShadowKernel<<<ceil(numSamples/(qreal)bs), bs>>>(
+            d_prodExpecVals,
+            numProds, numSamples, numBatches, 
+            d_numPaulisPerProd, d_baseBitseqs, d_pauliTargBitseqs, 
+            d_pauliBitseqs, d_outcomeBitseqs, d_outcomeTargBitseqs);
+            
+        // copy expec vals back to RAM 
+        cudaMemcpy(d_prodExpecVals, prodExpecVals.data(), memExpecVals, cudaMemcpyDeviceToHost);
     }
-    
-    // FOR VALIDATION - JUST RACE CONDITION WRITE TO A GLOBAL FLAG
-    
-    // parallel validation: O(numTotalPaulis)
-    
-    // parallel validation: O(numSamples*numQb)
-    
-    // parallel bitseq encode: O(numProds*numQb) 
-    
-    // parallel bitseq encode: O(numSamples*numQb)
-    
-    // parallel eval: O(numProds*numSamples)
-    
-    
-    
-    
-    
+
     // clean-up
     cudaFree(d_prodExpecVals);
     cudaFree(d_sampleOutcomes);
@@ -571,10 +556,7 @@ void extension_calcExpecPauliProdsFromClassicalShadow(
     cudaFree(d_baseBitseqs);
     cudaFree(d_outcomeBitseqs);
     
-    if (invalid) {
-        // TODO: throw error
-    }
+    if (invalid)
+        throw QuESTException("", "The input classical shadow, or the Pauli products, were invalid.");
 }
-
-
 
