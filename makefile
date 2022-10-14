@@ -25,6 +25,9 @@ COMPILER_TYPE = GNU
 # only for WINDOWS: whether OS is 32-bit (x86) or 64-bit (x64). Choose {32, 64}
 WINDOWS_ARCH = 64
 
+# only for MACOS: whether OS runs on Intel (x64) or Apple Silicon (ARM). Choose {x64, ARM}
+MACOS_ARCH = x64
+
 # hardwares to target: 1 means use, 0 means don't use
 MULTITHREADED = 0
 GPUACCELERATED = 0
@@ -167,6 +170,14 @@ ifneq ($(SILENT), 1)
     endif
     endif
 
+    ifeq ($(OS), MACOS)
+    ifneq ($(MACOS_ARCH), x64)
+    ifneq ($(MACOS_ARCH), ARM)
+        $(error When compiling on MACOS, MACOS_ARCH must be x64 or ARM)
+    endif
+    endif
+    endif
+
 # end of allowed cleaning
 endif
 endif
@@ -187,7 +198,11 @@ endif
 ifeq ($(OS), WINDOWS)
     WSTP_SRC_DIR = $(WSTP_DIR)/Windows
 else ifeq ($(OS), MACOS)
-    WSTP_SRC_DIR = $(WSTP_DIR)/MacOS
+    ifeq ($(MACOS_ARCH), x64)
+        WSTP_SRC_DIR = $(WSTP_DIR)/MacOS
+    else ifeq ($(MACOS_ARCH), ARM)
+        WSTP_SRC_DIR = $(WSTP_DIR)/MacOS-ARM
+    endif
 else ifeq ($(OS), LINUX)
     WSTP_SRC_DIR = $(WSTP_DIR)/Linux
 endif
@@ -199,7 +214,11 @@ endif
 #
 
 ifeq ($(OS), MACOS)
-    LIBS = -lm -lc++ -lstdc++ $(WSTP_SRC_DIR)/MACOS_libWSTPi4.36.a
+    ifeq ($(MACOS_ARCH), x64)
+        LIBS = -lm -lc++ -lstdc++ $(WSTP_SRC_DIR)/MACOS_libWSTPi4.36.a
+    else ifeq ($(MACOS_ARCH), ARM)
+        LIBS = -lm -lc++ -lstdc++ $(WSTP_SRC_DIR)/macos_libWSTPi4.a
+    endif
     ifeq ($(GPUACCELERATED), 0)
         LIBS := $(LIBS) -framework Foundation
     endif
@@ -255,15 +274,23 @@ else
     ARCH_FLAG = X64
 endif
 
+AVX = -mavx
+# ARM doesn't have AVX
+ifeq ($(OS), MACOS)
+ifeq ($(MACOS_ARCH), ARM)
+    AVX =
+endif
+endif
+
 # c
-C_CLANG_FLAGS = -O2 -std=c99 -mavx -Wall -DQuEST_PREC=$(PRECISION)
-C_GNU_FLAGS = -O2 -std=c99 -mavx -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
+C_CLANG_FLAGS = -O2 -std=c99 $(AVX) -Wall -DQuEST_PREC=$(PRECISION)
+C_GNU_FLAGS = -O2 -std=c99 $(AVX) -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 C_INTEL_FLAGS = -O2 -std=c99 -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 C_MSVC_FLAGS = -O2 -EHs -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN$(WINDOWS_ARCH) -D_WINDOWS -Fo$@
 
 # c++
-CPP_CLANG_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION)
-CPP_GNU_FLAGS = -O2 -std=c++11 -mavx -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
+CPP_CLANG_FLAGS = -O2 -std=c++11 $(AVX) -Wall -DQuEST_PREC=$(PRECISION)
+CPP_GNU_FLAGS = -O2 -std=c++11 $(AVX) -Wall -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 CPP_INTEL_FLAGS = -O2 -std=c++11 -fprotect-parens -Wall -xAVX -axCORE-AVX2 -diag-disable -cpu-dispatch -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS)
 CPP_MSVC_FLAGS = -O2 -EHs -std:c++latest -DQuEST_PREC=$(PRECISION) $(THREAD_FLAGS) -nologo -DDWIN$(WINDOWS_ARCH) -D_WINDOWS -Fo$@
 
