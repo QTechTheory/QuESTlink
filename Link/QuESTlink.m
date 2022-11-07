@@ -266,6 +266,8 @@ GetKnownCircuit[\"LowDepthAnsatz\", reps, paramSymbol, qubits]
     (https://arxiv.org/pdf/1801.01053.pdf)"
     GetKnownCircuit::error = "`1`"
     
+    (* BELOW ARE TEMPORARILY MADE PRIVATE DUE TO INSUFFICIENT TESTING BEFORE v012 RELEASE *)
+    (*
     GetCircuitsFromChannel::usage = "GetCircuitsFromChannel[channel] returns a list of all pure, analytic circuits which are admitted as possible errors of the input channel (a circuit including decoherence). Coherent noise channels become unitaries weighted by a non-unitary Fac[] operator, while incoherent noise channels become non-trace-preserving Matr[] operators. The sum of the expected values of the (potentially unnormalised) state-vectors output by the returned circuits is equivalent to the expected value of the input channel.
 See GetRandomCircuitFromChannel[] to randomly select one of these circuits, weighted by its probability.
 See SampleExpecPauliString[] to sample such circuits in order to efficiently approximate the effect of decoherence on an expectation value."
@@ -280,6 +282,7 @@ SampleExpecPauliString[initQureg, channel, pauliString, All] deterministically s
 SampleExpecPauliString[initQureg, channel, pauliString, numSamples, {workQureg1, workQureg2}] uses the given persistent working registers to avoid their internal creation and destruction.
 Use option ShowProgress to monitor the progress of sampling."
     SampleExpecPauliString::error = "`1`"
+    *)
     
     SampleClassicalShadow::usage = "SampleClassicalShadow[qureg, numSamples] returns a sequence of pseudorandom measurement bases (X, Y and Z) and their outcomes (as bits) when performed on all qubits of the given input state.
 \[Bullet] The output has structure { {bases, outcomes}, ...} where bases is a list of Pauli bases (encoded as 1=X, 2=Y, 3=Z) specified per-qubit, and outcomes are the corresponding classical qubit outcomes (0 or 1)."
@@ -714,6 +717,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         	With[
         		{codes = codifyCircuit[circuit]},
         		Which[
+                    MemberQ[codes[[1]], -1],
+                    Message[ApplyCircuit::error, "Circuit contained an unrecognised gate: " <> ToString@StandardForm@
+                        circuit[[ Position[codes[[1]], -1][[1,1]] ]]]; $Failed,
         			Not @ AllTrue[codes[[4]], Internal`RealValuedNumericQ, 2],
                     Message[ApplyCircuit::error, "Circuit contains non-numerical or non-real parameters!"]; $Failed,
                     Not @ Or[OptionValue[WithBackup] === True, OptionValue[WithBackup] === False],
@@ -785,6 +791,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             
             (* encode the circuit for the backend *)
             encodedCirc = codifyCircuit[(circuit /. varVals)];
+            
+            (* validate that all gates were recognised *)
+            If[MemberQ[encodedCirc[[1]], -1],
+                Throw["Circuit contained an unrecognised gate: " <> ToString@StandardForm@
+                    circuit[[ Position[encodedCirc[[1]], -1][[1,1]] ]]]];
             
             (* validate the circuit contains no unspecified variables *)
             If[Not @ AllTrue[encodedCirc[[4]], Internal`RealValuedNumericQ, 2],
@@ -1112,15 +1123,17 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         convertOpToPureCircs[g_] :=
         	{{g}} (* non-decoherence ops have no alternatives *)
             
-        GetCircuitsFromChannel[circ_?isCircuitFormat ] := With[
+        GetCircuitsFromChannel[circ_List /; isCircuitFormat[circ] ] := With[
             {choices = convertOpToPureCircs /@ circ},
             {numCircs = Times @@ Length /@ choices},
             If[Ceiling @ Log2[numCircs] > $SystemWordLength,
                 Message[GetCircuitsFromChannel::error, "The number of unique circuit decompositions exceeds 2^$SystemWordLength and cannot be enumerated."]; $Failed,
         	       Flatten /@ Tuples[choices]]]
+        GetCircuitsFromChannel[gate_?isCircuitFormat] :=
+            GetCircuitsFromChannel @ {gate}
         GetCircuitsFromChannel[___] := invalidArgError[GetCircuitsFromChannel]
         
-        GetRandomCircuitFromChannel[ channel_?isCircuitFormat ] := With[
+        GetRandomCircuitFromChannel[ channel_List /; isCircuitFormat[channel] ] := With[
 
         	(* get circuit decompositions of each  operator *)
         	{circs = convertOpToPureCircs /@ channel},
@@ -1149,6 +1162,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         				choice /. Fac[_]->Nothing]] &,
         		{probs, circs}]
         ]
+        GetRandomCircuitFromChannel[operator_?isCircuitFormat] :=
+            GetRandomCircuitFromChannel @ {operator}
         GetRandomCircuitFromChannel[___] := invalidArgError[GetRandomCircuitFromChannel]
         
         Options[SampleExpecPauliString] = {
@@ -2254,6 +2269,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getAnalGateMatrix[R[a_, pauli_]] := MatrixExp[-I a/2 getAnalGateMatrix @ pauli];
         getAnalGateMatrix[R[a_, paulis_Times]] := MatrixExp[-I a/2 * KroneckerProduct @@ (getAnalGateMatrix /@ List @@ paulis)]
         getAnalGateMatrix[Subscript[C, __][g_]] := getAnalGateMatrix[g]
+        getAnalGateMatrix[Subscript[Id, t__]] = IdentityMatrix[2^Length[{t}]]
         
         (* extract ctrls from gate symbols *)
         getAnalGateControls[Subscript[C, c_List][___]] := c
