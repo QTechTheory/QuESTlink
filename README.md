@@ -15,7 +15,7 @@ QuESTlink brings the power of [QuEST](https://github.com/QuEST-Kit/QuEST)'s quan
 
 
 [![Languages](https://img.shields.io/badge/API-Mathematica-ff69b4.svg)](http://www.open-std.org/jtc1/sc22/wg14/www/standards.html#9899)
-[![Languages](https://img.shields.io/badge/backend-C++14-ff69b4.svg)](https://isocpp.org/wiki/faq/cpp11)
+[![Languages](https://img.shields.io/badge/backend-C++11-ff69b4.svg)](https://isocpp.org/wiki/faq/cpp11)
 ![OS](https://img.shields.io/badge/os-MacOS-9cbd3c.svg)
 ![OS](https://img.shields.io/badge/os-Linux-9cbd3c.svg)
 ![OS](https://img.shields.io/badge/os-Windows-9cbd3c.svg)

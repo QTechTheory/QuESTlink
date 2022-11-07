@@ -1,43 +1,50 @@
 
 # Doc
 
-Our [whitepaper](https://arxiv.org/abs/1912.07904) gives a thorough overview of the QuEST syntax and functionality. This, and our [demos](../Demos), are the best ways to learn QuESTlink. Learn more at [quest.qtechtheory.org](https://questlink.qtechtheory.org/). 
+If you wish to run QuESTlink in multithreaded or GPU-accelerated modes, or as a server, you will need to download and manually compile it. Below are instructions for getting QuESTlink up and running, when it doesn't quite run out-of-the-box.
 
-Below are instructions for getting QuESTlink up and running, when it doesn't quite run out-of-the-box.
-
-  * [Running](#running)
-  * [Compiling](#compiling)
-  * [Launching offline](#launching-offline)
-  * [Launching as server](#launching-as-server)
+  * [Tools](#tools)
+  * [Download](#download)
+  * [Compile](#compile)
+  * [Launch offline](#launch-offline)
+  * [Launch as a server](#launch-as-a-server)
 
 ______________
 
-## Running
 
-Single-thread QuESTlink can be used immediately from within Mathematica:
-```Mathematica 
-Import["https://qtechtheory.org/questlink.m"]
-CreateDownloadedQuESTEnv[]
+## Tools 
+
+Don't have a compiler handy? We recommend the [comprehensive guide](https://quest.qtechtheory.org/download/) for the parent QuEST project to obtain the tools needed below.
+
+
+## Download
+
+The best way to download the QuESTlink source code is through [`git`](https://git-scm.com/) at the command-line.
+
+```bash
+git clone --recurse-submodules https://github.com/QTechTheory/QuESTlink.git
+cd QuESTlink
 ```
+This will also download the [QuEST](https://github.com/QuEST-Kit/QuEST) submodule source-code.
+You are thereafter in the root directory of QuESTlink and ready to compile.
 
-These commands download the QuESTlink Mathematica package file, and the `quest_link` executable, to your machine.
-
-To see available all available functions and circuit symbols, run
-```Mathematica
-?QuEST`*
-```
+> If you wish to compile a specific *Github branch* like `develop`, simply additionally run
+> ```bash
+> git checkout develop
+> ```
+> You can also perform this within the `/QuEST` subdirectory to change the branch of the QuEST submodule and access in-development features.
 
 ______________________________
 
-## Compiling
+## Compile
 
-Multithreaded and GPU-accelerated modes require compiling QuESTlink from source, using [GNUMake](https://www.gnu.org/software/make/) with the provided [makefile](../makefile), and a C++ compiler (which supports C++11).
+Compiling is trivial with [GNUMake](https://www.gnu.org/software/make/) and the provided [makefile](../makefile), and a C++ compiler (which supports `C++11`).
 
-> See [here](WINDOWS.md) for complete guide on compiling on **Windows**, including how to obtain the necessary compilers.
+> See [here](WINDOWS.md) for a comprehensive guide to compiling QuESTlink on **Windows**, including how to obtain the necessary compilers.
 
 > Note **Linux** users should first run `sudo apt-get install uuid-dev` before compiling. If this fails (and/or compiling says `cannot find -luuid`, also try to install `uuid`, `uuid-devel` and `libuuid-devel`.
 
-Edit [makefile](../makefile) and set:
+Within the root directory, edit the [makefile](../makefile) and set:
 
 - `OS` to your operating system (`LINUX`, `MACOS` or `WINDOWS`)
 
@@ -85,7 +92,7 @@ CreateLocalQuESTEnv["path/to/quest_link"];
 
 _______________________________
 
-## Launching offline 
+## Launch offline 
 
 QuESTlink can be launched without an internet connection, using a copy of this repository. In Mathematica, simply run 
 
@@ -99,7 +106,7 @@ where `quest_link` has been compiled as above, or previously obtained using
 CreateDownloadedQuESTEnv[];
 ```
 
-## Launching as server
+## Launch as a server
 
 To launch `quest_link` as a server, to access remotely from a local kernel, run
 ```bash
