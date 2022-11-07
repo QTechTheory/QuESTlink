@@ -1245,7 +1245,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             Module[{url,resp,log},
                 (* attempt download *)
                 log = PrintTemporary["Downloading..."];
-                url = "https://github.com/QTechTheory/QuESTlink/raw/master/Binaries/" <> getExecFn[os];
+                url = "https://github.com/QTechTheory/QuESTlink/raw/main/Binaries/" <> getExecFn[os];
                 resp = URLDownload[url, "quest_link",  {"File", "StatusCode"}, FollowRedirects->False, TimeConstraint->10];
                 NotebookDelete[log];
                 (* check response *)
