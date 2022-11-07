@@ -55,8 +55,12 @@ pauliOpType* local_preparePauliCache(pauliOpType pauli, int numPaulis) {
 pauliOpType* local_preparePauliCache(qreal* paulis, int numPaulis) {
     
     static pauliOpType pauliCache[MAX_NUM_TARGS_CTRLS]; 
-    for (int p=0; p < numPaulis; p++)
-        pauliCache[p] = (pauliOpType) ((int) paulis[p]);
+    for (int p=0; p < numPaulis; p++) {
+        if ((int) paulis[p] == OPCODE_Id)
+            pauliCache[p] = PAULI_I;
+        else
+            pauliCache[p] = (pauliOpType) ((int) paulis[p]);
+    }
     return pauliCache;
 }
 
@@ -236,7 +240,7 @@ std::string Gate::getSyntax() {
                     form = opStr + "[" + std::to_string(params[0]) + ", ";
                     for (int t=0; t<numTargs; t++) {
                         std::string paulis[] = {"Id", "X", "Y", "Z"};
-                        std::string pauliStr = paulis[(int) params[t+1]];
+                        std::string pauliStr = paulis[((int) params[t+1])%OPCODE_Id];
                         form += "Subscript[" + pauliStr + ", " + std::to_string(targs[t]) + "]";
                     }
                     form += "]";
