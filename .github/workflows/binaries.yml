@@ -2,7 +2,7 @@ name: Binaries
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
     
 jobs:
   
@@ -95,24 +95,24 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: master
+          ref: main
       - name: Prepare binaries directory 
         run: |
           rm -rf Binaries
           mkdir Binaries
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@main
         with:
           name: linux_quest_link
           path: Binaries
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@main
         with:
           name: macos_x86_quest_link
           path: Binaries
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@main
         with:
           name: macos_arm_quest_link
           path: Binaries
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@main
         with:
           name: windows_quest_link
           path: Binaries
@@ -123,7 +123,7 @@ jobs:
           git add Binaries
           git commit -m "Update precompiled binaries"
       - name: Push recompiled binaries
-        uses: ad-m/github-push-action@master
+        uses: ad-m/github-push-action@main
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: master
+          branch: main
