@@ -7,12 +7,21 @@ on:
     branches: [ develop ]
 
 jobs:
-  cpu_macos_build:
-    name: MacOS
+  cpu_macos_x86_build:
+    name: MacOS_x86
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
       - name: Build QuESTlink
-        run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG
+        run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG MACOS_ARCH=x64
+  cpu_macos_arm_build:
+    name: MacOS_ARM
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Build QuESTlink
+        run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG MACOS_ARCH=ARM

@@ -1222,20 +1222,37 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             ]
         CreateLocalQuESTEnv[__] := invalidArgError[CreateLocalQuESTEnv] (* no args is valid *)
             
-        getExecFn["MacOS"|"MacOSX"] = "macos_quest_link";
+        getExecFn["MacOS"|"MacOSX"] = "macos_x86_quest_link";
+        getExecFn["MacOS M1"|"MacOSX M1"] = "macos_arm_quest_link";
         getExecFn["Windows"] = "windows_quest_link.exe";
         getExecFn["Linux"|"Unix"] = "linux_quest_link";
-        CreateDownloadedQuESTEnv[os:("MacOS"|"MacOSX"|"Windows"|"Linux"|"Unix")] := 
-            Module[{url,exec},
+        CreateDownloadedQuESTEnv[os:("MacOS"|"MacOSX"|"MacOS M1"|"MacOSX M1"|"Windows"|"Linux"|"Unix")] := 
+            Module[{url,resp,log},
+                (* attempt download *)
+                log = PrintTemporary["Downloading..."];
                 url = "https://github.com/QTechTheory/QuESTlink/raw/master/Binaries/" <> getExecFn[os];
-                exec = URLDownload[url, "quest_link"];
-                If[os != "Windows", Run["chmod +x quest_link"]];
-                Install[exec]
+                resp = URLDownload[url, "quest_link",  {"File", "StatusCode"}, FollowRedirects->False, TimeConstraint->10];
+                NotebookDelete[log];
+                (* check response *)
+                If[resp["StatusCode"] >= 400,
+                    Message[CreateDownloadedQuESTEnv::error, "Download failed; returned status code " <> ToString @ resp["StatusCode"]];
+                    Return[$Failed, Module]
+                ];
+                (* install *)
+                log = PrintTemporary["Installing..."];
+                If[os =!= "Windows", Run["chmod +x quest_link"]];
+                Install @ resp["File"];
+                NotebookDelete[log];
             ]
-        CreateDownloadedQuESTEnv[] :=
-            CreateDownloadedQuESTEnv[$OperatingSystem]
+        CreateDownloadedQuESTEnv[] := Module[
+            {os = $OperatingSystem},
+            If[ (os === "MacOS" || os === "MacOSX") && Not @ StringContainsQ[$System, "x86"],
+                os = "MacOS M1"
+            ];
+            CreateDownloadedQuESTEnv[os]
+        ]
         CreateDownloadedQuESTEnv[__] := (
-            Message[CreateDownloadedQuESTEnv::error, "Supported operating systems are Windows, Linux, Unix, MacOS, MacOSX."]; 
+            Message[CreateDownloadedQuESTEnv::error, "Supported operating systems are Windows, Linux, Unix, MacOS, MacOSX, MacOS M1, MacOSX M1"]; 
             $Failed)
                     
         DestroyQuESTEnv[link_] := Uninstall @ link

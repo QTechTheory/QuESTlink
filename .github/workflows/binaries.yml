@@ -30,23 +30,41 @@ jobs:
           name: linux_quest_link
           path: Binaries/linux
           
-  cpu_macos_build:
-    name: MacOS
+  cpu_macos_x86_build:
+    name: MacOS_x86
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
       - name: Build QuESTlink
-        run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG EXE=macos_quest_link
+        run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG MACOS_ARCH=x64 EXE=macos_x86_quest_link
       - name: Prepare to upload binary
         run: |
-          mkdir -p Binaries/macos
-          mv macos_quest_link Binaries/macos/.
+          mkdir -p Binaries/macos_x86
+          mv macos_x86_quest_link Binaries/macos_x86/.
       - uses: actions/upload-artifact@v1
         with:
-          name: macos_quest_link
-          path: Binaries/macos
+          name: macos_x86_quest_link
+          path: Binaries/macos_x86
+          
+  cpu_macos_arm_build:
+    name: MacOS_ARM
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Build QuESTlink
+        run: make OS=MACOS compiler=clang COMPILER_TYPE=CLANG MACOS_ARCH=ARM EXE=macos_arm_quest_link
+      - name: Prepare to upload binary
+        run: |
+          mkdir -p Binaries/macos_arm
+          mv macos_arm_quest_link Binaries/macos_arm/.
+      - uses: actions/upload-artifact@v1
+        with:
+          name: macos_arm_quest_link
+          path: Binaries/macos_arm
 
   cpu_windows_build:
     name: Windows
@@ -72,7 +90,7 @@ jobs:
 
   publish_binaries:
     name: Publish binaries
-    needs: [cpu_linux_build, cpu_macos_build, cpu_windows_build]
+    needs: [cpu_linux_build, cpu_macos_x86_build, cpu_macos_arm_build, cpu_windows_build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -88,7 +106,11 @@ jobs:
           path: Binaries
       - uses: actions/download-artifact@master
         with:
-          name: macos_quest_link
+          name: macos_x86_quest_link
+          path: Binaries
+      - uses: actions/download-artifact@master
+        with:
+          name: macos_arm_quest_link
           path: Binaries
       - uses: actions/download-artifact@master
         with:
