@@ -3425,7 +3425,6 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                         reps]]]
         GetKnownCircuit["LowDepthAnsatz", reps_Integer, paramSymbol_Symbol, numQubits_Integer] :=
             GetKnownCircuit["LowDepthAnsatz", reps, paramSymbol, Range[0,numQubits-1]]
-            
         GetKnownCircuit[___] := invalidArgError[GetKnownCircuit]
 
     End[ ]
