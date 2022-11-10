@@ -1247,7 +1247,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 log = PrintTemporary["Downloading..."];
                 url = "https://github.com/QTechTheory/QuESTlink/raw/main/Binaries/" <> getExecFn[os];
                 fn = FileNameJoin[{Directory[], "quest_link"}];
-                resp = URLDownload[url, fn,  {"File", "StatusCode"}, FollowRedirects->False, TimeConstraint->10];
+                resp = URLDownload[url, fn,  {"File", "StatusCode"}, TimeConstraint->10];
                 NotebookDelete[log];
                 (* check response *)
                 If[resp["StatusCode"] >= 400,
