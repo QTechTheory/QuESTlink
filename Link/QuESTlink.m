@@ -1242,7 +1242,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         getExecFn["Windows"] = "windows_quest_link.exe";
         getExecFn["Linux"|"Unix"] = "linux_quest_link";
         CreateDownloadedQuESTEnv[os:("MacOS"|"MacOSX"|"MacOS M1"|"MacOSX M1"|"Windows"|"Linux"|"Unix")] := 
-            Module[{url,resp,log,fn},
+            Module[{url,resp,log,fn,exec},
                 (* attempt download *)
                 log = PrintTemporary["Downloading..."];
                 url = "https://github.com/QTechTheory/QuESTlink/raw/main/Binaries/" <> getExecFn[os];
@@ -1256,9 +1256,15 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 ];
                 (* install *)
                 log = PrintTemporary["Installing..."];
-                If[os =!= "Windows", Run["chmod +x " <> fn]];
-                Install @ resp["File"];
+                If[os =!= "Windows", 
+                    Run["chmod +x " <> fn];
+                    (* esoteric permissions problem. Machine gun hot fix, pow pow *)
+                    Run["chmod +x " <> (ToString @@ resp["File"])];
+                    Run["chmod +x " <> FileNameTake[fn]];
+                ];
+                exec = Install @ resp["File"];
                 NotebookDelete[log];
+                exec
             ]
         CreateDownloadedQuESTEnv[] := Module[
             {os = $OperatingSystem},
