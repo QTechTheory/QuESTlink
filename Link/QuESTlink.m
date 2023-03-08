@@ -2822,18 +2822,29 @@ The probability of the forced measurement outcome (if hypothetically not forced)
     	   Select[circ, isUnsupportedGate[spec]]
         GetUnsupportedGates[___] := invalidArgError[GetUnsupportedGates]
             
-        (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
-        (* note this is overriding alias rule -> with :> which should be fine *)
+        (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting),
+         * without triggering premature evaluation of the substituting values *)
         optionalReplaceAliases[False, spec_Association][in_] := in 
-        (* alas, it was NOT fine; it triggered premature evaluation of the RHS of an alias rule! *)
-            (*
-            optionalReplaceAliases[True, spec_Association][in_] := in //. If[
-                KeyExistsQ[spec, Aliases], (#1 :> Sequence @@ #2 &) @@@ spec[Aliases], {}]
-            *)
-        (* we will have to instead trust the user to use :> when necessary *)
-        optionalReplaceAliases[True, spec_Association][in_] := in //. spec[Aliases]
-        
-        
+        optionalReplaceAliases[True, spec_Association][in_] := Module[
+            {aliases, heldValues, releasedRules},
+            
+            (* transform alias rules into:   rule :> dummySubstitutedAlias[Hold[value]] *)
+            aliases = spec[Aliases][[All, 1]];
+            heldValues = dummySubstitutedAlias /@ Table[Extract[alias, 2, Hold], {alias, spec[Aliases]}];
+            releasedRules = RuleDelayed @@@ Transpose[{aliases, heldValues}] // ReleaseHold;
+
+            (* repeatedly replace aliases with their (revised) values, until all (nested) aliases are expanded *)
+            FixedPoint[
+                (Replace[#, releasedRules, Infinity] 
+                    (* expand dummy-wrapped lists into sequences (happens when the original alias value was a Circuit or List) *)
+                    /. dummySubstitutedAlias[{x___}] :> x 
+                    (* expand dummy-wrapped sequences into sequences (happens when the original alias value was a single gate or a Sequence.
+                     * this is actually an invalid syntax which will already break ViewDeviceSpec[], but protects Cica's existing code) *)
+                    /. dummySubstitutedAlias -> Sequence &),
+                in
+            ]
+        ]
+
         (* declaring optional args to GetCircuitSchedule *)
         Options[GetCircuitSchedule] = {
             ReplaceAliases -> False
