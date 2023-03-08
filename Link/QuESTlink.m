@@ -2936,7 +2936,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         (* the gates in active noise can contain symbolic qubits that won't trigger 
          * Circuit[] evaluation. This function forces Circuit[] to a list *)
         frozenCircToList[HoldForm[Circuit[gs_Times]]] := ReleaseHold[List @@@ Hold[gs]]
+        frozenCircToList[Circuit[gs_Times]] := ReleaseHold[List @@@ Hold[gs]]
         frozenCircToList[HoldForm[Circuit[g_]]] := {g}
+        frozenCircToList[Circuit[g_]] := {g}
         frozenCircToList[HoldForm[gs_List]] := gs
         frozenCircToList[else_] := else
         
@@ -2982,7 +2984,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                         First[row], 
                         (* attempt to render element as spaced list *)
                         With[
-                            {attemptedList = frozenCircToList[Last[row]]},
+                            {attemptedList = frozenCircToList @ Last @ row},
                             If[ Head[attemptedList] === List,
                                 Row[attemptedList /. m_?MatrixQ :> MatrixForm[m], Spacer[0]],
                                 HoldForm[attemptedList] /. m_?MatrixQ :> MatrixForm[m]
