@@ -2694,6 +2694,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 {sub, subcircs}
             ];
             
+            (* append the final time to the end of the schedule *)
+            AppendTo[subcircTimes, curTime];
+            AppendTo[subcircActives, {}];
+            AppendTo[subcircPassives, {}];
+            
             (* return *)    
             {subcircTimes, subcircActives, subcircPassives}
         ]
@@ -2832,7 +2837,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             Catch[
                 With[
                     {times = First @ getSchedAndNoiseFromSubcircs[cols,spec]}, (* throws *)
-                    Transpose[{times, cols}] // optionalReplaceAliases[OptionValue[ReplaceAliases], spec]]]
+                    Transpose[{times, Append[cols,{}]}] // optionalReplaceAliases[OptionValue[ReplaceAliases], spec]]]
         GetCircuitSchedule[circ_List, spec_Association, opts:OptionsPattern[]] :=
             GetCircuitSchedule[GetCircuitColumns[circ], spec, opts]
         GetCircuitSchedule[___] := invalidArgError[GetCircuitSchedule]
