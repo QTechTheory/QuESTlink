@@ -2627,6 +2627,13 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 
             (* infer the whole subcircuit duration (unless forced) *)
             slowestGateDur = Max[gateDurs];
+    
+            (* warn if duration was forced and too short *)
+            If[forcedSubcircDur =!= None && forcedSubcircDur < slowestGateDur,
+                Message[InsertCircuitNoise::error, 
+                    "The given circuit schedule allocated insufficient time for a column's slowest gate to execute. If this is intentional, silence this warning with Quiet[]."]];
+            
+            (* choose the forced duration if given, else the slowest gate duration *)
             subcircDur = If[
                 forcedSubcircDur === None,
                 slowestGateDur,
