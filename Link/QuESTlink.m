@@ -1881,7 +1881,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             	curCol,curSymb,curCtrls,curTargs,curInterval,curIsSpecialSwap,
             	prevIntervals,prevIsSpecialSwap,prevSpecialQubits,
                 isFirstGate,subcircInd=0,subcircIndMax=Length[subcircs],
-                gates},
+                gates,finalSubSpacing},
 
                 (* outputs *)
             	qubitgraphics = {};
@@ -1959,9 +1959,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 		{gate,gates}
                 	];
             	
-                	(* perform the final round of qubit line drawing (for previous column) *)
-                	AppendTo[qubitgraphics, 
-                		drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]];
+                	(* perform the final round of qubit line drawing (for previous column),
+                     * unless this is the final and empty subcircuit *) 
+                    If[ subcircInd < subcircIndMax || Length@subcircs[[-1]] =!= 0,
+                	   AppendTo[qubitgraphics, 
+                		     drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]]];
                         
                     (* make a new column (just accounting for previous subcircuit) *)
                     curCol = curCol + If[prevIsSpecialSwap,2,1]; 
@@ -1981,11 +1983,16 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                             AppendTo[gategraphics, 
                                 labelDrawFunc[labels[[subcircInd+1]], curCol + subSpacing/2]]];
                     
-                        (* add offset for subcircuit spacing (avoid 0 length for visual artefact) *)
+                        (* add offset for subcircuit spacing (avoid 0 length for visual artefact) ... *)
                         If[subSpacing > 0,
+                        
+                            (* if this is the penultimate subcirc and the ultimate is empty (to indicate a final schedule time),
+                             * then half the offset *)
+                            finalSubSpacing = If[(subcircInd < subcircIndMax-1) || Length@subcircs[[-1]] =!= 0, subSpacing, subSpacing/2];
                             AppendTo[qubitgraphics, 
-                                drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol, subSpacing]];
-                            curCol = curCol + subSpacing];
+                                drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol, finalSubSpacing]];
+                            curCol = curCol + finalSubSpacing
+                        ];
                     ]
                     ,
                     {subcirc, subcircs}
