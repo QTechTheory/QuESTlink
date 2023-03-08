@@ -2800,12 +2800,14 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             ]
         CheckCircuitSchedule[___] := invalidArgError[CheckCircuitSchedule]
         
+        isUnsupportedGate[spec_][gate_] := gate === (gate /. spec[Gates])
+        
         GetUnsupportedGates[sched:{{_, _List}..}, spec_Association] :=
             GetUnsupportedGates[ sched[[All, 2]], spec ]
         GetUnsupportedGates[cols:{_List ..}, spec_Association] :=
             GetUnsupportedGates[#, spec]& /@ cols
         GetUnsupportedGates[circ_List, spec_Association] :=
-    	   Select[circ, (Not[isCompatibleGate[spec][#]]&) ]
+    	   Select[circ, isUnsupportedGate[spec]]
         GetUnsupportedGates[___] := invalidArgError[GetUnsupportedGates]
             
         (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
