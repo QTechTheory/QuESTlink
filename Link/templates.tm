@@ -495,7 +495,16 @@
 :ArgumentTypes:  { Integer, Manual }
 :ReturnType:     Manual
 :End:
-:Evaluate: QuEST`Private`SampleClassicalShadowStateInternal::usage = "SampleClassicalShadowStateInternal[quregId, numSamples] blah."
+:Evaluate: QuEST`Private`SampleClassicalShadowStateInternal::usage = "SampleClassicalShadowStateInternal[quregId, numSamples] repeatedly measures a state in order to populate a classical shadow."
+
+:Begin:
+:Function:       internal_calcExpecPauliProdsFromClassicalShadow
+:Pattern:        QuEST`Private`CalcExpecPauliProdsFromClassicalShadowInternal[numQb_Integer, numBatches_Integer, numSamples_Integer, sampleBases_List, sampleOutcomes_List, pauliCodes_List, pauliTargs_List, numPaulisPerProd_List]
+:Arguments:      { numQb, numBatches, numSamples, sampleBases, sampleOutcomes, pauliCodes, pauliTargs, numPaulisPerProd }
+:ArgumentTypes:  { Integer, Integer, Manual }
+:ReturnType:     Manual
+:End:
+:Evaluate: QuEST`Private`CalcExpecPauliProdsFromClassicalShadowInternal::usage = "CalcExpecPauliProdsFromClassicalShadowInternal[numQb, numBatches, numSamples, sampleBases, sampleOutcomes, pauliCodes, pauliTargs, numPaulisPerProd] calculates the expected value of each Pauli product as prescribed by a classical shadow."
 
 
 

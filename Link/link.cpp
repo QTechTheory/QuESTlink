@@ -1254,6 +1254,55 @@ void internal_sampleClassicalShadow(int quregId) {
     destroyQureg(tmp, env);
 }
 
+void internal_calcExpecPauliProdsFromClassicalShadow(int numQb, int numBatches) {
+    std::string apiFuncName = "CalcExpecPauliProdsFromClassicalShadow";
+    
+    long numSamples;
+    WSGetLongInteger(stdlink, &numSamples);
+    
+    int *sampleBases, *sampleOutcomes, *pauliCodes, *pauliTargs, *numPaulisPerProd;
+    long lenTotalBases, lenTotalPaulis, numProds;
+    WSGetIntegerList(stdlink, &sampleBases, &lenTotalBases);
+    WSGetIntegerList(stdlink, &sampleOutcomes, &lenTotalBases);
+    WSGetIntegerList(stdlink, &pauliCodes, &lenTotalPaulis);
+    WSGetIntegerList(stdlink, &pauliTargs, &lenTotalPaulis);
+    WSGetIntegerList(stdlink, &numPaulisPerProd, &numProds);
+    
+    std::vector<qreal> prodExpecVals(numProds);
+    
+    try {
+        // validate numBatches 
+        if (numBatches < 1)
+            throw QuESTException("", "The number of batches must be a positive integer (default 10).");
+        if (numBatches > numSamples)
+            throw QuESTException("", "The number of batches cannot exceed the number of samples.");
+        if (numBatches > 200)
+            local_sendWarningAndContinue(apiFuncName, 
+                "Warning: using a very large number of batches may cause errors. Use Quiet[] to suppress this warning.");
+        
+        // perform remaining validation (parallelised) and populate prodExpecVals
+        extension_calcExpecPauliProdsFromClassicalShadow(
+            prodExpecVals, numProds,
+            sampleBases, sampleOutcomes, numQb, numSamples,
+            pauliCodes,  pauliTargs, numPaulisPerProd,
+            numBatches
+        ); // throws
+
+        WSPutReal64List(stdlink, prodExpecVals.data(), numProds);
+
+    } catch( QuESTException& err) {
+        
+        local_sendErrorAndFail(apiFuncName, err.message);
+    }
+
+    // clean-up (even if above errors)
+    WSReleaseIntegerList(stdlink, sampleBases, lenTotalBases);
+    WSReleaseIntegerList(stdlink, sampleOutcomes, lenTotalBases);
+    WSReleaseIntegerList(stdlink, pauliCodes, lenTotalPaulis);
+    WSReleaseIntegerList(stdlink, pauliTargs, lenTotalPaulis);
+    WSReleaseIntegerList(stdlink, numPaulisPerProd, numProds);
+}
+
 
 
 /*
