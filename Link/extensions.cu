@@ -8,6 +8,13 @@
 #include "QuEST.h"
 #include "QuEST_validation.h"
 
+#include "errors.hpp"
+
+#include <vector>
+#include <algorithm>
+#include <thrust/sort.h>
+#include <thrust/execution_policy.h>
+
 
 
 __forceinline__ __device__ int extractBit (const int locationOfBitFromRight, const long long int theEncodedNumber) {
@@ -331,3 +338,225 @@ void extension_mixDampingDeriv(Qureg qureg, int targ, qreal prob, qreal probDeri
     extension_mixDampingDerivKernel<<<CUDABlocks, threadsPerCUDABlock>>>(qureg, targ, c1, c2);
     extension_addAdjointToSelfKernel<<<CUDABlocks, threadsPerCUDABlock>>>(qureg);
 }
+
+__global__ void local_validateShadowPaulisKernel(int* invalid, int numQb, unsigned long long  numTotalPaulis, int* pauliCodes, int* pauliTargs) {
+    long long int k = blockIdx.x*blockDim.x + threadIdx.x;
+    if (k >= numTotalPaulis) return;
+    
+    if (pauliCodes[k] < 0 || pauliCodes[k] > 3 || pauliTargs[k] < 0 || pauliTargs[k] >= numQb)
+        *invalid = 1;
+}
+
+__global__ void local_validateShadowSampsKernel(int* invalid, unsigned long long numTotalSampVals, int* sampleBases, int* sampleOutcomes) {
+    long long int k = blockIdx.x*blockDim.x + threadIdx.x;
+    if (k >= numTotalSampVals) return;
+    
+    if (sampleBases[k] < 1 || sampleBases[k] > 3 || sampleOutcomes[k] < 0 || sampleOutcomes[k] > 1)
+        *invalid = 1;
+}
+
+__global__ void local_prepareShadowPauliBitseqsKernel(
+    unsigned long long* pauliBitseqs, unsigned long long* pauliTargBitseqs, unsigned long long* outcomeTargBitseqs,
+    long numProds, int* numPaulisPerProd, long* pauliIndOffset, int* pauliCodes, int* pauliTargs
+) {
+    long long int i = blockIdx.x*blockDim.x + threadIdx.x;
+    if (i >= numProds) return;
+    
+    int offset = pauliIndOffset[i];
+    int numPaulisInProd = numPaulisPerProd[i];
+    
+    unsigned long long seqPaulis = 00ULL;      // length 2*numQb
+    unsigned long long seqPauliTargs = 00ULL;  // length 2*numQb
+    unsigned long long seqOutcomeTargs = 0ULL; // length numQb
+    
+    for (int p=0; p<numPaulisInProd; p++) {
+        int j = offset + p;
+        seqPaulis |= (pauliCodes[j] << 2*pauliTargs[j]);
+        seqPauliTargs |= (3ULL << 2*pauliTargs[j]);
+        seqOutcomeTargs |= (1ULL << pauliTargs[j]);
+    }
+    
+    pauliBitseqs[i] = seqPaulis;
+    pauliTargBitseqs[i] = seqPauliTargs;
+    outcomeTargBitseqs[i] = seqOutcomeTargs;
+}
+
+__global__ void local_prepareShadowSampleBitseqsKernel(
+    unsigned long long* baseBitseqs, unsigned long long* outcomeBitseqs,
+    int numQb, long numSamples, int* sampleBases, int* sampleOutcomes
+) {
+    long long int s = blockIdx.x*blockDim.x + threadIdx.x;
+    if (s >= numSamples) return;
+    
+    long offset = numQb*s;
+    unsigned long long seqBases = 00ULL;   // length 2*numQb
+    unsigned long long seqOuts = 0ULL;     // length numQb
+
+    for (int q=numQb-1; q>=0; q--) {
+        int ind = offset + q;
+        seqBases = (seqBases << 2) | sampleBases[ind];
+        seqOuts = (seqOuts << 1) | sampleOutcomes[ind];
+    }
+        
+    baseBitseqs[s] = seqBases;
+    outcomeBitseqs[s] = seqOuts;
+}
+
+#define MAX_NUM_SHADOW_BATCHES 200
+    
+__global__ void extension_calcExpecPauliProdsFromClassicalShadowKernel(
+    qreal* prodExpecVals,
+    int numProds, int numSamples, int numBatches,
+    int* numPaulisPerProd,
+    unsigned long long *baseBitseqs, unsigned long long *pauliTargBitseqs, 
+    unsigned long long *pauliBitseqs, unsigned long long *outcomeBitseqs, 
+    unsigned long long *outcomeTargBitseqs
+) {
+    // parallel evauate the expected values of each pauli product, modifying output array prodExpecVals.
+    long long int p = blockIdx.x*blockDim.x + threadIdx.x;
+    if (p >= numProds) return;
+    
+    // divide this thread's job into batches 
+    qreal batchVals[MAX_NUM_SHADOW_BATCHES];
+    long numSampsPerBatch = (long) ceil(numSamples/(qreal) numBatches);
+    int numProdPaulis = numPaulisPerProd[p];
+    
+    // populate batch values
+    for (int b=0; b<numBatches; b++) {
+        
+        // batch indivisibility may mean final batch has fewer samples than others
+        bool isFinalBatch = (b == (numBatches-1));
+        long batchSize = isFinalBatch * (numSamples-(numBatches-1)*numSampsPerBatch) + (1-isFinalBatch) * numSampsPerBatch;
+        
+        long val = 0;
+        for (long i=0; i<batchSize; i++) {
+            long s = b*batchSize + i;
+            
+            // determine whether this sample matches the pauli product
+            int match = (baseBitseqs[s] & pauliTargBitseqs[p]) == pauliBitseqs[p];
+            
+            // obtain the outcomes of only the targeted qubits (rest forced to 0)
+            unsigned long long targOuts = (outcomeBitseqs[s] & outcomeTargBitseqs[p]);
+
+            // bit-twiddling hack to determine parity of number of 1s in targOuts
+            // https://graphics.stanford.edu/~seander/bithacks.html#ParityMultiply
+            targOuts ^= targOuts >> 1;
+            targOuts ^= targOuts >> 2;
+            targOuts = (targOuts & 0x1111111111111111UL) * 0x1111111111111111UL;
+            int par = (targOuts >> 60) & 1;
+            
+            // contribute sample if match (without branching)
+            val += match * (1-2*par);
+        }
+        
+        batchVals[b] = val / (qreal) batchSize;
+    }
+    
+    qreal fac = pow((qreal) 3., (qreal) numProdPaulis); 
+    
+    // choose the median of the batch values
+    thrust::sort(thrust::seq, batchVals, &(batchVals[numBatches]));
+    if (numBatches % 2)
+        prodExpecVals[p] = fac * batchVals[numBatches/2];
+    else 
+        prodExpecVals[p] = fac * .5 * (batchVals[numBatches/2] + batchVals[numBatches/2 + 1]);
+}
+
+void extension_calcExpecPauliProdsFromClassicalShadow(
+    std::vector<qreal> &prodExpecVals, long numProds,
+    int* sampleBases, int* sampleOutcomes, int numQb, long numSamples,
+    int* pauliCodes, int* pauliTargs, int* numPaulisPerProd,
+    int numBatches
+) {
+    // early numBatches validation, since we must be more strict than the CPU variant
+    if (numBatches > MAX_NUM_SHADOW_BATCHES)
+        throw QuESTException("", "The maximum number of batches permitted in GPU mode is " + std::to_string(MAX_NUM_SHADOW_BATCHES));
+    
+    // serial array encode: O(numProds)
+    std::vector<long> pauliIndOffset(numProds);
+    pauliIndOffset[0] = 0;
+    for (int i=1; i<numProds; i++)
+        pauliIndOffset[i] = pauliIndOffset[i-1] + numPaulisPerProd[i-1];
+        
+    // prepare device copy of output structure
+    qreal* d_prodExpecVals;
+    size_t memExpecVals = numProds * sizeof *d_prodExpecVals;
+    cudaMalloc(&d_prodExpecVals, memExpecVals);
+        
+    // prepare device copies of input structures
+    unsigned long long numTotalPaulis = pauliIndOffset[numProds-1] + numPaulisPerProd[numProds-1];
+    size_t memSamps = numSamples*numQb * sizeof(int);
+    size_t memPaulis = numTotalPaulis * sizeof (int);
+    size_t memProds = numProds * sizeof (int);
+    int* d_sampleBases;         cudaMalloc(&d_sampleBases, memSamps);       cudaMemcpy(d_sampleBases, sampleBases, memSamps, cudaMemcpyHostToDevice);
+    int* d_sampleOutcomes;      cudaMalloc(&d_sampleOutcomes, memSamps);    cudaMemcpy(d_sampleOutcomes, sampleOutcomes, memSamps, cudaMemcpyHostToDevice);
+    int* d_pauliCodes;          cudaMalloc(&d_pauliCodes, memPaulis);       cudaMemcpy(d_pauliCodes, pauliCodes, memPaulis, cudaMemcpyHostToDevice);
+    int* d_pauliTargs;          cudaMalloc(&d_pauliTargs, memPaulis);       cudaMemcpy(d_pauliTargs, pauliTargs, memPaulis, cudaMemcpyHostToDevice);
+    int* d_numPaulisPerProd;    cudaMalloc(&d_numPaulisPerProd, memProds);  cudaMemcpy(d_numPaulisPerProd, numPaulisPerProd, memProds, cudaMemcpyHostToDevice);
+    
+    // prepare device working structures
+    size_t memOffset = numProds * sizeof(long);
+    long *d_pauliIndOffset; 
+    cudaMalloc(&d_pauliIndOffset, memOffset);
+    cudaMemcpy(d_pauliIndOffset, pauliIndOffset.data(), memOffset, cudaMemcpyHostToDevice);
+    
+    memProds = numProds * sizeof(unsigned long long);
+    memSamps = numSamples * sizeof(unsigned long long);
+    unsigned long long *d_pauliBitseqs;         cudaMalloc(&d_pauliBitseqs, memProds);
+    unsigned long long *d_pauliTargBitseqs;     cudaMalloc(&d_pauliTargBitseqs, memProds);
+    unsigned long long *d_outcomeTargBitseqs;   cudaMalloc(&d_outcomeTargBitseqs, memProds);
+    unsigned long long *d_baseBitseqs;          cudaMalloc(&d_baseBitseqs, memSamps);
+    unsigned long long *d_outcomeBitseqs;       cudaMalloc(&d_outcomeBitseqs, memSamps);
+    
+    int bs = 128; // blocksize for GPU parallelisation
+    
+    // perform validation 
+    int invalid = 0;
+    int *d_invalid;
+    cudaMalloc(&d_invalid, sizeof(int));
+    cudaMemcpy(d_invalid, &invalid, sizeof(int), cudaMemcpyHostToDevice); 
+    local_validateShadowPaulisKernel<<<ceil(numTotalPaulis/(qreal)bs), bs>>>(
+        d_invalid, numQb, numTotalPaulis, d_pauliCodes, d_pauliTargs);
+    local_validateShadowSampsKernel<<<ceil(numSamples*numQb/(qreal)bs), bs>>>(
+        d_invalid, numSamples*numQb, d_sampleBases, d_sampleOutcomes);
+    cudaMemcpy(&invalid, d_invalid, sizeof(int), cudaMemcpyDeviceToHost);
+    cudaFree(d_invalid);
+    
+    if (!invalid) {
+        
+        // prepare bit sequences
+        local_prepareShadowPauliBitseqsKernel<<<ceil(numProds/(qreal)bs), bs>>>(
+            d_pauliBitseqs, d_pauliTargBitseqs, d_outcomeTargBitseqs,
+            numProds, d_numPaulisPerProd, d_pauliIndOffset, d_pauliCodes, d_pauliTargs);
+        local_prepareShadowSampleBitseqsKernel<<<ceil(numSamples/(qreal)bs), bs>>>(
+            d_baseBitseqs, d_outcomeBitseqs,
+            numQb, numSamples, d_sampleBases, d_sampleOutcomes);
+            
+        // evaluate shadow expec values
+        extension_calcExpecPauliProdsFromClassicalShadowKernel<<<ceil(numSamples/(qreal)bs), bs>>>(
+            d_prodExpecVals,
+            numProds, numSamples, numBatches, 
+            d_numPaulisPerProd, d_baseBitseqs, d_pauliTargBitseqs, 
+            d_pauliBitseqs, d_outcomeBitseqs, d_outcomeTargBitseqs);
+            
+        // copy expec vals back to RAM 
+        cudaMemcpy(prodExpecVals.data(), d_prodExpecVals, memExpecVals, cudaMemcpyDeviceToHost);
+    }
+
+    // clean-up
+    cudaFree(d_prodExpecVals);
+    cudaFree(d_sampleOutcomes);
+    cudaFree(d_pauliCodes);
+    cudaFree(d_pauliTargs);
+    cudaFree(d_numPaulisPerProd);
+    cudaFree(d_pauliIndOffset);
+    cudaFree(d_pauliBitseqs);
+    cudaFree(d_pauliTargBitseqs);
+    cudaFree(d_outcomeTargBitseqs);
+    cudaFree(d_baseBitseqs);
+    cudaFree(d_outcomeBitseqs);
+    
+    if (invalid)
+        throw QuESTException("", "The input classical shadow, or the Pauli products, were invalid.");
+}
+
