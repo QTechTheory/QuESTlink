@@ -429,7 +429,7 @@ void extension_calcExpecPauliProdsFromClassicalShadow(
     if (invalid)
         throw QuESTException("", errMsg);
     
-    // parallel validate the shadow sample bases and outcomes, in time O(numSamps)
+    // parallel validate the shadow sample bases and outcomes, in time O(numSamples*numQb)
     unsigned long long numTotalSampVals = numSamples * numQb;
     invalid = false;
 # ifdef _OPENMP
@@ -500,10 +500,10 @@ void extension_calcExpecPauliProdsFromClassicalShadow(
         }
     }
 
-    // parallel encode shadow bases and outcomes into bit sequences, in time O(numSamples)
+    // parallel encode shadow bases and outcomes into bit sequences, in time O(numSamples*numQb)
     int q, ind;
     long s, offset;
-    long long seqBases, seqOuts;
+    unsigned long long seqBases, seqOuts;
 # ifdef _OPENMP
 # pragma omp parallel \
     default  (none) \
@@ -536,16 +536,16 @@ void extension_calcExpecPauliProdsFromClassicalShadow(
     unsigned long long targOuts;
     long numSampsPerBatch = (long) ceil(numSamples/(qreal) numBatches);
     int numProdPaulis, b, isFinalBatch, match, par; // re-using p
-    long batchSize, val; // re-using offset, s, i
+    long batchSize, val; // re-using s, i
     qreal fac;
     std::vector<qreal> batchVals(numBatches); // thread-private
 # ifdef _OPENMP
 # pragma omp parallel \
     default  (none) \
     shared   (numProds,numBatches,numSamples,numSampsPerBatch, pauliCodes,pauliTargs, \
-              pauliIndOffset,numPaulisPerProd, baseBitseqs,outcomeBitseqs,pauliBitseqs, \
+              numPaulisPerProd, baseBitseqs,outcomeBitseqs,pauliBitseqs, \
               pauliTargBitseqs,outcomeTargBitseqs, prodExpecVals) \
-    private  (offset,numProdPaulis,isFinalBatch,batchSize, targOuts, p,b,i,s, par,val,match,fac) \
+    private  (numProdPaulis,isFinalBatch,batchSize, targOuts, p,b,i,s, par,val,match,fac) \
     firstprivate (batchVals)
 # endif
     {
@@ -554,7 +554,6 @@ void extension_calcExpecPauliProdsFromClassicalShadow(
 # endif
         for (p=0; p<numProds; p++) {
             
-            offset = pauliIndOffset[p];
             numProdPaulis = numPaulisPerProd[p];
             
             // divide the sample into batches, where numBatches expected << 100
