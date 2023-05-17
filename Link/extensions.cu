@@ -511,15 +511,15 @@ void extension_calcExpecPauliProdsFromClassicalShadow(
     int bs = 128; // blocksize for GPU parallelisation
     
     // perform validation 
-    int *d_invalid;
     int invalid = 0;
+    int *d_invalid;
     cudaMalloc(&d_invalid, sizeof(int));
-    cudaMemset(d_invalid, 0, sizeof(int));
+    cudaMemcpy(d_invalid, &invalid, sizeof(int), cudaMemcpyHostToDevice); 
     local_validateShadowPaulisKernel<<<ceil(numTotalPaulis/(qreal)bs), bs>>>(
         d_invalid, numQb, numTotalPaulis, d_pauliCodes, d_pauliTargs);
     local_validateShadowSampsKernel<<<ceil(numSamples*numQb/(qreal)bs), bs>>>(
         d_invalid, numSamples*numQb, d_sampleBases, d_sampleOutcomes);
-    cudaMemcpy(d_invalid, &invalid, sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&invalid, d_invalid, sizeof(int), cudaMemcpyDeviceToHost);
     cudaFree(d_invalid);
     
     if (!invalid) {
@@ -540,7 +540,7 @@ void extension_calcExpecPauliProdsFromClassicalShadow(
             d_pauliBitseqs, d_outcomeBitseqs, d_outcomeTargBitseqs);
             
         // copy expec vals back to RAM 
-        cudaMemcpy(d_prodExpecVals, prodExpecVals.data(), memExpecVals, cudaMemcpyDeviceToHost);
+        cudaMemcpy(prodExpecVals.data(), d_prodExpecVals, memExpecVals, cudaMemcpyDeviceToHost);
     }
 
     // clean-up
