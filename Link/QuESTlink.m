@@ -411,7 +411,9 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
     
     P::usage = "P[val] is a (normalised) projector onto {0,1} (i.e. a forced measurement) such that the target qubits represent integer val in binary (right most target takes the least significant digit in val).
 P[outcome1, outcome2, ...] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome.
-The probability of the forced measurement outcome (if hypothetically not forced) is included in the output of ApplyCircuit[]."
+P[{outcome1, outcome2, ...}] is as above.
+The probability of the forced measurement outcome (as if it were hypothetically not forced) is included in the output of ApplyCircuit[].
+Projection into zero-probability states is invalid and will throw an error."
     Protect[P]
     
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
@@ -661,6 +663,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
             Subscript[KrausNonTP, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
                 {getOpCode[KrausNonTP], {}, {targs}, codifyMatrices[matrs]},
+            Subscript[P, (targs:__Integer)|{targs:__Integer}][outcomes_List] :> 
+                {getOpCode[P], {}, {targs}, outcomes},
             Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__] :> 
                 {getOpCode[gate], {}, {targs}, {args}},
         	Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}] :> 
