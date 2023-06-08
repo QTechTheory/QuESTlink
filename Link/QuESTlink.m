@@ -411,7 +411,9 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
     
     P::usage = "P[val] is a (normalised) projector onto {0,1} (i.e. a forced measurement) such that the target qubits represent integer val in binary (right most target takes the least significant digit in val).
 P[outcome1, outcome2, ...] is a (normalised) projector onto the given {0,1} outcomes. The left most qubit is set to the left most outcome.
-The probability of the forced measurement outcome (if hypothetically not forced) is included in the output of ApplyCircuit[]."
+P[{outcome1, outcome2, ...}] is as above.
+The probability of the forced measurement outcome (as if it were hypothetically not forced) is included in the output of ApplyCircuit[].
+Projection into zero-probability states is invalid and will throw an error."
     Protect[P]
     
     Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
@@ -661,6 +663,8 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
             Subscript[KrausNonTP, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
                 {getOpCode[KrausNonTP], {}, {targs}, codifyMatrices[matrs]},
+            Subscript[P, (targs:__Integer)|{targs:__Integer}][outcomes_List] :> 
+                {getOpCode[P], {}, {targs}, outcomes},
             Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__] :> 
                 {getOpCode[gate], {}, {targs}, {args}},
         	Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}] :> 
@@ -1906,7 +1910,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             	curCol,curSymb,curCtrls,curTargs,curInterval,curIsSpecialSwap,
             	prevIntervals,prevIsSpecialSwap,prevSpecialQubits,
                 isFirstGate,subcircInd=0,subcircIndMax=Length[subcircs],
-                gates},
+                gates,finalSubSpacing},
 
                 (* outputs *)
             	qubitgraphics = {};
@@ -1984,9 +1988,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 		{gate,gates}
                 	];
             	
-                	(* perform the final round of qubit line drawing (for previous column) *)
-                	AppendTo[qubitgraphics, 
-                		drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]];
+                	(* perform the final round of qubit line drawing (for previous column),
+                     * unless this is the final and empty subcircuit *) 
+                    If[ subcircInd < subcircIndMax || Length@subcircs[[-1]] =!= 0,
+                	   AppendTo[qubitgraphics, 
+                		     drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]]];
                         
                     (* make a new column (just accounting for previous subcircuit) *)
                     curCol = curCol + If[prevIsSpecialSwap,2,1]; 
@@ -2006,11 +2012,16 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                             AppendTo[gategraphics, 
                                 labelDrawFunc[labels[[subcircInd+1]], curCol + subSpacing/2]]];
                     
-                        (* add offset for subcircuit spacing (avoid 0 length for visual artefact) *)
+                        (* add offset for subcircuit spacing (avoid 0 length for visual artefact) ... *)
                         If[subSpacing > 0,
+                        
+                            (* if this is the penultimate subcirc and the ultimate is empty (to indicate a final schedule time),
+                             * then half the offset *)
+                            finalSubSpacing = If[(subcircInd < subcircIndMax-1) || Length@subcircs[[-1]] =!= 0, subSpacing, subSpacing/2];
                             AppendTo[qubitgraphics, 
-                                drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol, subSpacing]];
-                            curCol = curCol + subSpacing];
+                                drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol, finalSubSpacing]];
+                            curCol = curCol + finalSubSpacing
+                        ];
                     ]
                     ,
                     {subcirc, subcircs}
@@ -2627,6 +2638,13 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 
             (* infer the whole subcircuit duration (unless forced) *)
             slowestGateDur = Max[gateDurs];
+    
+            (* warn if duration was forced and too short *)
+            If[forcedSubcircDur =!= None && forcedSubcircDur < slowestGateDur,
+                Message[InsertCircuitNoise::error, 
+                    "The given circuit schedule allocated insufficient time for a column's slowest gate to execute. If this is intentional, silence this warning with Quiet[]."]];
+            
+            (* choose the forced duration if given, else the slowest gate duration *)
             subcircDur = If[
                 forcedSubcircDur === None,
                 slowestGateDur,
@@ -2686,6 +2704,11 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                 curTime += curDur,
                 {sub, subcircs}
             ];
+            
+            (* append the final time to the end of the schedule *)
+            AppendTo[subcircTimes, curTime];
+            AppendTo[subcircActives, {}];
+            AppendTo[subcircPassives, {}];
             
             (* return *)    
             {subcircTimes, subcircActives, subcircPassives}
@@ -2793,26 +2816,39 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             ]
         CheckCircuitSchedule[___] := invalidArgError[CheckCircuitSchedule]
         
+        isUnsupportedGate[spec_][gate_] := gate === (gate /. spec[Gates])
+        
         GetUnsupportedGates[sched:{{_, _List}..}, spec_Association] :=
             GetUnsupportedGates[ sched[[All, 2]], spec ]
         GetUnsupportedGates[cols:{_List ..}, spec_Association] :=
             GetUnsupportedGates[#, spec]& /@ cols
         GetUnsupportedGates[circ_List, spec_Association] :=
-    	   Select[circ, (Not[isCompatibleGate[spec][#]]&) ]
+    	   Select[circ, isUnsupportedGate[spec]]
         GetUnsupportedGates[___] := invalidArgError[GetUnsupportedGates]
             
-        (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting *)
-        (* note this is overriding alias rule -> with :> which should be fine *)
+        (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting),
+         * without triggering premature evaluation of the substituting values *)
         optionalReplaceAliases[False, spec_Association][in_] := in 
-        (* alas, it was NOT fine; it triggered premature evaluation of the RHS of an alias rule! *)
-            (*
-            optionalReplaceAliases[True, spec_Association][in_] := in //. If[
-                KeyExistsQ[spec, Aliases], (#1 :> Sequence @@ #2 &) @@@ spec[Aliases], {}]
-            *)
-        (* we will have to instead trust the user to use :> when necessary *)
-        optionalReplaceAliases[True, spec_Association][in_] := in //. spec[Aliases]
-        
-        
+        optionalReplaceAliases[True, spec_Association][in_] := Module[
+            {aliases, heldValues, releasedRules},
+            
+            (* transform alias rules into:   rule :> dummySubstitutedAlias[Hold[value]] *)
+            aliases = spec[Aliases][[All, 1]];
+            heldValues = dummySubstitutedAlias /@ Table[Extract[alias, 2, Hold], {alias, spec[Aliases]}];
+            releasedRules = RuleDelayed @@@ Transpose[{aliases, heldValues}] // ReleaseHold;
+
+            (* repeatedly replace aliases with their (revised) values, until all (nested) aliases are expanded *)
+            FixedPoint[
+                (Replace[#, releasedRules, Infinity] 
+                    (* expand dummy-wrapped lists into sequences (happens when the original alias value was a Circuit or List) *)
+                    /. dummySubstitutedAlias[{x___}] :> x 
+                    (* expand dummy-wrapped sequences into sequences (happens when the original alias value was a single gate or a Sequence.
+                     * this is actually an invalid syntax which will already break ViewDeviceSpec[], but protects Cica's existing code) *)
+                    /. dummySubstitutedAlias -> Sequence &),
+                in
+            ]
+        ]
+
         (* declaring optional args to GetCircuitSchedule *)
         Options[GetCircuitSchedule] = {
             ReplaceAliases -> False
@@ -2823,7 +2859,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
             Catch[
                 With[
                     {times = First @ getSchedAndNoiseFromSubcircs[cols,spec]}, (* throws *)
-                    Transpose[{times, cols}] // optionalReplaceAliases[OptionValue[ReplaceAliases], spec]]]
+                    Transpose[{times, Append[cols,{}]}] // optionalReplaceAliases[OptionValue[ReplaceAliases], spec]]]
         GetCircuitSchedule[circ_List, spec_Association, opts:OptionsPattern[]] :=
             GetCircuitSchedule[GetCircuitColumns[circ], spec, opts]
         GetCircuitSchedule[___] := invalidArgError[GetCircuitSchedule]
@@ -2915,7 +2951,9 @@ The probability of the forced measurement outcome (if hypothetically not forced)
         (* the gates in active noise can contain symbolic qubits that won't trigger 
          * Circuit[] evaluation. This function forces Circuit[] to a list *)
         frozenCircToList[HoldForm[Circuit[gs_Times]]] := ReleaseHold[List @@@ Hold[gs]]
+        frozenCircToList[Circuit[gs_Times]] := ReleaseHold[List @@@ Hold[gs]]
         frozenCircToList[HoldForm[Circuit[g_]]] := {g}
+        frozenCircToList[Circuit[g_]] := {g}
         frozenCircToList[HoldForm[gs_List]] := gs
         frozenCircToList[else_] := else
         
@@ -2961,7 +2999,7 @@ The probability of the forced measurement outcome (if hypothetically not forced)
                         First[row], 
                         (* attempt to render element as spaced list *)
                         With[
-                            {attemptedList = frozenCircToList[Last[row]]},
+                            {attemptedList = frozenCircToList @ Last @ row},
                             If[ Head[attemptedList] === List,
                                 Row[attemptedList /. m_?MatrixQ :> MatrixForm[m], Spacer[0]],
                                 HoldForm[attemptedList] /. m_?MatrixQ :> MatrixForm[m]
