@@ -80,6 +80,37 @@ void local_lazyShuffle(std::vector<int> &array) {
 
 
 /*
+ * vector formatters 
+ */
+ 
+void local_setSubDiagonalOpFromFlatList(qreal* list, SubDiagonalOp op) {
+    for (long long int i=0; i<op.numElems; i++) {
+        op.real[i] = list[2*i];
+        op.imag[i] = list[2*i+1];
+    }
+}
+
+void local_setFlatListToDiagonalMatrixDagger(qreal* list, int numQubits) {
+    long long int dim = (1LL << numQubits);
+    for (long long int i=0; i<dim; i++)
+        list[2*i] *= -1;
+}
+
+void local_setFlatListFromQvector(qreal* list, qvector v) {
+    for (size_t i=0; i<v.size(); i++) {
+        list[2*i] = real(v[i]);
+        list[2*i+1] = imag(v[i]);
+    }
+}
+
+long long int local_getNumRealScalarsToFormDiagonalMatrix(int numQubits) {
+    long long int dim = (1LL << numQubits);
+    return dim*2; // fac 2 for separate real and imag cmoponents
+}
+
+
+
+/*
  * matrix formatters
  */
  
@@ -196,7 +227,7 @@ void local_createManyMatrixNFromFlatList(qreal* list, ComplexMatrixN* matrs, int
     }
 }
 
-long long int local_getNumScalarsToFormMatrix(int numQubits) {
+long long int local_getNumRealScalarsToFormMatrix(int numQubits) {
     long long int dim = (1LL << numQubits);
     return dim*dim*2; // fac 2 for separate real and imag cmoponents
 }
@@ -251,6 +282,38 @@ qvector local_getQvector(int dim) {
     // one to believe qmatrix(dim) is valid, which will instead cause 
     // inoccuous segmentation faults
     return qvector(dim);
+}
+
+qvector local_getQvectorFromFlatList(qreal* flatElems, int dim) {
+    
+    qvector vec = local_getQvector(dim);
+        
+    int n = 0;
+    for (int i=0; i<dim; i++) {
+        vec[i] = qcomp(flatElems[n], flatElems[n+1]);
+        n += 2;
+    }
+            
+    return vec;
+}
+
+bool local_isInvertible(qvector diagonal) {
+    
+    for (size_t i=0; i<diagonal.size(); i++)
+        if (! local_isNonZero(diagonal[i]) )
+            return false;
+            
+    return true;
+}
+
+qvector local_getInverse(qvector diagonal) {
+    
+    qvector inv = diagonal;
+    
+    for (size_t i=0; i<inv.size(); i++)
+        inv[i] = qcomp(1,0)/diagonal[i];
+        
+    return inv;
 }
 
 
@@ -348,6 +411,11 @@ qmatrix local_getKrausSuperoperatorFromFlatList(qreal* flatElems, int numQubits)
 bool local_isNonZero(qreal scalar) {
     
     return (abs(scalar) > MIN_NON_ZERO_EPS_FAC * REAL_EPS);
+}
+
+bool local_isNonZero(qcomp scalar) {
+    
+    return local_isNonZero(abs(scalar));
 }
 
 qmatrix local_decomposeLU(qmatrix matr, std::vector<int>& pivots, int *numPivots) {
@@ -492,17 +560,37 @@ qmatrix local_getDagger(qmatrix matr) {
 /* 
  * property checkers
  */
- 
-bool local_isSquareMatrix(int numFlatReals) {
+
+/* determines whether numFlatReals could principally be any-sized square matrix */
+bool local_isPossiblySquareMatrix(int numFlatReals) {
     
     if (numFlatReals % 2)
         return false;
         
     int dim = round(sqrt(numFlatReals/2));
-    bool flag = (2*dim*dim == numFlatReals);
-    return flag;
+    return (2*dim*dim == numFlatReals);
+}
+
+/*
+ * THESE FUNCTIONS ARE FLAWED!
+ * The total number of elements alone cannot reliably differentiate whether the user, 
+ * at the QuESTlink level, supplied a square matrix or a flat list of diagonal elements.
+ *
+ * TODO:
+ *  We must pass an additional parameter/flag along with U, UNonNorm and Matr which 
+ *  which specifies its type (0=dense, 1=diagonal)
+ */
+ 
+bool local_isSquareMatrix(int numTargs, long long int numFlatReals) {
+    return numFlatReals == local_getNumRealScalarsToFormMatrix(numTargs);
+}
+
+bool local_isDiagonalMatrix(int numTargs, long long int numFlatReals) {
+    return numFlatReals == local_getNumRealScalarsToFormDiagonalMatrix(numTargs);
 }
 
 bool local_isInt(qreal num) {
     return num == trunc(num);
 }
+
+

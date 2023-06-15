@@ -27,7 +27,11 @@ qmatrix local_getQmatrix(int dim);
 qmatrix operator + (const qmatrix& m1, const qmatrix& m2);
 
 
-long long int local_getNumScalarsToFormMatrix(int numQubits);
+long long int local_getNumRealScalarsToFormMatrix(int numQubits);
+
+long long int local_getNumRealScalarsToFormDiagonalMatrix(int numQubits);
+
+qvector local_getQvectorFromFlatList(qreal* flatElems, int dim);
 
 qmatrix local_getQmatrixFromFlatList(qreal* flatElems, int dim);
 
@@ -50,12 +54,16 @@ ComplexMatrix2 local_getZeroComplexMatrix2();
 
 void local_setMatrixNFromFlatListAtIndex(qreal* list, ComplexMatrixN m, int numQubits, int n);
 
+void local_setSubDiagonalOpFromFlatList(qreal* flatElems, SubDiagonalOp op);
+
 
 void local_setFlatListFromMatrixN(qreal* list, ComplexMatrixN m, int numQubits);
 
 void local_setFlatListToMatrixDagger(qreal* list, int numQubits);
 
 void local_setFlatListFromQmatrix(qreal* list, qmatrix m);
+
+void local_setFlatListFromQvector(qreal* list, qvector v);
 
 void local_setMatrixNFromQmatrix(ComplexMatrixN cm, qmatrix qm);
 
@@ -65,19 +73,30 @@ void local_setComplexMatrix4RealFactor(ComplexMatrix4 *m, qreal fac);
 
 void local_setComplexMatrixToRealFactor(ComplexMatrixN matr, qreal fac);
 
+void local_setFlatListToDiagonalMatrixDagger(qreal* list, int numQubits);
+
 
 bool local_isInvertible(qmatrix matr);
 
+bool local_isInvertible(qvector diag);
+
 bool local_isNonZero(qreal scalar);
+
+bool local_isNonZero(qcomp scalar);
 
 qmatrix local_getInverse(qmatrix matr); // throws
 
+qvector local_getInverse(qvector diagonal);
+
 qmatrix local_getDagger(qmatrix matr);
 
-bool local_isSquareMatrix(int numFlatReals);
+bool local_isPossiblySquareMatrix(int numFlatReals);
+
+bool local_isSquareMatrix(int numTargs, long long int numFlatReals);
+
+bool local_isDiagonalMatrix(int numTargs, long long int numFlatReals);
 
 bool local_isInt(qreal num);
-
 
 
 #endif // UTILITIES_H

@@ -55,6 +55,15 @@ std::string local_getCommaSep(qcomp* elems, int len) {
     return form;
 }
 
+std::string local_qvectorToStr(qvector v) {
+    std::string form = "{";
+    for (size_t i=0; i<v.size(); i++) {
+        form += local_qcompToStr(v[i]);
+        form += (i<v.size()-1)? ", " : "}";
+    }
+    return form;
+}
+
 std::string local_qmatrixToStr(qmatrix m) {
     std::string form = "{";
     for (size_t r=0; r<m.size(); r++) {

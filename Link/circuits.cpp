@@ -190,20 +190,22 @@ std::string Gate::getName() {
         // explicit number of qubits
         case OPCODE_U :
         case OPCODE_UNonNorm :
-        case OPCODE_Matr : 
+        case OPCODE_Matr :
+            if (local_isDiagonalMatrix(numTargs, numParams))
+                targLabel = "diagonal ";
         case OPCODE_Deph :
         case OPCODE_Depol :
         case OPCODE_Damp :
         case OPCODE_Kraus :
         case OPCODE_KrausNonTP :
             if (numTargs == 0)
-                targLabel = "zero-target ";
+                targLabel += "zero-target ";
             if (numTargs == 1)
-                targLabel = "single-qubit ";
+                targLabel += "single-qubit ";
             if (numTargs == 2)
-                targLabel = "two-qubit ";
+                targLabel += "two-qubit ";
             if (numTargs > 2)
-                targLabel = "many-qubit ";
+                targLabel += "many-qubit ";
             break;
             
         // default handled above
@@ -266,17 +268,19 @@ std::string Gate::getSyntax() {
             case OPCODE_U :
             case OPCODE_UNonNorm :
             case OPCODE_Matr :
-                // We assume a single square matrix was given. If this is violated 
-                // (the user gives multiple matrices, or the matrix was rectangular)
-                // than the returned syntax will undetectably disagree with the 
-                // user input. Alas, this is a worthy risk to render the more subtly 
-                // erroneous square matrices.
-                if (local_isSquareMatrix(numParams)) {
+                if (local_isDiagonalMatrix(numTargs, numParams)) {
+                    qvector vec = local_getQvectorFromFlatList(params, 1LL<<numTargs);
+                    form += "[" + local_qvectorToStr(vec) + "]";
+                } 
+                else if (local_isPossiblySquareMatrix(numParams)) {
                     int dim = round(sqrt(numParams/2));
                     qmatrix matr = local_getQmatrixFromFlatList(params, dim);
                     form += "[ MatrixForm @ " + local_qmatrixToStr(matr) + " ]";
-                } else
-                    form += "[uninterpretable]";
+                }
+                else {
+                    qvector vec = local_getQvectorFromFlatList(params, numParams/2);
+                    form += "[" + local_qvectorToStr(vec) + "]";
+                }
                 break;
                 
             // complex matrices
@@ -292,7 +296,7 @@ std::string Gate::getSyntax() {
                         form += "[]";
                     else if ((numParams-1) % numOps != 0) // inconsistent sizes
                         form += "[uninterpretable]";
-                    else if (!local_isSquareMatrix((numParams-1)/numOps)) //  rectangular matrices
+                    else if (!local_isSquareMatrix(numTargs, (numParams-1)/numOps)) //  rectangular matrices
                         form += "[uninterpretable]"; 
                     else {
                         int dim = round(sqrt((numParams-1)/numOps/2));
@@ -427,13 +431,16 @@ void Gate::validate() {
         
         case OPCODE_U :
         case OPCODE_UNonNorm : 
-        case OPCODE_Matr : { ;
-            long long int dim = (1LL << numTargs);
-            if (numParams != 2 * dim*dim)
+        case OPCODE_Matr :
+            if (!local_isSquareMatrix(numTargs, numParams) && !local_isDiagonalMatrix(numTargs, numParams)) {
+                long long int dim = (1LL << numTargs);
                 throw QuESTException(getSyntax(), "The " + 
                     std::to_string(numTargs) + "-qubit " + getSymb() + " operator accepts only a single " + 
-                    std::to_string(dim) + "x" +  std::to_string(dim) + " complex matrix."); // throws
-        }
+                    std::to_string(dim) + "x" +  std::to_string(dim) + " complex matrix, or a single " + 
+                    std::to_string(dim) + "-length complex vector (to indicate a diagonal matrix)."); // throws
+            }
+            if (local_isDiagonalMatrix(numTargs, numParams) && numCtrls != 0)
+                throw local_gateUnsupportedExcep(getSyntax(), getName()); // throws
             return;
 
         case OPCODE_Deph :
@@ -624,55 +631,72 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
                 break;
             
             case OPCODE_U :
-                if (numTargs == 1) {
-                    ComplexMatrix2 u = local_getMatrix2FromFlatList(params);
-                    if (numCtrls == 0)
-                        unitary(qureg, targs[0], u); // throws
-                    else
-                        multiControlledUnitary(qureg, ctrls, numCtrls, targs[0], u); // throws
-                }
-                else if (numTargs == 2) {
-                    ComplexMatrix4 u = local_getMatrix4FromFlatList(params);
-                    if (numCtrls == 0)
-                        twoQubitUnitary(qureg, targs[0], targs[1], u); // throws
-                    else
-                        multiControlledTwoQubitUnitary(qureg, ctrls, numCtrls, targs[0], targs[1], u); // throws
-                } 
-                else {
-                    // this is wastefully(?) allocating and deallocating memory on the fly!
-                    ComplexMatrixN u = createComplexMatrixN(numTargs);
-                    local_setMatrixNFromFlatList(params, u, numTargs);
-                    if (numCtrls == 0)
-                        multiQubitUnitary(qureg, targs, numTargs, u); // throws
-                    else
-                        multiControlledMultiQubitUnitary(qureg, ctrls, numCtrls, targs, numTargs, u); // throws
-                    // memory leak if above throws :^)
-                    destroyComplexMatrixN(u);
+                if (local_isSquareMatrix(numTargs, numParams)) {
+                    if (numTargs == 1) {
+                        ComplexMatrix2 u = local_getMatrix2FromFlatList(params);
+                        if (numCtrls == 0)
+                            unitary(qureg, targs[0], u); // throws
+                        else
+                            multiControlledUnitary(qureg, ctrls, numCtrls, targs[0], u); // throws
+                    }
+                    else if (numTargs == 2) {
+                        ComplexMatrix4 u = local_getMatrix4FromFlatList(params);
+                        if (numCtrls == 0)
+                            twoQubitUnitary(qureg, targs[0], targs[1], u); // throws
+                        else
+                            multiControlledTwoQubitUnitary(qureg, ctrls, numCtrls, targs[0], targs[1], u); // throws
+                    } 
+                    else {
+                        ComplexMatrixN u = createComplexMatrixN(numTargs);
+                        local_setMatrixNFromFlatList(params, u, numTargs);
+                        if (numCtrls == 0)
+                            multiQubitUnitary(qureg, targs, numTargs, u); // throws
+                        else
+                            multiControlledMultiQubitUnitary(qureg, ctrls, numCtrls, targs, numTargs, u); // throws
+                        destroyComplexMatrixN(u); // memory leak if above throws :^)
+                    }
+                } else if (local_isDiagonalMatrix(numTargs, numParams)) {
+                    SubDiagonalOp op = createSubDiagonalOp(numTargs);
+                    local_setSubDiagonalOpFromFlatList(params, op);
+                    diagonalUnitary(qureg, targs, numTargs, op); // throws
+                    destroySubDiagonalOp(op); // memory leak if above throws :^)
                 }
                 break;
                 
-            case OPCODE_UNonNorm : { ;
-                ComplexMatrixN m = createComplexMatrixN(numTargs);
-                local_setMatrixNFromFlatList(params, m, numTargs);
-                if (numCtrls == 0)
-                    applyGateMatrixN(qureg, targs, numTargs, m); // throws
-                else
-                    applyMultiControlledGateMatrixN(qureg, ctrls, numCtrls, targs, numTargs, m); // throws
-                // memory leak if above throws :^)
-                destroyComplexMatrixN(m);
-            }
+            case OPCODE_UNonNorm :
+                if (local_isSquareMatrix(numTargs, numParams)) {
+                    ComplexMatrixN m = createComplexMatrixN(numTargs);
+                    local_setMatrixNFromFlatList(params, m, numTargs);
+                    if (numCtrls == 0)
+                        applyGateMatrixN(qureg, targs, numTargs, m); // throws
+                    else
+                        applyMultiControlledGateMatrixN(qureg, ctrls, numCtrls, targs, numTargs, m); // throws
+                    destroyComplexMatrixN(m); // memory leak if above throws :^)
+                }
+                else if (local_isDiagonalMatrix(numTargs, numParams)) {
+                    SubDiagonalOp op = createSubDiagonalOp(numTargs);
+                    local_setSubDiagonalOpFromFlatList(params, op);
+                    applyGateSubDiagonalOp(qureg, targs, numTargs, op); // throws
+                    destroySubDiagonalOp(op); // memory leak if above throws :^)
+                }
                 break;
                 
-            case OPCODE_Matr : { ;
-                ComplexMatrixN m = createComplexMatrixN(numTargs);
-                local_setMatrixNFromFlatList(params, m, numTargs);
-                if (numCtrls == 0)
-                    applyMatrixN(qureg, targs, numTargs, m); // throws
-                else
-                    applyMultiControlledMatrixN(qureg, ctrls, numCtrls, targs, numTargs, m); // throws
-                // memory leak if above throws :^)
-                destroyComplexMatrixN(m);
-            }
+            case OPCODE_Matr :
+                if (local_isSquareMatrix(numTargs, numParams)) {
+                    ComplexMatrixN m = createComplexMatrixN(numTargs);
+                    local_setMatrixNFromFlatList(params, m, numTargs);
+                    if (numCtrls == 0)
+                        applyMatrixN(qureg, targs, numTargs, m); // throws
+                    else
+                        applyMultiControlledMatrixN(qureg, ctrls, numCtrls, targs, numTargs, m); // throws
+                    destroyComplexMatrixN(m); // memory leak if above throws :^)
+                }
+                else if (local_isDiagonalMatrix(numTargs, numParams)) {
+                    SubDiagonalOp op = createSubDiagonalOp(numTargs);
+                    local_setSubDiagonalOpFromFlatList(params, op);
+                    applySubDiagonalOp(qureg, targs, numTargs, op); // throws
+                    destroySubDiagonalOp(op); // memory leak if above throws :^)
+                }
                 break;
                 
             case OPCODE_Deph :
@@ -871,9 +895,16 @@ void Gate::applyDaggerTo(Qureg qureg) {
         case OPCODE_U :
         case OPCODE_UNonNorm :
         case OPCODE_Matr :
-            local_setFlatListToMatrixDagger(params, numTargs);
-            applyTo(qureg); // throws (safe to persist params mod)
-            local_setFlatListToMatrixDagger(params, numTargs);
+            if (local_isSquareMatrix(numTargs, numParams)) {
+                local_setFlatListToMatrixDagger(params, numTargs);
+                applyTo(qureg); // throws (safe to persist params mod)
+                local_setFlatListToMatrixDagger(params, numTargs);
+            }
+            if (local_isDiagonalMatrix(numTargs, numParams)) {
+                local_setFlatListToDiagonalMatrixDagger(params, numTargs);
+                applyTo(qureg); // throws (safe to persist params mod)
+                local_setFlatListToDiagonalMatrixDagger(params, numTargs);
+            }
             break;
         
         // name -> phase
@@ -1010,7 +1041,10 @@ bool Gate::isInvertible() {
             return false;
         
         case OPCODE_Matr :
-            return local_isInvertible( local_getQmatrixFromFlatList(params, 1LL<<numTargs) );
+            if (local_isSquareMatrix(numTargs, numParams))
+                return local_isInvertible( local_getQmatrixFromFlatList(params, 1LL<<numTargs) );
+            if (local_isDiagonalMatrix(numTargs, numParams))
+                return local_isInvertible( local_getQvectorFromFlatList(params, 1LL<<numTargs) );
             
         case OPCODE_Fac : 
             return local_isNonZero(params[0]*params[0] + params[1]*params[1]);
@@ -1094,12 +1128,22 @@ void Gate::applyInverseTo(Qureg qureg) {
     switch (opcode) {
         
         case OPCODE_Matr : { ;
-            qmatrix matr = local_getQmatrixFromFlatList(params, 1LL<<numTargs);
-            qmatrix matrInv = local_getInverse(matr);
-            
-            local_setFlatListFromQmatrix(params, matrInv);
-            applyTo(qureg); // throws (param mod doesn't matter), in ways validate() doesn't catch
-            local_setFlatListFromQmatrix(params, matr);
+            if (local_isSquareMatrix(numTargs, numParams)) {
+                qmatrix matr = local_getQmatrixFromFlatList(params, 1LL<<numTargs);
+                qmatrix matrInv = local_getInverse(matr);
+                
+                local_setFlatListFromQmatrix(params, matrInv);
+                applyTo(qureg); // throws (param mod doesn't matter), in ways validate() doesn't catch
+                local_setFlatListFromQmatrix(params, matr);
+            }
+            if (local_isDiagonalMatrix(numTargs, numParams)) {
+                qvector diag = local_getQvectorFromFlatList(params, 1LL<<numTargs);
+                qvector diagInv = local_getInverse(diag);
+                
+                local_setFlatListFromQvector(params, diagInv);
+                applyTo(qureg);
+                local_setFlatListFromQvector(params, diag);
+            }
         }
             return;
             
