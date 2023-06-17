@@ -2311,7 +2311,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         getAnalGateMatrix[Subscript[T, _]] = {{1,0},{0,Exp[I Pi/4]}};
         getAnalGateMatrix[Subscript[SWAP, _,_]] = {{1,0,0,0},{0,0,1,0},{0,1,0,0},{0,0,0,1}};
         getAnalGateMatrix[Subscript[U|Matr|UNonNorm, __][m_?MatrixQ]] = m;
-        getAnalGateMatrix[Subscript[U|Matr|UNonNorm, __][v_List]] = DiagonalMatrix[v];
+        getAnalGateMatrix[Subscript[U|Matr|UNonNorm, __][v_?VectorQ]] = DiagonalMatrix[v];
         getAnalGateMatrix[Subscript[Ph, t__][a_]] = DiagonalMatrix[ Append[ConstantArray[1, 2^Length[{t}] - 1], Exp[I a]] ];
         getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
         getAnalGateMatrix[Fac[a_]] := a {{1,0},{0,1}}; (* will not be conjugated for density matrices *)
@@ -3236,9 +3236,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         getInverseGate[G[x_]] := G[-x]
         getInverseGate[Fac[x_]] := Fac[1/x]
         getInverseGate[Subscript[(g:U|UNonNorm), q__][m_?MatrixQ]] := Subscript[g, q][ConjugateTranspose[m]]
-        getInverseGate[Subscript[(g:U|UNonNorm), q__][v_List]] := Subscript[g, q][Conjugate[v]]
+        getInverseGate[Subscript[(g:U|UNonNorm), q__][v_?VectorQ]] := Subscript[g, q][Conjugate[v]]
         getInverseGate[Subscript[Matr, q__][m_?MatrixQ]] := Subscript[Matr, q][Inverse[m]]
-        getInverseGate[Subscript[Matr, q__][v_List]] := Subscript[Matr, q][1/v]
+        getInverseGate[Subscript[Matr, q__][v_?VectorQ]] := Subscript[Matr, q][1/v]
         getInverseGate[g:Subscript[C, c__][h_]] := With[
             {hInv = getInverseGate[h]},
             If[Head @ hInv =!= $Failed, 
@@ -3270,9 +3270,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             
         (* multiply matrices with one another or with diagonal matrix vectors *)    
         multiplyMatrsOrVecs[m1_?MatrixQ, m2_?MatrixQ] := m1 . m2 // Simplify
-        multiplyMatrsOrVecs[m_?MatrixQ, v_List] := m . DiagonalMatrix[v] // Simplify
-        multiplyMatrsOrVecs[v_List, m_?MatrixQ] := DiagonalMatrix[v] . m // Simplify
-        multiplyMatrsOrVecs[v1_List, v2_List] := v1 * v2 // Simplify
+        multiplyMatrsOrVecs[m_?MatrixQ, v_?VectorQ] := m . DiagonalMatrix[v] // Simplify
+        multiplyMatrsOrVecs[v_?VectorQ, m_?MatrixQ] := DiagonalMatrix[v] . m // Simplify
+        multiplyMatrsOrVecs[v1_?VectorQ, v2_?VectorQ] := v1 * v2 // Simplify
 
         SimplifyCircuit[circ_List] := With[{
         	(*
@@ -3398,7 +3398,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                         Fac[x_ /; (Abs[x] === 1)] -> G[ ArcTan[Re@x, Im@x] ],
         				(* remove identity matrices (qubits are sorted) *)
         				Subscript[U|Matr|UNonNorm, q__][m_?MatrixQ] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
-                        Subscript[U|Matr|UNonNorm, q__][v_List] /; v === ConstantArray[1, 2^Length[{q}]] -> Nothing,
+                        Subscript[U|Matr|UNonNorm, q__][v_?VectorQ] /; v === ConstantArray[1, 2^Length[{q}]] -> Nothing,
         				(* simplify known parameters to within their periods *)
         				Subscript[Ph, q__][x_?NumericQ] /; Not[0 <= x < 2 Pi] :> Subscript[Ph, q]@Mod[x, 2 Pi],
         				(g:(Subscript[(Rx|Ry|Rz), q__]))[x_?NumericQ] /; Not[0 <= x < 4 Pi] :> g@Mod[x, 4 Pi],
