@@ -90,13 +90,14 @@ qvector local_getInverse(qvector diagonal);
 
 qmatrix local_getDagger(qmatrix matr);
 
-bool local_isPossiblySquareMatrix(int numFlatReals);
-
-bool local_isSquareMatrix(int numTargs, long long int numFlatReals);
-
-bool local_isDiagonalMatrix(int numTargs, long long int numFlatReals);
 
 bool local_isInt(qreal num);
+
+bool local_isEncodedVector(qreal paramDim);
+
+bool local_isEncodedMatrix(qreal paramDim);
+
+bool local_isPossiblySquareMatrix(int numFlatReals);
 
 
 #endif // UTILITIES_H

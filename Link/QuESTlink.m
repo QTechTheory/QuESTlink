@@ -419,7 +419,8 @@ The probability of the forced measurement outcome (as if it were hypothetically 
 Projection into zero-probability states is invalid and will throw an error."
     Protect[P]
     
-    Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
+    Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix.
+Unlike U, UNonNorm and Matr, these operators must be specified as full, dense matrices, and cannot be specified as the diagonal elements of diagonal matrices."
     Protect[Kraus]
     
     KrausNonTP::usage = "KrausNonTP[ops] is equivalent to Kraus[ops] but does not explicitly check that the map is trace-presering. It is still assumed a completely-positive trace-preserving map for internal algorithms, but will tolerate numerical imperfection."
@@ -645,8 +646,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Reverse @ Circuit @ op
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
+        getParamDim[_?VectorQ] := 1
+        getParamDim[_?MatrixQ] := 2
+        getParamDim[_] := -1
         codifyMatrixOrVector[obj_] :=
-            Riffle[Re @ N @ Flatten @ obj, Im @ N @ Flatten @ obj]
+            {getParamDim[obj]} ~Join~ Riffle[Re @ N @ Flatten @ obj, Im @ N @ Flatten @ obj]
             
         (* convert multiple MMA matrices into {#matrices, ... flattened matrices ...} *)
         codifyMatrices[matrs_] :=

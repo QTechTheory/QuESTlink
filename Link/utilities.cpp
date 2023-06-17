@@ -561,7 +561,18 @@ qmatrix local_getDagger(qmatrix matr) {
  * property checkers
  */
 
-/* determines whether numFlatReals could principally be any-sized square matrix */
+bool local_isInt(qreal num) {
+    return num == trunc(num);
+}
+
+bool local_isEncodedVector(qreal paramDim) {
+    return (paramDim == 1.0);
+}
+
+bool local_isEncodedMatrix(qreal paramDim) {
+    return (paramDim == 2.0);
+}
+
 bool local_isPossiblySquareMatrix(int numFlatReals) {
     
     if (numFlatReals % 2)
@@ -569,28 +580,6 @@ bool local_isPossiblySquareMatrix(int numFlatReals) {
         
     int dim = round(sqrt(numFlatReals/2));
     return (2*dim*dim == numFlatReals);
-}
-
-/*
- * THESE FUNCTIONS ARE FLAWED!
- * The total number of elements alone cannot reliably differentiate whether the user, 
- * at the QuESTlink level, supplied a square matrix or a flat list of diagonal elements.
- *
- * TODO:
- *  We must pass an additional parameter/flag along with U, UNonNorm and Matr which 
- *  which specifies its type (0=dense, 1=diagonal)
- */
- 
-bool local_isSquareMatrix(int numTargs, long long int numFlatReals) {
-    return numFlatReals == local_getNumRealScalarsToFormMatrix(numTargs);
-}
-
-bool local_isDiagonalMatrix(int numTargs, long long int numFlatReals) {
-    return numFlatReals == local_getNumRealScalarsToFormDiagonalMatrix(numTargs);
-}
-
-bool local_isInt(qreal num) {
-    return num == trunc(num);
 }
 
 

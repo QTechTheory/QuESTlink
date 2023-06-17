@@ -165,7 +165,7 @@ void local_multiControlledMultiQubitMatrixDeriv(
     for (int c=0; c<numCtrls; c++)
         statevec_collapseToKnownProbOutcome(qureg, ctrls[c], 1, 1);
         
-    // subsequent Jamiolkowski-isomorphism and chain rule don't occur if only left-applying D[gate]
+    // subsequent Jamiolkowski-isomorphism and chain rule don't occur if only left-applying D[gate], like for Matr[]
     if (leftApplyOnly)
         return;
 
@@ -184,9 +184,6 @@ void local_multiControlledMultiQubitMatrixDeriv(
     // |rho> -> conj(C[M]) (x) D(C[M]) |rho> + C[M] (x) conj(D(C[M])) |rho>
     if (qureg.isDensityMatrix)
         extension_addAdjointToSelf(qureg);
-        
-    // DEBUG
-    sendDebugEcho("Made it boss!");
 }
 
 void local_subDiagonalOpDeriv(
@@ -197,7 +194,7 @@ void local_subDiagonalOpDeriv(
     // |psi> -> D(op)|psi>,  |rho> -> D(op)|rho>
     applySubDiagonalOp(qureg, targs, numTargs, opDeriv);
     
-    // subsequent Jamiolkowski-isomorphism and chain rule don't occur if only left-applying D[gate]
+    // subsequent Jamiolkowski-isomorphism and chain rule don't occur if only left-applying D[gate], like for Matr[]
     if (leftApplyOnly)
         return;
     
@@ -291,14 +288,14 @@ void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
             case OPCODE_UNonNorm : 
             case OPCODE_Matr : {
                 bool leftApplyOnly = (opcode == OPCODE_Matr);
-                if (local_isSquareMatrix(numTargs, numParams)) {
+                if (local_isEncodedMatrix(params[0])) {
                     int reqNumDerivParams = local_getNumRealScalarsToFormMatrix(numTargs);
                     if (numDerivParams != reqNumDerivParams)
                         throw local_wrongNumDerivParamsExcep("", numDerivParams, reqNumDerivParams); // throws
                     
                     ComplexMatrixN matr = createComplexMatrixN(numTargs);
                     ComplexMatrixN matrDeriv = createComplexMatrixN(numTargs);
-                    local_setMatrixNFromFlatList(params, matr, numTargs);
+                    local_setMatrixNFromFlatList(&params[1], matr, numTargs);
                     local_setMatrixNFromFlatList(derivParams, matrDeriv, numTargs);
                     
                     local_multiControlledMultiQubitMatrixDeriv(
@@ -307,14 +304,14 @@ void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
                     destroyComplexMatrixN(matr);
                     destroyComplexMatrixN(matrDeriv);
                 }
-                if (local_isDiagonalMatrix(numTargs, numParams)) {
+                if (local_isEncodedVector(params[0])) {
                     int reqNumDerivParams = local_getNumRealScalarsToFormDiagonalMatrix(numTargs);
                     if (numDerivParams != reqNumDerivParams)
                         throw local_wrongNumDerivParamsExcep("", numDerivParams, reqNumDerivParams); // throws
                         
                     SubDiagonalOp op = createSubDiagonalOp(numTargs);
                     SubDiagonalOp opDeriv = createSubDiagonalOp(numTargs);
-                    local_setSubDiagonalOpFromFlatList(params, op);
+                    local_setSubDiagonalOpFromFlatList(&params[1], op);
                     local_setSubDiagonalOpFromFlatList(derivParams, opDeriv);
                     
                     local_subDiagonalOpDeriv(qureg, targs, numTargs, op, opDeriv, leftApplyOnly);
