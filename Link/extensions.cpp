@@ -16,6 +16,61 @@
 
 
 
+bool extension_isHermitian(Qureg qureg) {
+
+    validateDensityMatrQureg(qureg, "isHermitian (internal)");
+
+    qreal tolerance = 1E4 * REAL_EPS;
+
+    long long int dim = 1LL << qureg.numQubitsRepresented;
+    qreal* vecRe = qureg.stateVec.real;
+    qreal* vecIm = qureg.stateVec.imag;
+
+    long long int c, r, i, j;
+
+    // assume Hermitian until encountering a violating amplitude
+    bool isHermit = true;
+
+    // iterate |r><c| basis states (matrix stored column-wise, so successive r are adjacent amplitudes).
+    // parallelise only outer loop, since if there a fewer threads than columns, the total work is negligible anyway
+# ifdef _OPENMP
+# pragma omp parallel \
+    default  (none) \
+    shared   (tolerance, dim,vecRe,vecIm, isHermit) \
+    private  (c, r, i, j)
+# endif
+    {
+# ifdef _OPENMP
+# pragma omp for schedule (static)
+# endif
+        for (c=0; c<dim; c++) {
+
+            // abort if a thread has already determined non-Hermitivity
+            if (!isHermit)
+                continue;
+
+            for (r=c; r<dim; r++) {
+                if (!isHermit)
+                    break;
+
+                // determine |i> and |j> where |r><c| ~ |c>|r> = |i>,  |j> = |c><r| (dagger element)
+                i = (c*dim) | r;
+                j = (r*dim) | c;
+
+                // non-Hermitiain if real( amp[i] ) != real( amp[j] )
+                if (absReal(vecRe[i] - vecRe[j]) > tolerance)
+                    isHermit = false;
+
+                // non-Hermitiain if imag( amp[i] ) != - imag( amp[j] )
+                if (absReal(vecIm[i] + vecIm[j]) > tolerance)
+                    isHermit = false;
+            }
+        }
+    }
+
+    return isHermit;
+}
+
 void extension_addAdjointToSelf(Qureg qureg) {
     
     validateDensityMatrQureg(qureg, "addAdjointToSelf (internal)");

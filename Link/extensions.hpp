@@ -4,6 +4,8 @@
 
 
 
+bool extension_isHermitian(Qureg qureg);
+
 void extension_addAdjointToSelf(Qureg qureg);
 
 void extension_applyImagFactor(Qureg qureg, qreal imagFac);
