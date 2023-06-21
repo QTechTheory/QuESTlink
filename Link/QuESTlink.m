@@ -391,7 +391,10 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
     T::usage = "T is the T gate, a.k.a PI/4 gate."
     Protect[T]
     
-    U::usage = "U[matrix] is a general unitary gate with any number of target qubits, specified as a unitary square complex matrix. If the matrix breaks normalisation but is intended unitarity, use UNonNorm. To specify a general non-unitary matrix, use Matr."
+    U::usage = "U[matrix] is a general unitary gate with any number of target qubits, specified as a unitary square complex matrix.
+U[list] specifies a diagonal matrix with any number ofg target qubits, specifying only a list of the diagonal elements; this quadratically shrinks memory and runtime costs.
+If the given matrix is intended unitarity but is numerically non-unitary due to finite precision effects, use UNonNorm. 
+To specify a general non-unitary matrix, use Matr."
     Protect[U]
     
     Deph::usage = "Deph[prob] is a 1 or 2 qubit dephasing with probability prob of error."
@@ -416,7 +419,8 @@ The probability of the forced measurement outcome (as if it were hypothetically 
 Projection into zero-probability states is invalid and will throw an error."
     Protect[P]
     
-    Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix."
+    Kraus::usage = "Kraus[ops] applies a one or two-qubit Kraus map (given as a list of Kraus operators) to a density matrix.
+Unlike U, UNonNorm and Matr, these operators must be specified as full, dense matrices, and cannot be specified as the diagonal elements of diagonal matrices."
     Protect[Kraus]
     
     KrausNonTP::usage = "KrausNonTP[ops] is equivalent to Kraus[ops] but does not explicitly check that the map is trace-presering. It is still assumed a completely-positive trace-preserving map for internal algorithms, but will tolerate numerical imperfection."
@@ -431,10 +435,14 @@ Projection into zero-probability states is invalid and will throw an error."
     Ph::usage = "Ph is the phase shift gate, which introduces phase factor exp(i*theta) upon state |1...1> of the target and control qubits. The gate is the same under different orderings of qubits, and division between control and target qubits."
     Protect[Ph]
     
-    UNonNorm::usage = "UNonNorm[matr] is treated like a general unitary gate U, but with relaxed normalisation conditions on the matrix. This is distinct to gate Matr, which will be internally assumed non-unitary."
+    UNonNorm::usage = "UNonNorm[matrix] is treated like a general unitary gate U, but with relaxed normalisation conditions on the matrix.
+UNonNorm[list] specifies a diagonal matrix via only the diagonal elements; this quadratically shrinks memory and runtime costs.
+UNonNorm is distinct from Matr which is internally treated as a non-unitary operator."
     Protect[UNonNorm]
     
-    Matr::usage = "Matr[matrix] is an arbitrary operator with any number of target qubits, specified as a completely general (even non-unitary) square complex matrix. Unlike UNonNorm, the given matrix is not internally assumed unitary. It is hence only left-multiplied onto density matrices."
+    Matr::usage = "Matr[matrix] is an arbitrary operator with any number of target qubits, specified as a completely general (even non-unitary) square complex matrix.
+Matr[list] specifies a diagonal matrix via only the diagonal elements; this quadratically shrinks memory and runtime costs.
+Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix. For instance, it is only left-multiplied onto density matrices."
     Protect[Matr]
     
     Fac::usage = "Fac[scalar] is a non-physical operator which multiplies the given complex scalar onto every amplitude of the quantum state. This is directly multiplied onto state-vectors and density-matrices, and may break state normalisation."
@@ -638,8 +646,11 @@ Projection into zero-probability states is invalid and will throw an error."
             Reverse @ Circuit @ op
         
         (* convert MMA matrix to a flat format which can be embedded in the circuit param list *)
-        codifyMatrix[matr_] :=
-            Riffle[Re @ N @ Flatten @ matr, Im @ N @ Flatten @ matr]
+        getParamDim[_?VectorQ] := 1
+        getParamDim[_?MatrixQ] := 2
+        getParamDim[_] := -1
+        codifyMatrixOrVector[obj_] :=
+            {getParamDim[obj]} ~Join~ Riffle[Re @ N @ Flatten @ obj, Im @ N @ Flatten @ obj]
             
         (* convert multiple MMA matrices into {#matrices, ... flattened matrices ...} *)
         codifyMatrices[matrs_] :=
@@ -647,8 +658,8 @@ Projection into zero-probability states is invalid and will throw an error."
         
         (* recognising and codifying gates into {opcode, ctrls, targs, params} *)
         gatePatterns = {
-            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[g:U|Matr|UNonNorm,  (targs:__Integer)|{targs:__Integer}][matr:_List]] :> 
-                {getOpCode[g], {ctrls}, {targs}, codifyMatrix[matr]},
+            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[g:U|Matr|UNonNorm,  (targs:__Integer)|{targs:__Integer}][obj:_List]] :> 
+                {getOpCode[g], {ctrls}, {targs}, codifyMatrixOrVector[obj]},
         	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {args}},
         	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] :> 
@@ -657,8 +668,8 @@ Projection into zero-probability states is invalid and will throw an error."
                 {getOpCode[R], {ctrls}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
             R[param_, ({paulis:pauliOpPatt..}|Verbatim[Times][paulis:pauliOpPatt..]|paulis:pauliOpPatt__)] :>
                 {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
-        	Subscript[g:U|Matr|UNonNorm, (targs:__Integer)|{targs:__Integer}][matr:_List] :> 
-                {getOpCode[g], {}, {targs}, codifyMatrix[matr]},
+        	Subscript[g:U|Matr|UNonNorm, (targs:__Integer)|{targs:__Integer}][obj_List] :> 
+                {getOpCode[g], {}, {targs}, codifyMatrixOrVector[obj]},
             Subscript[Kraus, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
                 {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
             Subscript[KrausNonTP, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
@@ -775,8 +786,8 @@ Projection into zero-probability states is invalid and will throw an error."
         encodeDerivParams[R[f_,_], x_] := {D[f,x]}
         encodeDerivParams[G[f_], x_] := {D[f,x]}
         encodeDerivParams[Fac[f_], x_] := With[{df=D[f,x]}, {Re@N@df, Im@N@df}]
-        encodeDerivParams[Subscript[U|Matr|UNonNorm, __][matr_], x_] := With[
-            {dm = D[matr,x]}, Riffle[Re @ Flatten @ dm, Im @ Flatten @ dm]]
+        encodeDerivParams[Subscript[U|Matr|UNonNorm, __][matrOrVec_], x_] := With[
+            {dm = D[matrOrVec,x]}, Riffle[Re @ Flatten @ dm, Im @ Flatten @ dm]]
         encodeDerivParams[Subscript[Kraus|KrausNonTP, __][matrs_List], x_] := 
             (Riffle[Re @ Flatten @ #, Im @ Flatten @ #]&) /@ Table[D[m,x] , {m,matrs}]
         encodeDerivParams[Subscript[C, __][g_], x_] := encodeDerivParams[g, x]
@@ -2299,7 +2310,8 @@ Projection into zero-probability states is invalid and will throw an error."
         getAnalGateMatrix[Subscript[S, _]] = {{1,0},{0,I}};
         getAnalGateMatrix[Subscript[T, _]] = {{1,0},{0,Exp[I Pi/4]}};
         getAnalGateMatrix[Subscript[SWAP, _,_]] = {{1,0,0,0},{0,0,1,0},{0,1,0,0},{0,0,0,1}};
-        getAnalGateMatrix[Subscript[U|Matr|UNonNorm, __][m_]] = m;
+        getAnalGateMatrix[Subscript[U|Matr|UNonNorm, __][m_?MatrixQ]] = m;
+        getAnalGateMatrix[Subscript[U|Matr|UNonNorm, __][v_?VectorQ]] = DiagonalMatrix[v];
         getAnalGateMatrix[Subscript[Ph, t__][a_]] = DiagonalMatrix[ Append[ConstantArray[1, 2^Length[{t}] - 1], Exp[I a]] ];
         getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
         getAnalGateMatrix[Fac[a_]] := a {{1,0},{0,1}}; (* will not be conjugated for density matrices *)
@@ -2391,8 +2403,8 @@ Projection into zero-probability states is invalid and will throw an error."
             	(* global phase and fac become a fac*identity on the first qubit *)
                 G[x_] :> Subscript[U, 0][ Exp[I x] IdentityMatrix[2] ],
                 Fac[x_] :> Subscript[Matr, 0][ x IdentityMatrix[2] ],  (* will not be conjugated for density matrices *)
-                (* Matr and UNonNorm gates remain the same *)
-                g:(Subscript[Matr|UNonNorm, q__Integer|{q__Integer}][m_]) :> g,
+                (* U, Matr and UNonNorm gates remain the same *)
+                g:(Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][m_]) :> g,
             	(* controlled gates are turned into U of identities with bottom-right submatrix *)
                 Subscript[C, c__Integer|{c__Integer}][Subscript[(mg:Matr|UNonNorm), q__Integer|{q__Integer}][m_]] :> 
                     With[{cDim=2^Length[{c}], tDim=Length@m},
@@ -2456,8 +2468,8 @@ Projection into zero-probability states is invalid and will throw an error."
             		 R[s*x, Times @@ MapThread[(Subscript[#1, #2]&), {{p}[[All,1]], {p}[[All,2]] + numQb}]]}],
             	(* gates with no inbuilt conjugates *)
             	Subscript[Y, q_Integer] :> {Subscript[Y, q], Subscript[U, q+numQb][Conjugate@PauliMatrix@2]},
-            	Subscript[(g:U|UNonNorm), q__Integer|{q__Integer}][m_] :> {Subscript[g, q][m], Subscript[g, shiftInds[q,numQb]][Conjugate@m]},
-                Subscript[Matr, q__Integer|{q__Integer}][m_] :> {Subscript[Matr, q][m]},
+            	Subscript[(g:U|UNonNorm), q__Integer|{q__Integer}][matrOrVec_] :> {Subscript[g, q][matrOrVec], Subscript[g, shiftInds[q,numQb]][Conjugate@matrOrVec]},
+                Subscript[Matr, q__Integer|{q__Integer}][matrOrVec_] :> {Subscript[Matr, q][matrOrVec]},
             	(* controlled gates must recurse: assume inner gate resolves to two ops *)
             	Subscript[C, c__Integer|{c__Integer}][g_] :> {Subscript[C, c][g], 
             		Subscript[C, shiftInds[c,numQb]][Last @ GetCircuitSuperoperator[{g},numQb]]},
@@ -3224,7 +3236,9 @@ Projection into zero-probability states is invalid and will throw an error."
         getInverseGate[G[x_]] := G[-x]
         getInverseGate[Fac[x_]] := Fac[1/x]
         getInverseGate[Subscript[(g:U|UNonNorm), q__][m_?MatrixQ]] := Subscript[g, q][ConjugateTranspose[m]]
+        getInverseGate[Subscript[(g:U|UNonNorm), q__][v_?VectorQ]] := Subscript[g, q][Conjugate[v]]
         getInverseGate[Subscript[Matr, q__][m_?MatrixQ]] := Subscript[Matr, q][Inverse[m]]
+        getInverseGate[Subscript[Matr, q__][v_?VectorQ]] := Subscript[Matr, q][1/v]
         getInverseGate[g:Subscript[C, c__][h_]] := With[
             {hInv = getInverseGate[h]},
             If[Head @ hInv =!= $Failed, 
@@ -3242,16 +3256,23 @@ Projection into zero-probability states is invalid and will throw an error."
         GetCircuitInverse[___] := invalidArgError[GetCircuitInverse]
         
         tidyInds[q__] := Sequence @@ Sort@DeleteDuplicates@List@q
-        tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q_Integer][m_]] := Subscript[g, q][Simplify @ m]
-        tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q__Integer][m_]] /; OrderedQ[{q}] := Subscript[g, q][Simplify @ m]
-        tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q__Integer][m_]] := 
+        tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q_Integer][matrOrVec_]] := Subscript[g, q][Simplify @ matrOrVec]
+        tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q__Integer][matrOrVec_]] /; OrderedQ[{q}] := Subscript[g, q][Simplify @ matrOrVec]
+        tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q__Integer][matrOrVec_]] := 
         	With[{order=Ordering[{q}]},
         		Do[
         			If[order[[i]] =!= i, Block[{tmp}, With[
         				{q1={q}[[i]], q2={q}[[order[[i]]]]}, 
         				{s=CalcCircuitMatrix[{Subscript[SWAP, i-1,order[[i]]-1]}, Length[{q}]]},
-        				Return @ tidyMatrixGate @ Subscript[g, Sequence@@((({q} /. q1->tmp) /. q2->q1) /. tmp->q2)][s . m . s]]]],
+                        {newMatr=If[MatrixQ[matrOrVec], (s . matrOrVec . s), (s . matrOrVec)]},
+        				Return @ tidyMatrixGate @ Subscript[g, Sequence@@((({q} /. q1->tmp) /. q2->q1) /. tmp->q2)][newMatr]]]],
         			{i, Length[{q}]}]]
+            
+        (* multiply matrices with one another or with diagonal matrix vectors *)    
+        multiplyMatrsOrVecs[m1_?MatrixQ, m2_?MatrixQ] := m1 . m2 // Simplify
+        multiplyMatrsOrVecs[m_?MatrixQ, v_?VectorQ] := m . DiagonalMatrix[v] // Simplify
+        multiplyMatrsOrVecs[v_?VectorQ, m_?MatrixQ] := DiagonalMatrix[v] . m // Simplify
+        multiplyMatrsOrVecs[v1_?VectorQ, v2_?VectorQ] := v1 * v2 // Simplify
 
         SimplifyCircuit[circ_List] := With[{
         	(*
@@ -3264,8 +3285,8 @@ Projection into zero-probability states is invalid and will throw an error."
         		Subscript[(g:S|T), t_Integer ]:> Subscript[Ph, t][Pi / (g/.{S->2,T->4})], 
         		Subscript[C, c__Integer|{c__Integer}][Subscript[(g:S|T), t_Integer]] :> Subscript[Ph, tidyInds[c,t]][Pi / (g/.{S->2,T->4})],
         		(* sort qubits of general unitaries by SWAPs upon matrix *)
-        		g:Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][m_] :> tidyMatrixGate[g],
-        		Subscript[C, c__][g:Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][m_]] :> Subscript[C, tidyInds@c][tidyMatrixGate@g],
+        		g:Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][matrOrVec_] :> tidyMatrixGate[g],
+        		Subscript[C, c__][g:Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][matrOrVec_]] :> Subscript[C, tidyInds@c][tidyMatrixGate@g],
         		(* sort controls of any gate *)
         		Subscript[C, c__Integer|{c__Integer}][g_] :> Subscript[C, tidyInds@c][g],
         		(* sort targets of target-order-agnostic gates *)
@@ -3316,8 +3337,11 @@ Projection into zero-probability states is invalid and will throw an error."
         				(* multiply matrices of adjacent unitaries and Matr *)
                         (* we do not presently merge U unto neighbouring Matr *)
         				{
-        					{ {a___, Subscript[g:(U|Matr|UNonNorm), q__][m1_], b___}, {c___, Subscript[g:(U|Matr|UNonNorm), q__][m2_], d___} } :> Sequence[{a,Subscript[g, q][m1 . m2//Simplify],b},{c,d}],
-        					{ {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][m1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][m2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][m1 . m2//Simplify],b},{c,d}]
+        					{ {a___, Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> 
+                                (
+                                    Sequence[{a,Subscript[g, q][multiplyMatrsOrVecs[mv1,mv2]],b},{c,d}]
+                                ),
+        					{ {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][multiplyMatrsOrVecs[mv1,mv2]],b},{c,d}]
         				},
         				(* merge all global phases *)
         				{
@@ -3373,7 +3397,8 @@ Projection into zero-probability states is invalid and will throw an error."
                         Fac[1|1.] -> Nothing,
                         Fac[x_ /; (Abs[x] === 1)] -> G[ ArcTan[Re@x, Im@x] ],
         				(* remove identity matrices (qubits are sorted) *)
-        				Subscript[U|Matr|UNonNorm, q__][m_] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
+        				Subscript[U|Matr|UNonNorm, q__][m_?MatrixQ] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
+                        Subscript[U|Matr|UNonNorm, q__][v_?VectorQ] /; v === ConstantArray[1, 2^Length[{q}]] -> Nothing,
         				(* simplify known parameters to within their periods *)
         				Subscript[Ph, q__][x_?NumericQ] /; Not[0 <= x < 2 Pi] :> Subscript[Ph, q]@Mod[x, 2 Pi],
         				(g:(Subscript[(Rx|Ry|Rz), q__]))[x_?NumericQ] /; Not[0 <= x < 4 Pi] :> g@Mod[x, 4 Pi],

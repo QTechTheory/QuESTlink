@@ -16,6 +16,7 @@ std::string local_getCommaSep(qcomp* elems, int len);
 
 std::string local_qrealToStr(qreal r);
 std::string local_qcompToStr(qcomp s);
+std::string local_qvectorToStr(qvector v);
 std::string local_qmatrixToStr(qmatrix m);
 
 std::string local_getStandardFormFromMMA(std::string expr);
