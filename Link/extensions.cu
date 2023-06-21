@@ -27,6 +27,63 @@ __forceinline__ __device__ long long int flipBit(const long long int number, con
 
 
 
+__global__ void extension_isHermitianKernel(Qureg qureg, int *isHermit) {
+
+    // if any kernel set the flag to false, stop
+    if (! *isHermit)
+        return;
+
+    long long int numTasks = qureg.numAmpsPerChunk;
+    long long int thisTask = blockIdx.x*blockDim.x + threadIdx.x;
+    if (thisTask >= numTasks) return;
+
+    qreal* stateRe = qureg.deviceStateVec.real;
+    qreal* stateIm = qureg.deviceStateVec.imag;
+    
+    // |k> = |j>|i>
+    int numQubits = qureg.numQubitsRepresented;
+    long long int k = thisTask;
+    long long int i = k & ((1LL << numQubits)-1);
+    long long int j = k >> numQubits;
+
+    if (j>i)
+        return;
+
+    // |l> = |i>|j>
+    long long int l = (i << numQubits) | j;
+    
+    // non-Hermit when real(amp[k]) != real(amp[l]) or imag(amp[k]) != - imag(amp[l])
+    qreal threshold = 4*REAL_EPS;
+    qreal difRe = abs(stateRe[k] - stateRe[l]);
+    qreal difIm = abs(stateIm[k] + stateIm[l]);
+    if (difRe > threshold || difIm > threshold)
+        *isHermit = 0;
+}
+
+bool extension_isHermitian(Qureg qureg) {
+
+    validateDensityMatrQureg(qureg, "isHermitianKernel (internal)");
+
+    // prepare flag in GPU memory
+    int isHermit = 1;
+    int *d_isHermit;
+    cudaMalloc(&d_isHermit, sizeof(int));
+    cudaMemcpy(d_isHermit, &isHermit, sizeof(int), cudaMemcpyHostToDevice); 
+    
+    // only threads encountering Hermitian-breaking 
+    int threadsPerCUDABlock = 128;
+    int CUDABlocks = ceil(qureg.numAmpsPerChunk/ (qreal) threadsPerCUDABlock);
+    extension_isHermitianKernel<<<CUDABlocks, threadsPerCUDABlock>>>(qureg, d_isHermit);
+
+    // copy flag to CPU memory
+    cudaMemcpy(&isHermit, d_isHermit, sizeof(int), cudaMemcpyDeviceToHost);
+    cudaFree(d_isHermit);
+
+    return isHermit;
+}
+
+
+
 __global__ void extension_addAdjointToSelfKernel(Qureg qureg) {
     
     // each thread modifies one value (blegh)
