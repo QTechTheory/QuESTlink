@@ -517,6 +517,9 @@ void DerivCircuit::calcDerivEnergiesDenseHamil(qreal* energyGrad, Qureg hamilQur
     if (!circuit->isTracePreserving()) // throws
         throw QuESTException("", "The circuit must be trace-preserving and hence cannot contain operators "
             "like Fac[] and Matr[]. Please instead use KrausNonTP which tolerates numerical non-CPTP.");
+
+    if (!extension_isHermitian(initQureg))
+        throw QuESTException("", "The initial density matrix state must be Hermitian."); // throws
     
      if (numWorkQuregs < 3)
          throw QuESTException("", "An internal error occured. Fewer than three working registers were "
@@ -701,6 +704,9 @@ qmatrix DerivCircuit::calcMetricTensorDensMatr(Qureg initQureg, Qureg* workQureg
     if (!circuit->isTracePreserving()) // throws
         throw QuESTException("", "The circuit must be trace-preserving and hence cannot contain operators "
             "like Fac[] and Matr[]. Please instead use KrausNonTP which tolerates numerical non-CPTP.");
+
+    if (!extension_isHermitian(initQureg))
+        throw QuESTException("", "The initial density matrix state must be Hermitian."); // throws
     
      if (numWorkQuregs < 4)
          throw QuESTException("", "An internal error occured. Fewer than four working registers were "
@@ -896,6 +902,9 @@ void internal_applyCircuitDerivs(int initQuregId, int workspaceId) {
             if (quregs[quregIds[q]].isDensityMatrix != isDens)
                 throw QuESTException("", "Quregs must be all state-vectors or all density-matrices"); // throws
         }
+
+        if (isDens && !extension_isHermitian(quregs[initQuregId]))
+            throw QuESTException("", "The initial density matrix state must be Hermitian."); // throws
         
     } catch (QuESTException& err) {
         local_sendErrorAndFail(apiFuncName, err.message);
