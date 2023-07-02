@@ -268,6 +268,13 @@ std::string Gate::getSyntax() {
             case OPCODE_U :
             case OPCODE_UNonNorm :
             case OPCODE_Matr :
+                // The below code exposes a (still unpatched, grr) bug in the Mathematica frontend
+                // whereby formatted expressions sometimes cause the entire Message[] contents to become
+                // hidden (depending on frontned window width), replaced with something like: <<<527>>>.
+                // Until this is resolved, we will not attempt to render a formatted matrix.
+                form += "[\"...\"]";
+                break;
+                /*
                 if (local_isEncodedMatrix(params[0])) {
                     int dim = round(sqrt((numParams-1)/2));
                     qmatrix matr = local_getQmatrixFromFlatList(&params[1], dim);
@@ -279,10 +286,18 @@ std::string Gate::getSyntax() {
                 } else
                     form += "[uninterpretable]";
                 break;
+                */
                 
             // complex matrices
             case OPCODE_Kraus :
             case OPCODE_KrausNonTP :
+                // Like above, the below code exposes a (still unpatched, grr) bug in the Mathematica frontend
+                // whereby formatted expressions sometimes cause the entire Message[] contents to become
+                // hidden (depending on frontned window width), replaced with something like: <<<527>>>.
+                // Until this is resolved, we will not attempt to render a formatted matrix(ces).
+                form += "[\"...\"]";
+                break;
+                /*
                 if (numParams < 0)
                     form += "[]";
                 else if (!local_isInt(params[0]))
@@ -305,6 +320,7 @@ std::string Gate::getSyntax() {
                     }
                 }
                 break;
+                */
                 
             // complex scalar
             case OPCODE_Fac :

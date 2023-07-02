@@ -649,8 +649,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         getParamDim[_?VectorQ] := 1
         getParamDim[_?MatrixQ] := 2
         getParamDim[_] := -1
-        codifyMatrixOrVector[obj_] :=
-            {getParamDim[obj]} ~Join~ Riffle[Re @ N @ Flatten @ obj, Im @ N @ Flatten @ obj]
+        codifyMatrix[obj_] := Riffle[Re @ N @ Flatten @ obj, Im @ N @ Flatten @ obj]
+        codifyMatrixOrVectorWithDim[obj_] :=
+            {getParamDim[obj]} ~Join~ codifyMatrix[obj]
             
         (* convert multiple MMA matrices into {#matrices, ... flattened matrices ...} *)
         codifyMatrices[matrs_] :=
@@ -659,7 +660,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         (* recognising and codifying gates into {opcode, ctrls, targs, params} *)
         gatePatterns = {
             Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[g:U|Matr|UNonNorm,  (targs:__Integer)|{targs:__Integer}][obj:_List]] :> 
-                {getOpCode[g], {ctrls}, {targs}, codifyMatrixOrVector[obj]},
+                {getOpCode[g], {ctrls}, {targs}, codifyMatrixOrVectorWithDim[obj]},
         	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {args}},
         	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] :> 
@@ -669,7 +670,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             R[param_, ({paulis:pauliOpPatt..}|Verbatim[Times][paulis:pauliOpPatt..]|paulis:pauliOpPatt__)] :>
                 {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
         	Subscript[g:U|Matr|UNonNorm, (targs:__Integer)|{targs:__Integer}][obj_List] :> 
-                {getOpCode[g], {}, {targs}, codifyMatrixOrVector[obj]},
+                {getOpCode[g], {}, {targs}, codifyMatrixOrVectorWithDim[obj]},
             Subscript[Kraus, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
                 {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
             Subscript[KrausNonTP, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
