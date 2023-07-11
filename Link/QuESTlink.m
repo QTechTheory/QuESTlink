@@ -95,7 +95,8 @@ ApplyPhaseFunc[qureg, {qubits, ...}, FuncName] evaluates a specific named multi-
     \[Bullet] {\"InverseDistance\", div} evaluates 1/Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...], replaced by div at divergence (when x1=x2, y1=y2, ...).   
     \[Bullet] {\"ScaledDistance\", coeff} evaluates coeff*Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...]
     \[Bullet] {\"ScaledInverseDistance\", coeff, div} evaluates coeff/Sqrt[(x1-x2)^2 + (y1-y2)^2 + ...], replaced by div at divergence (when x1=x2, y1=y2, ...). 
-    \[Bullet] {\"ScaledInverseShiftedDistance\", coeff, div, \[CapitalDelta]x, \[CapitalDelta]y, ...} evaluates coeff/Sqrt[(x1-x2-\[CapitalDelta]x)^2 + (y1-y2-\[CapitalDelta]y)^2 + ...], replaced by div at numerical divergence (when the denominator is within machine epsilon to zero).   
+    \[Bullet] {\"ScaledInverseShiftedDistance\", coeff, div, \[CapitalDelta]x, \[CapitalDelta]y, ...} evaluates coeff/Sqrt[(x1-x2-\[CapitalDelta]x)^2 + (y1-y2-\[CapitalDelta]y)^2 + ...], replaced by div at numerical divergence (when the denominator is within machine epsilon to zero).
+    \[Bullet] {\"ScaledInverseShiftedWeightedDistance\", coeff, div, fx, \[CapitalDelta]x, fy, \[CapitalDelta]y, ...} evaluates coeff/Sqrt[fx (x1-x2-\[CapitalDelta]x)^2 + fy (y1-y2-\[CapitalDelta]y)^2 + ...], replaced by div at numerical divergence (when the denominator is within machine epsilon to zero), and when the denominator sqrt argument is negative.   
     Notice the order of parameters matches the ordering of the words in the FuncName.
 ApplyPhaseFunc accepts optional arguments BitEncoding and PhaseOverrides.
 ApplyPhaseFunc[... PhaseOverrides -> rules] first consults whether a basis state's index is included in the list of rules {index -> phase}, and if present, uses the prescribed phase in lieu of evaluating f[index].
@@ -1430,7 +1431,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             "ScaledDistance" -> 10,
             "InverseDistance" -> 11,
             "ScaledInverseDistance" -> 12,
-            "ScaledInverseShiftedDistance" -> 13
+            "ScaledInverseShiftedDistance" -> 13,
+            "ScaledInverseShiftedWeightedDistance" -> 14
         };
         Options[ApplyPhaseFunc] = {
             BitEncoding -> "Unsigned",
