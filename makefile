@@ -35,6 +35,9 @@ GPUACCELERATED = 0
 # GPU hardware dependent, lookup at https://developer.nvidia.com/cuda-gpus, write without fullstop
 GPU_COMPUTE_CAPABILITY = 61
 
+# whether to use single, double or quad floating point precision in the state-vector {1,2,4}
+PRECISION = 2
+
 # whether to suppress the below warnings about compiler compatibility
 SUPPRESS_WARNING = 0
 
@@ -60,9 +63,6 @@ WSTP_DIR = WSTP
 
 # path to QuESTlink code from root directory
 LINK_DIR = Link
-
-# whether to use single, double or quad floating point precision in the state-vector {1,2,4}
-PRECISION = 2
 
 # wrapper compiler for GPU accel
 CUDA_COMPILER = nvcc

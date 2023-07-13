@@ -78,7 +78,7 @@ void local_updateCircuitProgress(qreal progress) {
     // echo the message
     WSPutFunction(stdlink, "Set", 2);
     WSPutSymbol(stdlink, CALC_PROGRESS_VAR);
-    WSPutReal64(stdlink, progress);
+    WSPutQreal(stdlink, progress);
 
     WSEndPacket(stdlink);
     WSNextPacket(stdlink);
@@ -1803,7 +1803,7 @@ void internal_sampleExpecPauliString(int showProgress, int initQuregId, int work
         
         // output average energy (if random), else determined energy
         qreal expecVal = expecValSum / ((useAllDecomps)? 1 : numSamples);
-        WSPutReal64(stdlink, expecVal);
+        WSPutQreal(stdlink, expecVal);
         
     } catch (QuESTException& err) {
         local_sendErrorAndFailOrAbortFromExcep(apiFuncName, err.thrower,  err.message);
