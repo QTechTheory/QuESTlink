@@ -995,7 +995,7 @@ void internal_calcExpecPauliStringDerivs(int initQuregId) {
     // attempt to compute and return energy grad
     try {    
         derivCirc.calcDerivEnergies(energyGrad, hamil, initQureg, workQuregs, numNeededWorkQuregs); // throws
-        WSPutReal64List(stdlink, energyGrad, numDerivs);
+        WSPutQrealList(stdlink, energyGrad, numDerivs);
         
     } catch (QuESTException& err) {
         local_sendErrorAndFailOrAbortFromExcep(apiFuncName, err.thrower,  err.message);
@@ -1067,7 +1067,7 @@ void internal_calcExpecPauliStringDerivsDenseHamil(int initQuregId, int hamilQur
     try {    
         derivCirc.calcDerivEnergiesDenseHamil(energyGrad, hamilQureg, initQureg, workQuregs, numNeededWorkQuregs); // throws
 
-        WSPutReal64List(stdlink, energyGrad, numDerivs);
+        WSPutQrealList(stdlink, energyGrad, numDerivs);
         
     } catch (QuESTException& err) {
         local_sendErrorAndFailOrAbortFromExcep(apiFuncName, err.thrower,  err.message);

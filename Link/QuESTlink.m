@@ -1331,27 +1331,31 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         (* Im[0.] = 0, how annoying *)
         SetWeightedQureg[fac1_?NumericQ, q1_Integer, fac2_?NumericQ, q2_Integer, facOut_?NumericQ, qOut_Integer] :=
             SetWeightedQuregInternal[
-                Re @ N @ fac1, N @ Im @ N @ fac1, q1,
-                Re @ N @ fac2, N @ Im @ N @ fac2, q2,
-                Re @ N @ facOut, N @ Im @ N @ facOut, qOut
+                q1, q2, qOut,
+                Re @ N @ fac1, N @ Im @ N @ fac1,
+                Re @ N @ fac2, N @ Im @ N @ fac2,
+                Re @ N @ facOut, N @ Im @ N @ facOut
             ]
         SetWeightedQureg[fac1_?NumericQ, q1_Integer, fac2_?NumericQ, q2_Integer, qOut_Integer] :=
             SetWeightedQuregInternal[
-                Re @ N @ fac1, N @ Im @ N @ fac1, q1,
-                Re @ N @ fac2, N @ Im @ N @ fac2, q2,
-                0., 0., qOut
+                q1, q2, qOut,
+                Re @ N @ fac1, N @ Im @ N @ fac1,
+                Re @ N @ fac2, N @ Im @ N @ fac2,
+                0., 0.
             ]
         SetWeightedQureg[fac1_?NumericQ, q1_Integer, qOut_Integer] :=
             SetWeightedQuregInternal[
-                Re @ N @ fac1, N @ Im @ N @ fac1, q1,
-                0., 0., q1,
-                0., 0., qOut
+                q1, q1, qOut,
+                Re @ N @ fac1, N @ Im @ N @ fac1,
+                0., 0.,
+                0., 0.
             ]
         SetWeightedQureg[fac_?NumericQ, qOut_Integer] :=
             SetWeightedQuregInternal[
-                0., 0., qOut,
-                0., 0., qOut,
-                Re @ N @ fac, N @ Im @ N @ fac, qOut
+                qOut, qOut, qOut,
+                0., 0., 
+                0., 0.,
+                Re @ N @ fac, N @ Im @ N @ fac
             ]
         SetWeightedQureg[___] := invalidArgError[SetWeightedQureg]
         
