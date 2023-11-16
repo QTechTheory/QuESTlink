@@ -2412,19 +2412,15 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 Fac[x_] :> Subscript[Matr, 0][ x IdentityMatrix[2] ],  (* will not be conjugated for density matrices *)
                 (* U, Matr and UNonNorm gates remain the same *)
                 g:(Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][m_]) :> g,
-            	(* controlled gates are turned into U of identities with bottom-right submatrix *)
+            	(* controlled gates are turned into U of identity matrices with bottom-right submatrix *)
                 Subscript[C, c__Integer|{c__Integer}][Subscript[(mg:Matr|UNonNorm), q__Integer|{q__Integer}][m_]] :> 
                     With[{cDim=2^Length[{c}], tDim=Length@m},
                         Subscript[mg, Sequence @@ Join[{q}, {c}]][
-                        Join[
-                            MapThread[Join, {IdentityMatrix[cDim], ConstantArray[0,{cDim,tDim}]}],
-                            MapThread[Join, {ConstantArray[0,{tDim,cDim}], m}]]]],
+                            ArrayFlatten[{{IdentityMatrix[tDim(cDim-1)], 0}, {0, m}}]]],
             	Subscript[C, c__Integer|{c__Integer}][g_] :> 
             		With[{cDim=2^Length[{c}], tDim=2^Length[getAnalGateTargets[g]]},
             			Subscript[U, Sequence @@ Join[getAnalGateTargets[g], {c}]][
-            			Join[
-            				MapThread[Join, {IdentityMatrix[cDim], ConstantArray[0,{cDim,tDim}]}],
-            				MapThread[Join, {ConstantArray[0,{tDim,cDim}], getAnalGateMatrix@g}]]]],
+                            ArrayFlatten[{{IdentityMatrix[tDim(cDim-1)], 0}, {0, getAnalGateMatrix[g]}}]]],
             	(* all other symbols are treated like generic unitary gates *)
             	g_ :> Subscript[U, Sequence @@ getAnalGateTargets[g]][getAnalGateMatrix[g]]
             (* replace at top level *)
