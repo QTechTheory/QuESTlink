@@ -3342,9 +3342,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         				{
         					{ {a___, Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> 
                                 (
-                                    Sequence[{a,Subscript[g, q][multiplyMatrsOrVecs[mv1,mv2]],b},{c,d}]
+                                    Sequence[{a,Subscript[g, q][multiplyMatrsOrVecs[mv2,mv1]],b},{c,d}]
                                 ),
-        					{ {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][multiplyMatrsOrVecs[mv1,mv2]],b},{c,d}]
+        					{ {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][multiplyMatrsOrVecs[mv2,mv1]],b},{c,d}]
         				},
         				(* merge all global phases *)
         				{
@@ -3394,9 +3394,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         				(* remove controlled gates with insides already removed *)
         				Subscript[C, __][Nothing] -> Nothing,
         				(* remove zero-parameter gates *)
-        				Subscript[(Ph|Rx|Ry|Rz|Damp|Deph|Depol), __][0] -> Nothing,
-        				R[0,_] -> Nothing,
-        				G[0] -> Nothing,
+        				Subscript[(Ph|Rx|Ry|Rz|Damp|Deph|Depol), __][0|0.] -> Nothing,
+        				R[0|0.,_] -> Nothing,
+        				G[0|0.] -> Nothing,
                         Fac[1|1.] -> Nothing,
                         Fac[x_ /; (Abs[x] === 1)] -> G[ ArcTan[Re@x, Im@x] ],
         				(* remove identity matrices (qubits are sorted) *)
