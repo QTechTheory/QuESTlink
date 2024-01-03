@@ -296,8 +296,9 @@ CalcExpecPauliProdsFromClassicalShadow[shadow, prods, numBatches] divides the sh
 This is the procedure outlined in Nat. Phys. 16, 1050–1057 (2020)."
     CalcExpecPauliProdsFromClassicalShadow::error = "`1`"
 
-    RecompileCircuit::usage = "RecompileCircuit[circuit, method] returns an equivalent circuit, transpiled to a differnet gate set. Supported methods include:
-\[Bullet] \"SingleQubitAndCNOT\" decompiles the circuit into canonical single-qubit gates {H, Ph, T, S, X, Y, Z, Rx, Ry, Rz}, a global phase G, and two-qubit C[X] gates. The input circuit can contain any unitary gate, with any number of control qubits. This method uses a combination of 23 analytic and numerical decompositions. 
+    RecompileCircuit::usage = "RecompileCircuit[circuit, method] returns an equivalent circuit, transpiled to a differnet gate set. The input circuit can contain any unitary gate, with any number of control qubits. Supported methods include:
+\[Bullet] \"SingleQubitAndCNOT\" decompiles the circuit into canonical single-qubit gates (H, Ph, T, S, X, Y, Z, Rx, Ry, Rz), a global phase G, and two-qubit C[X] gates. This method uses a combination of 23 analytic and numerical decompositions.
+\[Bullet] \"CliffordAndRz\" decompiles the circuit into Clifford gates (H, S, X, Y, Z, CX, CY, CZ, SWAP), a global phase G, and non-Clifford Rz.
 Note that the returned circuits are not necessarily optimal/minimal, and may benefit from a subsequent call to SimplifyCircuit[]. "
     RecompileCircuit::error = "`1`"
     
@@ -3550,6 +3551,10 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         addControlsToGate[newCtrls__][g_] :=
             Subscript[C, newCtrls][g]
 
+        (*
+         * recompiling to single-qubit canonical gates, and CNOT
+         *)
+
         (* ultimate gate set of the decomposition *)
         decomposeToSingleQubitAndCNOT[g:G[_]] := {g}
         decomposeToSingleQubitAndCNOT[g:Subscript[H|S|T|X|Y|Z,_]] := {g}
@@ -4132,28 +4137,75 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         decomposeToSingleQubitAndCNOT[ Subscript[C, c__][Subscript[U|UNonNorm, t__][v_?VectorQ]] ] :=
             Throw["Controlled diagonal gates are not yet supported by the recompiler."]
 
+        (* throw error on unrecognised gate *)
+        decomposeToSingleQubitAndCNOT[ g_ ] :=
+            Throw["Could not recompile unrecognised gate: " <> ToString @ StandardForm @ g]
+
+        (*
+         * recompiling to Clifford gates and Rz
+         *)
+
+        (* ultimate gate set of the decomposition *)
+        decomposeToCliffordAndRz[g:G[_]] := {g}
+        decomposeToCliffordAndRz[g:Subscript[H|S|X|Y|Z,_]] := {g}
+        decomposeToCliffordAndRz[g:Subscript[C,_][Subscript[X|Y|Z,_]]] := {g}
+        decomposeToCliffordAndRz[g:Subscript[Id,__]] := {g}
+        decomposeToCliffordAndRz[g:Subscript[SWAP,_,_]] := {g}
+        decomposeToCliffordAndRz[g:Subscript[Rz,_][_]] := {g}
+
+        (*
+         * Rx -> H, Rz
+         * src: https://quantumcomputing.stackexchange.com/questions/11861/
+         *)
+        decomposeToCliffordAndRz[ Subscript[Rx,t_][r_] ] := 
+            {
+                Subscript[H,t], Subscript[Rz,t][r], Subscript[H,t]
+            }
+
+        (*
+         * Ry -> H, S, Rz
+         * src: https://quantumcomputing.stackexchange.com/questions/11861/
+         *)
+        decomposeToCliffordAndRz[ Subscript[Ry,t_][r_] ] := 
+            {
+                Subscript[S,t], Subscript[H,t], Subscript[Rz,t][-r], Subscript[H,t],
+                Subscript[S,t], Subscript[S,t], Subscript[S,t]
+            }
+
+        (* Ph -> G, Rz *)
+        decomposeToCliffordAndRz[ Subscript[Ph,t_][r_] ] := 
+            {
+                G[r/2], Subscript[Rz, t][r]
+            }
+
+        (* T -> Ph, then recurse *)
+        decomposeToCliffordAndRz[ Subscript[T,t_] ] :=
+            decomposeToCliffordAndRz @ Subscript[Ph,t][Pi/4]
+
+        (* sub-optimally decompile all other gates to single-qubit, then convert to Clifford *)
+        decomposeToCliffordAndRz[ g_ ] :=
+            Flatten[
+                decomposeToCliffordAndRz /@ decomposeToSingleQubitAndCNOT[g]]
+
+        (*
+         * recompiler interface
+         *)
+
         changeQubitListsToSeqs[circ_] :=
             circ /. Subscript[g_, {q__Integer}] :> Subscript[g, q]
 
-        RecompileCircuit[gate_?isGateFormat, args___] :=
-            RecompileCircuit[{gate}, args]
-
-        RecompileCircuit[circ_?isCircuitFormat, "SingleQubitAndCNOT"] := Module[
+        recompileCircuitInner[circ_, decompMethod_] := Module[
             {result, phase, adjusted},
 
             (* decompose each gate in-turn, catching errors and unrecognised gates *)
             result = Catch @ Flatten @ Table[
                 With[
-                    {decomp = Catch @ decomposeToSingleQubitAndCNOT @ gate},
-                    Which[
-                        StringQ @ decomp,
-                            Message[RecompileCircuit::error, "Recompilation failed. " <> decomp];
-                            Throw @ $Failed,
-                        Head @ decomp === decomposeToSingleQubitAndCNOT,
-                            Message[RecompileCircuit::error, "Could not recompile unrecognised gate: " <> ToString @ StandardForm @ gate];
-                            Throw @ $Failed,
-                        True, 
-                            decomp]],
+                    {decomp = Catch @ decompMethod @ gate},
+                    If[ StringQ @ decomp,
+                        Message[RecompileCircuit::error, "Recompilation failed. " <> decomp];
+                        Throw @ $Failed];
+                    decomp
+                ],
                 {gate, changeQubitListsToSeqs @ circ}
             ];
             If[result === $Failed, 
@@ -4167,6 +4219,19 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 Prepend[adjusted, G[phase]]
             ]
         ]
+
+        RecompileCircuit[gate_?isGateFormat, args___] :=
+            RecompileCircuit[{gate}, args]
+
+        RecompileCircuit[circ_?isCircuitFormat, method_?StringQ] := 
+            Which[
+                method === "SingleQubitAndCNOT",
+                    recompileCircuitInner[circ, decomposeToSingleQubitAndCNOT],
+                method === "CliffordAndRz",
+                    recompileCircuitInner[circ, decomposeToCliffordAndRz],
+                True,
+                    Message[RecompileCircuit::error, "Unrecognised method. See available methods via ?RecompileCircuit"];
+            ]
 
         RecompileCircuit[___] := invalidArgError[RecompileCircuit]
 
