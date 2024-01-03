@@ -3660,7 +3660,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             decomposeToSingleQubitAndCNOT @ Subscript[Ph, c,t][Pi/4]
 
         (* R^(1) -> Rx, Ry, Rz (a base case) *)
-        decomposeToSingleQubitAndCNOT[ R[x_, Subscript[sigma_, t_]] ] := 
+        decomposeToSingleQubitAndCNOT[ R[x_, Subscript[sigma:(X|Y|Z), t_]] ] := 
             { Subscript[sigma /. {X->Rx,Y->Ry,Z->Rz}, t][x] }
 
         (*
@@ -3678,7 +3678,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * R^(n) -> H, R^(n), where an X is replaced with Z (enabling above reduction)
          * src: https://arxiv.org/abs/1906.01734
          *)
-        decomposeToSingleQubitAndCNOT[R[x_, Verbatim[Times][OrderlessPatternSequence[Subscript[X, t_], rest___]]]] :=
+        decomposeToSingleQubitAndCNOT[ R[x_, Verbatim[Times][OrderlessPatternSequence[Subscript[X, t_], rest___]]] ] :=
 	        Flatten @ {
                 Subscript[H, t], 
                 decomposeToSingleQubitAndCNOT @ R[x, Times[Subscript[Z, t], rest]], 
@@ -3689,7 +3689,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * R^(n) -> Rx[+-pi/2], R^(n), where a Y is replaced with Z (enabling above reduction)
          * src: https://arxiv.org/abs/1906.01734
          *)
-        decomposeToSingleQubitAndCNOT[R[x_, Verbatim[Times][OrderlessPatternSequence[Subscript[Y, t_], rest___]]]] :=
+        decomposeToSingleQubitAndCNOT[ R[x_, Verbatim[Times][OrderlessPatternSequence[Subscript[Y, t_], rest___]]] ] :=
 	        Flatten @ {
                 Subscript[Rx, t][Pi/2], 
                 decomposeToSingleQubitAndCNOT @ R[x, Times[Subscript[Z, t], rest]], 
@@ -3697,16 +3697,27 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             }
 
         (*
-         * C*[R^(n)] -> C*[Rx,Ry,Rz] and above decomposition (only middle gadget decomp gate is controlled)
+         * C*[R^(n)] -> C*[Rx,Ry,Rz] using above decomposition (only middle gadget decomp gate is controlled)
          * src: https://quantumcomputing.stackexchange.com/questions/24122
          *)
-        decomposeToSingleQubitAndCNOT[Subscript[C, ctrls__Integer][g:R[x_, prod_]]] := 
+        decomposeToSingleQubitAndCNOT[ Subscript[C, ctrls__Integer][g:R[x_, prod_]] ] := 
             Module[{circ,ind},
 	            circ = decomposeToSingleQubitAndCNOT[g];
                 ind = 1 + Floor[Length[circ] / 2];
                 circ[[ind]] = decomposeToSingleQubitAndCNOT @ Subscript[C, ctrls] @ circ[[ind]];
                 Flatten @ circ
             ]
+
+        (* R[x, Id] -> G[-x/2] *)
+        decomposeToSingleQubitAndCNOT[ R[x_, Subscript[Id,_]] ] :=
+            G[-x/2]
+
+        (* 
+         * For user convenience, R[x, Id...] has the Id Pauli removed, then recurses.
+         * Such gates can result from Trotterisation of GetRandomPauliString[] outputs
+         *)
+        decomposeToSingleQubitAndCNOT[ R[x_, Verbatim[Times][a___, Subscript[Id,_], b___]] ] :=
+            decomposeToSingleQubitAndCNOT @ R[x, Times[a,b]]
 
         (*
          * C[Y] -> C[X], S, Ph
@@ -4059,7 +4070,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             {l0,l1,r0,r1,angles}
         ]
 
-        decomposeToSingleQubitAndCNOT[g:Subscript[s:U|UNonNorm, t__][m_?MatrixQ]] := Module[
+        decomposeToSingleQubitAndCNOT[ g:Subscript[s:U|UNonNorm, t__][m_?MatrixQ] ] := Module[
             {tMost,tLast, l0,l1,r0,r1,angles, lg0,lg1,rg0,rg1, lc0,lc1,lc2,mc,rc0,rc1,rc2},
             
             (* The GSVD used by the CS-decomposition is strictly numerical *)
