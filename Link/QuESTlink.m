@@ -295,6 +295,12 @@ Use option ShowProgress to monitor the progress of sampling."
 CalcExpecPauliProdsFromClassicalShadow[shadow, prods, numBatches] divides the shadow into batches, computes the expected values of each, then returns their medians. This may suppress measurement errors. The default numBatches is 10. 
 This is the procedure outlined in Nat. Phys. 16, 1050–1057 (2020)."
     CalcExpecPauliProdsFromClassicalShadow::error = "`1`"
+
+    RecompileCircuit::usage = "RecompileCircuit[circuit, method] returns an equivalent circuit, transpiled to a differnet gate set. The input circuit can contain any unitary gate, with any number of control qubits. Supported methods include:
+\[Bullet] \"SingleQubitAndCNOT\" decompiles the circuit into canonical single-qubit gates (H, Ph, T, S, X, Y, Z, Rx, Ry, Rz), a global phase G, and two-qubit C[X] gates. This method uses a combination of 23 analytic and numerical decompositions.
+\[Bullet] \"CliffordAndRz\" decompiles the circuit into Clifford gates (H, S, X, Y, Z, CX, CY, CZ, SWAP), a global phase G, and non-Clifford Rz.
+Note that the returned circuits are not necessarily optimal/minimal, and may benefit from a subsequent call to SimplifyCircuit[]. "
+    RecompileCircuit::error = "`1`"
     
     
     (*
@@ -1331,27 +1337,31 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         (* Im[0.] = 0, how annoying *)
         SetWeightedQureg[fac1_?NumericQ, q1_Integer, fac2_?NumericQ, q2_Integer, facOut_?NumericQ, qOut_Integer] :=
             SetWeightedQuregInternal[
-                Re @ N @ fac1, N @ Im @ N @ fac1, q1,
-                Re @ N @ fac2, N @ Im @ N @ fac2, q2,
-                Re @ N @ facOut, N @ Im @ N @ facOut, qOut
+                q1, q2, qOut,
+                Re @ N @ fac1, N @ Im @ N @ fac1,
+                Re @ N @ fac2, N @ Im @ N @ fac2,
+                Re @ N @ facOut, N @ Im @ N @ facOut
             ]
         SetWeightedQureg[fac1_?NumericQ, q1_Integer, fac2_?NumericQ, q2_Integer, qOut_Integer] :=
             SetWeightedQuregInternal[
-                Re @ N @ fac1, N @ Im @ N @ fac1, q1,
-                Re @ N @ fac2, N @ Im @ N @ fac2, q2,
-                0., 0., qOut
+                q1, q2, qOut,
+                Re @ N @ fac1, N @ Im @ N @ fac1,
+                Re @ N @ fac2, N @ Im @ N @ fac2,
+                0., 0.
             ]
         SetWeightedQureg[fac1_?NumericQ, q1_Integer, qOut_Integer] :=
             SetWeightedQuregInternal[
-                Re @ N @ fac1, N @ Im @ N @ fac1, q1,
-                0., 0., q1,
-                0., 0., qOut
+                q1, q1, qOut,
+                Re @ N @ fac1, N @ Im @ N @ fac1,
+                0., 0.,
+                0., 0.
             ]
         SetWeightedQureg[fac_?NumericQ, qOut_Integer] :=
             SetWeightedQuregInternal[
-                0., 0., qOut,
-                0., 0., qOut,
-                Re @ N @ fac, N @ Im @ N @ fac, qOut
+                qOut, qOut, qOut,
+                0., 0., 
+                0., 0.,
+                Re @ N @ fac, N @ Im @ N @ fac
             ]
         SetWeightedQureg[___] := invalidArgError[SetWeightedQureg]
         
@@ -2408,19 +2418,15 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 Fac[x_] :> Subscript[Matr, 0][ x IdentityMatrix[2] ],  (* will not be conjugated for density matrices *)
                 (* U, Matr and UNonNorm gates remain the same *)
                 g:(Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][m_]) :> g,
-            	(* controlled gates are turned into U of identities with bottom-right submatrix *)
+            	(* controlled gates are turned into U of identity matrices with bottom-right submatrix *)
                 Subscript[C, c__Integer|{c__Integer}][Subscript[(mg:Matr|UNonNorm), q__Integer|{q__Integer}][m_]] :> 
                     With[{cDim=2^Length[{c}], tDim=Length@m},
                         Subscript[mg, Sequence @@ Join[{q}, {c}]][
-                        Join[
-                            MapThread[Join, {IdentityMatrix[cDim], ConstantArray[0,{cDim,tDim}]}],
-                            MapThread[Join, {ConstantArray[0,{tDim,cDim}], m}]]]],
+                            ArrayFlatten[{{IdentityMatrix[tDim(cDim-1)], 0}, {0, m}}]]],
             	Subscript[C, c__Integer|{c__Integer}][g_] :> 
             		With[{cDim=2^Length[{c}], tDim=2^Length[getAnalGateTargets[g]]},
             			Subscript[U, Sequence @@ Join[getAnalGateTargets[g], {c}]][
-            			Join[
-            				MapThread[Join, {IdentityMatrix[cDim], ConstantArray[0,{cDim,tDim}]}],
-            				MapThread[Join, {ConstantArray[0,{tDim,cDim}], getAnalGateMatrix@g}]]]],
+                            ArrayFlatten[{{IdentityMatrix[tDim(cDim-1)], 0}, {0, getAnalGateMatrix[g]}}]]],
             	(* all other symbols are treated like generic unitary gates *)
             	g_ :> Subscript[U, Sequence @@ getAnalGateTargets[g]][getAnalGateMatrix[g]]
             (* replace at top level *)
@@ -3342,9 +3348,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         				{
         					{ {a___, Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> 
                                 (
-                                    Sequence[{a,Subscript[g, q][multiplyMatrsOrVecs[mv1,mv2]],b},{c,d}]
+                                    Sequence[{a,Subscript[g, q][multiplyMatrsOrVecs[mv2,mv1]],b},{c,d}]
                                 ),
-        					{ {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][multiplyMatrsOrVecs[mv1,mv2]],b},{c,d}]
+        					{ {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][multiplyMatrsOrVecs[mv2,mv1]],b},{c,d}]
         				},
         				(* merge all global phases *)
         				{
@@ -3394,9 +3400,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         				(* remove controlled gates with insides already removed *)
         				Subscript[C, __][Nothing] -> Nothing,
         				(* remove zero-parameter gates *)
-        				Subscript[(Ph|Rx|Ry|Rz|Damp|Deph|Depol), __][0] -> Nothing,
-        				R[0,_] -> Nothing,
-        				G[0] -> Nothing,
+        				Subscript[(Ph|Rx|Ry|Rz|Damp|Deph|Depol), __][0|0.] -> Nothing,
+        				R[0|0.,_] -> Nothing,
+        				G[0|0.] -> Nothing,
                         Fac[1|1.] -> Nothing,
                         Fac[x_ /; (Abs[x] === 1)] -> G[ ArcTan[Re@x, Im@x] ],
         				(* remove identity matrices (qubits are sorted) *)
@@ -3524,6 +3530,721 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetKnownCircuit["LowDepthAnsatz", reps_Integer, paramSymbol_Symbol, numQubits_Integer] :=
             GetKnownCircuit["LowDepthAnsatz", reps, paramSymbol, Range[0,numQubits-1]]
         GetKnownCircuit[___] := invalidArgError[GetKnownCircuit]
+    
+
+
+        (* 
+         * Front-end functions for exact
+         * recompilation of unitary circuits
+         *)
+
+        addControlsToGate[newCtrls__][Subscript[C, oldCtrls__][g_]] :=
+	        Subscript[C, oldCtrls,newCtrls][g]
+        addControlsToGate[newCtrls__][G[x_]] :=
+            Subscript[Ph, newCtrls][x]
+        addControlsToGate[newCtrls__][Subscript[Ph, t__][x_]] :=
+            Subscript[Ph, newCtrls,t][x]
+        addControlsToGate[newCtrls__][Subscript[S, t_]] :=
+            Subscript[Ph, newCtrls,t][Pi/2]
+        addControlsToGate[newCtrls__][Subscript[T, t_]] :=
+            Subscript[Ph, newCtrls,t][Pi/4]
+        addControlsToGate[newCtrls__][g_] :=
+            Subscript[C, newCtrls][g]
+
+        (*
+         * recompiling to single-qubit canonical gates, and CNOT
+         *)
+
+        (* ultimate gate set of the decomposition *)
+        decomposeToSingleQubitAndCNOT[g:G[_]] := {g}
+        decomposeToSingleQubitAndCNOT[g:Subscript[H|S|T|X|Y|Z,_]] := {g}
+        decomposeToSingleQubitAndCNOT[g:Subscript[Ph|Rx|Ry|Rz,_][_]] := {g}
+        decomposeToSingleQubitAndCNOT[g:Subscript[Id,__]] := {g}
+        decomposeToSingleQubitAndCNOT[g:Subscript[C,_][Subscript[X,_]]] := {g}
+
+        (*
+         * Below are analaytic decompositions of symbolic gates;
+         * G, H, Ph, R, Rx, Ry,Rz, S, T, SWAP, X, Y, Z
+         *)
+
+        (* C*[G] -> Ph^(n), then recurses *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c__][G[x_]] ] :=
+            decomposeToSingleQubitAndCNOT @ Subscript[Ph, c][x]
+
+        (* 
+         * C[H] -> C[X], T, H, S, Ph
+         * src: https://github.com/qiskit-community/qiskit-community-tutorials/blob/master/awards/teach_me_qiskit_2018/exact_ising_model_simulation/Ising_time_evolution.ipynb
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c_][Subscript[H, t_]] ] :=
+	        {
+                Subscript[Ph, t][-Pi/2], Subscript[H, t], Subscript[Ph, t][-Pi/4], 
+                Subscript[C, c][Subscript[X, t]], 
+                Subscript[T, t], Subscript[H, t], Subscript[S, t]
+            }
+
+        (*  C*[H] sub-optimally adds controls to above and recurses *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_, cRest__][Subscript[H, t_]] ] :=
+            Flatten[
+                decomposeToSingleQubitAndCNOT /@ 
+                addControlsToGate[cRest] /@ 
+                decomposeToSingleQubitAndCNOT @ 
+                Subscript[C, c1] @ Subscript[H, t]
+            ]
+
+        (* SWAP -> C[X] *)
+        decomposeToSingleQubitAndCNOT[ Subscript[SWAP, t1_,t2_] ] := 
+            {
+                Subscript[C, t1][Subscript[X, t2]], 
+                Subscript[C, t2][Subscript[X, t1]], 
+                Subscript[C, t1][Subscript[X, t2]]
+            }
+
+        (* 
+         * C[SWAP] -> C[X], H, T, Ph
+         * src: https://www.nature.com/articles/s41598-018-23764-x 
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c_][Subscript[SWAP, t1_,t2_]] ] := 
+            {
+                Subscript[C, t1][Subscript[X, t2]], Subscript[H, t1], Subscript[C, c][Subscript[X, t2]], Subscript[T, t1], 
+                Subscript[Ph, t2][-Pi/4], Subscript[T, c], Subscript[C, t1][Subscript[X, t2]], Subscript[C, c][Subscript[X, t1]], 
+                Subscript[T, t2], Subscript[C, c][Subscript[X, t2]], Subscript[Ph, t1][-Pi/4], Subscript[Ph, t2][-Pi/4], 
+                Subscript[C, c][Subscript[X, t1]], Subscript[C, t1][Subscript[X, t2]], Subscript[H, t1], Subscript[T, t2], 
+                Subscript[C, t1][Subscript[X, t2]]
+            }
+
+        (* 
+         * C*[SWAP] -> C[X], C*[X], then recurses
+         * src: https://quantum-journal.org/papers/q-2022-03-30-676/pdf/ 
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c__][Subscript[SWAP, t1_,t2_]] ] := 
+            Flatten @ {
+	            Subscript[C, t1][Subscript[X, t2]], 
+                decomposeToSingleQubitAndCNOT @ Subscript[C, c,t2][Subscript[X, t1]], 
+                Subscript[C, t1][Subscript[X, t2]]
+            }
+
+        (* C*[Ph] -> many-target Ph, for convenient patterns below *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C,c__][Subscript[Ph,t__][x_]] ] :=
+            decomposeToSingleQubitAndCNOT @ Subscript[Ph,c,t][x]
+
+        (*
+         * Ph^(2) -> Ph^(1), C[X]
+         * src: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5882919/
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[Ph,c_,t_][x_] ] :=
+            {
+		        Subscript[Ph, t][x/2], Subscript[Ph, c][x/2], 
+                Subscript[C, c][Subscript[X, t]], 
+                Subscript[Ph, t][-x/2], 
+                Subscript[C, c][Subscript[X, t]]
+            }
+
+        (* 
+         * Ph^(n) sub-optimally adds controls to above and recurses 
+         * TODO: optimise this via https://arxiv.org/pdf/quant-ph/0303063.pdf
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[Ph,c_,t_,cRest__][x_] ] := 
+            Flatten[
+                decomposeToSingleQubitAndCNOT /@
+                addControlsToGate[cRest] /@ 
+                decomposeToSingleQubitAndCNOT @ 
+                Subscript[Ph,c,t][x]
+            ]
+
+        (* C*[S] sub-optimally converts to Ph^(n)[pi/2] and uses above decomps *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c__][Subscript[S, t_]] ] :=
+            decomposeToSingleQubitAndCNOT @ Subscript[Ph, c,t][Pi/2]
+
+        (* C*[T] sub-optimally converts to Ph^(n)[pi/4] and uses above decomps *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c__][Subscript[T, t_]] ] :=
+            decomposeToSingleQubitAndCNOT @ Subscript[Ph, c,t][Pi/4]
+
+        (* R^(1) -> Rx, Ry, Rz (a base case) *)
+        decomposeToSingleQubitAndCNOT[ R[x_, Subscript[sigma:(X|Y|Z), t_]] ] := 
+            { Subscript[sigma /. {X->Rx,Y->Ry,Z->Rz}, t][x] }
+
+        (*
+         * R^(n) -> C[X], R^(n-1), by removing a Z, and C[X]'ing a remaining Y or Z
+         * src: https://arxiv.org/abs/1906.01734
+         *)
+        decomposeToSingleQubitAndCNOT[ R[x_, Verbatim[Times][OrderlessPatternSequence[Subscript[Z, c_], g:Subscript[(Z|Y), t_], rest___]]] ] :=
+	        Flatten @ {
+                Subscript[C, c][Subscript[X, t]], 
+                decomposeToSingleQubitAndCNOT @ R[x, Times[g, rest]], 
+                Subscript[C, c][Subscript[X, t]]
+            }
+
+        (*
+         * R^(n) -> H, R^(n), where an X is replaced with Z (enabling above reduction)
+         * src: https://arxiv.org/abs/1906.01734
+         *)
+        decomposeToSingleQubitAndCNOT[ R[x_, Verbatim[Times][OrderlessPatternSequence[Subscript[X, t_], rest___]]] ] :=
+	        Flatten @ {
+                Subscript[H, t], 
+                decomposeToSingleQubitAndCNOT @ R[x, Times[Subscript[Z, t], rest]], 
+                Subscript[H, t]
+            }
+
+        (*
+         * R^(n) -> Rx[+-pi/2], R^(n), where a Y is replaced with Z (enabling above reduction)
+         * src: https://arxiv.org/abs/1906.01734
+         *)
+        decomposeToSingleQubitAndCNOT[ R[x_, Verbatim[Times][OrderlessPatternSequence[Subscript[Y, t_], rest___]]] ] :=
+	        Flatten @ {
+                Subscript[Rx, t][Pi/2], 
+                decomposeToSingleQubitAndCNOT @ R[x, Times[Subscript[Z, t], rest]], 
+                Subscript[Rx, t][-Pi/2]
+            }
+
+        (*
+         * C*[R^(n)] -> C*[Rx,Ry,Rz] using above decomposition (only middle gadget decomp gate is controlled)
+         * src: https://quantumcomputing.stackexchange.com/questions/24122
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, ctrls__Integer][g:R[x_, prod_]] ] := 
+            Module[{circ,ind},
+	            circ = decomposeToSingleQubitAndCNOT[g];
+                ind = 1 + Floor[Length[circ] / 2];
+                circ[[ind]] = decomposeToSingleQubitAndCNOT @ Subscript[C, ctrls] @ circ[[ind]];
+                Flatten @ circ
+            ]
+
+        (* R[x, Id] -> G[-x/2] *)
+        decomposeToSingleQubitAndCNOT[ R[x_, Subscript[Id,_]] ] :=
+            G[-x/2]
+
+        (* 
+         * For user convenience, R[x, Id...] has the Id Pauli removed, then recurses.
+         * Such gates can result from Trotterisation of GetRandomPauliString[] outputs
+         *)
+        decomposeToSingleQubitAndCNOT[ R[x_, Verbatim[Times][a___, Subscript[Id,_], b___]] ] :=
+            decomposeToSingleQubitAndCNOT @ R[x, Times[a,b]]
+
+        (*
+         * C[Y] -> C[X], S, Ph
+         * src: https://github.com/Qiskit/textbook/blob/main/notebooks/ch-gates/basic-circuit-identities.ipynb
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c_][Subscript[Y, t_]] ] := 
+            {
+                Subscript[Ph, t][-Pi/2], Subscript[C, c][Subscript[X, t]], Subscript[S, t]
+            }
+
+        (* C*[Y] sub-optimally adds controls to the above decomposition *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_,cRest__][Subscript[Y, t_]] ] :=
+            Flatten[
+                decomposeToSingleQubitAndCNOT /@ 
+                addControlsToGate[cRest] /@ 
+                decomposeToSingleQubitAndCNOT @ 
+                Subscript[C, c1][Subscript[Y, t]]
+            ]
+        
+        (* 
+         * C[Z] -> C[X], H 
+         * src: https://quantumcomputing.stackexchange.com/questions/13782
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c_][Subscript[Z, t_]] ] := 
+            {
+                Subscript[H, t], Subscript[C, c][Subscript[X, t]], Subscript[H, t]
+            }
+
+        (* 
+         * CC[Z] -> C[X], T, Ph
+         * src: https://arxiv.org/pdf/1612.09384.pdf
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_,c2_][Subscript[Z, t_]] ] := 
+            {
+                Subscript[C, c1][Subscript[X, t]], Subscript[Ph, t][-Pi/4], Subscript[C, c2][Subscript[X, t]], 
+                Subscript[T, t], Subscript[C, c1][Subscript[X, t]], Subscript[Ph, t][-Pi/4], 
+                Subscript[C, c2][Subscript[X, t]], Subscript[T, t], Subscript[T, c1], Subscript[C, c2][Subscript[X, c1]], 
+                Subscript[T, c2], Subscript[Ph, c1][-Pi/4], Subscript[C, c2][Subscript[X, c1]]
+            }
+        
+        (* C*[Z] sub-optimally treats Z as Ph[pi], and uses Ph^(n) decomposition *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c__][Subscript[Z, t_]] ] /; Length@{c} >= 3 :=
+	        decomposeToSingleQubitAndCNOT @ Subscript[Ph, c,t][Pi]
+
+        (* 
+         * CC[X] -> C[X], H, T, Ph, via pre/post-appending H onto CC[Z] decomp
+         * src: https://arxiv.org/pdf/0803.2316.pdf
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_,c2_][Subscript[X, t_]] ] := 
+            Flatten @ {
+                Subscript[H, t],
+                decomposeToSingleQubitAndCNOT @ Subscript[C,c1,c2][Subscript[Z,t]],
+                Subscript[H, t]
+            }
+
+        (* 
+         * CCC[X] -> C[X], G, H, Rz[+-pi/8]
+         * src: https://classiq.tips/Competition/MCX_First.pdf
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_,c2_,c3_][Subscript[X, t_]] ] := 
+            With[{r = Pi/8}, {
+                G[r/2], Subscript[H, t], Subscript[Rz, c1][r], Subscript[Rz, c2][r], Subscript[Rz, c3][r],
+                Subscript[Rz, t][r], Subscript[C, c3][Subscript[X, c2]],  Subscript[Rz, c2][-r] , 
+                Subscript[C, c3][Subscript[X, c2]], Subscript[C, c2][Subscript[X, c1]], Subscript[Rz, c1][-r], 
+                Subscript[C, c3][Subscript[X, c1]], Subscript[Rz, c1][r], Subscript[C, c2][Subscript[X, c1]], 
+                Subscript[Rz, c1][-r], Subscript[C, c3][Subscript[X, c1]], Subscript[C, c1][Subscript[X, t]], 
+                Subscript[Rz, t][-r], Subscript[C, c2][Subscript[X, t]], Subscript[Rz, t][r], 
+                Subscript[C, c1][Subscript[X, t]], Subscript[Rz, t][-r], Subscript[C, c3][Subscript[X, t]],
+                Subscript[Rz, t][r], Subscript[C, c1][Subscript[X, t]], Subscript[Rz, t][-r], 
+                Subscript[C, c2][Subscript[X, t]], Subscript[Rz, t][r], Subscript[C, c1][Subscript[X, t]], 
+                Subscript[Rz, t][-r], Subscript[C, c3][Subscript[X, t]], Subscript[H, t]
+            }]
+
+        (* C*[X] sub-optimally adds additional control qubits to above decomps, and recurses *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_,c2_,c3_,cRest__][Subscript[X, t_]] ] := 
+            Flatten[
+                decomposeToSingleQubitAndCNOT /@
+                addControlsToGate[cRest] /@ 
+                decomposeToSingleQubitAndCNOT @ 
+                Subscript[C, c1,c2,c3][Subscript[X, t]]
+            ]
+
+        (* 
+         * optimised decomposition of CC[g] -> C[X], C[v], where v^2 = g, used by C*[U], C*[Rx/Ry/Rz]
+         * src: https://arxiv.org/pdf/quant-ph/9705009.pdf
+         *)
+        reduceTwoControlsToOne[{c1_,c2_}, v_, vDagger_] :=
+            Flatten[ 
+                decomposeToSingleQubitAndCNOT /@ {
+                    Subscript[C, c1] @ v, 
+                    Subscript[C, c2] @ Subscript[X, c1], 
+                    Subscript[C, c1] @ vDagger, 
+                    Subscript[C, c2] @ Subscript[X, c1], 
+                    Subscript[C, c2] @ v
+            }]
+
+        (* 
+         * optimised decomposition of CCC[g] -> C[X], C[v], where v^4 = g, used by C*[U], C*[Rx/Ry/Rz]
+         * src: https://arxiv.org/pdf/quant-ph/9503016.pdf
+         *)
+        reduceThreeControlsToOne[{c1_,c2_,c3_}, v_, vDagger_] := 
+            Flatten[
+                decomposeToSingleQubitAndCNOT /@ {
+                    Subscript[C, c3] @ v, 
+                    Subscript[C, c3] @ Subscript[X, c2], 
+                    Subscript[C, c2] @ vDagger, 
+                    Subscript[C, c3] @ Subscript[X, c2], 
+                    Subscript[C, c2] @ v, 
+                    Subscript[C, c2] @ Subscript[X, c1], 
+                    Subscript[C, c1] @ vDagger, 
+                    Subscript[C, c3] @ Subscript[X, c1], 
+                    Subscript[C, c1] @ v, 
+                    Subscript[C, c2] @ Subscript[X, c1], 
+                    Subscript[C, c1] @ vDagger,
+                    Subscript[C, c3] @ Subscript[X, c1], 
+                    Subscript[C, c1] @ v
+            }]
+
+        (*
+         * C[Ry] -> C[X], Ry
+         * C[Rz] -> C[X], Rz
+         * src: https://arxiv.org/pdf/2203.15368.pdf
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c_][Subscript[s:Ry|Rz, t_][r_]] ] :=
+	        {
+                Subscript[s, t][r/2], 
+                Subscript[C, c][Subscript[X, t]], 
+                Subscript[s, t][-r/2], 
+                Subscript[C, c][Subscript[X, t]]
+            }
+
+        (*
+         * C[Rx] -> C[X], Ry, Rz[+-pi/2]
+         * src: https://github.com/qiskit-community/qiskit-community-tutorials/blob/master/awards/teach_me_qiskit_2018/exact_ising_model_simulation/Ising_time_evolution.ipynb
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c_Integer][Subscript[Rx, t_Integer][r_]] ] :=
+            {
+                Subscript[Rz, t][Pi/2], 
+                Subscript[Ry, t][r/2], 
+                Subscript[C, c][Subscript[X, t]], 
+                Subscript[Ry, t][-r/2], 
+                Subscript[C, c][Subscript[X, t]], 
+                Subscript[Rz, t][-Pi/2]
+            }
+
+        (* CC[Rx] -> C[X], C[Rx] (etc for Ry,Rz), then recurses *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_,c2_][(s:Subscript[Rx|Ry|Rz, t_])[x_]]] :=
+            reduceTwoControlsToOne[{c1,c2}, s[x/2], s[-x/2]]
+
+        (* CCC[Rx] -> C[X], C[Rx] (etc for Ry,Rz), then recurses *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_,c2_,c3_][(s:Subscript[Rx|Ry|Rz, t_])[x_]]] :=
+            reduceThreeControlsToOne[{c1,c2,c3}, s[x/4], s[-x/4]]
+
+        (* C*[Rx/Ry/Rz] sub-optimally adds additional controls to the above decomps, then recurses *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_,c2_,c3_,cRest__][g:Subscript[Rx|Ry|Rz, t_][x_]]] :=
+            Flatten[
+                decomposeToSingleQubitAndCNOT /@
+                addControlsToGate[cRest] /@ 
+                decomposeToSingleQubitAndCNOT @ 
+                Subscript[C, c1,c2,c3] @ g
+            ]
+
+        (* Rz^(n) merely changed to a phase gadget, then recursed *)
+        decomposeToSingleQubitAndCNOT[ Subscript[Rz, t__][r_] ] :=
+            decomposeToSingleQubitAndCNOT @ R[r, Times @@ Map[Subscript[Z, #]&, {t}]]
+
+        (* C*[Rz^(n)] merely changed to a controlled phase gadget, then recursed *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c__][Subscript[Rz, t__][r_]] ] :=
+            decomposeToSingleQubitAndCNOT @ 
+            Subscript[C, c] @
+            R[r, Times @@ Map[Subscript[Z, #]&, {t}]]
+
+        (*
+         * Below are numerical decompositions of general unitary matrices;
+         * U, UNonNorm
+         *)
+
+        (* 
+         * U^(1)[matrix] -> {g, y, z1, z2}, where U = Ph[g] Rz[z2] Ry[y] Rz[z1]
+         * src: https://quantumcomputing.stackexchange.com/questions/16256/
+         *)
+        getRotationAnglesFromSingleTargetU[ {{a_,b_},{c_,d_}} ] := 
+            Module[
+                {g,y,z1,z2,phase},
+                phase = ArcTan[Re@#, Im@#]&;
+
+                (* determine Ry angle *)
+                y = If[N@a === 0., \[Pi], 2 ArcTan[Abs[b] / Abs[a]]];
+
+                (* determine Rz angles *)
+                Which[
+                    N@y === 0.,
+                        z1 = 0;
+                        z2 = phase[d] - phase[a],
+                    N@y === Pi,
+                        z1 = phase[-b] - phase[c];
+                        z2 = 0,
+                    True,
+                        z1 = phase[-b] - phase[a];
+                        z2 = phase[c] - phase[a]];
+
+                (* determine global phase *)
+                g = If[N@a === 0.,
+                    phase[c] + (z1-z2)/2,
+                    phase[a] + (z1+z2)/2];
+                {g,y,z1,z2}
+            ]
+
+        (* 
+         * U^(1)[matrix] -> Ry, Rz, Ph
+         * src: https://journals.aps.org/pra/pdf/10.1103/PhysRevA.52.3457
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[U|UNonNorm, t_][m_?MatrixQ] ] := 
+            Module[
+                {g,y,z1,z2},
+                {g,y,z1,z2} = getRotationAnglesFromSingleTargetU[m];
+
+                (* remove zero-angle gates *)
+                {G[g], Subscript[Rz, t][z1], Subscript[Ry, t][y], Subscript[Rz, t][z2]} /. _[0|0.] :> Nothing
+            ]
+
+        (* 
+         * C[U^(1)[matrix]] -> C[X], Ry, Rz, Ph
+         * src: https://arxiv.org/pdf/quant-ph/9503016.pdf
+         *
+         * TODO: when z1=0 (as occurs for diagonal m), the full gate is equivalent to
+         * C[G Rz] which permits a decomposition with one fewer Rz than given below.
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c_][Subscript[U|UNonNorm, t_][m_?MatrixQ]] ] := 
+            Module[
+                {g,y,z1,z2},
+                {g,y,z1,z2} = getRotationAnglesFromSingleTargetU[m];
+                {
+                    Subscript[Rz, t][(z1-z2)/2],
+                    Subscript[C, c][Subscript[X, t]],
+                    Subscript[Rz, t][-(z1+z2)/2], Subscript[Ry, t][-y/2],
+                    Subscript[C, c][Subscript[X, t]],
+                    Subscript[Ry, t][y/2], Subscript[Rz, t][z2],
+                    Subscript[Ph, c][g]
+                } /. _[0|0.] :> Nothing
+            ]
+        
+        (* 
+         * uniformly-controlled^(n) Ry/Rz -> C[X], Ry/Rz
+         * This is used by the U^(n) -> U^(n-1) decomposition
+         * src: https://arxiv.org/pdf/quant-ph/0404089.pdf
+         * 
+         * TODO: the optimisation described in the below paper 
+         * for compactifying the diagonal-unitary decomposition
+         * (similar to this; using gray-code Hadamard transform)
+         * might also be possible here.
+         * src: https://arxiv.org/pdf/2212.01002.pdf
+         *)
+
+        getGrayCodes[numBits_] := With[
+            {codes = Nest[Join[#,Length[#]+Reverse[#]]&,{0},numBits]},
+            PadLeft[#,numBits]& /@ IntegerDigits[codes, 2]]
+
+        getGrayCodeBitFlipInds[numBits_] := With[
+            {bits = Append[getGrayCodes[numBits], ConstantArray[0,numBits]]},
+            Position[Abs[bits[[2;;]] - bits[[;;-2]]], 1][[All,2]]]
+
+        getGrayCodeRenormalisedHadamardMatrix[numBits_] := With[
+            {codes = getGrayCodes[numBits]},
+            (1/2^numBits) Transpose @ Table[
+                (-1)^(PadLeft[IntegerDigits[i-1,2],numBits] . codes[[j]]),
+                {i,2^numBits},{j,2^numBits}]]
+
+        getDecompOfUniformlyControlledRyOrRz[rot:Ry|Rz, ctrls_, targ_, angles_] := With[
+            {numBits = Length[ctrls]},
+            {flipInds = getGrayCodeBitFlipInds[numBits]},
+            {newAngles = getGrayCodeRenormalisedHadamardMatrix[numBits] . angles},
+            Flatten @ MapThread[
+                {Subscript[rot, targ] @ #1, Subscript[C, #2] @ Subscript[X, targ]} &,
+                {newAngles, ctrls[[-flipInds]]}]]
+
+        (*
+         * uniformly-controlled^(1) U^(n)[matrix] -> U^(n)[matrix], uniformly-controlled^(n) Rz
+         * This then recurses to the above decomposition, and is used by U^(n) -> U^(n-1)
+         * src: https://edu.itp.phys.ethz.ch/hs12/qsit/solutions05.pdf
+         *)
+        
+        getSpectralDecomp[m0_, m1_] := Module[
+            {diags, matrV, matrD, matrW},
+            {diags, matrV} = Eigensystem[ m0 . ConjugateTranspose[m1] ];
+            matrV = Transpose @ Orthogonalize[matrV, Method->"GramSchmidt"];
+            matrD = Sqrt @ DiagonalMatrix @ diags;
+            matrW = matrD . ConjugateTranspose[matrV] . m1;
+            {matrV, matrD, matrW}
+        ]
+            
+        getDecompOfUniformlyControlledU[m0_, m1_, ctrl_, targs_, s:U|UNonNorm] := Module[
+            {mV, mD, mW, angles, circD, newOp},
+            
+            (* results will be erroneous if either of the input matrices are non-unitary *)
+            If[(s === U) && Not[And @@ UnitaryMatrixQ /@ {m0,m1}],
+                Throw["Encountered a non-unitary U gate matrix which cannot be (spectrally) decomposed. Please use UNonNorm instead."]];
+            
+            (* spectral-decompose U[m0,m1] into fewer-qubit mV and mW, and uniformly-controlled Rz[Diagonal@mD] *)
+            {mV, mD, mW} = getSpectralDecomp[m0, m1];
+
+            (* a zero-diagonal should be impossible if both m0 and m1 are unitarity, but it doesn't hurt to check *)
+            If[MemberQ[Chop @ Diagonal @ mD, 0],
+                Throw["The spectral decomposition involved in recompiling a " <> ToString@s <> " gate failed. This should never occur; please report to Tyson Jones."]];
+            
+            (* further decompose uniformly-controlled Rz[Diagonal@mD] into CNOTs and Rz *)
+            angles = -2 (ArcTan[Re@#, Im@#]& /@ Diagonal[mD]);
+            circD = getDecompOfUniformlyControlledRyOrRz[Rz, targs, ctrl, angles];
+            newOp = Subscript[s, Sequence @@ targs];
+            {newOp[mW], circD, newOp[mV]}
+        ]
+
+        (*
+         * U^(n)[matrix] -> uniformly-controlled^(1) U^(n-1)[matrix], uniformly-controlled^(n-1) Ry
+         * These are then further decomposed via the above methods, then recursed upon.
+         * src: https://arxiv.org/pdf/0707.1838.pdf
+         *)
+
+        getCosineSineDecomp[m_] := Module[
+            {dim, u00,u10,u01, l0,l1,d00,d10,r0,r1, angles},
+
+            (* partition input matrix into four quadrants *)
+            dim = Length[m];
+            u00 = m[[;;dim/2, ;;dim/2]];
+            u10 = m[[dim/2+1;;, ;;dim/2]];
+            u01 = m[[;;dim/2, dim/2+1;;]];
+
+            (* perform cosine-sine (CS) decomposition via numerical GSVD *)
+            {{l0,l1},{d00,d10},r0} = SingularValueDecomposition @ N @ {u00, u10};	
+            
+            (* TODO: we should implement the general CS decomposition, in order to handle when 
+             * the diagonals include zeros; see https://arxiv.org/abs/2302.14324
+             * For now, we will just fail instead. The numerical threshold of 10^(-15)
+             * (as a substitute for precisely 0) was arbitrarily chosen.
+             *)
+            If[Abs @ Det[d10] < 10^(-15),
+                Throw["The cosine-sine decomposition involved in recompiling a U (or UNonNorm) gate failed."]];
+            
+            (* obtain right-hand-side uniformly-controlled matrices *)
+            r0 = ConjugateTranspose[r0];
+            r1 = - Inverse[d10] . ConjugateTranspose[l0] . u01;
+            
+            (* obtain angles of the uniformly-controlled Ry gate *)
+            angles = 2 ArcCos /@ Diagonal[d00];
+            
+            (* return sub-matrices which together constitute:
+             * m = diag(l0,l1) * {{d00, -d10}, {d10,d00}} * diag(r0,r1)
+             * where angles are the diagonals of d00
+             *)
+            {l0,l1,r0,r1,angles}
+        ]
+
+        decomposeToSingleQubitAndCNOT[ g:Subscript[s:U|UNonNorm, t__][m_?MatrixQ] ] := Module[
+            {tMost,tLast, l0,l1,r0,r1,angles, lg0,lg1,rg0,rg1, lc0,lc1,lc2,mc,rc0,rc1,rc2},
+            
+            (* The GSVD used by the CS-decomposition is strictly numerical *)
+            If[Not @ MatrixQ[m, NumericQ],
+                Throw["Encountered a non-numerical matrix in a two (or more) qubit " <> ToString@s <> " gate, which cannot be decomposed."]];
+            
+            (* discard identity matrix, to thwart all-control instability *)
+            If[N[m] === N @ IdentityMatrix @ Length[m],
+                Return @ {}];
+            
+            (* partition targets; each recursive call of this function removes one *)
+            tMost = Most @ {t};
+            tLast = Last @ {t};
+            
+            (* perform CS-decomposition on matrix m, yielding uniformly-controlled gates *)
+            {l0,l1,r0,r1,angles} = getCosineSineDecomp @ N @ m;
+            
+            (* decompose the CS' uniformly-controlled Ry into CNOT + Ry *)
+            mc = getDecompOfUniformlyControlledRyOrRz[Ry, tMost, tLast, angles];
+            
+            (* decompose away the uniform-controls on the remaining CS gates *)
+            {lg0, lc1, lg1} = getDecompOfUniformlyControlledU[l0, l1, tLast, tMost, s];
+            {rg0, rc1, rg1} = getDecompOfUniformlyControlledU[r0, r1, tLast, tMost, s];
+            
+            (* recursively decompose the leftmost and rightmost (Length[t]-1)-qubit gates of the above decomp *)
+            {lc0, lc2, rc0, rc2} = decomposeToSingleQubitAndCNOT /@ {lg0,lg1,rg0,rg1};
+            
+            (* combine the sub-circuits *)
+            Flatten @ Join[rc0, rc1, rc2, mc, lc0, lc1, lc2]
+        ]
+
+        (* C[U^(n)[matrix]] sub-optimally adds a control to the above decomp, then recurses *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c_][u:Subscript[U|UNonNorm, t__][m_?MatrixQ]] ] :=
+            Flatten[
+                decomposeToSingleQubitAndCNOT /@
+                addControlsToGate[c] /@ 
+                decomposeToSingleQubitAndCNOT @ u
+            ]
+
+        (* CC[U^(n)[matrix]] -> C[X], C[U^(n)[matrix]] then recurses *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_,c2_][(g:Subscript[U|UNonNorm, t__])[m_?MatrixQ]] ] := 
+            With[
+                {mSqrt = MatrixPower[m, 1/2]},
+                reduceTwoControlsToOne[{c1,c2}, g@mSqrt, g@ConjugateTranspose@mSqrt]
+            ]
+
+        (* CCC[U^(n)[matrix]] -> C[X], C[U^(n)[matrix]] then recurses *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_,c2_,c3_][(g:Subscript[U|UNonNorm, t__])[m_?MatrixQ]] ] := 
+            With[
+                {mQdrt = MatrixPower[m, 1/4]},
+                reduceThreeControlsToOne[{c1,c2,c3}, g@mQdrt, g@ConjugateTranspose@mQdrt]
+            ]
+
+        (* C*[U^(n)[matrix]] sub-optimally adds controls to the above decomps, then recurses *)
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c1_,c2_,c3_,cRest__][u:Subscript[U|UNonNorm, t__][m_?MatrixQ]] ] := 
+            Flatten[
+                decomposeToSingleQubitAndCNOT /@
+                addControlsToGate[cRest] /@ 
+                decomposeToSingleQubitAndCNOT @ 
+                Subscript[C, c1,c2,c3] @ u
+            ]
+
+        (* U^(1)[vector] (diagonal) is automatically simplified when treated as a matrix *)
+        decomposeToSingleQubitAndCNOT[ (g:Subscript[U|UNonNorm, t_])[v_?VectorQ] ] :=
+            decomposeToSingleQubitAndCNOT @ g @ DiagonalMatrix @ v
+
+        (* 
+         * C*[U^(n)[vector]], i.e. diagonal unitaries, are not yet implemented,
+         * but should make use use of the gray-code Hadamard-transform optimisation
+         * described below, and the other compacting optimisations.
+         * src: https://arxiv.org/pdf/2212.01002.pdf
+         *)
+        decomposeToSingleQubitAndCNOT[ Subscript[U|UNonNorm, t__][v_?VectorQ] ] :=
+            Throw["Many-qubit diagonal gates are not yet supported by the recompiler."]
+        decomposeToSingleQubitAndCNOT[ Subscript[C, c__][Subscript[U|UNonNorm, t__][v_?VectorQ]] ] :=
+            Throw["Controlled diagonal gates are not yet supported by the recompiler."]
+
+        (* throw error on unrecognised gate *)
+        decomposeToSingleQubitAndCNOT[ g_ ] :=
+            Throw["Could not recompile unrecognised gate: " <> ToString @ StandardForm @ g]
+
+        (*
+         * recompiling to Clifford gates and Rz
+         *)
+
+        (* ultimate gate set of the decomposition *)
+        decomposeToCliffordAndRz[g:G[_]] := {g}
+        decomposeToCliffordAndRz[g:Subscript[H|S|X|Y|Z,_]] := {g}
+        decomposeToCliffordAndRz[g:Subscript[C,_][Subscript[X|Y|Z,_]]] := {g}
+        decomposeToCliffordAndRz[g:Subscript[Id,__]] := {g}
+        decomposeToCliffordAndRz[g:Subscript[SWAP,_,_]] := {g}
+        decomposeToCliffordAndRz[g:Subscript[Rz,_][_]] := {g}
+
+        (*
+         * Rx -> H, Rz
+         * src: https://quantumcomputing.stackexchange.com/questions/11861/
+         *)
+        decomposeToCliffordAndRz[ Subscript[Rx,t_][r_] ] := 
+            {
+                Subscript[H,t], Subscript[Rz,t][r], Subscript[H,t]
+            }
+
+        (*
+         * Ry -> H, S, Rz
+         * src: https://quantumcomputing.stackexchange.com/questions/11861/
+         *)
+        decomposeToCliffordAndRz[ Subscript[Ry,t_][r_] ] := 
+            {
+                Subscript[S,t], Subscript[H,t], Subscript[Rz,t][-r], Subscript[H,t],
+                Subscript[S,t], Subscript[S,t], Subscript[S,t]
+            }
+
+        (* Ph -> G, Rz *)
+        decomposeToCliffordAndRz[ Subscript[Ph,t_][r_] ] := 
+            {
+                G[r/2], Subscript[Rz, t][r]
+            }
+
+        (* T -> Ph, then recurse *)
+        decomposeToCliffordAndRz[ Subscript[T,t_] ] :=
+            decomposeToCliffordAndRz @ Subscript[Ph,t][Pi/4]
+
+        (* sub-optimally decompile all other gates to single-qubit, then convert to Clifford *)
+        decomposeToCliffordAndRz[ g_ ] :=
+            Flatten[
+                decomposeToCliffordAndRz /@ decomposeToSingleQubitAndCNOT[g]]
+
+        (*
+         * recompiler interface
+         *)
+
+        changeQubitListsToSeqs[circ_] :=
+            circ /. Subscript[g_, {q__Integer}] :> Subscript[g, q]
+
+        recompileCircuitInner[circ_, decompMethod_] := Module[
+            {result, phase, adjusted},
+
+            (* decompose each gate in-turn, catching errors and unrecognised gates *)
+            result = Catch @ Flatten @ Table[
+                With[
+                    {decomp = Catch @ decompMethod @ gate},
+                    If[ StringQ @ decomp,
+                        Message[RecompileCircuit::error, "Recompilation failed. " <> decomp];
+                        Throw @ $Failed];
+                    decomp
+                ],
+                {gate, changeQubitListsToSeqs @ circ}
+            ];
+            If[result === $Failed, 
+                Return @ $Failed];
+
+            (* combine all global phases into one initial G gate *)
+            phase = 0;
+            adjusted = result /. G[x_] :> (phase += x; Nothing);
+            If[phase === 0,
+                adjusted,
+                Prepend[adjusted, G[phase]]
+            ]
+        ]
+
+        RecompileCircuit[gate_?isGateFormat, args___] :=
+            RecompileCircuit[{gate}, args]
+
+        RecompileCircuit[circ_?isCircuitFormat, method_?StringQ] := 
+            Which[
+                method === "SingleQubitAndCNOT",
+                    recompileCircuitInner[circ, decomposeToSingleQubitAndCNOT],
+                method === "CliffordAndRz",
+                    recompileCircuitInner[circ, decomposeToCliffordAndRz],
+                True,
+                    Message[RecompileCircuit::error, "Unrecognised method. See available methods via ?RecompileCircuit"];
+            ]
+
+        RecompileCircuit[___] := invalidArgError[RecompileCircuit]
 
     End[ ]
                                        

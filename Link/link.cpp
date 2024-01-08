@@ -287,8 +287,8 @@ void internal_getAmp(int quregID) {
         
         // return as complex number
         WSPutFunction(stdlink, "Complex", 2);
-        WSPutReal64(stdlink, amp.real);
-        WSPutReal64(stdlink, amp.imag);
+        WSPutQreal(stdlink, amp.real);
+        WSPutQreal(stdlink, amp.imag);
         
     } catch( QuESTException& err) {
         local_sendErrorAndFail("GetAmp", err.message);
@@ -324,8 +324,8 @@ void internal_getQuregMatrix(int id) {
         WSPutFunction(stdlink, "List", 4);
         WSPutInteger(stdlink, qureg.numQubitsRepresented);
         WSPutInteger(stdlink, qureg.isDensityMatrix);
-        WSPutReal64List(stdlink, qureg.stateVec.real, qureg.numAmpsTotal);
-        WSPutReal64List(stdlink, qureg.stateVec.imag, qureg.numAmpsTotal);    
+        WSPutQrealList(stdlink, qureg.stateVec.real, qureg.numAmpsTotal);
+        WSPutQrealList(stdlink, qureg.stateVec.imag, qureg.numAmpsTotal);    
         
     } catch (QuESTException& err) {
         local_sendErrorAndFail("GetQuregMatrix", err.message);
@@ -399,7 +399,14 @@ void wrapper_initPureState(int quregID, int pureID) {
     }
 }
 
-void wrapper_initStateFromAmps(int quregID, qreal* reals, long l1, qreal* imags, long l2) {
+void wrapper_initStateFromAmps(int quregID) {
+
+    qreal* reals;
+    qreal* imags;
+    int l1, l2;
+    WSGetQrealList(stdlink, &reals, &l1);
+    WSGetQrealList(stdlink, &imags, &l2);
+
     try {
         local_throwExcepIfQuregNotCreated(quregID); // throws
         
@@ -413,6 +420,9 @@ void wrapper_initStateFromAmps(int quregID, qreal* reals, long l1, qreal* imags,
     } catch( QuESTException& err) {
         local_sendErrorAndFail("InitStateFromAmps", err.message);
     }
+
+    WSReleaseQrealList(stdlink, reals, l1);
+    WSReleaseQrealList(stdlink, imags, l2);
 }
 
 void wrapper_cloneQureg(int outID, int inID) {
@@ -445,11 +455,15 @@ void wrapper_collapseToOutcome(int id, int qb, int outcome) {
     }
 }
 
-void internal_setWeightedQureg(
-    double facRe1, double facIm1, int qureg1, 
-    double facRe2, double facIm2, int qureg2, 
-    double facReOut, double facImOut, int outID
-) {
+void internal_setWeightedQureg(int qureg1, int qureg2, int outID) {
+    qreal facRe1, facIm1, facRe2, facIm2, facReOut, facImOut;
+    WSGetQreal(stdlink, &facRe1);
+    WSGetQreal(stdlink, &facIm1);
+    WSGetQreal(stdlink, &facRe2);
+    WSGetQreal(stdlink, &facIm2);
+    WSGetQreal(stdlink, &facReOut);
+    WSGetQreal(stdlink, &facImOut);
+
     try {
         local_throwExcepIfQuregNotCreated(qureg1); // throws
         local_throwExcepIfQuregNotCreated(qureg2); // throws
@@ -472,9 +486,13 @@ void internal_setWeightedQureg(
     }
 }
 
-void internal_setAmp(int quregID, double ampRe, double ampIm) {
-    
+void internal_setAmp(int quregID) {
+
     // get args from MMA (must do this before possible early-exit)
+    qreal ampRe, ampIm;
+    WSGetQreal(stdlink, &ampRe);
+    WSGetQreal(stdlink, &ampIm);
+    
     wsint64 rawRow, rawCol;
     WSGetInteger64(stdlink, &rawRow);
     WSGetInteger64(stdlink, &rawCol); // -1 for state-vecs
@@ -517,7 +535,7 @@ void wrapper_calcProbOfOutcome(int id, int qb, int outcome) {
     try {
         local_throwExcepIfQuregNotCreated(id); // throws
         qreal prob = calcProbOfOutcome(quregs[id], qb, outcome); // throws
-        WSPutReal64(stdlink, prob); 
+        WSPutQreal(stdlink, prob); 
         
     } catch( QuESTException& err) {
         local_sendErrorAndFail("CalcProbOfOutCome", err.message);
@@ -533,7 +551,7 @@ void wrapper_calcProbOfAllOutcomes(int id, int* qubits, long numQubits) {
         local_throwExcepIfQuregNotCreated(id); // throws
         calcProbOfAllOutcomes(probs, quregs[id], qubits, numQubits); // throws
         
-        WSPutReal64List(stdlink, probs, numProbs);
+        WSPutQrealList(stdlink, probs, numProbs);
         
     } catch( QuESTException& err) {
         local_sendErrorAndFail("CalcProbOfAllOutcomes", err.message);
@@ -548,7 +566,7 @@ void wrapper_calcFidelity(int id1, int id2) {
         local_throwExcepIfQuregNotCreated(id1); // throws
         local_throwExcepIfQuregNotCreated(id2); // throws
         qreal fid = calcFidelity(quregs[id1], quregs[id2]); // throws
-        WSPutReal64(stdlink, fid);
+        WSPutQreal(stdlink, fid);
         
     } catch( QuESTException& err) {
         local_sendErrorAndFail("CalcFidelity", err.message);
@@ -561,8 +579,8 @@ void wrapper_calcInnerProduct(int id1, int id2) {
         local_throwExcepIfQuregNotCreated(id2); // throws
         Complex res = calcInnerProduct(quregs[id1], quregs[id2]); // throws
         WSPutFunction(stdlink, "Complex", 2);
-        WSPutReal64(stdlink, res.real);
-        WSPutReal64(stdlink, res.imag);
+        WSPutQreal(stdlink, res.real);
+        WSPutQreal(stdlink, res.imag);
         
     } catch( QuESTException& err) {
         local_sendErrorAndFail("CalcInnerProduct", err.message);
@@ -582,10 +600,10 @@ void wrapper_calcDensityInnerProduct(int id1, int id2) {
                 
         if (local_isNonZero(prod.imag)) {
             WSPutFunction(stdlink, "Complex", 2);
-            WSPutReal64(stdlink, prod.real);
-            WSPutReal64(stdlink, prod.imag);
+            WSPutQreal(stdlink, prod.real);
+            WSPutQreal(stdlink, prod.imag);
         } else
-            WSPutReal64(stdlink, prod.real);
+            WSPutQreal(stdlink, prod.real);
         
     } catch( QuESTException& err) {
         local_sendErrorAndFail("CalcDensityInnerProduct", err.message);
@@ -596,7 +614,7 @@ void wrapper_calcPurity(int id) {
     try {
         local_throwExcepIfQuregNotCreated(id); // throws
         qreal pur = calcPurity(quregs[id]); // throws
-        WSPutReal64(stdlink, pur);
+        WSPutQreal(stdlink, pur);
     
     } catch( QuESTException& err) {
         local_sendErrorAndFail("CalcPurity", err.message);
@@ -607,7 +625,7 @@ void wrapper_calcTotalProb(int id) {
     try {
         local_throwExcepIfQuregNotCreated(id); // throws
         qreal prob = calcTotalProb(quregs[id]); // throws
-        WSPutReal64(stdlink, prob);
+        WSPutQreal(stdlink, prob);
     
     } catch( QuESTException& err) {
         local_sendErrorAndFail("CalcTotalProb", err.message);
@@ -619,7 +637,7 @@ void wrapper_calcHilbertSchmidtDistance(int id1, int id2) {
         local_throwExcepIfQuregNotCreated(id1); // throws
         local_throwExcepIfQuregNotCreated(id2); // throws
         qreal dist = calcHilbertSchmidtDistance(quregs[id1], quregs[id2]); // throws
-        WSPutReal64(stdlink, dist);
+        WSPutQreal(stdlink, dist);
     
     } catch( QuESTException& err) {
         local_sendErrorAndFail("CalcHilbertSchmidtDistance", err.message);
@@ -652,8 +670,8 @@ void internal_calcDensityInnerProductsVector(int rhoId, int* omegaIds, long numO
             
         // send result to MMA
         WSPutFunction(stdlink, "List", 2);
-        WSPutReal64List(stdlink, prodsRe, numOmegas);
-        WSPutReal64List(stdlink, prodsIm, numOmegas);
+        WSPutQrealList(stdlink, prodsRe, numOmegas);
+        WSPutQrealList(stdlink, prodsIm, numOmegas);
     
     } catch (QuESTException& err) {
         local_sendErrorAndFail("CalcDensityInnerProducts", err.message);
@@ -691,8 +709,8 @@ void internal_calcInnerProductsVector(int braId, int* ketIds, long numKets) {
         
         // send result to MMA
         WSPutFunction(stdlink, "List", 2);
-        WSPutReal64List(stdlink, vecRe, numKets);
-        WSPutReal64List(stdlink, vecIm, numKets);
+        WSPutQrealList(stdlink, vecRe, numKets);
+        WSPutQrealList(stdlink, vecIm, numKets);
         
         // clean-up
         free(vecRe);
@@ -768,8 +786,8 @@ void internal_calcInnerProductsMatrix(int* quregIds, long numQuregs) {
         
         // return
         WSPutFunction(stdlink, "List", 2);
-        WSPutReal64List(stdlink, matrRe, len);
-        WSPutReal64List(stdlink, matrIm, len);
+        WSPutQrealList(stdlink, matrRe, len);
+        WSPutQrealList(stdlink, matrIm, len);
         
         // cleanup
         free(matrRe);
@@ -822,7 +840,7 @@ void internal_calcExpecPauliString(int quregId, int workspaceId) {
         
         // compute return value
         qreal val = calcExpecPauliSum(qureg, arrPaulis, termCoeffs, numTerms, workspace); // throws
-        WSPutReal64(stdlink, val);
+        WSPutQreal(stdlink, val);
     
     } catch( QuESTException& err) {
 
@@ -882,8 +900,8 @@ void internal_calcPauliStringMatrix(int numQubits) {
         syncQuESTEnv(env);
         copyStateFromGPU(outQureg); // does nothing on CPU
         
-        WSPutReal64List(stdlink, outQureg.stateVec.real, dim);
-        WSPutReal64List(stdlink, outQureg.stateVec.imag, dim);
+        WSPutQrealList(stdlink, outQureg.stateVec.real, dim);
+        WSPutQrealList(stdlink, outQureg.stateVec.imag, dim);
     }
     
     // output has already been 'put'
@@ -957,10 +975,10 @@ void internal_applyPhaseFunc(int quregId, int* qubits, long numQubits, int encod
     wsint64* ws_overrideInds;
     qreal* overridePhases;
     int numOverrides;
-    WSGetReal64List(stdlink, &coeffs, &numTerms);
-    WSGetReal64List(stdlink, &exponents, &numTerms);
+    WSGetQrealList(stdlink, &coeffs, &numTerms);
+    WSGetQrealList(stdlink, &exponents, &numTerms);
     WSGetInteger64List(stdlink, &ws_overrideInds, &numOverrides);
-    WSGetReal64List(stdlink, &overridePhases, &numOverrides);
+    WSGetQrealList(stdlink, &overridePhases, &numOverrides);
     
     // cast Wolfram 'wsint' into QuEST 'long long int'
     overrideInds = (long long int*) malloc(numOverrides * sizeof(long long int));
@@ -980,10 +998,10 @@ void internal_applyPhaseFunc(int quregId, int* qubits, long numQubits, int encod
     }
     
     // clean-up (even if error)
-    WSReleaseReal64List(stdlink, coeffs, numTerms);
-    WSReleaseReal64List(stdlink, exponents, numTerms);
+    WSReleaseQrealList(stdlink, coeffs, numTerms);
+    WSReleaseQrealList(stdlink, exponents, numTerms);
     WSReleaseInteger64List(stdlink, ws_overrideInds, numOverrides);
-    WSReleaseReal64List(stdlink, overridePhases, numOverrides);
+    WSReleaseQrealList(stdlink, overridePhases, numOverrides);
     free(overrideInds);
 }
 
@@ -1008,11 +1026,11 @@ void internal_applyMultiVarPhaseFunc(int quregId) {
     WSGetInteger32List(stdlink, &qubits, &dummy_totalQubits);
     WSGetInteger32List(stdlink, &numQubitsPerReg, &numRegs);
     WSGetInteger32(stdlink, &encoding);
-    WSGetReal64List(stdlink, &coeffs, &dummy_totalTerms);
-    WSGetReal64List(stdlink, &exponents, &dummy_totalTerms);
+    WSGetQrealList(stdlink, &coeffs, &dummy_totalTerms);
+    WSGetQrealList(stdlink, &exponents, &dummy_totalTerms);
     WSGetInteger32List(stdlink, &numTermsPerReg, &numRegs);
     WSGetInteger64List(stdlink, &ws_overrideInds, &dummy_totalInds);
-    WSGetReal64List(stdlink, &overridePhases, &numOverrides);
+    WSGetQrealList(stdlink, &overridePhases, &numOverrides);
     
     // convert wsint64 arr to long long int 
     long long int* overrideInds = (long long int*) malloc(numOverrides * numRegs * sizeof *overrideInds);
@@ -1037,11 +1055,11 @@ void internal_applyMultiVarPhaseFunc(int quregId) {
     free(overrideInds);
     WSReleaseInteger32List(stdlink, qubits, dummy_totalQubits);
     WSReleaseInteger32List(stdlink, numQubitsPerReg, numRegs);
-    WSReleaseReal64List(stdlink, coeffs, dummy_totalTerms);
-    WSReleaseReal64List(stdlink, exponents, dummy_totalTerms);
+    WSReleaseQrealList(stdlink, coeffs, dummy_totalTerms);
+    WSReleaseQrealList(stdlink, exponents, dummy_totalTerms);
     WSReleaseInteger32List(stdlink, numTermsPerReg, numRegs);
     WSReleaseInteger64List(stdlink, ws_overrideInds, dummy_totalInds);
-    WSReleaseReal64List(stdlink, overridePhases, numOverrides);
+    WSReleaseQrealList(stdlink, overridePhases, numOverrides);
 }
 
 void internal_applyNamedPhaseFunc(int quregId) {
@@ -1063,7 +1081,7 @@ void internal_applyNamedPhaseFunc(int quregId) {
     WSGetInteger32(stdlink, &encoding);
     WSGetInteger32(stdlink, &funcNameCode);
     WSGetInteger64List(stdlink, &ws_overrideInds, &dummy_totalInds);
-    WSGetReal64List(stdlink, &overridePhases, &numOverrides);
+    WSGetQrealList(stdlink, &overridePhases, &numOverrides);
 
     // convert wsint64 arr to long long int 
     long long int* overrideInds = (long long int*) malloc(numOverrides * numRegs * sizeof *overrideInds);
@@ -1090,7 +1108,7 @@ void internal_applyNamedPhaseFunc(int quregId) {
     WSReleaseInteger32List(stdlink, qubits, dummy_totalQubits);
     WSReleaseInteger32List(stdlink, numQubitsPerReg, numRegs);
     WSReleaseInteger64List(stdlink, ws_overrideInds, dummy_totalInds);
-    WSReleaseReal64List(stdlink, overridePhases, numOverrides);
+    WSReleaseQrealList(stdlink, overridePhases, numOverrides);
 }
 
 void internal_applyParamNamedPhaseFunc(int quregId) {
@@ -1113,9 +1131,9 @@ void internal_applyParamNamedPhaseFunc(int quregId) {
     WSGetInteger32List(stdlink, &numQubitsPerReg, &numRegs);
     WSGetInteger32(stdlink, &encoding);
     WSGetInteger32(stdlink, &funcNameCode);
-    WSGetReal64List(stdlink, &params, &numParams);
+    WSGetQrealList(stdlink, &params, &numParams);
     WSGetInteger64List(stdlink, &ws_overrideInds, &dummy_totalInds);
-    WSGetReal64List(stdlink, &overridePhases, &numOverrides);
+    WSGetQrealList(stdlink, &overridePhases, &numOverrides);
 
     // convert wsint64 arr to long long int 
     long long int* overrideInds = (long long int*) malloc(numOverrides * numRegs * sizeof *overrideInds);
@@ -1141,9 +1159,9 @@ void internal_applyParamNamedPhaseFunc(int quregId) {
     // free flat-packed args
     WSReleaseInteger32List(stdlink, qubits, dummy_totalQubits);
     WSReleaseInteger32List(stdlink, numQubitsPerReg, numRegs);
-    WSReleaseReal64List(stdlink, params, numParams);
+    WSReleaseQrealList(stdlink, params, numParams);
     WSReleaseInteger64List(stdlink, ws_overrideInds, dummy_totalInds);
-    WSReleaseReal64List(stdlink, overridePhases, numOverrides);
+    WSReleaseQrealList(stdlink, overridePhases, numOverrides);
 }
 
 
@@ -1288,7 +1306,7 @@ void internal_calcExpecPauliProdsFromClassicalShadow(int numQb, int numBatches) 
             numBatches
         ); // throws
 
-        WSPutReal64List(stdlink, prodExpecVals.data(), numProds);
+        WSPutQrealList(stdlink, prodExpecVals.data(), numProds);
 
     } catch( QuESTException& err) {
         

@@ -131,8 +131,8 @@ void local_sendMatrixToMMA(qmatrix matrix) {
     
     // send each to Mathematica
     WSPutFunction(stdlink, "List", 2);
-    WSPutReal64List(stdlink, matrRe, len);
-    WSPutReal64List(stdlink, matrIm, len);
+    WSPutQrealList(stdlink, matrRe, len);
+    WSPutQrealList(stdlink, matrIm, len);
 
     // clean-up
     free(matrRe);
@@ -159,7 +159,7 @@ void Circuit::loadFromMMA() {
     WSGetInteger32List(stdlink, &numCtrlsPerOp, &numGates);
     WSGetInteger32List(stdlink, &targs, &totalNumTargs);
     WSGetInteger32List(stdlink, &numTargsPerOp, &numGates);
-    WSGetReal64List(stdlink, &params, &totalNumParams);
+    WSGetQrealList(stdlink, &params, &totalNumParams);
     WSGetInteger32List(stdlink, &numParamsPerOp, &numGates);
     
     // allocate gates array attribute (creates all Gate instances)
@@ -200,7 +200,7 @@ void Circuit::freeMMA() {
     Gate gate = gates[0];
     WSReleaseInteger32List(stdlink, gate.getCtrlsAddr(),  totalNumCtrls);
     WSReleaseInteger32List(stdlink, gate.getTargsAddr(),  totalNumTargs);
-    WSReleaseReal64List(   stdlink, gate.getParamsAddr(), totalNumParams);
+    WSReleaseQrealList(   stdlink, gate.getParamsAddr(), totalNumParams);
 }
 
 void Circuit::sendOutputsToMMA(qreal* outputs) {
@@ -217,7 +217,7 @@ void Circuit::sendOutputsToMMA(qreal* outputs) {
         
         // P gate outputs are top-level qreals (probabilities of projector)
         if (gate.getOpcode() == OPCODE_P)
-            WSPutReal64(stdlink, outputs[outInd++]);
+            WSPutQreal(stdlink, outputs[outInd++]);
         
         // M gate outputs are integer sublists (measurement outcomes grouped by targets)
         if (gate.getOpcode() == OPCODE_M) {
@@ -246,7 +246,7 @@ void DerivCircuit::loadFromMMA() {
     
     WSGetInteger32List(stdlink, &derivGateInds, &numTerms);
     WSGetInteger32List(stdlink, &derivVarInds,  &numTerms);
-    WSGetReal64List(stdlink, &derivParams, &totalNumDerivParams);
+    WSGetQrealList(stdlink, &derivParams, &totalNumDerivParams);
     WSGetInteger32List(stdlink, &numDerivParamsPerDerivGate, &numTerms);
     
     /*
@@ -282,7 +282,7 @@ void DerivCircuit::loadFromMMA() {
 void DerivCircuit::freeMMA() {
     
     // first term holds (i.e. has array beginning pointer) all term's derivParams
-    WSReleaseReal64List(stdlink, terms[0].getDerivParamsAddr(), totalNumDerivParams);
+    WSReleaseQrealList(stdlink, terms[0].getDerivParamsAddr(), totalNumDerivParams);
 }
 
 
@@ -293,7 +293,7 @@ void DerivCircuit::freeMMA() {
 
 void local_loadEncodedPauliStringFromMMA(int* numPaulis, int* numTerms, qreal** termCoeffs, int** allPauliCodes, int** allPauliTargets, int** numPaulisPerTerm) {
     
-    WSGetReal64List(stdlink, termCoeffs, numTerms);
+    WSGetQrealList(stdlink, termCoeffs, numTerms);
     WSGetInteger32List(stdlink, allPauliCodes, numPaulis);    
     WSGetInteger32List(stdlink, allPauliTargets, numPaulis);
     WSGetInteger32List(stdlink, numPaulisPerTerm, numTerms);
@@ -336,7 +336,7 @@ pauliOpType* local_decodePauliString(int numQb, int numTerms, int* allPauliCodes
 }
 
 void local_freePauliString(int numPaulis, int numTerms, qreal* termCoeffs, int* allPauliCodes, int* allPauliTargets, int* numPaulisPerTerm, pauliOpType* arrPaulis) {
-    WSReleaseReal64List(stdlink, termCoeffs, numTerms);
+    WSReleaseQrealList(stdlink, termCoeffs, numTerms);
     WSReleaseInteger32List(stdlink, allPauliCodes, numPaulis);
     WSReleaseInteger32List(stdlink, allPauliTargets, numPaulis);
     WSReleaseInteger32List(stdlink, numPaulisPerTerm, numTerms);
@@ -375,6 +375,6 @@ PauliHamil local_loadPauliHamilForQuregFromMMA(int quregId) {
 
 void local_freePauliHamil(PauliHamil hamil) {
     
-    WSReleaseReal64List(stdlink, hamil.termCoeffs, hamil.numSumTerms);
+    WSReleaseQrealList(stdlink, hamil.termCoeffs, hamil.numSumTerms);
     free(hamil.pauliCodes);
 }

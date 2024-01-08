@@ -9,6 +9,32 @@
 
 
 
+// variable precision WSTP scalar communication
+#if QuEST_PREC==1
+    #define WSGetQreal WSGetReal32
+    #define WSPutQreal WSPutReal32
+
+    #define WSGetQrealList WSGetReal32List
+    #define WSPutQrealList WSPutReal32List
+    #define WSReleaseQrealList WSReleaseReal32List
+#elif QuEST_PREC==2
+    #define WSGetQreal WSGetReal64
+    #define WSPutQreal WSPutReal64
+
+    #define WSGetQrealList WSGetReal64List
+    #define WSPutQrealList WSPutReal64List
+    #define WSReleaseQrealList WSReleaseReal64List
+#elif QuEST_PREC==4
+    #define WSGetQreal WSGetReal128
+    #define WSPutQreal WSPutReal128
+
+    #define WSGetQrealList WSGetReal128List
+    #define WSPutQrealList WSPutReal128List
+    #define WSReleaseQrealList WSReleaseReal128List
+#endif
+
+
+
 int local_getRandomIndex(qreal* weights, int numInds);
 
 int local_getRandomIndex(int numInds);
