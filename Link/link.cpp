@@ -328,7 +328,7 @@ void internal_getQuregMatrix(int id) {
         WSPutQrealList(stdlink, qureg.stateVec.imag, qureg.numAmpsTotal);    
         
     } catch (QuESTException& err) {
-        local_sendErrorAndFail("GetQuregMatrix", err.message);
+        local_sendErrorAndFail("GetQuregState", err.message);
     }
 }
 

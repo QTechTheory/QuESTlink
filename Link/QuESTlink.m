@@ -128,9 +128,12 @@ GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qure
     SetAmp::usage = "SetAmp[qureg, index, amp] modifies the indexed amplitude of the state-vector qureg to complex number amp.
 SetAmp[qureg, row, col, amp] modifies the indexed (row, col) amplitude of the density-matrix qureg to complex number amp"
     SetAmp::error = "`1`"
-    
-    GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
-    GetQuregMatrix::error = "`1`"
+
+    GetQuregState::usage = "GetQuregState[qureg, form] returns the state-vector or density matrix amplitudes associated with the given qureg, in the specified form. Options for form are:
+\[Bullet] \"ZBasisMatrix\" (default) returns the amplitudes in the standard Z-basis, as a complex vector or matrix.
+\[Bullet] \"ZBasisKets\" returns a sum of complex weighted kets (or ket-bra projectors) of qubits in the standard Z-basis.
+It is often convenient to pass the returned structure to Chop[] in order to remove negligible terms and numerical artefacts."
+    GetQuregState::error = "`1`"
     
     SetQuregMatrix::usage = "SetQuregMatrix[qureg, matr] modifies qureg, overwriting its statevector or density matrix with that passed."
     SetQuregMatrix::error = "`1`"
@@ -515,6 +518,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
     MixTwoQubitDephasing::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Deph."
     MixTwoQubitDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
     CalcQuregDerivs::usage = "This function is deprecated. Please instead use ApplyCircuitDerivs."
+    GetQuregMatrix::usage = "This function is deprecated. Please instead use GetQuregState."
     
     EndPackage[]
  
@@ -574,6 +578,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ApplyCircuitDerivs[initQureg, circuit, varVals, derivQuregs, workQuregs])
             
             
+
+        GetQuregMatrix[args___] := (
+            Message[GetQuregState::error, "The deprecated function GetQuregMatrix[] has been automatically replaced with GetQuregState[]. In future, please use GetQuregState[], or temporarily hide this message using Quiet[]."];
+            GetQuregState[args])
+           
             
         
         (*
@@ -986,20 +995,53 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         DestroyQureg[___] := invalidArgError[DestroyQureg]
 
         (* get a local matrix representation of the qureg. GetQuregMatrixInternal provided by WSTP *)
-        GetQuregMatrix[qureg_Integer] :=
+        GetQuregState[qureg_Integer, "ZBasisMatrix"] :=
         	With[{data = GetQuregMatrixInternal[qureg]},
         		Which[
+                    (* if failed, return failure type *)
         			Or[data === $Failed, data === $Aborted],
-        			data,
+        			    data,
+                    (* if state-vector, stitch the real and imag components into a complex array *)
         			data[[2]] === 0,
-        			MapThread[#1 + I #2 &, {data[[3]], data[[4]]}],
+        			    MapThread[#1 + I #2 &, {data[[3]], data[[4]]}],
+                    (* if density-matrix, stitch the real and imag components into a complex matrix *)
         			data[[2]] === 1,
-        			Transpose @ ArrayReshape[
-        				MapThread[#1 + I #2 &, {data[[3]], data[[4]]}], 
-        				{2^data[[1]],2^data[[1]]}]
+        			    Transpose @ ArrayReshape[
+        				    MapThread[#1 + I #2 &, {data[[3]], data[[4]]}], 
+        				    {2^data[[1]],2^data[[1]]}]
         		]
         	]
-        GetQuregMatrix[___] := invalidArgError[GetQuregMatrix]
+
+        GetQuregState[qureg_Integer, "ZBasisKets"] := 
+            With[
+                {matr = GetQuregState[qureg, "ZBasisMatrix"]},
+                {nQb = Log2 @ Length @ matr},
+                Which[
+                    (* if failed, return failure type *)
+                    Or[data === $Failed, data === $Aborted],
+                        data,
+                    (* project state-vector into kets *)
+                    Length @ Dimensions @ matr === 1,
+                        matr . Table[
+                            Ket @ IntegerString[i, 2, nQb], {i, 0, 2^nQb - 1}],
+                    (* project density-matrix into ket-bra's *)
+                    Length @ Dimensions @ matr === 2,
+                        Flatten[matr] . Flatten @ Table[
+                            Ket @ IntegerString[i, 2, nQb] ** 
+                            Bra @ IntegerString[j, 2, nQb],
+                            {i, 0, 2^nQb - 1}, {j, 0, 2^nQb - 1}]
+                (* tidy up some amplitudes for visual clarity *)
+                ] /. {
+                        Complex[1.`,0.`] -> 1, (* (1.`+0.`)  |s> -> |s> *)
+                        Complex[0.`,0.`] -> 0, (* (0.`+0.`1) |s> ->    *)
+                        Complex[x_,0.`] -> x   (* (x + 0.`)  |s> -> x |s> *)
+                    }
+            ]
+
+        GetQuregState[qureg_Integer] :=
+            GetQuregState[qureg, "ZBasisMatrix"]
+
+        GetQuregState[___] := invalidArgError[GetQuregState]
 
         (* overwrite the state of a qureg. InitStateFromAmps provided by WSTP *)
         SetQuregMatrix[qureg_Integer, elems_List] :=
@@ -1659,7 +1701,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          
         (* single matrix plot *)
         PlotDensityMatrix[id_Integer, opts:plotDensOptsPatt] :=
-            PlotDensityMatrix[GetQuregMatrix[id], opts]
+            PlotDensityMatrix[GetQuregState[id], opts]
         PlotDensityMatrix[matrix_?isNumericSquareMatrix, opts:plotDensOptsPatt] :=
             Block[{data, chartelem, space, offset},
                 (* unpack data and args (may throw Message) *)
@@ -1690,11 +1732,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ]
         (* two matrix plot *)
         PlotDensityMatrix[id1_Integer, id2_Integer, opts:plotDensOptsPatt] :=
-            PlotDensityMatrix[GetQuregMatrix[id1], GetQuregMatrix[id2], opts]
+            PlotDensityMatrix[GetQuregState[id1], GetQuregState[id2], opts]
         PlotDensityMatrix[id1_Integer, matr2_?isNumericSquareMatrix, opts:plotDensOptsPatt] :=
-            PlotDensityMatrix[GetQuregMatrix[id1], matr2, opts]
+            PlotDensityMatrix[GetQuregState[id1], matr2, opts]
         PlotDensityMatrix[matr1_?isNumericSquareMatrix, id2_Integer, opts:plotDensOptsPatt] :=
-            PlotDensityMatrix[matr1, GetQuregMatrix[id2], opts]
+            PlotDensityMatrix[matr1, GetQuregState[id2], opts]
         PlotDensityMatrix[matr1_?isNumericSquareMatrix, vec2_?isNumericVector, opts:plotDensOptsPatt] :=
             With[{matr2 = KroneckerProduct[ConjugateTranspose@{vec2}, vec2]},
                 PlotDensityMatrix[matr1, matr2, opts]]
