@@ -296,6 +296,10 @@ CalcExpecPauliProdsFromClassicalShadow[shadow, prods, numBatches] divides the sh
 This is the procedure outlined in Nat. Phys. 16, 1050–1057 (2020)."
     CalcExpecPauliProdsFromClassicalShadow::error = "`1`"
 
+    GetPauliStringFromMatrix::usage = "GetPauliStringFromMatrix[m] returns a complex-weighted sum of Pauli tensors equivalent to the given square, power-of-2 length matrix m.
+If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components."
+    GetPauliStringFromMatrix::error = "`1`"
+
     RecompileCircuit::usage = "RecompileCircuit[circuit, method] returns an equivalent circuit, transpiled to a differnet gate set. The input circuit can contain any unitary gate, with any number of control qubits. Supported methods include:
 \[Bullet] \"SingleQubitAndCNOT\" decompiles the circuit into canonical single-qubit gates (H, Ph, T, S, X, Y, Z, Rx, Ry, Rz), a global phase G, and two-qubit C[X] gates. This method uses a combination of 23 analytic and numerical decompositions.
 \[Bullet] \"CliffordAndRz\" decompiles the circuit into Clifford gates (H, S, X, Y, Z, CX, CY, CZ, SWAP), a global phase G, and non-Clifford Rz.
@@ -3530,6 +3534,43 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetKnownCircuit["LowDepthAnsatz", reps_Integer, paramSymbol_Symbol, numQubits_Integer] :=
             GetKnownCircuit["LowDepthAnsatz", reps, paramSymbol, Range[0,numQubits-1]]
         GetKnownCircuit[___] := invalidArgError[GetKnownCircuit]
+
+
+
+        (* 
+         * Front-end functions for converting
+         * gates and matrices into Pauli strings
+         *)
+
+        getNthPauliTensor[n_, numQubits_] :=
+            PadLeft[IntegerDigits[n,4], numQubits, 0]
+            
+        getNthPauliTensorMatrix[n_, 1] /; n < 4 :=
+            PauliMatrix[n]
+        getNthPauliTensorMatrix[n_, numQubits_] /; n < 4^numQubits :=
+            KroneckerProduct @@ PauliMatrix /@ getNthPauliTensor[n, numQubits]
+            
+        getNthPauliTensorSymbols[0, numQubits_] :=
+            Subscript[Id, numQubits-1]
+        getNthPauliTensorSymbols[n_, numQubits_] :=
+            Times @@ (MapThread[Subscript[#1, #2]&, {
+                getNthPauliTensor[n, numQubits] /. {0->Id,1->X,2->Y,3->Z}, 
+                Reverse @ Range[numQubits] - 1}] /. Subscript[Id, _] -> Nothing)
+
+        isPowerOfTwoSquareMatrix[m_] := 
+            And[SquareMatrixQ @ m, BitAnd[Length@m, Length@m - 1] === 0]
+
+        GetPauliStringFromMatrix[m_?isPowerOfTwoSquareMatrix] := With[
+            {nQb = Log2 @ Length @ m},
+            {coeffs =  1/2^nQb Table[
+                Tr[getNthPauliTensorMatrix[i,nQb] . m],  
+                {i, 0, 4^nQb - 1}]},
+            coeffs . Table[getNthPauliTensorSymbols[n,nQb], {n, 0, 4^nQb-1}]]
+
+        GetPauliStringFromMatrix[_] := (
+            Message[GetPauliStringFromMatrix::error, "The input must be a square matrix with power-of-2 dimensions."];
+            $Failed)
+        GetPauliStringFromMatrix[___] := invalidArgError[GetPauliStringFromMatrix]
     
 
 
