@@ -300,6 +300,12 @@ This is the procedure outlined in Nat. Phys. 16, 1050–1057 (2020)."
 If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components."
     GetPauliStringFromMatrix::error = "`1`"
 
+    RetargetCircuit::usage = "RetargetCircuit[circuit, rules] returns the given circuit but with its target and control qubits modified as per the given rules. The rules can be anything accepted by ReplaceAll.
+For instance RetargetCircuit[..., {0->1, 1->0}] swaps the first and second qubits, and RetargetCircuit[..., q_ -> q + 10] shifts every qubit up by 10.
+This function modifies only the qubits in the circuit, carefully avoiding modifying gate arguments and other data, so it is a safe alternative to simply evaluating (circuit /. rules).
+Custom user gates are supported provided they adhere to the standard QuESTlink subscript format."
+    RetargetCircuit::error = "`1`"
+
     RecompileCircuit::usage = "RecompileCircuit[circuit, method] returns an equivalent circuit, transpiled to a differnet gate set. The input circuit can contain any unitary gate, with any number of control qubits. Supported methods include:
 \[Bullet] \"SingleQubitAndCNOT\" decompiles the circuit into canonical single-qubit gates (H, Ph, T, S, X, Y, Z, Rx, Ry, Rz), a global phase G, and two-qubit C[X] gates. This method uses a combination of 23 analytic and numerical decompositions.
 \[Bullet] \"CliffordAndRz\" decompiles the circuit into Clifford gates (H, S, X, Y, Z, CX, CY, CZ, SWAP), a global phase G, and non-Clifford Rz.
@@ -3571,6 +3577,70 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Message[GetPauliStringFromMatrix::error, "The input must be a square matrix with power-of-2 dimensions."];
             $Failed)
         GetPauliStringFromMatrix[___] := invalidArgError[GetPauliStringFromMatrix]
+
+
+
+        (*
+         * front-end functions for remapping
+         * qubits indices in circuits
+        *)
+
+        (* support both lists and sequences of qubits *)
+        retargetQubits[qubits_, map_] :=
+            qubits /. map
+        retargetQubits[qubits__, map_] :=
+            Sequence @@ ({qubits} /. map)
+
+        (* remap controls and recurse upon inner gate *)
+        retargetGate[map_][ Subscript[C, c__][g_] ] :=
+            Subscript[C, retargetQubits[c, map]] @ retargetGate[map] @ g
+
+        (* avoid modifying arg of parameterised gates *)
+        retargetGate[map_][ Subscript[s:Damp|Deph|Depol|Kraus|KrausNonTP|Matr|P|Ph|Rx|Ry|Rz|U|UNonNorm, t__][args__] ] :=
+            Subscript[s, retargetQubits[t, map]] @ args
+
+        (* modify only the qubits of the Pauli product in R gates *)
+        retargetGate[map_][ R[arg_, Subscript[s_, q__]] ] :=
+            R[arg, Subscript[s, retargetQubits[q,map]]]
+        retargetGate[map_][ R[arg_, Verbatim[Times][ p: Subscript[_,_] .. ]] ] :=
+            R[arg, Times @@ MapThread[Subscript, {
+                {p}[[All, 1]], 
+                retargetQubits[{p}[[All, 2]], map]}]]
+
+        (* no-parameter gates *)
+        retargetGate[map_][ Subscript[s:H|Id|M|S|SWAP|T|X|Y|Z, t__] ] :=
+            Subscript[s, retargetQubits[t, map]]
+
+        (* no-target gates *)
+        retargetGate[_][g:(Fac|G)[__]] := 
+            g
+
+        (* support recognisable custom user gates, and avoid modifying their params  *)
+        retargetGate[map_][ Subscript[s_Symbol, q__] ] :=
+            Subscript[s, retargetQubits[q, map]]
+        retargetGate[map_][ Subscript[s_Symbol, q__][args___] ] :=
+            Subscript[s, retargetQubits[q, map]] @ args
+            
+        (* throw error if qubits can't be identified *)
+        retargetGate[_][g_] :=
+            Throw["Could not identify qubits in unrecognised gate: " <> ToString @ StandardForm @ g]
+
+        (* catch invalid maps with trigger ReplaceAll errors*)
+        RetargetCircuit[_, map_] /; (Head[0 /. map] === ReplaceAll) := 
+            $Failed
+            
+        RetargetCircuit[circ_List, map_] := With[
+            {newCirc = Catch[retargetGate[map] /@ circ]},
+            If[ Not @ StringQ @ newCirc,
+                newCirc,
+                Message[RetargetCircuit::error, newCirc];
+                $Failed]]
+
+        (* overload to accept single gate; note this restricts to integer qubit formats*)
+        RetargetCircuit[gate_?isGateFormat, map_] :=
+            RetargetCircuit[{gate}, map]
+
+        RetargetCircuit[___] := invalidArgError[RetargetCircuit]
     
 
 
