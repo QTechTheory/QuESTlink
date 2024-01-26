@@ -580,7 +580,10 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             
 
         GetQuregMatrix[args___] := (
-            Message[GetQuregState::error, "The deprecated function GetQuregMatrix[] has been automatically replaced with GetQuregState[]. In future, please use GetQuregState[], or temporarily hide this message using Quiet[]."];
+            (* temporarily hide the deprecation notice, so existing code doesn't yet need to be updated *)
+            (*
+                Message[GetQuregState::error, "The deprecated function GetQuregMatrix[] has been automatically replaced with GetQuregState[]. In future, please use GetQuregState[], or temporarily hide this message using Quiet[]."];
+            *)
             GetQuregState[args])
            
             
