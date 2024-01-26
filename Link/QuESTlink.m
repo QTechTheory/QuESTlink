@@ -927,7 +927,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     unpackEncodedDerivCircTerms @ encodedDerivTerms];
                 (* reformat output to complex matrix *)
                 If[data === $Failed, data, ArrayReshape[
-                    MapThread[#1 + I #2 &, {data[[1]], data[[2]]}], 
+                    MapThread[Complex, {data[[1]], data[[2]]}], 
                     Length[varVals] {1,1}]]]
                     
         CalcMetricTensor[__] := invalidArgError[CalcMetricTensor]
@@ -944,7 +944,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 {data=CalcInnerProductsMatrixInternal[quregIds],
                 len=Length[quregIds]},
                 ArrayReshape[
-                    MapThread[#1 + I #2 &, {data[[1]], data[[2]]}], 
+                    MapThread[Complex, {data[[1]], data[[2]]}], 
                     {len, len}
                 ]
             ]
@@ -952,7 +952,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         CalcInnerProducts[braId_Integer, ketIds:{__Integer}] := 
             With[
                 {data=CalcInnerProductsVectorInternal[braId, ketIds]},
-                MapThread[#1 + I #2 &, {data[[1]], data[[2]]}] 
+                MapThread[Complex, {data[[1]], data[[2]]}] 
             ]
         (* error for bad args *)
         CalcInnerProducts[___] := invalidArgError[CalcInnerProducts]
@@ -961,14 +961,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         CalcDensityInnerProducts[quregIds:{__Integer}] :=
             ArrayReshape[
                 MapThread[
-                    #1 + I #2 &,
+                    Complex,
                     CalcDensityInnerProductsMatrixInternal[quregIds]],
                 {Length @ quregIds, Length @ quregIds}
             ]
         (* compute a real vector of density innere products *)
         CalcDensityInnerProducts[rhoId_Integer, omegaIds:{__Integer}] :=
             MapThread[
-                #1 + I #2 &,
+                Complex,
                 CalcDensityInnerProductsVectorInternal[rhoId, omegaIds]]
         (* error for bad args *)
         CalcDensityInnerProducts[___] := invalidArgError[CalcDensityInnerProducts]
@@ -1111,7 +1111,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     RandomReal[{minCoeff,maxCoeff}] * 
                     Times @@ (
                         (* generate uniformly random but unique Pauli tensors *)
-                        MapThread[Subscript[#1, #2]&, {
+                        MapThread[Subscript, {
                             IntegerDigits[tensorInd, 4, numQubits] /. {0->Id,1->X,2->Y,3->Z},
                             Range[0,numQubits-1]}
                             ] /. Subscript[Id, _]->Nothing /. {} -> {Subscript[Id, 0]}),
@@ -2478,7 +2478,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             	R[x_, Verbatim[Times][p:Subscript[_Symbol, _Integer] ..]] :> With[
                     {s = - (-1)^Count[{p}, Subscript[Y,_]]}, 
                     {R[x, Times @ p],
-            		 R[s*x, Times @@ MapThread[(Subscript[#1, #2]&), {{p}[[All,1]], {p}[[All,2]] + numQb}]]}],
+            		 R[s*x, Times @@ MapThread[Subscript, {{p}[[All,1]], {p}[[All,2]] + numQb}]]}],
             	(* gates with no inbuilt conjugates *)
             	Subscript[Y, q_Integer] :> {Subscript[Y, q], Subscript[U, q+numQb][Conjugate@PauliMatrix@2]},
             	Subscript[(g:U|UNonNorm), q__Integer|{q__Integer}][matrOrVec_] :> {Subscript[g, q][matrOrVec], Subscript[g, shiftInds[q,numQb]][Conjugate@matrOrVec]},
@@ -3553,7 +3553,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         getNthPauliTensorSymbols[0, numQubits_] :=
             Subscript[Id, numQubits-1]
         getNthPauliTensorSymbols[n_, numQubits_] :=
-            Times @@ (MapThread[Subscript[#1, #2]&, {
+            Times @@ (MapThread[Subscript, {
                 getNthPauliTensor[n, numQubits] /. {0->Id,1->X,2->Y,3->Z}, 
                 Reverse @ Range[numQubits] - 1}] /. Subscript[Id, _] -> Nothing)
 
