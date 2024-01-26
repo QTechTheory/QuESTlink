@@ -312,6 +312,11 @@ Custom user gates are supported provided they adhere to the standard QuESTlink s
     GetCircuitQubits::usage = "GetCircuitQubits[circuit] returns a sorted list of all qubit indices featured (i.e. controlled upon, or targeted by gates) in the given circuit."
     GetCircuitQubits::error = "`1`"
 
+    GetCircuitCompacted::usage = "GetCircuitCompacted[circuit] returns {out, map} where out is an equivalent circuit but which targets only the lowest possible qubits, and map is a list of rules to restore the original qubits.
+This is useful for computing the smallest-form matrix of gates which otherwise target large-index qubits, via CalcCircuitMatrix @ First @ GetCircuitCompacted @ gate.
+The original circuit is restored by RetargetCircuit[out, map]."
+    GetCircuitCompacted::error = "`1`"
+
     RecompileCircuit::usage = "RecompileCircuit[circuit, method] returns an equivalent circuit, transpiled to a differnet gate set. The input circuit can contain any unitary gate, with any number of control qubits. Supported methods include:
 \[Bullet] \"SingleQubitAndCNOT\" decompiles the circuit into canonical single-qubit gates (H, Ph, T, S, X, Y, Z, Rx, Ry, Rz), a global phase G, and two-qubit C[X] gates. This method uses a combination of 23 analytic and numerical decompositions.
 \[Bullet] \"CliffordAndRz\" decompiles the circuit into Clifford gates (H, S, X, Y, Z, CX, CY, CZ, SWAP), a global phase G, and non-Clifford Rz.
@@ -3697,6 +3702,17 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetCircuitQubits[circ_?isCircuitFormat] /; Head[circ] === List :=
             Rest /@ getSymbCtrlsTargs /@ circ // Flatten // DeleteDuplicates // Sort
         GetCircuitQubits[___] := invalidArgError[GetCircuitQubits]
+
+
+
+        GetCircuitCompacted[circuit_?isCircuitFormat] := Module[
+            {qubits, map, out},
+            qubits = GetCircuitQubits[circuit];
+            If[qubits === $Failed, Return @ $Failed];
+            map = MapThread[Rule, {qubits, Range @ Length @ qubits - 1}];
+            {RetargetCircuit[circuit, map], Reverse /@ map}
+        ]
+        GetCircuitCompacted[___] := invalidArgError[GetCircuitCompacted]
 
 
 
