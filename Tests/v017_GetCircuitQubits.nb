@@ -1,0 +1,1144 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     43714,       1136]
+NotebookOptionsPosition[     38701,       1035]
+NotebookOutlinePosition[     39095,       1051]
+CellTagsIndexPosition[     39052,       1048]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["GetCircuitQubits", "Title",
+ CellChangeTimes->{{3.913273690088934*^9, 3.913273712038406*^9}, {
+  3.915199103735641*^9, 3.915199106675872*^9}, {3.915269826205503*^9, 
+  3.9152698282606173`*^9}, {3.915274538692251*^9, 
+  3.915274553398651*^9}},ExpressionUUID->"639163ff-fb96-4d1a-a038-\
+97c95367e718"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", " ", "@", " ", 
+   RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Import", "[", "\"\<../Link/QuESTlink.m\>\"", "]"}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.91451986218738*^9, 3.91451987324094*^9}, {
+  3.915269087976445*^9, 3.915269088235178*^9}},
+ CellLabel->"In[23]:=",ExpressionUUID->"01a37c46-9a28-4cdc-af2f-4e8d33e0cac9"],
+
+Cell[CellGroupData[{
+
+Cell["Doc", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 
+  3.9151991786465263`*^9}},ExpressionUUID->"e85875dc-59e0-467e-8eb6-\
+030323bf6cff"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "GetCircuitQubits"}]], "Input",
+ CellChangeTimes->{{3.9152745562671947`*^9, 3.915274561018203*^9}},
+ CellLabel->"In[25]:=",ExpressionUUID->"bad4bf22-4e5d-430f-b99a-b8c6fc9b8372"],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   FrameBox[
+    DynamicModuleBox[{System`InformationDump`open$$ = False, 
+     System`InformationDump`mouseOver$$ = False}, 
+     PaneSelectorBox[{True->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False,
+             BaseStyle -> None],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetCircuitQubits[circuit] returns a sorted list of \
+all qubit indices featured (i.e. controlled upon, or targeted by gates) in \
+the given circuit.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          PaneBox[
+           TagBox[GridBox[{
+              {
+               StyleBox[
+                TagBox[
+                 TooltipBox[
+                  StyleBox["\<\" Definitions\"\>", "InformationRowLabel",
+                   StripOnInput->False],
+                  "\"Definitions\"",
+                  TooltipStyle->"TextStyling"],
+                 Annotation[#, "Definitions", "Tooltip"]& ], "DialogStyle",
+                StripOnInput->False]},
+              {
+               TemplateBox[{"\"\[ThinSpace]\"", 
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"GetCircuitQubits", "[", 
+                    RowBox[{
+                    "QuEST`Private`gate_", "?", 
+                    "QuEST`Private`isGateFormat"}], "]"}], ":=", 
+                    RowBox[{"GetCircuitQubits", "[", 
+                    RowBox[{"{", "QuEST`Private`gate", "}"}], "]"}]}]}, {
+                   " "}, {
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"GetCircuitQubits", "[", 
+                    
+                    RowBox[{
+                    "QuEST`Private`circ_", "?", 
+                    "QuEST`Private`isCircuitFormat"}], "]"}], "/;", 
+                    RowBox[{
+                    RowBox[{"Head", "[", "QuEST`Private`circ", "]"}], "===", 
+                    "List"}]}], ":=", 
+                    RowBox[{"Sort", "[", 
+                    RowBox[{"DeleteDuplicates", "[", 
+                    RowBox[{"Flatten", "[", 
+                    RowBox[{"Rest", "/@", 
+                    
+                    RowBox[{"QuEST`Private`getSymbCtrlsTargs", "/@", 
+                    "QuEST`Private`circ"}]}], "]"}], "]"}], "]"}]}]}, {" "}, {
+                   
+                    RowBox[{
+                    RowBox[{"GetCircuitQubits", "[", "___", "]"}], ":=", 
+                    
+                    RowBox[{
+                    "QuEST`Private`invalidArgError", "[", "GetCircuitQubits", 
+                    "]"}]}]}, {" "}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]},
+                "RowDefault"]}
+             },
+             DefaultBaseStyle->"Column",
+             GridBoxAlignment->{"Columns" -> {{Left}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+            "Column"],
+           FrameMargins->{{6, 0}, {3, 6}}], "\<\"\"\>"},
+         {
+          PaneBox[GridBox[{
+             {
+              
+              DynamicModuleBox[{System`InformationDump`open$$ = {
+               False, False, False, False, False, False}}, 
+               StyleBox[GridBox[{
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Full Name\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"FullName\"",
+                    TooltipStyle->"TextStyling"],
+                    
+                    Annotation[#, "FullName", 
+                    "Tooltip"]& ], "\<\"QuEST`GetCircuitQubits\"\>"}
+                 },
+                 AutoDelete->False,
+                 GridBoxAlignment->{"Columns" -> {Right, Left}},
+                 GridBoxDividers->None,
+                 GridBoxItemSize->{"Columns" -> {Automatic, Automatic}},
+                 GridBoxSpacings->{"Columns" -> {
+                    Offset[0.27999999999999997`], {
+                    Offset[0.5599999999999999]}, 
+                    Offset[0.27999999999999997`]}, "Rows" -> {
+                    Offset[0.2], {
+                    Offset[0.8]}, 
+                    Offset[0.2]}}], "DialogStyle",
+                StripOnInput->False],
+               DynamicModuleValues:>{}]}
+            },
+            DefaultBaseStyle->"Column",
+            GridBoxAlignment->{"Columns" -> {{Left}}},
+            GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings->{"Columns" -> {
+                Offset[0.27999999999999997`], {
+                 Offset[0.5599999999999999]}, 
+                Offset[0.27999999999999997`]}, "Rows" -> {
+                Offset[0.2], {
+                 Offset[3.6]}, 
+                Offset[0.2]}}],
+           FrameMargins->{{6, 6}, {6, 3}}], ""},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpener"]], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpenerHot"]]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, False],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"], False->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetCircuitQubits[circuit] returns a sorted list of \
+all qubit indices featured (i.e. controlled upon, or targeted by gates) in \
+the given circuit.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {2., 8.}}], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpenerHot"],
+               ImageSizeCache->{10., {2., 8.}}]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, True],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}, Dynamic[System`InformationDump`open$$],
+      BaselinePosition->Baseline,
+      FrameMargins->0,
+      ImageSize->Automatic],
+     DynamicModuleValues:>{}],
+    BaseStyle->"InformationGridFrame",
+    StripOnInput->False], "InformationGridPlain",
+   StripOnInput->False],
+  InformationData[<|
+   "ObjectType" -> "Symbol", "Usage" -> 
+    "GetCircuitQubits[circuit] returns a sorted list of all qubit indices \
+featured (i.e. controlled upon, or targeted by gates) in the given circuit.", 
+    "Documentation" -> None, "OwnValues" -> None, "UpValues" -> None, 
+    "DownValues" -> 
+    Information`InformationValueForm[
+     DownValues, QuEST`GetCircuitQubits, {QuEST`GetCircuitQubits[
+         PatternTest[
+          Pattern[QuEST`Private`gate, 
+           Blank[]], QuEST`Private`isGateFormat]] :> 
+       QuEST`GetCircuitQubits[{QuEST`Private`gate}], Condition[
+         QuEST`GetCircuitQubits[
+          PatternTest[
+           Pattern[QuEST`Private`circ, 
+            Blank[]], QuEST`Private`isCircuitFormat]], 
+         Head[QuEST`Private`circ] === List] :> Sort[
+         DeleteDuplicates[
+          Flatten[
+           Map[Rest, 
+            Map[QuEST`Private`getSymbCtrlsTargs, QuEST`Private`circ]]]]], 
+       QuEST`GetCircuitQubits[
+         BlankNullSequence[]] :> 
+       QuEST`Private`invalidArgError[QuEST`GetCircuitQubits]}], "SubValues" -> 
+    None, "DefaultValues" -> None, "NValues" -> None, "FormatValues" -> None, 
+    "Options" -> None, "Attributes" -> {}, "FullName" -> 
+    "QuEST`GetCircuitQubits"|>, False]]], "Output",
+ CellChangeTimes->{3.915274561288517*^9},
+ CellLabel->"Out[25]=",ExpressionUUID->"1735d32c-af5f-46ab-99fd-1d8dd3635668"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tests", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.91526984596105*^9, 3.915269846573016*^9}, {3.915270237920871*^9, 
+  3.9152702382838287`*^9}},ExpressionUUID->"d67da5ad-247f-4052-8a1c-\
+f2b9158d6b2d"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", " ", "@", " ", 
+  RowBox[{"Circuit", "[", " ", 
+   RowBox[{
+    SubscriptBox["X", "0"], " ", 
+    RowBox[{
+     SubscriptBox["C", "1"], "[", 
+     RowBox[{
+      SubscriptBox["Rz", "3"], "[", "x", "]"}], "]"}]}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.915274722425503*^9, 3.91527472686661*^9}, {
+  3.915274897350501*^9, 3.915274907207065*^9}},
+ CellLabel->"In[51]:=",ExpressionUUID->"ebd9058f-acf4-4a58-b5a6-cf2c9d20774d"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0", ",", "1", ",", "3"}], "}"}]], "Output",
+ CellChangeTimes->{3.915274727110601*^9, 3.9152749074911537`*^9},
+ CellLabel->"Out[51]=",ExpressionUUID->"c8125602-2e7d-40f7-83f3-a2c78bee08ff"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Gate coverage", "Subsection",
+ CellChangeTimes->{{3.915274616822427*^9, 3.91527462180264*^9}, {
+  3.915274663646264*^9, 
+  3.9152746683644114`*^9}},ExpressionUUID->"3abe115f-64f0-44c1-83b9-\
+32163b259a2c"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "QuEST`Gate`*"}]], "Input",
+ CellChangeTimes->{{3.9152745685225267`*^9, 3.915274579704729*^9}},
+ CellLabel->"In[28]:=",ExpressionUUID->"cbebff6f-1d47-4453-be88-0822a2270184"],
+
+Cell[BoxData[
+ StyleBox[
+  FrameBox[GridBox[{
+     {
+      DynamicModuleBox[{Typeset`open$$ = True}, 
+       PaneSelectorBox[{False->
+        ButtonBox[
+         RowBox[{
+          
+          DynamicBox[FEPrivate`FrontEndResource[
+           "FEBitmaps", "RightPointerOpener"]], " ", 
+          StyleBox["QuEST`Gate`", "InformationGridGroupHeader"]}],
+         Appearance->None,
+         BaseStyle->"InformationGridLink",
+         ButtonFunction:>FEPrivate`Set[Typeset`open$$, True],
+         Evaluator->Automatic,
+         Method->"Preemptive"], True->
+        PaneBox[GridBox[{
+           {
+            ButtonBox[
+             RowBox[{
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {3., 7.}}], " ", 
+              StyleBox["QuEST`Gate`", "InformationGridGroupHeader"]}],
+             Appearance->None,
+             BaseStyle->"InformationGridLink",
+             ButtonFunction:>FEPrivate`Set[Typeset`open$$, False],
+             Evaluator->Automatic,
+             Method->"Preemptive"]},
+           {
+            PaneBox[GridBox[{
+               {
+                ButtonBox[
+                 StyleBox["Damp", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Damp", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["H", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "H", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Matr", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Matr", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Ry", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Ry", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["U", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "U", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["Deph", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Deph", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Id", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Id", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["P", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "P", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Rz", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Rz", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["UNonNorm", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "UNonNorm", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["Depol", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Depol", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Kraus", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Kraus", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Ph", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Ph", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["S", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "S", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["X", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "X", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["Fac", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Fac", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["KrausNonTP", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "KrausNonTP", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["R", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "R", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["SWAP", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "SWAP", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Y", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Y", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["G", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "G", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["M", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "M", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Rx", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Rx", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["T", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "T", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Z", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-9f662aab-ae8f-4488-91bc-9728974f2158", {
+                   "Z", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic]}
+              },
+              DefaultBaseStyle->"Text",
+              
+              GridBoxAlignment->{
+               "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+              GridBoxItemSize->{"Columns" -> {{
+                   Scaled[0.19]}}}],
+             ImageMargins->{{10, 0}, {0, 2}}]}
+          },
+          GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}}],
+         FrameMargins->{{0, 0}, {8, 0}}]}, Dynamic[Typeset`open$$],
+        ImageSize->Automatic]]}
+    },
+    GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+    GridBoxDividers->{"ColumnsIndexed" -> {{False}}, "RowsIndexed" -> {}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.5599999999999999]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.8]}, 
+        Offset[0.2]}}],
+   BaseStyle->"InformationTitleFrame"], "InformationGridPlain"]], "Output",
+ CellChangeTimes->{{3.915274572806575*^9, 3.915274579941867*^9}},
+ CellLabel->"Out[28]=",ExpressionUUID->"21755bd5-8772-4fc9-8450-0df820413919"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", " ", "@", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    SubscriptBox["Damp", "0"], ",", " ", 
+    SubscriptBox["Deph", 
+     RowBox[{"1", ",", "2"}]], ",", " ", 
+    SubscriptBox["Depol", 
+     RowBox[{"3", ",", "4"}]]}], "}"}]}]], "Input",
+ CellChangeTimes->{{3.915274655999342*^9, 3.915274671414132*^9}, {
+  3.915274706134199*^9, 3.915274717681219*^9}},
+ CellLabel->"In[39]:=",ExpressionUUID->"f813bec1-b306-4ce8-96e4-a5fd5fc258ba"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0", ",", "1", ",", "2", ",", "3", ",", "4"}], "}"}]], "Output",
+ CellChangeTimes->{3.915274672319172*^9, 3.915274717989316*^9},
+ CellLabel->"Out[39]=",ExpressionUUID->"c0ae1a2c-1ab1-4b01-bb63-bd893ce46874"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", " ", "@", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"Fac", "[", "x", "]"}], ",", " ", 
+    RowBox[{"G", "[", "x", "]"}]}], "}"}]}]], "Input",
+ CellChangeTimes->{{3.915274722425503*^9, 3.91527472686661*^9}},
+ CellLabel->"In[40]:=",ExpressionUUID->"6499b3b0-b528-4dae-bbcb-ad3c509eb72f"],
+
+Cell[BoxData[
+ RowBox[{"{", "}"}]], "Output",
+ CellChangeTimes->{3.915274727110601*^9},
+ CellLabel->"Out[40]=",ExpressionUUID->"ef95ca0b-6c98-49c5-9253-72b9e5830aca"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", " ", "@", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    SubscriptBox["H", "0"], ",", " ", 
+    SubscriptBox["Id", 
+     RowBox[{"1", ",", "2"}]], ",", " ", 
+    RowBox[{
+     SubscriptBox["Kraus", 
+      RowBox[{"3", ",", "4"}]], "[", "x", "]"}], ",", " ", 
+    SubscriptBox["KrausNonTP", 
+     RowBox[{"5", ",", "6"}]]}], "}"}]}]], "Input",
+ CellChangeTimes->{{3.915274731795829*^9, 3.915274754873932*^9}},
+ CellLabel->"In[44]:=",ExpressionUUID->"1ce2786b-e622-43ab-9e9b-79155064a318"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0", ",", "1", ",", "2", ",", "3", ",", "4", ",", "5", ",", "6"}], 
+  "}"}]], "Output",
+ CellChangeTimes->{{3.915274741203142*^9, 3.915274756573296*^9}},
+ CellLabel->"Out[44]=",ExpressionUUID->"ab44f128-f8c8-4f5e-9aad-3a9714508c3a"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", " ", "@", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    SubscriptBox["M", "0"], ",", " ", 
+    RowBox[{
+     SubscriptBox["Matr", 
+      RowBox[{"1", ",", "2"}]], "[", "m", "]"}], ",", " ", 
+    RowBox[{
+     SubscriptBox["P", 
+      RowBox[{"3", ",", "4"}]], "[", "0", "]"}], ",", " ", 
+    RowBox[{
+     SubscriptBox["Ph", 
+      RowBox[{"5", ",", "6", ",", "7"}]], "[", "0", "]"}]}], "}"}]}]], "Input",\
+
+ CellChangeTimes->{{3.915274758247052*^9, 3.9152747811248617`*^9}},
+ CellLabel->"In[45]:=",ExpressionUUID->"40b70e63-31f9-4de8-8d08-894257948196"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+  "0", ",", "1", ",", "2", ",", "3", ",", "4", ",", "5", ",", "6", ",", "7"}],
+   "}"}]], "Output",
+ CellChangeTimes->{3.915274781373811*^9},
+ CellLabel->"Out[45]=",ExpressionUUID->"1c06dd76-7b4b-474e-9e03-6a59876a59a9"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", " ", "@", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"R", "[", 
+     RowBox[{"\[Pi]", ",", " ", 
+      SubscriptBox["X", "0"]}], "]"}], ",", " ", 
+    RowBox[{"R", "[", 
+     RowBox[{"\[Pi]", ",", " ", 
+      RowBox[{
+       SubscriptBox["X", "1"], 
+       SubscriptBox["Y", "2"], 
+       SubscriptBox["Z", "3"]}]}], "]"}]}], "}"}]}]], "Input",
+ CellChangeTimes->{{3.915274784360952*^9, 3.915274794854539*^9}},
+ CellLabel->"In[46]:=",ExpressionUUID->"8e3d3b9a-f186-441a-aadd-c1c84422d9aa"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0", ",", "1", ",", "2", ",", "3"}], "}"}]], "Output",
+ CellChangeTimes->{3.9152747965962143`*^9},
+ CellLabel->"Out[46]=",ExpressionUUID->"f25d2adf-75f4-48fa-b28e-ed1bed090af6"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", " ", "@", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rx", "0"], "[", "x", "]"}], ",", " ", 
+    RowBox[{
+     SubscriptBox["Ry", 
+      RowBox[{"1", ",", "2"}]], "[", "y", "]"}], ",", " ", 
+    RowBox[{
+     SubscriptBox["Rz", 
+      RowBox[{"3", ",", "4", ",", "5"}]], "[", "z", "]"}]}], "}"}]}]], "Input",\
+
+ CellChangeTimes->{{3.915274798975732*^9, 3.9152748118778276`*^9}},
+ CellLabel->"In[47]:=",ExpressionUUID->"9b8702de-ac03-4a25-9fda-8cb25ebedb46"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0", ",", "1", ",", "2", ",", "3", ",", "4", ",", "5"}], 
+  "}"}]], "Output",
+ CellChangeTimes->{3.9152748141137123`*^9},
+ CellLabel->"Out[47]=",ExpressionUUID->"c4e1169b-50dd-4caa-9525-1f8fa5f13aa1"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", " ", "@", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    SubscriptBox["S", "0"], ",", " ", 
+    SubscriptBox["SWAP", 
+     RowBox[{"1", ",", "2"}]], ",", " ", 
+    SubscriptBox["T", "3"], ",", " ", 
+    RowBox[{
+     SubscriptBox["U", 
+      RowBox[{"4", ",", "5"}]], "[", "m", "]"}], ",", " ", 
+    RowBox[{
+     SubscriptBox["UNonNorm", 
+      RowBox[{"6", ",", "7"}]], "[", "m", "]"}]}], "}"}]}]], "Input",
+ CellChangeTimes->{{3.915274815133432*^9, 3.915274830983835*^9}},
+ CellLabel->"In[48]:=",ExpressionUUID->"f4940131-afe5-4850-8df1-db6e965c7cf5"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+  "0", ",", "1", ",", "2", ",", "3", ",", "4", ",", "5", ",", "6", ",", "7"}],
+   "}"}]], "Output",
+ CellChangeTimes->{3.9152748318263187`*^9},
+ CellLabel->"Out[48]=",ExpressionUUID->"8e396a51-a5c1-47d5-b5a6-b96a01041df5"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", " ", "@", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    SubscriptBox["X", "0"], ",", " ", 
+    SubscriptBox["Y", "1"], ",", " ", 
+    SubscriptBox["Z", "2"]}], "}"}]}]], "Input",
+ CellChangeTimes->{{3.915274833244372*^9, 3.915274839731513*^9}},
+ CellLabel->"In[49]:=",ExpressionUUID->"0b109e15-fb7d-42ef-8ec9-220ba1282516"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0", ",", "1", ",", "2"}], "}"}]], "Output",
+ CellChangeTimes->{3.915274840402628*^9},
+ CellLabel->"Out[49]=",ExpressionUUID->"a5599ec1-c983-48ac-8394-4bfd4513f978"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Controls", "Subsection",
+ CellChangeTimes->{{3.915274616822427*^9, 3.91527462180264*^9}, {
+  3.915274663646264*^9, 3.9152746683644114`*^9}, {3.915274850039935*^9, 
+  3.9152748510123863`*^9}},ExpressionUUID->"fb176237-0fdf-4680-81b0-\
+8793347a1890"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", " ", "@", " ", 
+  RowBox[{
+   SubscriptBox["C", 
+    RowBox[{"2", ",", "5"}]], " ", "@", " ", 
+   RowBox[{"R", "[", 
+    RowBox[{"\[Pi]", ",", " ", 
+     RowBox[{
+      SubscriptBox["X", "1"], 
+      SubscriptBox["Z", "10"]}]}], "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.915274852248126*^9, 3.91527486426856*^9}},
+ CellLabel->"In[50]:=",ExpressionUUID->"0aeda7e5-c30c-427b-bc98-3db1bd0819ae"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"1", ",", "2", ",", "5", ",", "10"}], "}"}]], "Output",
+ CellChangeTimes->{3.915274864584215*^9},
+ CellLabel->"Out[50]=",ExpressionUUID->"793b6c6d-f6bc-4c14-af90-d69a35d825ae"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Edge cases", "Subsection",
+ CellChangeTimes->{{3.915274616822427*^9, 
+  3.91527462180264*^9}},ExpressionUUID->"92deb7b5-6e22-4776-afcd-\
+2cebdbab0a77"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", "[", 
+  SubscriptBox["Poop", "0"], "]"}]], "Input",
+ CellChangeTimes->{{3.9152745810785427`*^9, 3.915274607866005*^9}},
+ CellLabel->"In[33]:=",ExpressionUUID->"23d7cf00-9339-4815-9a56-c93daf574b31"],
+
+Cell[BoxData[
+ RowBox[{"{", "0", "}"}]], "Output",
+ CellChangeTimes->{{3.915274585086111*^9, 3.915274608256358*^9}},
+ CellLabel->"Out[33]=",ExpressionUUID->"ebd9661b-1743-4e3d-a476-e50fc8abd2cb"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", "[", 
+  RowBox[{"G", "[", "x", "]"}], "]"}]], "Input",
+ CellChangeTimes->{{3.9152745883793*^9, 3.915274590603397*^9}},
+ CellLabel->"In[30]:=",ExpressionUUID->"e97230ce-1a8f-4da9-976e-7171f412806e"],
+
+Cell[BoxData[
+ RowBox[{"{", "}"}]], "Output",
+ CellChangeTimes->{3.915274590792303*^9},
+ CellLabel->"Out[30]=",ExpressionUUID->"cf2a2b82-4ef3-434d-8858-165cea4a132a"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Errors", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.91526984596105*^9, 3.915269846573016*^9}, {3.915270237920871*^9, 
+  3.9152702382838287`*^9}, {3.915274913257629*^9, 
+  3.9152749149021606`*^9}},ExpressionUUID->"4e4666dc-037b-4277-a756-\
+1f1199557e90"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", "[", " ", "Eh", " ", "]"}]], "Input",
+ CellChangeTimes->{{3.915274918414113*^9, 3.915274932598196*^9}},
+ CellLabel->"In[53]:=",ExpressionUUID->"2336828e-04a9-4b7c-b763-034c4449fdc8"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetCircuitQubits", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See ?GetCircuitQubits\\\
+\\\\\"\\\"}]\\)\"", 2, 53, 5, 32423023848683450501, "Local", 
+   "QuEST`GetCircuitQubits"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.91527492062757*^9, 3.9152749328843803`*^9}},
+ CellLabel->
+  "During evaluation of \
+In[53]:=",ExpressionUUID->"b52c219e-3229-4366-b2e5-1f6e98fcdc35"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.915274920639861*^9, 3.915274932894642*^9}},
+ CellLabel->"Out[53]=",ExpressionUUID->"13d966f2-2442-426d-bf5b-0aaaa6581d2b"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitQubits", "[", " ", 
+  SubscriptBox["Bah", "eh"], " ", "]"}]], "Input",
+ CellChangeTimes->{{3.915274918414113*^9, 3.915274942765522*^9}},
+ CellLabel->"In[54]:=",ExpressionUUID->"5cbc7e42-96a9-4155-9544-452b684efa85"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetCircuitQubits", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See ?GetCircuitQubits\\\
+\\\\\"\\\"}]\\)\"", 2, 54, 6, 32423023848683450501, "Local", 
+   "QuEST`GetCircuitQubits"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.915274943086417*^9},
+ CellLabel->
+  "During evaluation of \
+In[54]:=",ExpressionUUID->"34e5b1a9-5f51-46b9-bb5c-ab8707cf5846"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.915274943094136*^9},
+ CellLabel->"Out[54]=",ExpressionUUID->"ffd3e50c-fa6c-47bd-a9fd-4dddc6126eaf"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{720, 805},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+FrontEndVersion->"13.0 for Mac OS X x86 (64-bit) (February 4, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"33f6b774-7ab4-4580-89f9-6ce1221ddd85"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 305, 5, 98, "Title",ExpressionUUID->"639163ff-fb96-4d1a-a038-97c95367e718"],
+Cell[888, 29, 429, 9, 52, "Input",ExpressionUUID->"01a37c46-9a28-4cdc-af2f-4e8d33e0cac9"],
+Cell[CellGroupData[{
+Cell[1342, 42, 296, 5, 69, "Chapter",ExpressionUUID->"e85875dc-59e0-467e-8eb6-030323bf6cff"],
+Cell[CellGroupData[{
+Cell[1663, 51, 206, 3, 30, "Input",ExpressionUUID->"bad4bf22-4e5d-430f-b99a-b8c6fc9b8372"],
+Cell[1872, 56, 11873, 292, 118, "Output",ExpressionUUID->"1735d32c-af5f-46ab-99fd-1d8dd3635668"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[13794, 354, 394, 6, 69, "Chapter",ExpressionUUID->"d67da5ad-247f-4052-8a1c-f2b9158d6b2d"],
+Cell[CellGroupData[{
+Cell[14213, 364, 467, 11, 30, "Input",ExpressionUUID->"ebd9058f-acf4-4a58-b5a6-cf2c9d20774d"],
+Cell[14683, 377, 228, 4, 34, "Output",ExpressionUUID->"c8125602-2e7d-40f7-83f3-a2c78bee08ff"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[14948, 386, 211, 4, 54, "Subsection",ExpressionUUID->"3abe115f-64f0-44c1-83b9-32163b259a2c"],
+Cell[CellGroupData[{
+Cell[15184, 394, 202, 3, 30, "Input",ExpressionUUID->"cbebff6f-1d47-4453-be88-0822a2270184"],
+Cell[15389, 399, 12822, 311, 180, "Output",ExpressionUUID->"21755bd5-8772-4fc9-8450-0df820413919"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[28248, 715, 469, 11, 34, "Input",ExpressionUUID->"f813bec1-b306-4ce8-96e4-a5fd5fc258ba"],
+Cell[28720, 728, 246, 4, 34, "Output",ExpressionUUID->"c0ae1a2c-1ab1-4b01-bb63-bd893ce46874"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[29003, 737, 332, 7, 30, "Input",ExpressionUUID->"6499b3b0-b528-4dae-bbcb-ad3c509eb72f"],
+Cell[29338, 746, 166, 3, 34, "Output",ExpressionUUID->"ef95ca0b-6c98-49c5-9253-72b9e5830aca"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[29541, 754, 521, 13, 33, "Input",ExpressionUUID->"1ce2786b-e622-43ab-9e9b-79155064a318"],
+Cell[30065, 769, 271, 5, 34, "Output",ExpressionUUID->"ab44f128-f8c8-4f5e-9aad-3a9714508c3a"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[30373, 779, 589, 16, 33, "Input",ExpressionUUID->"40b70e63-31f9-4de8-8d08-894257948196"],
+Cell[30965, 797, 260, 6, 34, "Output",ExpressionUUID->"1c06dd76-7b4b-474e-9e03-6a59876a59a9"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[31262, 808, 535, 14, 30, "Input",ExpressionUUID->"8e3d3b9a-f186-441a-aadd-c1c84422d9aa"],
+Cell[31800, 824, 216, 4, 34, "Output",ExpressionUUID->"f25d2adf-75f4-48fa-b28e-ed1bed090af6"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[32053, 833, 522, 14, 34, "Input",ExpressionUUID->"9b8702de-ac03-4a25-9fda-8cb25ebedb46"],
+Cell[32578, 849, 239, 5, 34, "Output",ExpressionUUID->"c4e1169b-50dd-4caa-9525-1f8fa5f13aa1"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[32854, 859, 588, 15, 33, "Input",ExpressionUUID->"f4940131-afe5-4850-8df1-db6e965c7cf5"],
+Cell[33445, 876, 262, 6, 34, "Output",ExpressionUUID->"8e396a51-a5c1-47d5-b5a6-b96a01041df5"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[33744, 887, 358, 8, 30, "Input",ExpressionUUID->"0b109e15-fb7d-42ef-8ec9-220ba1282516"],
+Cell[34105, 897, 204, 4, 34, "Output",ExpressionUUID->"a5599ec1-c983-48ac-8394-4bfd4513f978"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[34358, 907, 254, 4, 54, "Subsection",ExpressionUUID->"fb176237-0fdf-4680-81b0-8793347a1890"],
+Cell[CellGroupData[{
+Cell[34637, 915, 436, 11, 33, "Input",ExpressionUUID->"0aeda7e5-c30c-427b-bc98-3db1bd0819ae"],
+Cell[35076, 928, 215, 4, 34, "Output",ExpressionUUID->"793b6c6d-f6bc-4c14-af90-d69a35d825ae"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[35340, 938, 157, 3, 54, "Subsection",ExpressionUUID->"92deb7b5-6e22-4776-afcd-2cebdbab0a77"],
+Cell[CellGroupData[{
+Cell[35522, 945, 241, 4, 32, "Input",ExpressionUUID->"23d7cf00-9339-4815-9a56-c93daf574b31"],
+Cell[35766, 951, 195, 3, 34, "Output",ExpressionUUID->"ebd9661b-1743-4e3d-a476-e50fc8abd2cb"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[35998, 959, 240, 4, 30, "Input",ExpressionUUID->"e97230ce-1a8f-4da9-976e-7171f412806e"],
+Cell[36241, 965, 166, 3, 34, "Output",ExpressionUUID->"cf2a2b82-4ef3-434d-8858-165cea4a132a"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[36468, 975, 446, 7, 69, "Chapter",ExpressionUUID->"4e4666dc-037b-4277-a756-1f1199557e90"],
+Cell[CellGroupData[{
+Cell[36939, 986, 225, 3, 30, "Input",ExpressionUUID->"2336828e-04a9-4b7c-b763-034c4449fdc8"],
+Cell[37167, 991, 445, 10, 28, "Message",ExpressionUUID->"b52c219e-3229-4366-b2e5-1f6e98fcdc35"],
+Cell[37615, 1003, 179, 2, 34, "Output",ExpressionUUID->"13d966f2-2442-426d-bf5b-0aaaa6581d2b"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[37831, 1010, 249, 4, 30, "Input",ExpressionUUID->"5cbc7e42-96a9-4155-9544-452b684efa85"],
+Cell[38083, 1016, 420, 10, 28, "Message",ExpressionUUID->"34e5b1a9-5f51-46b9-bb5c-ab8707cf5846"],
+Cell[38506, 1028, 155, 2, 34, "Output",ExpressionUUID->"ffd3e50c-fa6c-47bd-a9fd-4dddc6126eaf"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+

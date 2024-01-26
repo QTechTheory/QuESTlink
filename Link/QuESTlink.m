@@ -309,6 +309,9 @@ This function modifies only the qubits in the circuit, carefully avoiding modify
 Custom user gates are supported provided they adhere to the standard QuESTlink subscript format."
     RetargetCircuit::error = "`1`"
 
+    GetCircuitQubits::usage = "GetCircuitQubits[circuit] returns a sorted list of all qubit indices featured (i.e. controlled upon, or targeted by gates) in the given circuit."
+    GetCircuitQubits::error = "`1`"
+
     RecompileCircuit::usage = "RecompileCircuit[circuit, method] returns an equivalent circuit, transpiled to a differnet gate set. The input circuit can contain any unitary gate, with any number of control qubits. Supported methods include:
 \[Bullet] \"SingleQubitAndCNOT\" decompiles the circuit into canonical single-qubit gates (H, Ph, T, S, X, Y, Z, Rx, Ry, Rz), a global phase G, and two-qubit C[X] gates. This method uses a combination of 23 analytic and numerical decompositions.
 \[Bullet] \"CliffordAndRz\" decompiles the circuit into Clifford gates (H, S, X, Y, Z, CX, CY, CZ, SWAP), a global phase G, and non-Clifford Rz.
@@ -3687,6 +3690,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         RetargetCircuit[___] := invalidArgError[RetargetCircuit]
     
+
+
+        GetCircuitQubits[gate_?isGateFormat] :=
+            GetCircuitQubits @ {gate}
+        GetCircuitQubits[circ_?isCircuitFormat] /; Head[circ] === List :=
+            Rest /@ getSymbCtrlsTargs /@ circ // Flatten // DeleteDuplicates // Sort
+        GetCircuitQubits[___] := invalidArgError[GetCircuitQubits]
+
 
 
         (* 
