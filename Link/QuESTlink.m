@@ -128,9 +128,12 @@ GetAmp[qureg, row, col] returns the complex amplitude of the density-matrix qure
     SetAmp::usage = "SetAmp[qureg, index, amp] modifies the indexed amplitude of the state-vector qureg to complex number amp.
 SetAmp[qureg, row, col, amp] modifies the indexed (row, col) amplitude of the density-matrix qureg to complex number amp"
     SetAmp::error = "`1`"
-    
-    GetQuregMatrix::usage = "GetQuregMatrix[qureg] returns the state-vector or density matrix associated with the given qureg."
-    GetQuregMatrix::error = "`1`"
+
+    GetQuregState::usage = "GetQuregState[qureg, form] returns the state-vector or density matrix amplitudes associated with the given qureg, in the specified form. Options for form are:
+\[Bullet] \"ZBasisMatrix\" (default) returns the amplitudes in the standard Z-basis, as a complex vector or matrix.
+\[Bullet] \"ZBasisKets\" returns a sum of complex weighted kets (or ket-bra projectors) of qubits in the standard Z-basis.
+It is often convenient to pass the returned structure to Chop[] in order to remove negligible terms and numerical artefacts."
+    GetQuregState::error = "`1`"
     
     SetQuregMatrix::usage = "SetQuregMatrix[qureg, matr] modifies qureg, overwriting its statevector or density matrix with that passed."
     SetQuregMatrix::error = "`1`"
@@ -295,6 +298,31 @@ Use option ShowProgress to monitor the progress of sampling."
 CalcExpecPauliProdsFromClassicalShadow[shadow, prods, numBatches] divides the shadow into batches, computes the expected values of each, then returns their medians. This may suppress measurement errors. The default numBatches is 10. 
 This is the procedure outlined in Nat. Phys. 16, 1050–1057 (2020)."
     CalcExpecPauliProdsFromClassicalShadow::error = "`1`"
+
+    GetPauliStringFromMatrix::usage = "GetPauliStringFromMatrix[m] returns a complex-weighted sum of Pauli tensors equivalent to the given square, power-of-2 length matrix m.
+If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components."
+    GetPauliStringFromMatrix::error = "`1`"
+
+    CalcCircuitGenerator::usage = "CalcCircuitGenerator[circuit] computes the Pauli string generator G of the given circuit, whereby circuit = Exp[i G]. 
+\[Bullet] If circuit contains decoherence operators, the generator of the circuit's superoperator is returned. See ?GetCircuitSuperoperator.
+\[Bullet] If circuit is unitary, the resulting coefficients may have non-zero imaginary components due to numerical error; these can be removed with Chop[].
+\[Bullet] If circuit is a single operator, the resulting Pauli string is automatically simplified.
+\[Bullet] Accepts option TransformationFunction -> f, where function f will be applied to the generator's Z-basis matrix before projection into the Pauli basis. This overrides the automatic simplification."
+    CalcCircuitGenerator::error = "`1`"
+
+    RetargetCircuit::usage = "RetargetCircuit[circuit, rules] returns the given circuit but with its target and control qubits modified as per the given rules. The rules can be anything accepted by ReplaceAll.
+For instance RetargetCircuit[..., {0->1, 1->0}] swaps the first and second qubits, and RetargetCircuit[..., q_ -> q + 10] shifts every qubit up by 10.
+This function modifies only the qubits in the circuit, carefully avoiding modifying gate arguments and other data, so it is a safe alternative to simply evaluating (circuit /. rules).
+Custom user gates are supported provided they adhere to the standard QuESTlink subscript format."
+    RetargetCircuit::error = "`1`"
+
+    GetCircuitQubits::usage = "GetCircuitQubits[circuit] returns a sorted list of all qubit indices featured (i.e. controlled upon, or targeted by gates) in the given circuit."
+    GetCircuitQubits::error = "`1`"
+
+    GetCircuitCompacted::usage = "GetCircuitCompacted[circuit] returns {out, map} where out is an equivalent circuit but which targets only the lowest possible qubits, and map is a list of rules to restore the original qubits.
+This is useful for computing the smallest-form matrix of gates which otherwise target large-index qubits, via CalcCircuitMatrix @ First @ GetCircuitCompacted @ gate.
+The original circuit is restored by RetargetCircuit[out, map]."
+    GetCircuitCompacted::error = "`1`"
 
     RecompileCircuit::usage = "RecompileCircuit[circuit, method] returns an equivalent circuit, transpiled to a differnet gate set. The input circuit can contain any unitary gate, with any number of control qubits. Supported methods include:
 \[Bullet] \"SingleQubitAndCNOT\" decompiles the circuit into canonical single-qubit gates (H, Ph, T, S, X, Y, Z, Rx, Ry, Rz), a global phase G, and two-qubit C[X] gates. This method uses a combination of 23 analytic and numerical decompositions.
@@ -515,6 +543,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
     MixTwoQubitDephasing::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Deph."
     MixTwoQubitDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
     CalcQuregDerivs::usage = "This function is deprecated. Please instead use ApplyCircuitDerivs."
+    GetQuregMatrix::usage = "This function is deprecated. Please instead use GetQuregState."
     
     EndPackage[]
  
@@ -574,6 +603,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ApplyCircuitDerivs[initQureg, circuit, varVals, derivQuregs, workQuregs])
             
             
+
+        GetQuregMatrix[args___] := (
+            (* temporarily hide the deprecation notice, so existing code doesn't yet need to be updated *)
+            (*
+                Message[GetQuregState::error, "The deprecated function GetQuregMatrix[] has been automatically replaced with GetQuregState[]. In future, please use GetQuregState[], or temporarily hide this message using Quiet[]."];
+            *)
+            GetQuregState[args])
+           
             
         
         (*
@@ -923,7 +960,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     unpackEncodedDerivCircTerms @ encodedDerivTerms];
                 (* reformat output to complex matrix *)
                 If[data === $Failed, data, ArrayReshape[
-                    MapThread[#1 + I #2 &, {data[[1]], data[[2]]}], 
+                    MapThread[Complex, {data[[1]], data[[2]]}], 
                     Length[varVals] {1,1}]]]
                     
         CalcMetricTensor[__] := invalidArgError[CalcMetricTensor]
@@ -940,7 +977,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 {data=CalcInnerProductsMatrixInternal[quregIds],
                 len=Length[quregIds]},
                 ArrayReshape[
-                    MapThread[#1 + I #2 &, {data[[1]], data[[2]]}], 
+                    MapThread[Complex, {data[[1]], data[[2]]}], 
                     {len, len}
                 ]
             ]
@@ -948,7 +985,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         CalcInnerProducts[braId_Integer, ketIds:{__Integer}] := 
             With[
                 {data=CalcInnerProductsVectorInternal[braId, ketIds]},
-                MapThread[#1 + I #2 &, {data[[1]], data[[2]]}] 
+                MapThread[Complex, {data[[1]], data[[2]]}] 
             ]
         (* error for bad args *)
         CalcInnerProducts[___] := invalidArgError[CalcInnerProducts]
@@ -957,14 +994,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         CalcDensityInnerProducts[quregIds:{__Integer}] :=
             ArrayReshape[
                 MapThread[
-                    #1 + I #2 &,
+                    Complex,
                     CalcDensityInnerProductsMatrixInternal[quregIds]],
                 {Length @ quregIds, Length @ quregIds}
             ]
         (* compute a real vector of density innere products *)
         CalcDensityInnerProducts[rhoId_Integer, omegaIds:{__Integer}] :=
             MapThread[
-                #1 + I #2 &,
+                Complex,
                 CalcDensityInnerProductsVectorInternal[rhoId, omegaIds]]
         (* error for bad args *)
         CalcDensityInnerProducts[___] := invalidArgError[CalcDensityInnerProducts]
@@ -986,20 +1023,53 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         DestroyQureg[___] := invalidArgError[DestroyQureg]
 
         (* get a local matrix representation of the qureg. GetQuregMatrixInternal provided by WSTP *)
-        GetQuregMatrix[qureg_Integer] :=
+        GetQuregState[qureg_Integer, "ZBasisMatrix"] :=
         	With[{data = GetQuregMatrixInternal[qureg]},
         		Which[
+                    (* if failed, return failure type *)
         			Or[data === $Failed, data === $Aborted],
-        			data,
+        			    data,
+                    (* if state-vector, stitch the real and imag components into a complex array *)
         			data[[2]] === 0,
-        			MapThread[#1 + I #2 &, {data[[3]], data[[4]]}],
+        			    MapThread[#1 + I #2 &, {data[[3]], data[[4]]}],
+                    (* if density-matrix, stitch the real and imag components into a complex matrix *)
         			data[[2]] === 1,
-        			Transpose @ ArrayReshape[
-        				MapThread[#1 + I #2 &, {data[[3]], data[[4]]}], 
-        				{2^data[[1]],2^data[[1]]}]
+        			    Transpose @ ArrayReshape[
+        				    MapThread[#1 + I #2 &, {data[[3]], data[[4]]}], 
+        				    {2^data[[1]],2^data[[1]]}]
         		]
         	]
-        GetQuregMatrix[___] := invalidArgError[GetQuregMatrix]
+
+        GetQuregState[qureg_Integer, "ZBasisKets"] := 
+            With[
+                {matr = GetQuregState[qureg, "ZBasisMatrix"]},
+                {nQb = Log2 @ Length @ matr},
+                Which[
+                    (* if failed, return failure type *)
+                    Or[data === $Failed, data === $Aborted],
+                        data,
+                    (* project state-vector into kets *)
+                    Length @ Dimensions @ matr === 1,
+                        matr . Table[
+                            Ket @ IntegerString[i, 2, nQb], {i, 0, 2^nQb - 1}],
+                    (* project density-matrix into ket-bra's *)
+                    Length @ Dimensions @ matr === 2,
+                        Flatten[matr] . Flatten @ Table[
+                            Ket @ IntegerString[i, 2, nQb] ** 
+                            Bra @ IntegerString[j, 2, nQb],
+                            {i, 0, 2^nQb - 1}, {j, 0, 2^nQb - 1}]
+                (* tidy up some amplitudes for visual clarity *)
+                ] /. {
+                        Complex[1.`,0.`] -> 1, (* (1.`+0.`)  |s> -> |s> *)
+                        Complex[0.`,0.`] -> 0, (* (0.`+0.`1) |s> ->    *)
+                        Complex[x_,0.`] -> x   (* (x + 0.`)  |s> -> x |s> *)
+                    }
+            ]
+
+        GetQuregState[qureg_Integer] :=
+            GetQuregState[qureg, "ZBasisMatrix"]
+
+        GetQuregState[___] := invalidArgError[GetQuregState]
 
         (* overwrite the state of a qureg. InitStateFromAmps provided by WSTP *)
         SetQuregMatrix[qureg_Integer, elems_List] :=
@@ -1107,7 +1177,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     RandomReal[{minCoeff,maxCoeff}] * 
                     Times @@ (
                         (* generate uniformly random but unique Pauli tensors *)
-                        MapThread[Subscript[#1, #2]&, {
+                        MapThread[Subscript, {
                             IntegerDigits[tensorInd, 4, numQubits] /. {0->Id,1->X,2->Y,3->Z},
                             Range[0,numQubits-1]}
                             ] /. Subscript[Id, _]->Nothing /. {} -> {Subscript[Id, 0]}),
@@ -1659,7 +1729,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          
         (* single matrix plot *)
         PlotDensityMatrix[id_Integer, opts:plotDensOptsPatt] :=
-            PlotDensityMatrix[GetQuregMatrix[id], opts]
+            PlotDensityMatrix[GetQuregState[id], opts]
         PlotDensityMatrix[matrix_?isNumericSquareMatrix, opts:plotDensOptsPatt] :=
             Block[{data, chartelem, space, offset},
                 (* unpack data and args (may throw Message) *)
@@ -1690,11 +1760,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ]
         (* two matrix plot *)
         PlotDensityMatrix[id1_Integer, id2_Integer, opts:plotDensOptsPatt] :=
-            PlotDensityMatrix[GetQuregMatrix[id1], GetQuregMatrix[id2], opts]
+            PlotDensityMatrix[GetQuregState[id1], GetQuregState[id2], opts]
         PlotDensityMatrix[id1_Integer, matr2_?isNumericSquareMatrix, opts:plotDensOptsPatt] :=
-            PlotDensityMatrix[GetQuregMatrix[id1], matr2, opts]
+            PlotDensityMatrix[GetQuregState[id1], matr2, opts]
         PlotDensityMatrix[matr1_?isNumericSquareMatrix, id2_Integer, opts:plotDensOptsPatt] :=
-            PlotDensityMatrix[matr1, GetQuregMatrix[id2], opts]
+            PlotDensityMatrix[matr1, GetQuregState[id2], opts]
         PlotDensityMatrix[matr1_?isNumericSquareMatrix, vec2_?isNumericVector, opts:plotDensOptsPatt] :=
             With[{matr2 = KroneckerProduct[ConjugateTranspose@{vec2}, vec2]},
                 PlotDensityMatrix[matr1, matr2, opts]]
@@ -2474,7 +2544,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             	R[x_, Verbatim[Times][p:Subscript[_Symbol, _Integer] ..]] :> With[
                     {s = - (-1)^Count[{p}, Subscript[Y,_]]}, 
                     {R[x, Times @ p],
-            		 R[s*x, Times @@ MapThread[(Subscript[#1, #2]&), {{p}[[All,1]], {p}[[All,2]] + numQb}]]}],
+            		 R[s*x, Times @@ MapThread[Subscript, {{p}[[All,1]], {p}[[All,2]] + numQb}]]}],
             	(* gates with no inbuilt conjugates *)
             	Subscript[Y, q_Integer] :> {Subscript[Y, q], Subscript[U, q+numQb][Conjugate@PauliMatrix@2]},
             	Subscript[(g:U|UNonNorm), q__Integer|{q__Integer}][matrOrVec_] :> {Subscript[g, q][matrOrVec], Subscript[g, shiftInds[q,numQb]][Conjugate@matrOrVec]},
@@ -3530,7 +3600,207 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetKnownCircuit["LowDepthAnsatz", reps_Integer, paramSymbol_Symbol, numQubits_Integer] :=
             GetKnownCircuit["LowDepthAnsatz", reps, paramSymbol, Range[0,numQubits-1]]
         GetKnownCircuit[___] := invalidArgError[GetKnownCircuit]
+
+
+
+        (* 
+         * Front-end functions for converting
+         * gates and matrices into Pauli strings
+         *)
+
+        getNthPauliTensor[n_, numQubits_] :=
+            PadLeft[IntegerDigits[n,4], numQubits, 0]
+            
+        getNthPauliTensorMatrix[n_, 1] /; n < 4 :=
+            PauliMatrix[n]
+        getNthPauliTensorMatrix[n_, numQubits_] /; n < 4^numQubits :=
+            KroneckerProduct @@ PauliMatrix /@ getNthPauliTensor[n, numQubits]
+            
+        getNthPauliTensorSymbols[0, numQubits_] :=
+            Subscript[Id, numQubits-1]
+        getNthPauliTensorSymbols[n_, numQubits_] :=
+            Times @@ (MapThread[Subscript, {
+                getNthPauliTensor[n, numQubits] /. {0->Id,1->X,2->Y,3->Z}, 
+                Reverse @ Range[numQubits] - 1}] /. Subscript[Id, _] -> Nothing)
+
+        isPowerOfTwoSquareMatrix[m_] := 
+            And[SquareMatrixQ @ m, BitAnd[Length@m, Length@m - 1] === 0]
+
+        GetPauliStringFromMatrix[m_?isPowerOfTwoSquareMatrix] := With[
+            {nQb = Log2 @ Length @ m},
+            {coeffs =  1/2^nQb Table[
+                Tr[getNthPauliTensorMatrix[i,nQb] . m],  
+                {i, 0, 4^nQb - 1}]},
+            coeffs . Table[getNthPauliTensorSymbols[n,nQb], {n, 0, 4^nQb-1}]]
+
+        GetPauliStringFromMatrix[_] := (
+            Message[GetPauliStringFromMatrix::error, "The input must be a square matrix with power-of-2 dimensions."];
+            $Failed)
+        GetPauliStringFromMatrix[___] := invalidArgError[GetPauliStringFromMatrix]
+
+
+
+        (* functions for forceful simplification of a finite set of expressions produced within the below generators *)
+        simplifyLogsInGenerator[expr_] := expr /. {
+            Log[a_] + Log[b_] :> Log[a b],
+            - Log[a_] :> Log[1/a],
+            Log[Exp[a_]] :> a
+        }
+        simplifyRotationGenerator[angle_][gen_] :=
+            FullSimplify[
+                gen, angle \[Element] Reals, 
+                TransformationFunctions -> {Automatic, simplifyLogsInGenerator}]
+
+        (* (optionally-controlled) rotation gates are FullSimply'd, with their parameter asserted real, and have Log functions forcefully simplified *)
+        getGateSimplifyFunc[{ Through @ (Subscript[C, __]|Identity) @ (Subscript[Rx|Ry|Rz, __][a_] | R[a_, __]) }] :=
+            simplifyRotationGenerator[a]
+        
+        (* (optionally-controlled) Hadamard gates have their surds expanded *)
+        getGateSimplifyFunc[{ Through @ (Subscript[C, __]|Identity) @ Subscript[H, __] }] :=
+            Expand
+
+        (* (optionally-controlled) Phase gates *)
+        getGateSimplifyFunc[{ Through @ (Subscript[C, __]|Identity) @ Subscript[Ph, __][_] }] :=
+            simplifyLogsInGenerator
+
+        (* global phase is simply a Id, which is automatically achieved from combining Log functions *)
+        getGateSimplifyFunc[{ G[a_] }] :=
+            simplifyLogsInGenerator
+
+        (* all other gates or entire circuits receive no automatic simplification *)
+        getGateSimplifyFunc[_] :=
+            Identity
+
+        containsNoise[circuit_List] :=
+            MemberQ[
+                circuit, 
+                Subscript[ Damp | Deph | Depol | Kraus | KrausNonTP, __ ][__]]
+
+        Options[CalcCircuitGenerator] = {
+            TransformationFunction -> Automatic
+        };
+
+        CalcCircuitGenerator[circuit_List, opts___] /; isCircuitFormat[circuit] && containsNoise[circuit] :=
+            CalcCircuitGenerator[GetCircuitSuperoperator @ circuit, opts]
+
+        CalcCircuitGenerator[circuit_List, OptionsPattern[]] /; isCircuitFormat[circuit] := Module[
+            {errFunc, simpFunc, shrunk, map, matr, str},
+            errFunc = Message[CalcCircuitGenerator::error, "The above error prevented calculating the generator."]&;
+
+            (* replace Automatic simplifying function with a gate-specific one *)
+            simpFunc = OptionValue[TransformationFunction];
+            If[simpFunc === Automatic, simpFunc = getGateSimplifyFunc[circuit]];
+
+            (* compactify circuit; errors if circuit contain an invalid/unrecognised gate *)
+            {shrunk, map} = Check[GetCircuitCompacted[circuit], errFunc[]; Return @ $Failed];
+
+            (* get circuit analytic matrix; fails if circuit contains a gate with no known analytic form *)
+            matr = Check[CalcCircuitMatrix @ shrunk, errFunc[]; Return @ $Failed];
+
+            (* evaluate generator matrix; fails if MatrixLog cannot be evaluated, because e.g. matr has prohibitive zeroes *)
+            matr = Check[-I MatrixLog @ matr, errFunc[]; Return @ $Failed];
+
+            (* attempt to simplify generator matrix is circuit is a single gate recognised above *)
+            matr = Check[simpFunc @ matr, errFunc[]; Return @ $Failed];
+            If[Not @ MatrixQ @ matr, 
+                Message[CalcCircuitGenerator::error, "The given TransformationFunction did not return a matrix."];
+                Return @ $Failed];
+
+            (* project generator matrix into Pauli strings on smallest qubits *)
+            str = GetPauliStringFromMatrix[matr];
+
+            (* remap Pauli string qubits back to original circuit qubits*)
+            str /. Subscript[(s:(X|Y|Z)), t__] :> Subscript[s, t /. map]
+        ]
+
+        CalcCircuitGenerator[gate_?isGateFormat, opts___] :=
+            CalcCircuitGenerator[{gate}, opts]
+
+        CalcCircuitGenerator[___] := invalidArgError[CalcCircuitGenerator]
+
+
+
+        (*
+         * front-end functions for remapping
+         * qubits indices in circuits
+        *)
+
+        (* support both lists and sequences of qubits *)
+        retargetQubits[qubits_, map_] :=
+            qubits /. map
+        retargetQubits[qubits__, map_] :=
+            Sequence @@ ({qubits} /. map)
+
+        (* remap controls and recurse upon inner gate *)
+        retargetGate[map_][ Subscript[C, c__][g_] ] :=
+            Subscript[C, retargetQubits[c, map]] @ retargetGate[map] @ g
+
+        (* avoid modifying arg of parameterised gates *)
+        retargetGate[map_][ Subscript[s:Damp|Deph|Depol|Kraus|KrausNonTP|Matr|P|Ph|Rx|Ry|Rz|U|UNonNorm, t__][args__] ] :=
+            Subscript[s, retargetQubits[t, map]] @ args
+
+        (* modify only the qubits of the Pauli product in R gates *)
+        retargetGate[map_][ R[arg_, Subscript[s_, q__]] ] :=
+            R[arg, Subscript[s, retargetQubits[q,map]]]
+        retargetGate[map_][ R[arg_, Verbatim[Times][ p: Subscript[_,_] .. ]] ] :=
+            R[arg, Times @@ MapThread[Subscript, {
+                {p}[[All, 1]], 
+                retargetQubits[{p}[[All, 2]], map]}]]
+
+        (* no-parameter gates *)
+        retargetGate[map_][ Subscript[s:H|Id|M|S|SWAP|T|X|Y|Z, t__] ] :=
+            Subscript[s, retargetQubits[t, map]]
+
+        (* no-target gates *)
+        retargetGate[_][g:(Fac|G)[__]] := 
+            g
+
+        (* support recognisable custom user gates, and avoid modifying their params  *)
+        retargetGate[map_][ Subscript[s_Symbol, q__] ] :=
+            Subscript[s, retargetQubits[q, map]]
+        retargetGate[map_][ Subscript[s_Symbol, q__][args___] ] :=
+            Subscript[s, retargetQubits[q, map]] @ args
+            
+        (* throw error if qubits can't be identified *)
+        retargetGate[_][g_] :=
+            Throw["Could not identify qubits in unrecognised gate: " <> ToString @ StandardForm @ g]
+
+        (* catch invalid maps with trigger ReplaceAll errors*)
+        RetargetCircuit[_, map_] /; (Head[0 /. map] === ReplaceAll) := 
+            $Failed
+            
+        RetargetCircuit[circ_List, map_] := With[
+            {newCirc = Catch[retargetGate[map] /@ circ]},
+            If[ Not @ StringQ @ newCirc,
+                newCirc,
+                Message[RetargetCircuit::error, newCirc];
+                $Failed]]
+
+        (* overload to accept single gate; note this restricts to integer qubit formats*)
+        RetargetCircuit[gate_?isGateFormat, map_] :=
+            RetargetCircuit[{gate}, map]
+
+        RetargetCircuit[___] := invalidArgError[RetargetCircuit]
     
+
+
+        GetCircuitQubits[gate_?isGateFormat] :=
+            GetCircuitQubits @ {gate}
+        GetCircuitQubits[circ_?isCircuitFormat] /; Head[circ] === List :=
+            Rest /@ getSymbCtrlsTargs /@ circ // Flatten // DeleteDuplicates // Sort
+        GetCircuitQubits[___] := invalidArgError[GetCircuitQubits]
+
+
+
+        GetCircuitCompacted[circuit_?isCircuitFormat] := Module[
+            {qubits, map, out},
+            qubits = GetCircuitQubits[circuit];
+            If[qubits === $Failed, Return @ $Failed];
+            map = MapThread[Rule, {qubits, Range @ Length @ qubits - 1}];
+            {RetargetCircuit[circuit, map], Reverse /@ map}
+        ]
+        GetCircuitCompacted[___] := invalidArgError[GetCircuitCompacted]
+
 
 
         (* 

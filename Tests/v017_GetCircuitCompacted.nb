@@ -1,0 +1,722 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     29389,        714]
+NotebookOptionsPosition[     27001,        662]
+NotebookOutlinePosition[     27396,        678]
+CellTagsIndexPosition[     27353,        675]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["GetCircuitCompacted", "Title",
+ CellChangeTimes->{{3.913273690088934*^9, 3.913273712038406*^9}, {
+  3.915199103735641*^9, 3.915199106675872*^9}, {3.915269826205503*^9, 
+  3.9152698282606173`*^9}, {3.915274538692251*^9, 3.915274553398651*^9}, {
+  3.915275180631983*^9, 
+  3.9152751820661783`*^9}},ExpressionUUID->"b16cad2b-56c3-478c-83db-\
+6d8ed6aa63eb"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", " ", "@", " ", 
+   RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Import", "[", "\"\<../Link/QuESTlink.m\>\"", "]"}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.91451986218738*^9, 3.91451987324094*^9}, {
+  3.915269087976445*^9, 3.915269088235178*^9}},
+ CellLabel->"In[37]:=",ExpressionUUID->"c508194c-91ab-452d-a56d-75469894d3cf"],
+
+Cell[CellGroupData[{
+
+Cell["Doc", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 
+  3.9151991786465263`*^9}},ExpressionUUID->"744aa43b-ef4f-4966-a29b-\
+58ffcff373a1"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "GetCircuitCompacted"}]], "Input",
+ CellChangeTimes->{{3.9152760815950937`*^9, 3.915276084436943*^9}},
+ CellLabel->"In[39]:=",ExpressionUUID->"755a6d26-748d-424d-8839-88fe0700b44a"],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   FrameBox[
+    DynamicModuleBox[{System`InformationDump`open$$ = False, 
+     System`InformationDump`mouseOver$$ = False}, 
+     PaneSelectorBox[{True->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False,
+             BaseStyle -> None],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetCircuitCompacted[circuit] returns {out, map} \
+where out is an equivalent circuit but which targets only the lowest possible \
+qubits, and map is a list of rules to restore the original qubits.\\nThis is \
+useful for computing the smallest-form matrix of gates which otherwise target \
+large-index qubits, via CalcCircuitMatrix @ First @ GetCircuitCompacted @ \
+gate.\\nThe original circuit is restored by RetargetCircuit[out, map].\"\>", 
+             "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          PaneBox[
+           TagBox[GridBox[{
+              {
+               StyleBox[
+                TagBox[
+                 TooltipBox[
+                  StyleBox["\<\" Definitions\"\>", "InformationRowLabel",
+                   StripOnInput->False],
+                  "\"Definitions\"",
+                  TooltipStyle->"TextStyling"],
+                 Annotation[#, "Definitions", "Tooltip"]& ], "DialogStyle",
+                StripOnInput->False]},
+              {
+               TemplateBox[{"\"\[ThinSpace]\"", 
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"GetCircuitCompacted", "[", 
+                    
+                    RowBox[{
+                    "QuEST`Private`circuit_", "?", 
+                    "QuEST`Private`isCircuitFormat"}], "]"}], ":=", 
+                    RowBox[{"Module", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    
+                    RowBox[{"QuEST`Private`qubits", ",", "QuEST`Private`map", 
+                    ",", "QuEST`Private`out"}], "}"}], ",", 
+                    RowBox[{
+                    RowBox[{"QuEST`Private`qubits", "=", 
+                    
+                    RowBox[{"GetCircuitQubits", "[", "QuEST`Private`circuit", 
+                    "]"}]}], ";", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"QuEST`Private`qubits", "===", "$Failed"}], ",", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}], "]"}], ";", 
+                    RowBox[{"QuEST`Private`map", "=", 
+                    RowBox[{"MapThread", "[", 
+                    RowBox[{"Rule", ",", 
+                    RowBox[{"{", 
+                    RowBox[{"QuEST`Private`qubits", ",", 
+                    RowBox[{
+                    RowBox[{"Range", "[", 
+                    RowBox[{"Length", "[", "QuEST`Private`qubits", "]"}], 
+                    "]"}], "-", "1"}]}], "}"}]}], "]"}]}], ";", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"RetargetCircuit", "[", 
+                    
+                    RowBox[{"QuEST`Private`circuit", ",", 
+                    "QuEST`Private`map"}], "]"}], ",", 
+                    RowBox[{"Reverse", "/@", "QuEST`Private`map"}]}], 
+                    "}"}]}]}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetCircuitCompacted", "[", "___", "]"}], ":=", 
+                    RowBox[{
+                    "QuEST`Private`invalidArgError", "[", 
+                    "GetCircuitCompacted", "]"}]}]}, {" "}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]},
+                "RowDefault"]}
+             },
+             DefaultBaseStyle->"Column",
+             GridBoxAlignment->{"Columns" -> {{Left}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+            "Column"],
+           FrameMargins->{{6, 0}, {3, 6}}], "\<\"\"\>"},
+         {
+          PaneBox[GridBox[{
+             {
+              
+              DynamicModuleBox[{System`InformationDump`open$$ = {
+               False, False, False, False, False, False}}, 
+               StyleBox[GridBox[{
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Full Name\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"FullName\"",
+                    TooltipStyle->"TextStyling"],
+                    
+                    Annotation[#, "FullName", 
+                    "Tooltip"]& ], "\<\"QuEST`GetCircuitCompacted\"\>"}
+                 },
+                 AutoDelete->False,
+                 GridBoxAlignment->{"Columns" -> {Right, Left}},
+                 GridBoxDividers->None,
+                 GridBoxItemSize->{"Columns" -> {Automatic, Automatic}},
+                 GridBoxSpacings->{"Columns" -> {
+                    Offset[0.27999999999999997`], {
+                    Offset[0.5599999999999999]}, 
+                    Offset[0.27999999999999997`]}, "Rows" -> {
+                    Offset[0.2], {
+                    Offset[0.8]}, 
+                    Offset[0.2]}}], "DialogStyle",
+                StripOnInput->False],
+               DynamicModuleValues:>{}]}
+            },
+            DefaultBaseStyle->"Column",
+            GridBoxAlignment->{"Columns" -> {{Left}}},
+            GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings->{"Columns" -> {
+                Offset[0.27999999999999997`], {
+                 Offset[0.5599999999999999]}, 
+                Offset[0.27999999999999997`]}, "Rows" -> {
+                Offset[0.2], {
+                 Offset[3.6]}, 
+                Offset[0.2]}}],
+           FrameMargins->{{6, 6}, {6, 3}}], ""},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpener"]], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpenerHot"]]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, False],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"], False->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetCircuitCompacted[circuit] returns {out, map} \
+where out is an equivalent circuit but which targets only the lowest possible \
+qubits, and map is a list of rules to restore the original qubits.\\nThis is \
+useful for computing the smallest-form matrix of gates which otherwise target \
+large-index qubits, via CalcCircuitMatrix @ First @ GetCircuitCompacted @ \
+gate.\\nThe original circuit is restored by RetargetCircuit[out, map].\"\>", 
+             "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {2., 8.}}], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpenerHot"],
+               ImageSizeCache->{10., {2., 8.}}]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, True],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}, Dynamic[System`InformationDump`open$$],
+      BaselinePosition->Baseline,
+      FrameMargins->0,
+      ImageSize->Automatic],
+     DynamicModuleValues:>{}],
+    BaseStyle->"InformationGridFrame",
+    StripOnInput->False], "InformationGridPlain",
+   StripOnInput->False],
+  InformationData[<|
+   "ObjectType" -> "Symbol", "Usage" -> 
+    "GetCircuitCompacted[circuit] returns {out, map} where out is an \
+equivalent circuit but which targets only the lowest possible qubits, and map \
+is a list of rules to restore the original qubits.\nThis is useful for \
+computing the smallest-form matrix of gates which otherwise target \
+large-index qubits, via CalcCircuitMatrix @ First @ GetCircuitCompacted @ \
+gate.\nThe original circuit is restored by RetargetCircuit[out, map].", 
+    "Documentation" -> None, "OwnValues" -> None, "UpValues" -> None, 
+    "DownValues" -> 
+    Information`InformationValueForm[
+     DownValues, QuEST`GetCircuitCompacted, {QuEST`GetCircuitCompacted[
+         PatternTest[
+          Pattern[QuEST`Private`circuit, 
+           Blank[]], QuEST`Private`isCircuitFormat]] :> 
+       Module[{QuEST`Private`qubits, QuEST`Private`map, QuEST`Private`out}, 
+         QuEST`Private`qubits = QuEST`GetCircuitQubits[QuEST`Private`circuit]; 
+         If[QuEST`Private`qubits === $Failed, 
+           Return[$Failed]]; 
+         QuEST`Private`map = MapThread[Rule, {QuEST`Private`qubits, Range[
+               Length[QuEST`Private`qubits]] - 1}]; {
+           QuEST`RetargetCircuit[QuEST`Private`circuit, QuEST`Private`map], 
+           Map[Reverse, QuEST`Private`map]}], QuEST`GetCircuitCompacted[
+         BlankNullSequence[]] :> 
+       QuEST`Private`invalidArgError[QuEST`GetCircuitCompacted]}], 
+    "SubValues" -> None, "DefaultValues" -> None, "NValues" -> None, 
+    "FormatValues" -> None, "Options" -> None, "Attributes" -> {}, "FullName" -> 
+    "QuEST`GetCircuitCompacted"|>, False]]], "Output",
+ CellChangeTimes->{
+  3.91527608474201*^9, {3.9152762345676813`*^9, 3.915276237637629*^9}},
+ CellLabel->"Out[39]=",ExpressionUUID->"07623549-7059-42e4-beb3-01bae9765848"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tests", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.915275610304962*^9, 
+  3.915275610668804*^9}},ExpressionUUID->"6d8f7dd0-4251-4d86-9b89-\
+5b29a1e82181"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"in", " ", "=", " ", 
+   RowBox[{"Circuit", "[", 
+    RowBox[{
+     SubscriptBox["X", "2"], " ", 
+     SubscriptBox["H", "1"], " ", 
+     RowBox[{
+      SubscriptBox["C", "5"], "[", 
+      RowBox[{"R", "[", 
+       RowBox[{"\[Pi]", ",", " ", 
+        RowBox[{
+         SubscriptBox["X", "6"], 
+         SubscriptBox["Y", "8"], 
+         SubscriptBox["Z", "11"]}]}], "]"}], "]"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"out", ",", " ", "map"}], "}"}], " ", "=", " ", 
+   RowBox[{"GetCircuitCompacted", " ", "@", " ", "in"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"DrawCircuit", " ", "@", " ", 
+   RowBox[{"{", 
+    RowBox[{"in", ",", "out"}], "}"}]}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{"in", " ", "===", " ", 
+  RowBox[{"RetargetCircuit", "[", 
+   RowBox[{"out", ",", " ", "map"}], "]"}]}]}], "Input",
+ CellChangeTimes->{{3.91527556097021*^9, 3.915275591988801*^9}, {
+  3.915275942699765*^9, 3.915276012869657*^9}, {3.9152760451742783`*^9, 
+  3.915276045463437*^9}},
+ CellLabel->"In[40]:=",ExpressionUUID->"e8a6fc9f-1bd0-40c3-8260-1a45367cf693"],
+
+Cell[BoxData[
+ GraphicsBox[
+  {EdgeForm[GrayLevel[0]], FaceForm[GrayLevel[
+   1]], {{LineBox[{{0, 0.5}, {1, 0.5}}], LineBox[{{0, 1.5}, {1, 1.5}}], 
+     LineBox[{{0, 2.5}, {1, 2.5}}], LineBox[{{0, 3.5}, {1, 3.5}}], 
+     LineBox[{{0, 4.5}, {1, 4.5}}], LineBox[{{0, 5.5}, {1, 5.5}}], 
+     LineBox[{{0, 6.5}, {1, 6.5}}], LineBox[{{0, 7.5}, {1, 7.5}}], 
+     LineBox[{{0, 8.5}, {1, 8.5}}], LineBox[{{0, 9.5}, {1, 9.5}}], 
+     LineBox[{{0, 10.5}, {1, 10.5}}], LineBox[{{0, 11.5}, {1, 11.5}}]}, {
+     LineBox[{{1, 0.5}, {1.25, 0.5}}], LineBox[{{1, 1.5}, {1.25, 1.5}}], 
+     LineBox[{{1, 2.5}, {1.25, 2.5}}], LineBox[{{1, 3.5}, {1.25, 3.5}}], 
+     LineBox[{{1, 4.5}, {1.25, 4.5}}], LineBox[{{1, 5.5}, {1.25, 5.5}}], 
+     LineBox[{{1, 6.5}, {1.25, 6.5}}], LineBox[{{1, 7.5}, {1.25, 7.5}}], 
+     LineBox[{{1, 8.5}, {1.25, 8.5}}], LineBox[{{1, 9.5}, {1.25, 9.5}}], 
+     LineBox[{{1, 10.5}, {1.25, 10.5}}], 
+     LineBox[{{1, 11.5}, {1.25, 11.5}}]}, {
+     LineBox[{{1.25, 0.5}, {2.25, 0.5}}], LineBox[{{1.25, 1.5}, {2.25, 1.5}}],
+      LineBox[{{1.25, 2.5}, {2.25, 2.5}}], 
+     LineBox[{{1.25, 3.5}, {2.25, 3.5}}], LineBox[{{1.25, 4.5}, {2.25, 4.5}}],
+      LineBox[{{1.25, 5.5}, {2.25, 5.5}}], 
+     LineBox[{{1.25, 6.5}, {2.25, 6.5}}], LineBox[{{1.25, 7.5}, {2.25, 7.5}}],
+      LineBox[{{1.25, 8.5}, {2.25, 8.5}}], 
+     LineBox[{{1.25, 9.5}, {2.25, 9.5}}], 
+     LineBox[{{1.25, 10.5}, {2.25, 10.5}}], 
+     LineBox[{{1.25, 11.5}, {2.25, 11.5}}]}}, {{CircleBox[{0.5, 2.5}, 0.25], 
+     LineBox[{{0.5, 2.25}, {0.5, 2.75}}]}, {
+     RectangleBox[{0.1, 1.1}, {0.9, 1.9}], 
+     InsetBox["\<\"H\"\>", {0.5, 1.5}]}, {
+     {FaceForm[GrayLevel[0]], DiskBox[{0.5, 5.5}, 0.1], 
+      LineBox[{{0.5, 5.5}, {0.5, 11.5}}]}, {
+      LineBox[{{0.5, 6.5}, {0.5, 11.5}}], {
+       RectangleBox[{0.1, 6.1}, {0.9, 6.9}], 
+       InsetBox["\<\"Rx\"\>", {0.5, 6.5}]}, {
+       RectangleBox[{0.1, 8.1}, {0.9, 8.9}], 
+       InsetBox["\<\"Ry\"\>", {0.5, 8.5}]}, {
+       RectangleBox[{0.1, 11.1}, {0.9, 11.9}], 
+       InsetBox["\<\"Rz\"\>", {0.5, 11.5}]}}}, 
+    {GrayLevel[0.5], Dashing[{Small, Small}], 
+     LineBox[{{1.125, 0}, {1.125, 12}}]}, {CircleBox[{1.75, 1.5}, 0.25], 
+     LineBox[{{1.75, 1.25}, {1.75, 1.75}}]}, {
+     RectangleBox[{1.35, 0.1}, {2.15, 0.9}], 
+     InsetBox["\<\"H\"\>", {1.75, 0.5}]}, {
+     {FaceForm[GrayLevel[0]], DiskBox[{1.75, 2.5}, 0.1], 
+      LineBox[{{1.75, 2.5}, {1.75, 5.5}}]}, {
+      LineBox[{{1.75, 3.5}, {1.75, 5.5}}], {
+       RectangleBox[{1.35, 3.1}, {2.15, 3.9}], 
+       InsetBox["\<\"Rx\"\>", {1.75, 3.5}]}, {
+       RectangleBox[{1.35, 4.1}, {2.15, 4.9}], 
+       InsetBox["\<\"Ry\"\>", {1.75, 4.5}]}, {
+       RectangleBox[{1.35, 5.1}, {2.15, 5.9}], 
+       InsetBox["\<\"Rz\"\>", {1.75, 5.5}]}}}}},
+  ImageSize->97.5,
+  PlotRangePadding->None]], "Output",
+ CellChangeTimes->{
+  3.91527559254189*^9, {3.915275936828143*^9, 3.915275945860649*^9}, {
+   3.9152759893776608`*^9, 3.91527601319167*^9}, 3.915276045835246*^9, 
+   3.915276242592136*^9},
+ CellLabel->"Out[42]=",ExpressionUUID->"82c4981e-5953-4876-914d-d642dac8445e"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{
+  3.91527559254189*^9, {3.915275936828143*^9, 3.915275945860649*^9}, {
+   3.9152759893776608`*^9, 3.91527601319167*^9}, 3.915276045835246*^9, 
+   3.915276242596895*^9},
+ CellLabel->"Out[43]=",ExpressionUUID->"f6ab98a5-3504-44e9-9307-5c31d695bfda"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitCompacted", " ", "@", " ", 
+  RowBox[{"G", "[", "x", "]"}]}]], "Input",
+ CellChangeTimes->{{3.915276067923893*^9, 3.915276069662106*^9}},
+ CellLabel->"In[44]:=",ExpressionUUID->"f5b4997e-f232-46a8-8754-65cbd677fd51"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"G", "[", "x", "]"}], "}"}], ",", 
+   RowBox[{"{", "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{3.915276069924314*^9, 3.9152762448090076`*^9},
+ CellLabel->"Out[44]=",ExpressionUUID->"891e2bdc-2403-4483-99c2-c2f783ab2050"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"CalcCircuitMatrix", " ", "@", " ", 
+  SubscriptBox["X", "3"]}]], "Input",
+ CellChangeTimes->{{3.915276158632326*^9, 3.915276162596656*^9}},
+ CellLabel->"In[45]:=",ExpressionUUID->"d8f15658-05ce-4519-bcc2-dac27089c7d3"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "1", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "1", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "1", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "1", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "1", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "1", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "1", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "1", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "1", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "1", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "1", ",", "0", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "1", ",", "0", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "1", ",", "0", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "1", ",", "0",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+    "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "1",
+      ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+     ",", "0"}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{3.9152761628561974`*^9, 3.915276245846291*^9},
+ CellLabel->"Out[45]=",ExpressionUUID->"343104d6-8842-4cfa-8aea-d27fb80438a1"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"CalcCircuitMatrix", " ", "@", " ", 
+  RowBox[{"First", " ", "@", " ", 
+   RowBox[{"GetCircuitCompacted", " ", "@", "  ", 
+    SubscriptBox["X", "3"]}]}]}]], "Input",
+ CellChangeTimes->{{3.915276167618573*^9, 3.915276186431056*^9}},
+ CellLabel->"In[46]:=",ExpressionUUID->"c7f4e3d3-90f6-4a54-8f29-b10d9ed4521c"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"0", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", "0"}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.915276171120141*^9, 3.9152761866808453`*^9}, 
+   3.915276247438528*^9},
+ CellLabel->"Out[46]=",ExpressionUUID->"2cc096c5-d596-4b0c-9433-fab22fe379c4"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Errors", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.915275610304962*^9, 
+  3.915275616813204*^9}},ExpressionUUID->"093a272b-e3bf-4f23-96ed-\
+2eab771624a0"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitCompacted", "[", "eh", "]"}]], "Input",
+ CellChangeTimes->{{3.915275927604699*^9, 3.915275934673485*^9}},
+ CellLabel->"In[47]:=",ExpressionUUID->"95c8f889-5df7-483d-b841-1924610238f6"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetCircuitCompacted", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetCircuitCompacted\\\\\\\"\\\"}]\\)\"", 2, 47, 30, 32423047631825046454, 
+   "Local", "QuEST`GetCircuitCompacted"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.91527593311934*^9, 3.915275934971085*^9}, 
+   3.915276249392468*^9},
+ CellLabel->
+  "During evaluation of \
+In[47]:=",ExpressionUUID->"fe342d2c-0512-4594-bb73-26bbb8a5059a"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.915275933144011*^9, 3.9152759349800797`*^9}, 
+   3.915276249400775*^9},
+ CellLabel->"Out[47]=",ExpressionUUID->"63f61861-ac53-4258-bd8b-c0fafbbbd53a"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{667, 706},
+WindowMargins->{{81, Automatic}, {1, Automatic}},
+FrontEndVersion->"13.0 for Mac OS X x86 (64-bit) (February 4, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"bbad3595-df01-4f62-a90a-1310bba62c36"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 359, 6, 98, "Title",ExpressionUUID->"b16cad2b-56c3-478c-83db-6d8ed6aa63eb"],
+Cell[942, 30, 429, 9, 52, "Input",ExpressionUUID->"c508194c-91ab-452d-a56d-75469894d3cf"],
+Cell[CellGroupData[{
+Cell[1396, 43, 296, 5, 69, "Chapter",ExpressionUUID->"744aa43b-ef4f-4966-a29b-58ffcff373a1"],
+Cell[CellGroupData[{
+Cell[1717, 52, 209, 3, 30, "Input",ExpressionUUID->"755a6d26-748d-424d-8839-88fe0700b44a"],
+Cell[1929, 57, 13497, 313, 215, "Output",ExpressionUUID->"07623549-7059-42e4-beb3-01bae9765848"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[15475, 376, 347, 6, 69, "Chapter",ExpressionUUID->"6d8f7dd0-4251-4d86-9b89-5b29a1e82181"],
+Cell[CellGroupData[{
+Cell[15847, 386, 1181, 33, 115, "Input",ExpressionUUID->"e8a6fc9f-1bd0-40c3-8260-1a45367cf693"],
+Cell[17031, 421, 3061, 57, 528, "Output",ExpressionUUID->"82c4981e-5953-4876-914d-d642dac8445e"],
+Cell[20095, 480, 299, 5, 34, "Output",ExpressionUUID->"f6ab98a5-3504-44e9-9307-5c31d695bfda"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[20431, 490, 250, 4, 30, "Input",ExpressionUUID->"f5b4997e-f232-46a8-8754-65cbd677fd51"],
+Cell[20684, 496, 291, 7, 34, "Output",ExpressionUUID->"891e2bdc-2403-4483-99c2-c2f783ab2050"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[21012, 508, 242, 4, 30, "Input",ExpressionUUID->"d8f15658-05ce-4519-bcc2-dac27089c7d3"],
+Cell[21257, 514, 3654, 84, 350, "Output",ExpressionUUID->"343104d6-8842-4cfa-8aea-d27fb80438a1"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[24948, 603, 334, 6, 30, "Input",ExpressionUUID->"c7f4e3d3-90f6-4a54-8f29-b10d9ed4521c"],
+Cell[25285, 611, 344, 9, 34, "Output",ExpressionUUID->"2cc096c5-d596-4b0c-9433-fab22fe379c4"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[25678, 626, 348, 6, 69, "Chapter",ExpressionUUID->"093a272b-e3bf-4f23-96ed-2eab771624a0"],
+Cell[CellGroupData[{
+Cell[26051, 636, 218, 3, 30, "Input",ExpressionUUID->"95c8f889-5df7-483d-b841-1924610238f6"],
+Cell[26272, 641, 479, 11, 28, "Message",ExpressionUUID->"fe342d2c-0512-4594-bb73-26bbb8a5059a"],
+Cell[26754, 654, 207, 3, 34, "Output",ExpressionUUID->"63f61861-ac53-4258-bd8b-c0fafbbbd53a"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+

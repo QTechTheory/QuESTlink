@@ -1,0 +1,1574 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     61365,       1566]
+NotebookOptionsPosition[     55659,       1455]
+NotebookOutlinePosition[     56053,       1471]
+CellTagsIndexPosition[     56010,       1468]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["RetargetCircuit", "Title",
+ CellChangeTimes->{{3.913273690088934*^9, 3.913273712038406*^9}, {
+  3.915199103735641*^9, 3.915199106675872*^9}, {3.915269826205503*^9, 
+  3.9152698282606173`*^9}},ExpressionUUID->"223c5e93-f36d-46eb-ad55-\
+20d3c4e4558d"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", " ", "@", " ", 
+   RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Import", "[", "\"\<../Link/QuESTlink.m\>\"", "]"}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.91451986218738*^9, 3.91451987324094*^9}, {
+  3.915269087976445*^9, 3.915269088235178*^9}},
+ CellLabel->"In[1]:=",ExpressionUUID->"630d3d6a-6e61-4efb-95f7-ae191fa9191e"],
+
+Cell[CellGroupData[{
+
+Cell["Doc", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 
+  3.9151991786465263`*^9}},ExpressionUUID->"1fd36cfc-fa1b-431f-91d7-\
+5039b9c56c51"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "RetargetCircuit"}]], "Input",
+ CellChangeTimes->{{3.9152690956658983`*^9, 3.915269096888311*^9}, {
+  3.915269147351327*^9, 3.91526914815121*^9}},
+ CellLabel->"In[25]:=",ExpressionUUID->"48aa9e4e-f4e8-4d85-b3b2-b0fb265148fe"],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   FrameBox[
+    DynamicModuleBox[{System`InformationDump`open$$ = False, 
+     System`InformationDump`mouseOver$$ = False}, 
+     PaneSelectorBox[{True->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False,
+             BaseStyle -> None],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"RetargetCircuit[circuit, rules] returns the given \
+circuit but with its target and control qubits modified as per the given \
+rules. The rules can be anything accepted by ReplaceAll.\\nFor instance \
+RetargetCircuit[..., {0->1, 1->0}] swaps the first and second qubits, and \
+RetargetCircuit[..., q_ -> q + 10] shifts every qubit up by 10.\\nThis \
+function modifies only the qubits in the circuit, carefully avoiding \
+modifying gate arguments and other data, so it is a safe alternative to \
+simply evaluating (circuit /. rules).\\nCustom user gates are supported \
+provided they adhere to the standard QuESTlink subscript format.\"\>", 
+             "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          PaneBox[
+           TagBox[GridBox[{
+              {
+               StyleBox[
+                TagBox[
+                 TooltipBox[
+                  StyleBox["\<\" Definitions\"\>", "InformationRowLabel",
+                   StripOnInput->False],
+                  "\"Definitions\"",
+                  TooltipStyle->"TextStyling"],
+                 Annotation[#, "Definitions", "Tooltip"]& ], "DialogStyle",
+                StripOnInput->False]},
+              {
+               TemplateBox[{"\"\[ThinSpace]\"", 
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"RetargetCircuit", "[", 
+                    
+                    RowBox[{
+                    "QuEST`Private`circ_List", ",", "QuEST`Private`map_"}], 
+                    "]"}], ":=", 
+                    RowBox[{"With", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"QuEST`Private`newCirc", "=", 
+                    RowBox[{"Catch", "[", 
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`retargetGate", "[", 
+                    "QuEST`Private`map", "]"}], "/@", "QuEST`Private`circ"}], 
+                    "]"}]}], "}"}], ",", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"!", 
+                    RowBox[{"StringQ", "[", "QuEST`Private`newCirc", "]"}]}], 
+                    ",", "QuEST`Private`newCirc", ",", 
+                    RowBox[{
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"RetargetCircuit", "::", "error"}], 
+                    "MessageName"], ",", "QuEST`Private`newCirc"}], "]"}], 
+                    ";", "$Failed"}]}], "]"}]}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"RetargetCircuit", "[", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`gate_", "?", 
+                    "QuEST`Private`isGateFormat"}], ",", 
+                    "QuEST`Private`map_"}], "]"}], ":=", 
+                    RowBox[{"RetargetCircuit", "[", 
+                    RowBox[{
+                    RowBox[{"{", "QuEST`Private`gate", "}"}], ",", 
+                    "QuEST`Private`map"}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"RetargetCircuit", "[", "___", "]"}], ":=", 
+                    
+                    RowBox[{
+                    "QuEST`Private`invalidArgError", "[", "RetargetCircuit", 
+                    "]"}]}]}, {" "}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]},
+                "RowDefault"]}
+             },
+             DefaultBaseStyle->"Column",
+             GridBoxAlignment->{"Columns" -> {{Left}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+            "Column"],
+           FrameMargins->{{6, 0}, {3, 6}}], "\<\"\"\>"},
+         {
+          PaneBox[GridBox[{
+             {
+              
+              DynamicModuleBox[{System`InformationDump`open$$ = {
+               False, False, False, False, False, False}}, 
+               StyleBox[GridBox[{
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Full Name\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"FullName\"",
+                    TooltipStyle->"TextStyling"],
+                    
+                    Annotation[#, "FullName", 
+                    "Tooltip"]& ], "\<\"QuEST`RetargetCircuit\"\>"}
+                 },
+                 AutoDelete->False,
+                 GridBoxAlignment->{"Columns" -> {Right, Left}},
+                 GridBoxDividers->None,
+                 GridBoxItemSize->{"Columns" -> {Automatic, Automatic}},
+                 GridBoxSpacings->{"Columns" -> {
+                    Offset[0.27999999999999997`], {
+                    Offset[0.5599999999999999]}, 
+                    Offset[0.27999999999999997`]}, "Rows" -> {
+                    Offset[0.2], {
+                    Offset[0.8]}, 
+                    Offset[0.2]}}], "DialogStyle",
+                StripOnInput->False],
+               DynamicModuleValues:>{}]}
+            },
+            DefaultBaseStyle->"Column",
+            GridBoxAlignment->{"Columns" -> {{Left}}},
+            GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings->{"Columns" -> {
+                Offset[0.27999999999999997`], {
+                 Offset[0.5599999999999999]}, 
+                Offset[0.27999999999999997`]}, "Rows" -> {
+                Offset[0.2], {
+                 Offset[3.6]}, 
+                Offset[0.2]}}],
+           FrameMargins->{{6, 6}, {6, 3}}], ""},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpener"]], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpenerHot"]]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, False],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"], False->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"RetargetCircuit[circuit, rules] returns the given \
+circuit but with its target and control qubits modified as per the given \
+rules. The rules can be anything accepted by ReplaceAll.\\nFor instance \
+RetargetCircuit[..., {0->1, 1->0}] swaps the first and second qubits, and \
+RetargetCircuit[..., q_ -> q + 10] shifts every qubit up by 10.\\nThis \
+function modifies only the qubits in the circuit, carefully avoiding \
+modifying gate arguments and other data, so it is a safe alternative to \
+simply evaluating (circuit /. rules).\\nCustom user gates are supported \
+provided they adhere to the standard QuESTlink subscript format.\"\>", 
+             "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {2., 8.}}], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpenerHot"],
+               ImageSizeCache->{10., {2., 8.}}]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, True],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}, Dynamic[System`InformationDump`open$$],
+      BaselinePosition->Baseline,
+      FrameMargins->0,
+      ImageSize->Automatic],
+     DynamicModuleValues:>{}],
+    BaseStyle->"InformationGridFrame",
+    StripOnInput->False], "InformationGridPlain",
+   StripOnInput->False],
+  InformationData[<|
+   "ObjectType" -> "Symbol", "Usage" -> 
+    "RetargetCircuit[circuit, rules] returns the given circuit but with its \
+target and control qubits modified as per the given rules. The rules can be \
+anything accepted by ReplaceAll.\nFor instance RetargetCircuit[..., {0->1, \
+1->0}] swaps the first and second qubits, and RetargetCircuit[..., q_ -> q + \
+10] shifts every qubit up by 10.\nThis function modifies only the qubits in \
+the circuit, carefully avoiding modifying gate arguments and other data, so \
+it is a safe alternative to simply evaluating (circuit /. rules).\nCustom \
+user gates are supported provided they adhere to the standard QuESTlink \
+subscript format.", "Documentation" -> None, "OwnValues" -> None, "UpValues" -> 
+    None, "DownValues" -> 
+    Information`InformationValueForm[
+     DownValues, QuEST`RetargetCircuit, {QuEST`RetargetCircuit[
+         Pattern[QuEST`Private`circ, 
+          Blank[List]], 
+         Pattern[QuEST`Private`map, 
+          Blank[]]] :> With[{QuEST`Private`newCirc = Catch[
+            Map[
+             QuEST`Private`retargetGate[QuEST`Private`map], 
+             QuEST`Private`circ]]}, 
+         If[
+          Not[
+           StringQ[QuEST`Private`newCirc]], QuEST`Private`newCirc, Message[
+            MessageName[QuEST`RetargetCircuit, "error"], 
+            QuEST`Private`newCirc]; $Failed]], QuEST`RetargetCircuit[
+         PatternTest[
+          Pattern[QuEST`Private`gate, 
+           Blank[]], QuEST`Private`isGateFormat], 
+         Pattern[QuEST`Private`map, 
+          Blank[]]] :> 
+       QuEST`RetargetCircuit[{QuEST`Private`gate}, QuEST`Private`map], 
+       QuEST`RetargetCircuit[
+         BlankNullSequence[]] :> 
+       QuEST`Private`invalidArgError[QuEST`RetargetCircuit]}], "SubValues" -> 
+    None, "DefaultValues" -> None, "NValues" -> None, "FormatValues" -> None, 
+    "Options" -> None, "Attributes" -> {}, "FullName" -> 
+    "QuEST`RetargetCircuit"|>, False]]], "Output",
+ CellChangeTimes->{
+  3.915269148476508*^9, 3.915269727735817*^9, {3.915269759670089*^9, 
+   3.915269770976687*^9}, 3.915269806758573*^9, 3.915269989701296*^9, 
+   3.915270181169279*^9},
+ CellLabel->"Out[25]=",ExpressionUUID->"87f491dd-3ecf-419c-9e5e-1b12cd7f602b"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Tests", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.91526984596105*^9, 3.915269846573016*^9}, {3.915270237920871*^9, 
+  3.9152702382838287`*^9}},ExpressionUUID->"57f2b7d5-15dc-4b27-aff0-\
+df07ae9b9436"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "QuEST`Gate`*"}]], "Input",
+ CellChangeTimes->{{3.9152702434316263`*^9, 3.915270246475244*^9}},
+ CellLabel->"In[29]:=",ExpressionUUID->"dbd66156-4b91-4406-a043-fde287dd0c37"],
+
+Cell[BoxData[
+ StyleBox[
+  FrameBox[GridBox[{
+     {
+      DynamicModuleBox[{Typeset`open$$ = True}, 
+       PaneSelectorBox[{False->
+        ButtonBox[
+         RowBox[{
+          
+          DynamicBox[FEPrivate`FrontEndResource[
+           "FEBitmaps", "RightPointerOpener"]], " ", 
+          StyleBox["QuEST`Gate`", "InformationGridGroupHeader"]}],
+         Appearance->None,
+         BaseStyle->"InformationGridLink",
+         ButtonFunction:>FEPrivate`Set[Typeset`open$$, True],
+         Evaluator->Automatic,
+         Method->"Preemptive"], True->
+        PaneBox[GridBox[{
+           {
+            ButtonBox[
+             RowBox[{
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {3., 7.}}], " ", 
+              StyleBox["QuEST`Gate`", "InformationGridGroupHeader"]}],
+             Appearance->None,
+             BaseStyle->"InformationGridLink",
+             ButtonFunction:>FEPrivate`Set[Typeset`open$$, False],
+             Evaluator->Automatic,
+             Method->"Preemptive"]},
+           {
+            PaneBox[GridBox[{
+               {
+                ButtonBox[
+                 StyleBox["Damp", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Damp", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["H", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "H", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Matr", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Matr", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Ry", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Ry", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["U", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "U", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["Deph", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Deph", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Id", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Id", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["P", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "P", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Rz", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Rz", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["UNonNorm", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "UNonNorm", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["Depol", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Depol", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Kraus", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Kraus", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Ph", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Ph", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["S", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "S", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["X", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "X", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["Fac", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Fac", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["KrausNonTP", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "KrausNonTP", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["R", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "R", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["SWAP", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "SWAP", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Y", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Y", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic]},
+               {
+                ButtonBox[
+                 StyleBox["G", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "G", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["M", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "M", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Rx", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Rx", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["T", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "T", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic], 
+                ButtonBox[
+                 StyleBox["Z", "InformationGridButton"],
+                 Appearance->None,
+                 BaseStyle->"InformationGridLink",
+                 
+                 ButtonData:>{
+                  "Info-c84367db-7a32-4efb-9ff3-f989fdc8e4f2", {
+                   "Z", "QuEST`Gate`"}, False},
+                 ButtonNote->"QuEST`Gate`",
+                 Evaluator->Automatic]}
+              },
+              DefaultBaseStyle->"Text",
+              
+              GridBoxAlignment->{
+               "Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+              GridBoxItemSize->{"Columns" -> {{
+                   Scaled[0.19]}}}],
+             ImageMargins->{{10, 0}, {0, 2}}]}
+          },
+          GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}}],
+         FrameMargins->{{0, 0}, {8, 0}}]}, Dynamic[Typeset`open$$],
+        ImageSize->Automatic]]}
+    },
+    GridBoxAlignment->{"Columns" -> {{Left}}, "Rows" -> {{Baseline}}},
+    GridBoxDividers->{"ColumnsIndexed" -> {{False}}, "RowsIndexed" -> {}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.5599999999999999]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.8]}, 
+        Offset[0.2]}}],
+   BaseStyle->"InformationTitleFrame"], "InformationGridPlain"]], "Output",
+ CellChangeTimes->{3.9152702468073378`*^9},
+ CellLabel->"Out[29]=",ExpressionUUID->"692e297c-73f5-42cb-9df1-d276411145f4"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Arbitrary rules", "Subsection",
+ CellChangeTimes->{{3.915270348399394*^9, 3.9152703525974197`*^9}, {
+  3.915270430366131*^9, 3.915270430999586*^9}, {3.915270752590383*^9, 
+  3.915270779899954*^9}, {3.915271057934044*^9, 
+  3.915271059255375*^9}},ExpressionUUID->"a65778b5-8be7-4349-8976-\
+aa2f8378fe22"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"in", " ", "=", " ", 
+   RowBox[{"Circuit", "[", 
+    RowBox[{
+     RowBox[{
+      SubscriptBox["Depol", 
+       RowBox[{"0", ",", "1"}]], "[", "x", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["C", "0"], "[", 
+      SubscriptBox["X", "2"], "]"}], " ", 
+     RowBox[{"R", "[", 
+      RowBox[{"x", ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], 
+        SubscriptBox["Y", "1"], 
+        SubscriptBox["Z", "2"]}]}], "]"}], " ", 
+     SubscriptBox["SWAP", 
+      RowBox[{"1", ",", "2"}]]}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"DrawCircuit", "[", "in", "]"}]}], "Input",
+ CellChangeTimes->{{3.91527106287201*^9, 3.915271106696591*^9}, {
+   3.915271144186653*^9, 3.9152711445455427`*^9}, 3.915271192058415*^9},
+ CellLabel->"In[6]:=",ExpressionUUID->"c46bf92d-f358-4abd-80ad-63d02f4da33e"],
+
+Cell[BoxData[
+ GraphicsBox[
+  {EdgeForm[GrayLevel[0]], FaceForm[GrayLevel[
+   1]], {{LineBox[{{0, 0.5}, {1, 0.5}}], LineBox[{{0, 1.5}, {1, 1.5}}], 
+     LineBox[{{0, 2.5}, {1, 2.5}}]}, {LineBox[{{1, 0.5}, {2, 0.5}}], 
+     LineBox[{{1, 1.5}, {2, 1.5}}], LineBox[{{1, 2.5}, {2, 2.5}}]}, {
+     LineBox[{{2, 0.5}, {3, 0.5}}], LineBox[{{2, 1.5}, {3, 1.5}}], 
+     LineBox[{{2, 2.5}, {3, 2.5}}]}, {LineBox[{{3, 0.5}, {4, 0.5}}], 
+     LineBox[{{3, 1.5}, {4, 1.5}}], LineBox[{{3, 2.5}, {4, 2.5}}]}}, {
+    {EdgeForm[Dashing[{Small, Small}]], RectangleBox[{0.1, 0.1}, {0.9, 1.9}], 
+     InsetBox["\<\"\[CapitalDelta]\"\>", {0.5, 1.}]}, {
+     {FaceForm[GrayLevel[0]], DiskBox[{1.5, 0.5}, 0.1], 
+      LineBox[{{1.5, 0.5}, {1.5, 2.5}}]}, {CircleBox[{1.5, 2.5}, 0.25], 
+      LineBox[{{1.5, 2.25}, {1.5, 2.75}}]}}, {
+     LineBox[{{2.5, 0.5}, {2.5, 2.5}}], {RectangleBox[{2.1, 0.1}, {2.9, 0.9}],
+       InsetBox["\<\"Rx\"\>", {2.5, 0.5}]}, {
+      RectangleBox[{2.1, 1.1}, {2.9, 1.9}], 
+      InsetBox["\<\"Ry\"\>", {2.5, 1.5}]}, {
+      RectangleBox[{2.1, 2.1}, {2.9, 2.9}], 
+      InsetBox["\<\"Rz\"\>", {2.5, 2.5}]}}, {{{
+       LineBox[{{3.4, 1.4}, {3.6, 1.6}}], 
+       LineBox[{{3.6, 1.4}, {3.4, 1.6}}]}, {LineBox[{{3.4, 2.4}, {3.6, 2.6}}],
+        LineBox[{{3.6, 2.4}, {3.4, 2.6}}]}}, 
+     LineBox[{{3.5, 1.5}, {3.5, 2.5}}]}}},
+  ImageSize->150,
+  PlotRangePadding->None]], "Output",
+ CellChangeTimes->{
+  3.9152711070394173`*^9, 3.915271144801353*^9, {3.915271192365622*^9, 
+   3.915271209186275*^9}, 3.915271633773203*^9},
+ CellLabel->"Out[7]=",ExpressionUUID->"6fdd0b58-f08f-4b38-9962-fa1c1b787bdc"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"out", " ", "=", " ", 
+  RowBox[{"RetargetCircuit", "[", 
+   RowBox[{"in", ",", " ", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"0", "->", "2"}], ",", 
+      RowBox[{"2", "->", "0"}]}], "}"}]}], "]"}]}], "\[IndentingNewLine]", 
+ RowBox[{"DrawCircuit", "[", "out", "]"}]}], "Input",
+ CellChangeTimes->{{3.915271109480771*^9, 3.915271206062722*^9}},
+ CellLabel->"In[8]:=",ExpressionUUID->"39709590-3c6f-429f-a362-731ba383fb10"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["Depol", 
+     RowBox[{"2", ",", "1"}]], "[", "x", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["C", "2"], "[", 
+    SubscriptBox["X", "0"], "]"}], ",", 
+   RowBox[{"R", "[", 
+    RowBox[{"x", ",", 
+     RowBox[{
+      SubscriptBox["X", "2"], " ", 
+      SubscriptBox["Y", "1"], " ", 
+      SubscriptBox["Z", "0"]}]}], "]"}], ",", 
+   SubscriptBox["SWAP", 
+    RowBox[{"1", ",", "0"}]]}], "}"}]], "Output",
+ CellChangeTimes->{{3.915271124459793*^9, 3.915271206320458*^9}, 
+   3.9152716349776907`*^9},
+ CellLabel->"Out[8]=",ExpressionUUID->"c2799d57-8034-4aca-8cea-c96cff8c7f40"],
+
+Cell[BoxData[
+ GraphicsBox[
+  {EdgeForm[GrayLevel[0]], FaceForm[GrayLevel[
+   1]], {{LineBox[{{0, 0.5}, {1, 0.5}}], LineBox[{{0, 1.5}, {1, 1.5}}], 
+     LineBox[{{0, 2.5}, {1, 2.5}}]}, {LineBox[{{1, 0.5}, {2, 0.5}}], 
+     LineBox[{{1, 1.5}, {2, 1.5}}], LineBox[{{1, 2.5}, {2, 2.5}}]}, {
+     LineBox[{{2, 0.5}, {3, 0.5}}], LineBox[{{2, 1.5}, {3, 1.5}}], 
+     LineBox[{{2, 2.5}, {3, 2.5}}]}, {LineBox[{{3, 0.5}, {4, 0.5}}], 
+     LineBox[{{3, 1.5}, {4, 1.5}}], LineBox[{{3, 2.5}, {4, 2.5}}]}}, {
+    {EdgeForm[Dashing[{Small, Small}]], RectangleBox[{0.1, 1.1}, {0.9, 2.9}], 
+     InsetBox["\<\"\[CapitalDelta]\"\>", {0.5, 2.}]}, {
+     {FaceForm[GrayLevel[0]], DiskBox[{1.5, 2.5}, 0.1], 
+      LineBox[{{1.5, 0.5}, {1.5, 2.5}}]}, {CircleBox[{1.5, 0.5}, 0.25], 
+      LineBox[{{1.5, 0.25}, {1.5, 0.75}}]}}, {
+     LineBox[{{2.5, 0.5}, {2.5, 2.5}}], {RectangleBox[{2.1, 2.1}, {2.9, 2.9}],
+       InsetBox["\<\"Rx\"\>", {2.5, 2.5}]}, {
+      RectangleBox[{2.1, 1.1}, {2.9, 1.9}], 
+      InsetBox["\<\"Ry\"\>", {2.5, 1.5}]}, {
+      RectangleBox[{2.1, 0.1}, {2.9, 0.9}], 
+      InsetBox["\<\"Rz\"\>", {2.5, 0.5}]}}, {{{
+       LineBox[{{3.4, 1.4}, {3.6, 1.6}}], 
+       LineBox[{{3.6, 1.4}, {3.4, 1.6}}]}, {LineBox[{{3.4, 0.4}, {3.6, 0.6}}],
+        LineBox[{{3.6, 0.4}, {3.4, 0.6}}]}}, 
+     LineBox[{{3.5, 0.5}, {3.5, 1.5}}]}}},
+  ImageSize->150,
+  PlotRangePadding->None]], "Output",
+ CellChangeTimes->{{3.915271124459793*^9, 3.915271206320458*^9}, 
+   3.915271634980132*^9},
+ CellLabel->"Out[9]=",ExpressionUUID->"bf2fb294-2c74-451c-b835-bbd9a6cd2de1"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"out", " ", "=", " ", 
+  RowBox[{"RetargetCircuit", "[", 
+   RowBox[{"in", ",", " ", 
+    RowBox[{"q_", " ", "->", " ", 
+     RowBox[{"q", "+", "1"}]}]}], "]"}]}], "\[IndentingNewLine]", 
+ RowBox[{"DrawCircuit", "[", "out", "]"}]}], "Input",
+ CellChangeTimes->{{3.91527121362374*^9, 3.915271247442268*^9}},
+ CellLabel->"In[10]:=",ExpressionUUID->"ebbc580e-caaf-4fa1-9b63-3497e232a81f"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["Depol", 
+     RowBox[{"1", ",", "2"}]], "[", "x", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["C", "1"], "[", 
+    SubscriptBox["X", "3"], "]"}], ",", 
+   RowBox[{"R", "[", 
+    RowBox[{"x", ",", 
+     RowBox[{
+      SubscriptBox["X", "1"], " ", 
+      SubscriptBox["Y", "2"], " ", 
+      SubscriptBox["Z", "3"]}]}], "]"}], ",", 
+   SubscriptBox["SWAP", 
+    RowBox[{"2", ",", "3"}]]}], "}"}]], "Output",
+ CellChangeTimes->{{3.915271239579002*^9, 3.915271247746072*^9}, {
+  3.915271631212627*^9, 3.915271636239245*^9}},
+ CellLabel->"Out[10]=",ExpressionUUID->"24708f2c-61c4-4018-ab1a-2e0c4cd6cb37"],
+
+Cell[BoxData[
+ GraphicsBox[
+  {EdgeForm[GrayLevel[0]], FaceForm[GrayLevel[
+   1]], {{LineBox[{{0, 0.5}, {1, 0.5}}], LineBox[{{0, 1.5}, {1, 1.5}}], 
+     LineBox[{{0, 2.5}, {1, 2.5}}], LineBox[{{0, 3.5}, {1, 3.5}}]}, {
+     LineBox[{{1, 0.5}, {2, 0.5}}], LineBox[{{1, 1.5}, {2, 1.5}}], 
+     LineBox[{{1, 2.5}, {2, 2.5}}], LineBox[{{1, 3.5}, {2, 3.5}}]}, {
+     LineBox[{{2, 0.5}, {3, 0.5}}], LineBox[{{2, 1.5}, {3, 1.5}}], 
+     LineBox[{{2, 2.5}, {3, 2.5}}], LineBox[{{2, 3.5}, {3, 3.5}}]}, {
+     LineBox[{{3, 0.5}, {4, 0.5}}], LineBox[{{3, 1.5}, {4, 1.5}}], 
+     LineBox[{{3, 2.5}, {4, 2.5}}], LineBox[{{3, 3.5}, {4, 3.5}}]}}, {
+    {EdgeForm[Dashing[{Small, Small}]], RectangleBox[{0.1, 1.1}, {0.9, 2.9}], 
+     InsetBox["\<\"\[CapitalDelta]\"\>", {0.5, 2.}]}, {
+     {FaceForm[GrayLevel[0]], DiskBox[{1.5, 1.5}, 0.1], 
+      LineBox[{{1.5, 1.5}, {1.5, 3.5}}]}, {CircleBox[{1.5, 3.5}, 0.25], 
+      LineBox[{{1.5, 3.25}, {1.5, 3.75}}]}}, {
+     LineBox[{{2.5, 1.5}, {2.5, 3.5}}], {RectangleBox[{2.1, 1.1}, {2.9, 1.9}],
+       InsetBox["\<\"Rx\"\>", {2.5, 1.5}]}, {
+      RectangleBox[{2.1, 2.1}, {2.9, 2.9}], 
+      InsetBox["\<\"Ry\"\>", {2.5, 2.5}]}, {
+      RectangleBox[{2.1, 3.1}, {2.9, 3.9}], 
+      InsetBox["\<\"Rz\"\>", {2.5, 3.5}]}}, {{{
+       LineBox[{{3.4, 2.4}, {3.6, 2.6}}], 
+       LineBox[{{3.6, 2.4}, {3.4, 2.6}}]}, {LineBox[{{3.4, 3.4}, {3.6, 3.6}}],
+        LineBox[{{3.6, 3.4}, {3.4, 3.6}}]}}, 
+     LineBox[{{3.5, 2.5}, {3.5, 3.5}}]}}},
+  ImageSize->150,
+  PlotRangePadding->None]], "Output",
+ CellChangeTimes->{{3.915271239579002*^9, 3.915271247746072*^9}, {
+  3.915271631212627*^9, 3.915271636241448*^9}},
+ CellLabel->"Out[11]=",ExpressionUUID->"9f59f6b2-b121-400d-b699-1d05a9e32777"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Gate support, and no modification of arguments", "Subsection",
+ CellChangeTimes->{{3.915270348399394*^9, 3.9152703525974197`*^9}, {
+  3.915270430366131*^9, 3.915270430999586*^9}, {3.915270752590383*^9, 
+  3.915270779899954*^9}},ExpressionUUID->"66a7eb09-f599-4efa-8702-\
+50444435770a"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", " ", 
+  RowBox[{
+   RowBox[{"Circuit", "[", "\[IndentingNewLine]", "\t", 
+    RowBox[{
+     RowBox[{
+      SubscriptBox["Damp", "0"], "[", "0", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Deph", 
+       RowBox[{"0", ",", "1"}]], "[", "0", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Depol", 
+       RowBox[{"0", ",", "1"}]], "[", "0", "]"}], " ", 
+     RowBox[{"Fac", "[", "0", "]"}], " ", 
+     RowBox[{"G", "[", "0", "]"}], " ", 
+     SubscriptBox["H", "0"], " ", 
+     SubscriptBox["Id", 
+      RowBox[{"0", ",", "1"}]], "\[IndentingNewLine]", "\t", 
+     RowBox[{
+      SubscriptBox["Kraus", 
+       RowBox[{"0", ",", "1"}]], "[", 
+      RowBox[{"0", ",", "0"}], "]"}], " ", 
+     RowBox[{
+      SubscriptBox["KrausNonTP", 
+       RowBox[{"0", ",", "1"}]], "[", 
+      RowBox[{"0", ",", "1"}], "]"}], " ", 
+     SubscriptBox["M", 
+      RowBox[{"0", ",", "1"}]], " ", 
+     RowBox[{
+      SubscriptBox["Matr", 
+       RowBox[{"0", ",", "1"}]], "[", "0", "]"}], "\[IndentingNewLine]", "\t", 
+     RowBox[{
+      SubscriptBox["P", 
+       RowBox[{"0", ",", "1"}]], "[", 
+      RowBox[{"0", ",", "1"}], "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"0", ",", "1"}]], "[", "0", "]"}], " ", 
+     RowBox[{"R", "[", 
+      RowBox[{"0", ",", " ", 
+       SubscriptBox["X", "0"]}], "]"}], " ", 
+     RowBox[{"R", "[", 
+      RowBox[{"0", ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], 
+        SubscriptBox["Y", "0"], 
+        SubscriptBox["Z", "1"]}]}], "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Rx", 
+       RowBox[{"0", ",", "1"}]], "[", "0", "]"}], "\[IndentingNewLine]", "\t", 
+     RowBox[{
+      SubscriptBox["Ry", 
+       RowBox[{"0", ",", "1"}]], "[", "0", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Rz", 
+       RowBox[{"0", ",", "1"}]], "[", "0", "]"}], " ", 
+     SubscriptBox["S", "0"], " ", 
+     SubscriptBox["SWAP", 
+      RowBox[{"0", ",", "1"}]], " ", 
+     SubscriptBox["T", "0"], " ", 
+     RowBox[{
+      SubscriptBox["U", 
+       RowBox[{"0", ",", "1"}]], "[", 
+      RowBox[{"0", ",", "1"}], "]"}], "\[IndentingNewLine]", "\t", 
+     RowBox[{
+      SubscriptBox["UNonNorm", 
+       RowBox[{"0", ",", "1"}]], "[", 
+      RowBox[{"0", ",", "1"}], "]"}], " ", 
+     SubscriptBox["X", "0"], " ", 
+     SubscriptBox["Y", "0"], " ", 
+     SubscriptBox["Z", "0"]}], "]"}], ",", "\[IndentingNewLine]", "\t", 
+   RowBox[{"0", "->", "a"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.915270756542221*^9, 3.915270949255872*^9}},
+ CellLabel->"In[3]:=",ExpressionUUID->"a434cc3b-b6a7-4b7b-81b3-e88e52fd5604"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["Damp", "a"], "[", "0", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["Deph", 
+     RowBox[{"a", ",", "1"}]], "[", "0", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["Depol", 
+     RowBox[{"a", ",", "1"}]], "[", "0", "]"}], ",", 
+   RowBox[{"Fac", "[", "0", "]"}], ",", 
+   RowBox[{"G", "[", "0", "]"}], ",", 
+   SubscriptBox["H", "a"], ",", 
+   SubscriptBox["Id", 
+    RowBox[{"a", ",", "1"}]], ",", 
+   RowBox[{
+    SubscriptBox["Kraus", 
+     RowBox[{"a", ",", "1"}]], "[", 
+    RowBox[{"0", ",", "0"}], "]"}], ",", 
+   RowBox[{
+    SubscriptBox["KrausNonTP", 
+     RowBox[{"a", ",", "1"}]], "[", 
+    RowBox[{"0", ",", "1"}], "]"}], ",", 
+   SubscriptBox["M", 
+    RowBox[{"a", ",", "1"}]], ",", 
+   RowBox[{
+    SubscriptBox["Matr", 
+     RowBox[{"a", ",", "1"}]], "[", "0", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["P", 
+     RowBox[{"a", ",", "1"}]], "[", 
+    RowBox[{"0", ",", "1"}], "]"}], ",", 
+   RowBox[{
+    SubscriptBox["Ph", 
+     RowBox[{"a", ",", "1"}]], "[", "0", "]"}], ",", 
+   RowBox[{"R", "[", 
+    RowBox[{"0", ",", 
+     SubscriptBox["X", "a"]}], "]"}], ",", 
+   RowBox[{"R", "[", 
+    RowBox[{"0", ",", 
+     RowBox[{
+      SubscriptBox["X", "a"], " ", 
+      SubscriptBox["Y", "a"], " ", 
+      SubscriptBox["Z", "1"]}]}], "]"}], ",", 
+   RowBox[{
+    SubscriptBox["Rx", 
+     RowBox[{"a", ",", "1"}]], "[", "0", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["Ry", 
+     RowBox[{"a", ",", "1"}]], "[", "0", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["Rz", 
+     RowBox[{"a", ",", "1"}]], "[", "0", "]"}], ",", 
+   SubscriptBox["S", "a"], ",", 
+   SubscriptBox["SWAP", 
+    RowBox[{"a", ",", "1"}]], ",", 
+   SubscriptBox["T", "a"], ",", 
+   RowBox[{
+    SubscriptBox["U", 
+     RowBox[{"a", ",", "1"}]], "[", 
+    RowBox[{"0", ",", "1"}], "]"}], ",", 
+   RowBox[{
+    SubscriptBox["UNonNorm", 
+     RowBox[{"a", ",", "1"}]], "[", 
+    RowBox[{"0", ",", "1"}], "]"}], ",", 
+   SubscriptBox["X", "a"], ",", 
+   SubscriptBox["Y", "a"], ",", 
+   SubscriptBox["Z", "a"]}], "}"}]], "Output",
+ CellChangeTimes->{{3.915270922191215*^9, 3.915270950601047*^9}, 
+   3.915271007498766*^9, 3.915271628825913*^9},
+ CellLabel->"Out[3]=",ExpressionUUID->"e83e1e78-8b9a-4d76-9858-178629e817f9"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Controls", "Subsection",
+ CellChangeTimes->{{3.915270348399394*^9, 3.9152703525974197`*^9}, {
+  3.915270430366131*^9, 
+  3.915270430999586*^9}},ExpressionUUID->"e4613dd8-951c-4129-bb2c-\
+cf7dbfb5c4de"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["C", 
+     RowBox[{"0", ",", "1", ",", "2"}]], "[", 
+    SubscriptBox["X", "3"], "]"}], ",", " ", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"0", "->", "a"}], ",", " ", 
+     RowBox[{"3", "->", "b"}]}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.915270705500642*^9, 3.915270732371516*^9}},
+ CellLabel->"In[12]:=",ExpressionUUID->"e0d0b034-9046-47f5-8b1d-19cdec37267c"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   SubscriptBox["C", 
+    RowBox[{"a", ",", "1", ",", "2"}]], "[", 
+   SubscriptBox["X", "b"], "]"}], "}"}]], "Output",
+ CellChangeTimes->{3.9152707326075163`*^9, 3.915271639444038*^9},
+ CellLabel->"Out[12]=",ExpressionUUID->"3a744d86-4c4e-4803-9448-c983d534a2be"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Qubit configurations (sequence vs list)", "Subsection",
+ CellChangeTimes->{{3.915270348399394*^9, 3.9152703525974197`*^9}, {
+  3.9152704371675386`*^9, 
+  3.915270440576622*^9}},ExpressionUUID->"e57c7873-02cc-4ac3-a7c5-\
+5a3d707eaae6"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     SubscriptBox["X", "0"], ",", " ", 
+     SubscriptBox["X", 
+      RowBox[{"0", ",", "1"}]], ",", " ", 
+     SubscriptBox["X", 
+      RowBox[{"{", "0", "}"}]], ",", " ", 
+     SubscriptBox["X", 
+      RowBox[{"{", 
+       RowBox[{"0", ",", "1"}], "}"}]]}], "}"}], ",", "  ", 
+   RowBox[{"0", "->", "a"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.91527047151651*^9, 3.915270471722584*^9}},
+ CellLabel->"In[13]:=",ExpressionUUID->"6a89518b-bb4c-4d6a-b2ac-bae9f21cb7ce"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   SubscriptBox["X", "a"], ",", 
+   SubscriptBox["X", 
+    RowBox[{"a", ",", "1"}]], ",", 
+   SubscriptBox["X", 
+    RowBox[{"{", "a", "}"}]], ",", 
+   SubscriptBox["X", 
+    RowBox[{"{", 
+     RowBox[{"a", ",", "1"}], "}"}]]}], "}"}]], "Output",
+ CellChangeTimes->{3.9152704057458153`*^9, 3.915270472009677*^9, 
+  3.9152715577353067`*^9, 3.915271640775509*^9},
+ CellLabel->"Out[13]=",ExpressionUUID->"42f37959-9735-4f00-91fa-35bc05b19458"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", "0", "]"}], ",", " ", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"0", ",", "1"}]], "[", "0", "]"}], ",", " ", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"{", "0", "}"}]], "[", "0", "]"}], ",", " ", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"{", 
+        RowBox[{"0", ",", "1"}], "}"}]], "[", "0", "]"}]}], "}"}], ",", "  ", 
+   
+   RowBox[{"0", "->", "a"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.915269224084831*^9, 3.915269254245475*^9}, {
+  3.9152694728407*^9, 3.9152694896284637`*^9}, {3.915270187188998*^9, 
+  3.915270194464121*^9}, {3.915270302120822*^9, 3.915270326629668*^9}, {
+  3.915270380767639*^9, 3.9152704005225687`*^9}, {3.915270474646984*^9, 
+  3.915270474817033*^9}},
+ CellLabel->"In[14]:=",ExpressionUUID->"358efe28-a6a8-410c-8999-9bb4a48fef87"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["Ph", "a"], "[", "0", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["Ph", 
+     RowBox[{"a", ",", "1"}]], "[", "0", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["Ph", 
+     RowBox[{"{", "a", "}"}]], "[", "0", "]"}], ",", 
+   RowBox[{
+    SubscriptBox["Ph", 
+     RowBox[{"{", 
+      RowBox[{"a", ",", "1"}], "}"}]], "[", "0", "]"}]}], "}"}]], "Output",
+ CellChangeTimes->{3.915270194700552*^9, 3.915270327372349*^9, 
+  3.915270402135942*^9, 3.915270475046974*^9, 3.915271642138178*^9},
+ CellLabel->"Out[14]=",ExpressionUUID->"7157f519-0fb7-4368-ae79-8bd0c632980f"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"R", "[", 
+      RowBox[{"0", ",", 
+       SubscriptBox["X", "0"]}], "]"}], ",", " ", 
+     RowBox[{"R", "[", 
+      RowBox[{"0", ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], 
+        SubscriptBox["Y", "0"], 
+        SubscriptBox["Z", "1"]}]}], "]"}]}], "}"}], " ", ",", " ", 
+   RowBox[{"0", "->", "a"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.915270446557912*^9, 3.9152704624406137`*^9}, {
+  3.9152706466117687`*^9, 3.915270681130979*^9}},
+ CellLabel->"In[15]:=",ExpressionUUID->"dd4733cb-b709-4461-8b7e-c06ae204387a"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"R", "[", 
+    RowBox[{"0", ",", 
+     SubscriptBox["X", "a"]}], "]"}], ",", 
+   RowBox[{"R", "[", 
+    RowBox[{"0", ",", 
+     RowBox[{
+      SubscriptBox["X", "a"], " ", 
+      SubscriptBox["Y", "a"], " ", 
+      SubscriptBox["Z", "1"]}]}], "]"}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.91527065633352*^9, 3.915270681459038*^9}, 
+   3.9152716432401733`*^9},
+ CellLabel->"Out[15]=",ExpressionUUID->"379d8342-d5fa-46ea-bfd7-083f425d21c3"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{
+      SubscriptBox["C", "0"], "@", 
+      RowBox[{"R", "[", 
+       RowBox[{"0", ",", 
+        SubscriptBox["X", "0"]}], "]"}]}], ",", " ", 
+     RowBox[{
+      SubscriptBox["C", 
+       RowBox[{"{", 
+        RowBox[{"0", ",", "1"}], "}"}]], "@", 
+      RowBox[{"R", "[", 
+       RowBox[{"0", ",", 
+        RowBox[{
+         SubscriptBox["X", "0"], 
+         SubscriptBox["Y", "0"], 
+         SubscriptBox["Z", "1"]}]}], "]"}]}]}], "}"}], " ", ",", " ", 
+   RowBox[{"0", "->", "a"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.91527069161314*^9, 3.915270713099612*^9}},
+ CellLabel->"In[16]:=",ExpressionUUID->"9aeaa7af-4a4c-465e-9e17-67297c029216"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["C", "a"], "[", 
+    RowBox[{"R", "[", 
+     RowBox[{"0", ",", 
+      SubscriptBox["X", "a"]}], "]"}], "]"}], ",", 
+   RowBox[{
+    SubscriptBox["C", 
+     RowBox[{"{", 
+      RowBox[{"a", ",", "1"}], "}"}]], "[", 
+    RowBox[{"R", "[", 
+     RowBox[{"0", ",", 
+      RowBox[{
+       SubscriptBox["X", "a"], " ", 
+       SubscriptBox["Y", "a"], " ", 
+       SubscriptBox["Z", "1"]}]}], "]"}], "]"}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.915270693731202*^9, 3.915270713427191*^9}, 
+   3.9152716442082567`*^9},
+ CellLabel->"Out[16]=",ExpressionUUID->"221a3108-fb98-48e8-83dd-a5ec088debf7"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Non-integer qubits", "Subsection",
+ CellChangeTimes->{{3.915270348399394*^9, 3.9152703525974197`*^9}, {
+  3.915270430366131*^9, 3.915270430999586*^9}, {3.915270484290007*^9, 
+  3.915270486100161*^9}},ExpressionUUID->"35d072ee-9907-451d-9d40-\
+cd0c8abd3df3"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     SubscriptBox["Rx", "a"], "[", "a", "]"}], "}"}], ",", "  ", 
+   RowBox[{"a", "->", "b"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.91527049305949*^9, 3.9152705114396963`*^9}, {
+  3.915270630855562*^9, 3.915270635634853*^9}},
+ CellLabel->"In[17]:=",ExpressionUUID->"8325c78b-f0bd-45da-bc9b-765a5132d8a1"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   SubscriptBox["Rx", "b"], "[", "a", "]"}], "}"}]], "Output",
+ CellChangeTimes->{{3.9152705008026037`*^9, 3.915270511685088*^9}, {
+   3.915270628396311*^9, 3.9152706359179688`*^9}, 3.915271645359614*^9},
+ CellLabel->"Out[17]=",ExpressionUUID->"2121e79c-71cb-4f3f-af74-1db23259845f"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Errors", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.91526984596105*^9, 
+  3.915269846573016*^9}},ExpressionUUID->"72f1f0e8-812d-4567-a588-\
+dfbce9602247"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     SubscriptBox["X", "0"], ",", 
+     SubscriptBox["Y", "1"]}], "}"}], ",", " ", "invalid"}], "]"}]], "Input",
+ CellChangeTimes->{{3.915271337933427*^9, 3.9152713586313467`*^9}, {
+  3.915271714393713*^9, 3.915271715969895*^9}},
+ CellLabel->"In[25]:=",ExpressionUUID->"ec8e0cc7-7591-4da4-ad95-7506b05dade9"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ReplaceAll", "reps", 
+   "\"\\!\\(\\*RowBox[{\\\"{\\\", \\\"invalid\\\", \\\"}\\\"}]\\) is neither \
+a list of replacement rules nor a valid dispatch table, and so cannot be used \
+for replacing.\"", 2, 25, 9, 32423019438032812360, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{{3.9152713399888353`*^9, 3.915271358889971*^9}, 
+   3.915271552389412*^9, 3.915271648687758*^9, 3.915271716182879*^9},
+ CellLabel->
+  "During evaluation of \
+In[25]:=",ExpressionUUID->"12d5e222-b447-428b-8efb-7a0ee43acf51"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.9152713400000763`*^9, 3.915271358905819*^9}, 
+   3.9152715524353724`*^9, 3.9152716487373333`*^9, 3.915271716190727*^9},
+ CellLabel->"Out[25]=",ExpressionUUID->"28460cfb-b414-452b-9a4d-0e0f88c2a3d3"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", 
+  RowBox[{
+   RowBox[{"{", "Anon", "}"}], ",", " ", 
+   RowBox[{"0", "->", "1"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.915271672554764*^9, 3.915271719805028*^9}},
+ CellLabel->"In[26]:=",ExpressionUUID->"75601796-a303-4526-a5d3-56715762c89f"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "RetargetCircuit", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Could not identify qubits in unrecognised \
+gate: \\\\\\\\!\\\\\\\\(\\\\\\\\*RowBox[{\\\\\\\\\\\\\\\"Anon\\\\\\\\\\\\\\\"}\
+]\\\\\\\\)\\\\\\\"\\\"}]\\)\"", 2, 26, 10, 32423019438032812360, "Local", 
+   "QuEST`RetargetCircuit"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.9152716799879923`*^9, 3.9152717200524807`*^9}},
+ CellLabel->
+  "During evaluation of \
+In[26]:=",ExpressionUUID->"74df796e-716e-4447-ae19-80a7b6ae1c63"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.9152716752631397`*^9, 3.9152717200609713`*^9}},
+ CellLabel->"Out[26]=",ExpressionUUID->"831dfa80-86ba-4b2e-8cdc-cf6b879a82b8"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", "hi", "]"}]], "Input",
+ CellChangeTimes->{{3.915269850688504*^9, 3.915269852491291*^9}},
+ CellLabel->"In[18]:=",ExpressionUUID->"79ec97ab-604c-4797-817d-57532131ee9e"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "RetargetCircuit", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?RetargetCircuit\\\\\\\"\\\"}]\\)\"", 2, 18, 3, 32423019438032812360, "Local",
+    "QuEST`RetargetCircuit"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.915269995048843*^9, 3.915270184716364*^9, 
+  3.915271334208205*^9, 3.915271551381572*^9, 3.9152716475034647`*^9},
+ CellLabel->
+  "During evaluation of \
+In[18]:=",ExpressionUUID->"1ebd3065-d72f-41da-a979-9a2405d5ce63"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.915269852798932*^9, 3.915269995057863*^9, 
+  3.915270184723379*^9, 3.9152713342184896`*^9, 3.915271551413064*^9, 
+  3.9152716475117693`*^9},
+ CellLabel->"Out[18]=",ExpressionUUID->"b9cbb693-b805-4886-823e-e737d0630005"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", 
+  RowBox[{"hello", ",", " ", "there", ",", " ", "friend"}], "]"}]], "Input",
+ CellChangeTimes->{{3.915271690201647*^9, 3.915271697403901*^9}},
+ CellLabel->"In[23]:=",ExpressionUUID->"9e4e7e60-2fad-4238-b8e3-4229a8724b9e"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "RetargetCircuit", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?RetargetCircuit\\\\\\\"\\\"}]\\)\"", 2, 23, 7, 32423019438032812360, "Local",
+    "QuEST`RetargetCircuit"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.9152716912112007`*^9, 3.915271697586067*^9}},
+ CellLabel->
+  "During evaluation of \
+In[23]:=",ExpressionUUID->"56c6be2b-fb5a-409f-b8a3-ddbb500b7048"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.9152716912221212`*^9, 3.91527169759404*^9}},
+ CellLabel->"Out[23]=",ExpressionUUID->"aa6d54f2-15f5-4809-9b6a-bed0f0dd0afa"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{720, 805},
+WindowMargins->{{Automatic, 0}, {Automatic, 0}},
+FrontEndVersion->"13.0 for Mac OS X x86 (64-bit) (February 4, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"d18f8c32-ba63-4751-aac0-d43fbf0e36c4"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 255, 4, 98, "Title",ExpressionUUID->"223c5e93-f36d-46eb-ad55-20d3c4e4558d"],
+Cell[838, 28, 428, 9, 52, "Input",ExpressionUUID->"630d3d6a-6e61-4efb-95f7-ae191fa9191e"],
+Cell[CellGroupData[{
+Cell[1291, 41, 296, 5, 69, "Chapter",ExpressionUUID->"1fd36cfc-fa1b-431f-91d7-5039b9c56c51"],
+Cell[CellGroupData[{
+Cell[1612, 50, 253, 4, 30, "Input",ExpressionUUID->"48aa9e4e-f4e8-4d85-b3b2-b0fb265148fe"],
+Cell[1868, 56, 14333, 334, 239, "Output",ExpressionUUID->"87f491dd-3ecf-419c-9e5e-1b12cd7f602b"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16250, 396, 394, 6, 69, "Chapter",ExpressionUUID->"57f2b7d5-15dc-4b27-aff0-df07ae9b9436"],
+Cell[CellGroupData[{
+Cell[16669, 406, 202, 3, 30, "Input",ExpressionUUID->"dbd66156-4b91-4406-a043-fde287dd0c37"],
+Cell[16874, 411, 12800, 311, 180, "Output",ExpressionUUID->"692e297c-73f5-42cb-9df1-d276411145f4"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[29711, 727, 309, 5, 54, "Subsection",ExpressionUUID->"a65778b5-8be7-4349-8976-aa2f8378fe22"],
+Cell[CellGroupData[{
+Cell[30045, 736, 840, 22, 55, "Input",ExpressionUUID->"c46bf92d-f358-4abd-80ad-63d02f4da33e"],
+Cell[30888, 760, 1602, 29, 123, "Output",ExpressionUUID->"6fdd0b58-f08f-4b38-9962-fa1c1b787bdc"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[32527, 794, 453, 10, 52, "Input",ExpressionUUID->"39709590-3c6f-429f-a362-731ba383fb10"],
+Cell[32983, 806, 644, 19, 38, "Output",ExpressionUUID->"c2799d57-8034-4aca-8cea-c96cff8c7f40"],
+Cell[33630, 827, 1553, 28, 123, "Output",ExpressionUUID->"bf2fb294-2c74-451c-b835-bbd9a6cd2de1"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[35220, 860, 409, 8, 52, "Input",ExpressionUUID->"ebbc580e-caaf-4fa1-9b63-3497e232a81f"],
+Cell[35632, 870, 666, 19, 38, "Output",ExpressionUUID->"24708f2c-61c4-4018-ab1a-2e0c4cd6cb37"],
+Cell[36301, 891, 1713, 30, 145, "Output",ExpressionUUID->"9f59f6b2-b121-400d-b699-1d05a9e32777"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[38063, 927, 291, 4, 54, "Subsection",ExpressionUUID->"66a7eb09-f599-4efa-8702-50444435770a"],
+Cell[CellGroupData[{
+Cell[38379, 935, 2602, 73, 173, "Input",ExpressionUUID->"a434cc3b-b6a7-4b7b-81b3-e88e52fd5604"],
+Cell[40984, 1010, 2261, 71, 108, "Output",ExpressionUUID->"e83e1e78-8b9a-4d76-9858-178629e817f9"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[43294, 1087, 207, 4, 54, "Subsection",ExpressionUUID->"e4613dd8-951c-4129-bb2c-cf7dbfb5c4de"],
+Cell[CellGroupData[{
+Cell[43526, 1095, 462, 12, 33, "Input",ExpressionUUID->"e0d0b034-9046-47f5-8b1d-19cdec37267c"],
+Cell[43991, 1109, 304, 7, 37, "Output",ExpressionUUID->"3a744d86-4c4e-4803-9448-c983d534a2be"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[44344, 1122, 240, 4, 54, "Subsection",ExpressionUUID->"e57c7873-02cc-4ac3-a7c5-5a3d707eaae6"],
+Cell[CellGroupData[{
+Cell[44609, 1130, 559, 15, 33, "Input",ExpressionUUID->"6a89518b-bb4c-4d6a-b2ac-bae9f21cb7ce"],
+Cell[45171, 1147, 480, 13, 37, "Output",ExpressionUUID->"42f37959-9735-4f00-91fa-35bc05b19458"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[45688, 1165, 944, 24, 33, "Input",ExpressionUUID->"358efe28-a6a8-410c-8999-9bb4a48fef87"],
+Cell[46635, 1191, 626, 17, 37, "Output",ExpressionUUID->"7157f519-0fb7-4368-ae79-8bd0c632980f"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[47298, 1213, 633, 17, 30, "Input",ExpressionUUID->"dd4733cb-b709-4461-8b7e-c06ae204387a"],
+Cell[47934, 1232, 492, 14, 34, "Output",ExpressionUUID->"379d8342-d5fa-46ea-bfd7-083f425d21c3"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[48463, 1251, 749, 22, 33, "Input",ExpressionUUID->"9aeaa7af-4a4c-465e-9e17-67297c029216"],
+Cell[49215, 1275, 661, 20, 37, "Output",ExpressionUUID->"221a3108-fb98-48e8-83dd-a5ec088debf7"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[49925, 1301, 263, 4, 54, "Subsection",ExpressionUUID->"35d072ee-9907-451d-9d40-cd0c8abd3df3"],
+Cell[CellGroupData[{
+Cell[50213, 1309, 397, 9, 30, "Input",ExpressionUUID->"8325c78b-f0bd-45da-bc9b-765a5132d8a1"],
+Cell[50613, 1320, 323, 6, 34, "Output",ExpressionUUID->"2121e79c-71cb-4f3f-af74-1db23259845f"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[50997, 1333, 347, 6, 69, "Chapter",ExpressionUUID->"72f1f0e8-812d-4567-a588-dfbce9602247"],
+Cell[CellGroupData[{
+Cell[51369, 1343, 397, 9, 30, "Input",ExpressionUUID->"ec8e0cc7-7591-4da4-ad95-7506b05dade9"],
+Cell[51769, 1354, 557, 11, 46, "Message",ExpressionUUID->"12d5e222-b447-428b-8efb-7a0ee43acf51"],
+Cell[52329, 1367, 255, 3, 34, "Output",ExpressionUUID->"28460cfb-b414-452b-9a4d-0e0f88c2a3d3"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[52621, 1375, 293, 6, 30, "Input",ExpressionUUID->"75601796-a303-4526-a5d3-56715762c89f"],
+Cell[52917, 1383, 539, 11, 28, "Message",ExpressionUUID->"74df796e-716e-4447-ae19-80a7b6ae1c63"],
+Cell[53459, 1396, 183, 2, 34, "Output",ExpressionUUID->"831dfa80-86ba-4b2e-8cdc-cf6b879a82b8"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[53679, 1403, 214, 3, 30, "Input",ExpressionUUID->"79ec97ab-604c-4797-817d-57532131ee9e"],
+Cell[53896, 1408, 510, 11, 28, "Message",ExpressionUUID->"1ebd3065-d72f-41da-a979-9a2405d5ce63"],
+Cell[54409, 1421, 275, 4, 34, "Output",ExpressionUUID->"b9cbb693-b805-4886-823e-e737d0630005"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[54721, 1430, 269, 4, 30, "Input",ExpressionUUID->"9e4e7e60-2fad-4238-b8e3-4229a8724b9e"],
+Cell[54993, 1436, 443, 10, 28, "Message",ExpressionUUID->"56c6be2b-fb5a-409f-b8a3-ddbb500b7048"],
+Cell[55439, 1448, 180, 2, 34, "Output",ExpressionUUID->"aa6d54f2-15f5-4809-9b6a-bed0f0dd0afa"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
