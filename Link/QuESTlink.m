@@ -303,6 +303,13 @@ This is the procedure outlined in Nat. Phys. 16, 1050–1057 (2020)."
 If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components."
     GetPauliStringFromMatrix::error = "`1`"
 
+    CalcCircuitGenerator::usage = "CalcCircuitGenerator[circuit] computes the Pauli string generator G of the given circuit, whereby circuit = Exp[i G]. 
+\[Bullet] If circuit contains decoherence operators, the generator of the circuit's superoperator is returned. See ?GetCircuitSuperoperator.
+\[Bullet] If circuit is unitary, the resulting coefficients may have non-zero imaginary components due to numerical error; these can be removed with Chop[].
+\[Bullet] If circuit is a single operator, the resulting Pauli string is automatically simplified.
+\[Bullet] Accepts option TransformationFunction -> f, where function f will be applied to the generator's Z-basis matrix before projection into the Pauli basis. This overrides the automatic simplification."
+    CalcCircuitGenerator::error = "`1`"
+
     RetargetCircuit::usage = "RetargetCircuit[circuit, rules] returns the given circuit but with its target and control qubits modified as per the given rules. The rules can be anything accepted by ReplaceAll.
 For instance RetargetCircuit[..., {0->1, 1->0}] swaps the first and second qubits, and RetargetCircuit[..., q_ -> q + 10] shifts every qubit up by 10.
 This function modifies only the qubits in the circuit, carefully avoiding modifying gate arguments and other data, so it is a safe alternative to simply evaluating (circuit /. rules).
@@ -3630,6 +3637,86 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Message[GetPauliStringFromMatrix::error, "The input must be a square matrix with power-of-2 dimensions."];
             $Failed)
         GetPauliStringFromMatrix[___] := invalidArgError[GetPauliStringFromMatrix]
+
+
+
+        (* functions for forceful simplification of a finite set of expressions produced within the below generators *)
+        simplifyLogsInGenerator[expr_] := expr /. {
+            Log[a_] + Log[b_] :> Log[a b],
+            - Log[a_] :> Log[1/a],
+            Log[Exp[a_]] :> a
+        }
+        simplifyRotationGenerator[angle_][gen_] :=
+            FullSimplify[
+                gen, angle \[Element] Reals, 
+                TransformationFunctions -> {Automatic, simplifyLogsInGenerator}]
+
+        (* (optionally-controlled) rotation gates are FullSimply'd, with their parameter asserted real, and have Log functions forcefully simplified *)
+        getGateSimplifyFunc[{ Through @ (Subscript[C, __]|Identity) @ (Subscript[Rx|Ry|Rz, __][a_] | R[a_, __]) }] :=
+            simplifyRotationGenerator[a]
+        
+        (* (optionally-controlled) Hadamard gates have their surds expanded *)
+        getGateSimplifyFunc[{ Through @ (Subscript[C, __]|Identity) @ Subscript[H, __] }] :=
+            Expand
+
+        (* (optionally-controlled) Phase gates *)
+        getGateSimplifyFunc[{ Through @ (Subscript[C, __]|Identity) @ Subscript[Ph, __][_] }] :=
+            simplifyLogsInGenerator
+
+        (* global phase is simply a Id, which is automatically achieved from combining Log functions *)
+        getGateSimplifyFunc[{ G[a_] }] :=
+            simplifyLogsInGenerator
+
+        (* all other gates or entire circuits receive no automatic simplification *)
+        getGateSimplifyFunc[_] :=
+            Identity
+
+        containsNoise[circuit_List] :=
+            MemberQ[
+                circuit, 
+                Subscript[ Damp | Deph | Depol | Kraus | KrausNonTP, __ ][__]]
+
+        Options[CalcCircuitGenerator] = {
+            TransformationFunction -> Automatic
+        };
+
+        CalcCircuitGenerator[circuit_List, opts___] /; isCircuitFormat[circuit] && containsNoise[circuit] :=
+            CalcCircuitGenerator[GetCircuitSuperoperator @ circuit, opts]
+
+        CalcCircuitGenerator[circuit_List, OptionsPattern[]] /; isCircuitFormat[circuit] := Module[
+            {errFunc, simpFunc, shrunk, map, matr, str},
+            errFunc = Message[CalcCircuitGenerator::error, "The above error prevented calculating the generator."]&;
+
+            (* replace Automatic simplifying function with a gate-specific one *)
+            simpFunc = OptionValue[TransformationFunction];
+            If[simpFunc === Automatic, simpFunc = getGateSimplifyFunc[circuit]];
+
+            (* compactify circuit; errors if circuit contain an invalid/unrecognised gate *)
+            {shrunk, map} = Check[GetCircuitCompacted[circuit], errFunc[]; Return @ $Failed];
+
+            (* get circuit analytic matrix; fails if circuit contains a gate with no known analytic form *)
+            matr = Check[CalcCircuitMatrix @ shrunk, errFunc[]; Return @ $Failed];
+
+            (* evaluate generator matrix; fails if MatrixLog cannot be evaluated, because e.g. matr has prohibitive zeroes *)
+            matr = Check[-I MatrixLog @ matr, errFunc[]; Return @ $Failed];
+
+            (* attempt to simplify generator matrix is circuit is a single gate recognised above *)
+            matr = Check[simpFunc @ matr, errFunc[]; Return @ $Failed];
+            If[Not @ MatrixQ @ matr, 
+                Message[CalcCircuitGenerator::error, "The given TransformationFunction did not return a matrix."];
+                Return @ $Failed];
+
+            (* project generator matrix into Pauli strings on smallest qubits *)
+            str = GetPauliStringFromMatrix[matr];
+
+            (* remap Pauli string qubits back to original circuit qubits*)
+            str /. Subscript[(s:(X|Y|Z)), t__] :> Subscript[s, t /. map]
+        ]
+
+        CalcCircuitGenerator[gate_?isGateFormat, opts___] :=
+            CalcCircuitGenerator[{gate}, opts]
+
+        CalcCircuitGenerator[___] := invalidArgError[CalcCircuitGenerator]
 
 
 
