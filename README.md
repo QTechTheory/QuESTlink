@@ -1,3 +1,6 @@
+> **Note**: Some antivirus vendors are erroneously flagging the latest precompiled Windows executable (served by `CreateDownloadedQuESTEnv[]`) as suspicious (see [this](https://www.virustotal.com/gui/file/22920882a5e3e5ec6923378d2a3599677b05680dcc5b9be826add7036c6ce6c2/behavior) VirusTotal report). This is likely due to the facilities possible of the [WSTP binaries](WSTP/Windows) supplied by Wolfram. Rest assured the executable is safe, and QuESTlink can be compiled from scratch using your local [WSTP binaries](https://reference.wolfram.com/language/tutorial/WSTPDeveloperGuide-Windows.html#26660) bundled with Mathematica.
+
+
 <!-- banner -->
 [<img src="Doc/banner.png" alt="QuESTlink" width=500>](https://questlink.qtechtheory.org)
 
@@ -12,6 +15,8 @@
 -->
 
 QuESTlink brings the power of [QuEST](https://github.com/QuEST-Kit/QuEST)'s quantum computer simulation to Mathematica, integrating it with powerful symbolic and diagrammatic facilities. QuESTlink is no mere *interface* to QuEST; it boasts a substantial number of additional features like analytic calculations, circuit rendering and recompiling, automatic differentiation of parameterised circuits and channels, and realistic quantum device descriptions. QuESTlink is especially fast at emulating variational quantum algorithms using a variety of novel asymptotically superior schemes.
+
+
 
 
 [![Languages](https://img.shields.io/badge/API-Mathematica-ff69b4.svg)](http://www.open-std.org/jtc1/sc22/wg14/www/standards.html#9899)
