@@ -1060,9 +1060,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                             {i, 0, 2^nQb - 1}, {j, 0, 2^nQb - 1}]
                 (* tidy up some amplitudes for visual clarity *)
                 ] /. {
-                        Complex[1.`,0.`] -> 1, (* (1.`+0.`)  |s> -> |s> *)
-                        Complex[0.`,0.`] -> 0, (* (0.`+0.`1) |s> ->    *)
-                        Complex[x_,0.`] -> x   (* (x + 0.`)  |s> -> x |s> *)
+                        Complex[1.`,0.`] -> 1, (* (1.`+0.`) |s> -> |s> *)
+                        Complex[0.`,0.`] -> 0, (* (0.`+0.`) |s> -> 0 *)
+                        Complex[x_,0.`] -> x   (* (x + 0.`) |s> -> x |s> *)
                     }
             ]
 
@@ -1365,9 +1365,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 log = PrintTemporary["Downloading..."];
                 url = "https://github.com/QTechTheory/QuESTlink/raw/main/Binaries/" <> getExecFn[os];
                 fn = FileNameJoin[{Directory[], "quest_link"}];
-                resp = URLDownload[url, fn,  {"File", "StatusCode"}, TimeConstraint->10];
+                resp = Check[URLDownload[url, fn,  {"File", "StatusCode"}, TimeConstraint->20], $Failed];
                 NotebookDelete[log];
                 (* check response *)
+                If[
+                    resp === $Failed,
+                    Message[CreateDownloadedQuESTEnv::error, "Download failed due to the above error."];
+                    Return[$Failed, Module]
+                ];
                 If[resp["StatusCode"] >= 400,
                     Message[CreateDownloadedQuESTEnv::error, "Download failed; returned status code " <> ToString @ resp["StatusCode"]];
                     Return[$Failed, Module]
