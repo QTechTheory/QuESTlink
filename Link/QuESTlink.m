@@ -321,6 +321,7 @@ Custom user gates are supported provided they adhere to the standard QuESTlink s
 
     GetCircuitCompacted::usage = "GetCircuitCompacted[circuit] returns {out, map} where out is an equivalent circuit but which targets only the lowest possible qubits, and map is a list of rules to restore the original qubits.
 This is useful for computing the smallest-form matrix of gates which otherwise target large-index qubits, via CalcCircuitMatrix @ First @ GetCircuitCompacted @ gate.
+The order of the target and control qubits in the first returned gate are strictly increasing, so GetCircuitCompacted[gate] is also useful for mapping gates to a unique form irrespective of their qubits.
 The original circuit is restored by GetCircuitRetargeted[out, map]."
     GetCircuitCompacted::error = "`1`"
 
