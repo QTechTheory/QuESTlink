@@ -330,6 +330,10 @@ The original circuit is restored by GetCircuitRetargeted[out, map]."
 \[Bullet] \"CliffordAndRz\" decompiles the circuit into Clifford gates (H, S, X, Y, Z, CX, CY, CZ, SWAP), a global phase G, and non-Clifford Rz.
 Note that the returned circuits are not necessarily optimal/minimal, and may benefit from a subsequent call to SimplifyCircuit[]. "
     RecompileCircuit::error = "`1`"
+
+    CalcPauliTransferMatrix::usage = "CalcPauliTransferMatrix[circuit] returns a PTM operator equivalent to the given circuit.
+CalcPauliTransferMatrix accepts optional argument AssertValidChannels."
+    CalcPauliTransferMatrix::error = "`1`"
     
     
     (*
@@ -385,7 +389,7 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
 
     AsSuperoperator::usage = "Optional argument to CalcCircuitMatrix (default Automatic), specifying whether the output should be a 2^N by 2^N unitary matrix (False), or a 2^2N by 2^2N superoperator matrix (True). The latter can capture decoherence, and be multiplied upon column-flattened 2^2N vectors."
     
-    AssertValidChannels::usage = "Optional argument to CalcCircuitMatrix and GetCircuitSuperoperator (default True), specifying whether to simplify their outputs by asserting that all channels therein are completely-positive and trace-preserving. For example, this asserts that the argument to a damping channel lies between 0 and 1."
+    AssertValidChannels::usage = "Optional argument to CalcCircuitMatrix, GetCircuitSuperoperator and CalcPauliTransferMatrix (default True), specifying whether to simplify their outputs by asserting that all channels therein are completely-positive and trace-preserving. For example, this asserts that the argument to a damping channel lies between 0 and 1 (inclusive)."
     
     EndPackage[]
     
@@ -482,7 +486,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
     Protect[Matr]
     
     Fac::usage = "Fac[scalar] is a non-physical operator which multiplies the given complex scalar onto every amplitude of the quantum state. This is directly multiplied onto state-vectors and density-matrices, and may break state normalisation."
-    
+    Protect[Fac]
+
+    PTM::usage = "PTM[matrix] is a Pauli-transfer matrix representation of an operator or channel. The subscript indices specify which Paulis of a Pauli string are operated upon."
+    Protect[PTM]
+
+    PTMap::usage = "PTMap[map] is a representation of a Pauli transfer matrix as a map between Pauli tensors."
+    Protect[PTMap]
+
     (* overriding Mathematica's doc for C[i] as i-th default constant *)
     C::usage = "C is a declaration of control qubits (subscript), which can wrap other gates to conditionally/controlled apply them."
     Protect[C]
@@ -2453,7 +2464,12 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     getAnalGateControls@#, getAnalGateTargets@#, getAnalGateMatrix@#, numQb
                     ]& /@ gates},
                     If[FreeQ[matrices, getAnalGateMatrix],
-                        Dot @@ Reverse @ matrices,
+                        (* handle when matrices is empty list (sometimes GetCircuitSuperoperator returns nothing, like when given only G )*)
+                        If[
+                            Length[matrices] === 0,
+                            matrices,
+                            Dot @@ Reverse @ matrices
+                        ],
                         (Message[CalcCircuitMatrix::error, "Circuit contained an unrecognised or unsupported gate: " <> 
                             ToString @ StandardForm @ First @ Cases[matrices, getAnalGateMatrix[g_] :> g, Infinity]];
                         $Failed)]]]
@@ -2533,10 +2549,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             {superops = Flatten @ Replace[circ, {
             (* qubit-agnostic gates *)
                 G[x_] :> Nothing,
-                Fac[x_] :> {Fac[x]},
+                Fac[x_] :> {Fac[x]}, (* this is _not_ Fac[Abs[x^2]] because Fac is not simply x * Id; it only ever left-multiplies *)
             (* unitaries *)
             	(* real gates (self conjugate) *)
-            	Subscript[(g:H|X|Z), q__Integer|{q__Integer}] :> {Subscript[g, q], Subscript[g, shiftInds[q,numQb]]},
             	Subscript[(g:H|X|Z|Id), q__Integer|{q__Integer}] :> {Subscript[g, q], Subscript[g, shiftInds[q,numQb]]},
             	g:Subscript[P, q__Integer|{q__Integer}][v_] :> {g, Subscript[P, shiftInds[q,numQb]][v]},
             	g:Subscript[SWAP, q1_,q2_] :> {g, Subscript[SWAP, q1+numQb,q2+numQb]},
@@ -4522,6 +4537,76 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ]
 
         RecompileCircuit[___] := invalidArgError[RecompileCircuit]
+
+
+
+        (* 
+         * Front-end functions for converting
+         * gates and circuits between the Z-basis
+         * and Pauli-basis.
+         *)
+
+        getChoiVecFromMatrix[m_] := 
+            Transpose @ {Flatten @ Transpose @ m}
+            
+        getSuperOpInnerProd[bra_, op_, ket_] := 
+            Part[ConjugateTranspose[bra] . op . ket, 1,1]
+
+        getSuperOpPTM[super_?MatrixQ, simpFunc_] := 
+            Module[{d,p},
+                d = Sqrt @ Length @ super;
+                (* todo: can significantly speed this up using sparsity, Hadamard-walsh transform, etc *)
+                p = Table[SparseArray @ getChoiVecFromMatrix @ getNthPauliTensorMatrix[i-1, Log2@d],{i,d^2}];
+                SparseArray @ Table[
+                    (1/d) getSuperOpInnerProd[p[[i]], super, p[[j]]] // simpFunc,
+                    {i,d^2}, {j,d^2}
+                ]
+            ]
+            
+
+        Options[CalcPauliTransferMatrix] = {
+            AssertValidChannels -> True
+        };
+    
+        CalcPauliTransferMatrix[circ_?isCircuitFormat, opts:OptionsPattern[]] :=
+            Enclose[
+                Module[
+                    {simpFlag, qubits, compCirc, superMatr, ptMatr},
+
+                     (* trigger option validation (and show error message immediately )*)
+                    simpFlag = OptionValue[AssertValidChannels];
+
+                    (* get equivalent circuit acting upon lowest order qubits *)
+                    qubits = GetCircuitQubits[circ] // ConfirmQuiet;
+                    If[qubits === {}, Message[CalcPauliTransferMatrix::error, "Circuit must explicitly target at least one qubit."]] // ConfirmQuiet;
+                    compCirc = First @ GetCircuitCompacted[circ] // ConfirmQuiet;
+
+                    (* compute superator of entire circuit *)
+                    superMatr = SparseArray @ CalcCircuitMatrix[compCirc, AsSuperoperator -> True, opts] // ConfirmQuiet;
+                    If[superMatr === {}, Message[CalcPauliTransferMatrix::error, "Could not compute circuit superoperator."]] // ConfirmQuiet;
+
+                    (* compute PTM from superoperator **)
+                    ptMatr = getSuperOpPTM[superMatr, If[simpFlag, FullSimplify, Identity]];
+
+                    (* optionally simplify, and return PTM *)
+                    Subscript[PTM, Sequence @@ qubits] @ ptMatr
+                ],
+
+                (* if any function call above failed... *)
+                Function[{failObj},
+
+                    (* hijack its error messages (note; invalid option error already shown *)
+                    If[
+                        failObj["HeldMessageName"] =!= Hold[OptionValue::nodef],
+                        Message[CalcPauliTransferMatrix::error, failObj["HeldMessageCall"][[1,2]]]
+                    ];
+                    $Failed
+                ]
+            ]
+
+        CalcPauliTransferMatrix[___] := invalidArgError[CalcPauliTransferMatrix]
+
+
 
     End[ ]
                                        
