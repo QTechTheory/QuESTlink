@@ -2537,6 +2537,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             (* unitaries *)
             	(* real gates (self conjugate) *)
             	Subscript[(g:H|X|Z), q__Integer|{q__Integer}] :> {Subscript[g, q], Subscript[g, shiftInds[q,numQb]]},
+            	Subscript[(g:H|X|Z|Id), q__Integer|{q__Integer}] :> {Subscript[g, q], Subscript[g, shiftInds[q,numQb]]},
             	g:Subscript[P, q__Integer|{q__Integer}][v_] :> {g, Subscript[P, shiftInds[q,numQb]][v]},
             	g:Subscript[SWAP, q1_,q2_] :> {g, Subscript[SWAP, q1+numQb,q2+numQb]},
                 g:Subscript[Ry, q_Integer][x_] :> {g, Subscript[Ry, q+numQb][x]},
