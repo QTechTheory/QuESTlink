@@ -310,18 +310,18 @@ If the input matrix is Hermitian, the output can be passed to Chop[] in order to
 \[Bullet] Accepts option TransformationFunction -> f, where function f will be applied to the generator's Z-basis matrix before projection into the Pauli basis. This overrides the automatic simplification."
     CalcCircuitGenerator::error = "`1`"
 
-    RetargetCircuit::usage = "RetargetCircuit[circuit, rules] returns the given circuit but with its target and control qubits modified as per the given rules. The rules can be anything accepted by ReplaceAll.
-For instance RetargetCircuit[..., {0->1, 1->0}] swaps the first and second qubits, and RetargetCircuit[..., q_ -> q + 10] shifts every qubit up by 10.
+    GetCircuitRetargeted::usage = "GetCircuitRetargeted[circuit, rules] returns the given circuit but with its target and control qubits modified as per the given rules. The rules can be anything accepted by ReplaceAll.
+For instance GetCircuitRetargeted[..., {0->1, 1->0}] swaps the first and second qubits, and GetCircuitRetargeted[..., q_ -> q + 10] shifts every qubit up by 10.
 This function modifies only the qubits in the circuit, carefully avoiding modifying gate arguments and other data, so it is a safe alternative to simply evaluating (circuit /. rules).
 Custom user gates are supported provided they adhere to the standard QuESTlink subscript format."
-    RetargetCircuit::error = "`1`"
+    GetCircuitRetargeted::error = "`1`"
 
     GetCircuitQubits::usage = "GetCircuitQubits[circuit] returns a sorted list of all qubit indices featured (i.e. controlled upon, or targeted by gates) in the given circuit."
     GetCircuitQubits::error = "`1`"
 
     GetCircuitCompacted::usage = "GetCircuitCompacted[circuit] returns {out, map} where out is an equivalent circuit but which targets only the lowest possible qubits, and map is a list of rules to restore the original qubits.
 This is useful for computing the smallest-form matrix of gates which otherwise target large-index qubits, via CalcCircuitMatrix @ First @ GetCircuitCompacted @ gate.
-The original circuit is restored by RetargetCircuit[out, map]."
+The original circuit is restored by GetCircuitRetargeted[out, map]."
     GetCircuitCompacted::error = "`1`"
 
     RecompileCircuit::usage = "RecompileCircuit[circuit, method] returns an equivalent circuit, transpiled to a differnet gate set. The input circuit can contain any unitary gate, with any number of control qubits. Supported methods include:
@@ -3771,21 +3771,21 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Throw["Could not identify qubits in unrecognised gate: " <> ToString @ StandardForm @ g]
 
         (* catch invalid maps with trigger ReplaceAll errors*)
-        RetargetCircuit[_, map_] /; (Head[0 /. map] === ReplaceAll) := 
+        GetCircuitRetargeted[_, map_] /; (Head[0 /. map] === ReplaceAll) := 
             $Failed
             
-        RetargetCircuit[circ_List, map_] := With[
+        GetCircuitRetargeted[circ_List, map_] := With[
             {newCirc = Catch[retargetGate[map] /@ circ]},
             If[ Not @ StringQ @ newCirc,
                 newCirc,
-                Message[RetargetCircuit::error, newCirc];
+                Message[GetCircuitRetargeted::error, newCirc];
                 $Failed]]
 
         (* overload to accept single gate; note this restricts to integer qubit formats*)
-        RetargetCircuit[gate_?isGateFormat, map_] :=
-            RetargetCircuit[{gate}, map]
+        GetCircuitRetargeted[gate_?isGateFormat, map_] :=
+            GetCircuitRetargeted[{gate}, map]
 
-        RetargetCircuit[___] := invalidArgError[RetargetCircuit]
+        GetCircuitRetargeted[___] := invalidArgError[GetCircuitRetargeted]
     
 
 
@@ -3802,7 +3802,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             qubits = GetCircuitQubits[circuit];
             If[qubits === $Failed, Return @ $Failed];
             map = MapThread[Rule, {qubits, Range @ Length @ qubits - 1}];
-            {RetargetCircuit[circuit, map], Reverse /@ map}
+            {GetCircuitRetargeted[circuit, map], Reverse /@ map}
         ]
         GetCircuitCompacted[___] := invalidArgError[GetCircuitCompacted]
 
