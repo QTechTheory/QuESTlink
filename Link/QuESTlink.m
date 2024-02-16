@@ -316,7 +316,7 @@ This function modifies only the qubits in the circuit, carefully avoiding modify
 Custom user gates are supported provided they adhere to the standard QuESTlink subscript format."
     GetCircuitRetargeted::error = "`1`"
 
-    GetCircuitQubits::usage = "GetCircuitQubits[circuit] returns a sorted list of all qubit indices featured (i.e. controlled upon, or targeted by gates) in the given circuit."
+    GetCircuitQubits::usage = "GetCircuitQubits[circuit] returns a list of all qubit indices featured (i.e. controlled upon or targeted by gates) in the given circuit. The order of the returned qubits matches the order they first appear in the circuit, and within a gate, by the target then control qubits in the user-given order (with duplicates deleted)."
     GetCircuitQubits::error = "`1`"
 
     GetCircuitCompacted::usage = "GetCircuitCompacted[circuit] returns {out, map} where out is an equivalent circuit but which targets only the lowest possible qubits, and map is a list of rules to restore the original qubits.
@@ -3792,7 +3792,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetCircuitQubits[gate_?isGateFormat] :=
             GetCircuitQubits @ {gate}
         GetCircuitQubits[circ_?isCircuitFormat] /; Head[circ] === List :=
-            Rest /@ getSymbCtrlsTargs /@ circ // Flatten // DeleteDuplicates // Sort
+            Reverse /@ Rest /@ getSymbCtrlsTargs /@ circ // Flatten // DeleteDuplicates
         GetCircuitQubits[___] := invalidArgError[GetCircuitQubits]
 
 
