@@ -351,6 +351,13 @@ Note that the returned circuits are not necessarily optimal/minimal, and may ben
 CalcPauliTranferMatrix /@ circuit returns an equivalent sequence of individual (and likely smaller) PTM operators.
 CalcPauliTransferMatrix accepts optional argument AssertValidChannels."
     CalcPauliTransferMatrix::error = "`1`"
+
+    CalcPauliTransferMap::usage = "CalcPauliTransferMap[ptm] produces a PTMap equivalent to the given PTM operator. See ?PTM.
+CalcPauliTransferMap[circuit] produces a PTMap from a given gate or circuit, and merely first invokes CalcPauliTransferMatrix.
+By default, this returned map is from a Pauli-string index to a list of {index, coefficient} pairs, encoding how the PTM would modify the indexed Pauli string. The indexing is the same as used by GetIndexOfPauliString[] and GetPauliStringFromIndex[], where the subscripted qubits of the PTM are treated as though given in order of increasing significance.
+CalcPauliTransferMap accepts options \"KroneckerForm\"->True which replaces the Pauli-string indices with their corresponding Pauli-string in the form produced by GetKroneckerOfPauliString[].
+CalcPauliTransferMap also accepts option AssertValidChannels->False to disable the automatic simplification of the map's coefficients through the assertion of valid channel parameters. See ?AssertValidChannels."
+    CalcPauliTransferMap::error = "`1`"
     
     
     (*
@@ -406,7 +413,7 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
 
     AsSuperoperator::usage = "Optional argument to CalcCircuitMatrix (default Automatic), specifying whether the output should be a 2^N by 2^N unitary matrix (False), or a 2^2N by 2^2N superoperator matrix (True). The latter can capture decoherence, and be multiplied upon column-flattened 2^2N vectors."
     
-    AssertValidChannels::usage = "Optional argument to CalcCircuitMatrix, GetCircuitSuperoperator and CalcPauliTransferMatrix (default True), specifying whether to simplify their outputs by asserting that all channels therein are completely-positive and trace-preserving. For example, this asserts that the argument to a damping channel lies between 0 and 1 (inclusive)."
+    AssertValidChannels::usage = "Optional argument to CalcCircuitMatrix, GetCircuitSuperoperator, CalcPauliTransferMatrix and CalcPauliTransferMap (default True), specifying whether to simplify their outputs by asserting that all channels therein are completely-positive and trace-preserving. For example, this asserts that the symbolic argument to a damping channel is constrained between 0 and 1 (inclusive)."
     
     EndPackage[]
     
@@ -505,10 +512,10 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
     Fac::usage = "Fac[scalar] is a non-physical operator which multiplies the given complex scalar onto every amplitude of the quantum state. This is directly multiplied onto state-vectors and density-matrices, and may break state normalisation."
     Protect[Fac]
 
-    PTM::usage = "PTM[matrix] is a Pauli-transfer matrix representation of an operator or channel. The subscript indices specify which Paulis of a Pauli string are operated upon."
+    PTM::usage = "PTM[matrix] is a Pauli-transfer matrix representation of an operator or channel. The subscript indices specify which Paulis of a Pauli string are operated upon. Such objects are produced by functions like CalcPauliTransferMatrix[]."
     Protect[PTM]
 
-    PTMap::usage = "PTMap[map] is a representation of a Pauli transfer matrix as a map between Pauli tensors."
+    PTMap::usage = "PTMap[map] is a representation of a Pauli transfer matrix as a map between Pauli tensors, specified either as basis-state indices or in a Kronecker form. See ?CalcPauliTransferMap."
     Protect[PTMap]
 
     (* overriding Mathematica's doc for C[i] as i-th default constant *)
@@ -4753,6 +4760,58 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ]
 
         CalcPauliTransferMatrix[___] := invalidArgError[CalcPauliTransferMatrix]
+
+
+
+        getMapOfPauliIndicesFromPTM[matr_?MatrixQ] :=
+            Table[
+                (i-1) ->
+                With[
+                    {col = matr . SparseArray @ UnitVector[Length[matr], i]},
+                    {inds = Flatten @ SparseArray[col]["NonzeroPositions"]},
+                    Transpose @ {inds - 1, col[[inds]]}],
+                {i, Length[matr]}]
+
+
+        Options[CalcPauliTransferMap] = {
+            "KroneckerForm" -> False,
+            AssertValidChannels -> True
+        };
+
+        CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] :=
+            Module[
+                {indMap, pauliFunc},
+                indMap = getMapOfPauliIndicesFromPTM[m];
+                pauliFunc = Function[{ind}, 
+                    GetKroneckerOfPauliString @ 
+                        GetPauliStringFromIndex[ind, Length@{q}, "RemoveIds"->False]];
+                Subscript[PTMap, q] @@ If[
+                    Not @ OptionValue["KroneckerForm"],
+                    indMap,
+                    Table[
+                        pauliFunc @ First @ rule -> MapAt[pauliFunc, Last @ rule, {All,1}],
+                        {rule, indMap}]]
+            ]
+
+        CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] /; 
+            Not[ And@@(NonNegative/@{q}) ] || Not @ DuplicateFreeQ[{q}] := (
+                Message[CalcPauliTransferMap::error, "The PTM target indices were not unique non-negative integers."];
+                $Failed)
+
+        CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] /; 
+            Not[SquareMatrixQ[m]] || Length[m] =!= 4^Length@{q} := (
+                Message[CalcPauliTransferMap::error, "The PTM matrix was not a compatibly-sized square matrix."];
+                $Failed)
+
+        CalcPauliTransferMap[circ_?isCircuitFormat, opts:OptionsPattern[]] := Module[
+            {ptm},
+            ptm = Check[
+                CalcPauliTransferMatrix[circ, FilterRules[{opts}, Options @ CalcPauliTransferMatrix]], 
+                Message[CalcPauliTransferMap::error, "Unable to determine PTM as per the above error."];
+                Return @ $Failed];
+            
+            CalcPauliTransferMap[ptm, FilterRules[{opts}, Options @ CalcPauliTransferMap]]
+        ]
 
 
 
