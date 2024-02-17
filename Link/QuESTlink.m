@@ -154,6 +154,12 @@ GetPauliStringFromIndex accepts optional argument \"RemoveIds\" -> False (defaul
 GetIndexOfPauliString[string] returns a list of {index, coefficient} pairs which describe all Pauli products in the given string.
 To force GetIndexOfPauliString[product] to return the same format as GetIndexOfPauliString[string], simply call GetIndexOfPauliString[ 1. product ]."
     GetIndexOfPauliString::error = "`1`"
+
+    GetKroneckerOfPauliString::usage = "GetKroneckerOfPauliString[product, n] expands the given Pauli product into an explicit n-Pauli Kronecker form. The zero target in the given product corresponds to the rightmost Pauli in the Kronecker form. 
+GetKroneckerOfPauliString[string, n] returns a list of {kronecker, coefficient} pairs; one for each term in the given Pauli string.
+GetKroneckerOfPauliString[string] infers the number of Paulis from the given string or product.
+This function is useful for converting QuESTlink's Pauli strings (i.e. subscript index notation) into fixed-size structures for easy comparison."
+    GetKroneckerOfPauliString::error = "`1`"
     
     GetRandomPauliString::usage = "GetRandomPauliString[numQubits, numTerms, {minCoeff, maxCoeff}] generates a random Pauli string with unique Pauli tensors.
 GetRandomPauliString[numQubits, All, {minCoeff, maxCoeff}] will generate all 4^numQubits unique Pauli tensors.
@@ -657,13 +663,17 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          
         pauliCodePatt = X|Y|Z|Id;
         pauliOpPatt = Subscript[pauliCodePatt, _Integer];
-        numericPauliProdPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?Internal`RealValuedNumericQ,{0,1}], pauliOpPatt.. ];
+        pauliProdPatt = Verbatim[Times][pauliOpPatt..];
+        numericCoeffPauliProdPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?Internal`RealValuedNumericQ,{0,1}], pauliOpPatt.. ];
+
+        getNumQubitsInPauliString[expr_] :=
+            1 + Max @ Cases[expr, Subscript[pauliCodePatt, q_Integer] :> q, {0,Infinity}]
 
         isValidNumericPauliString[expr_] := 
             Switch[expr,
                 pauliOpPatt, 
                     Last[expr] >= 0,
-                numericPauliProdPatt,
+                numericCoeffPauliProdPatt,
                     With[
                         {qubits = Cases[expr, Subscript[pauliCodePatt, q_Integer] :> q]},
                         And[
@@ -688,13 +698,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         getEncodedNumericPauliString[ Verbatim[Times][p:pauliOpPatt.. ] ] :=
             {{1}, getOpCode /@ {p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
         (* .1 X1 X2 *)
-        getEncodedNumericPauliString[ p:numericPauliProdPatt ] :=
+        getEncodedNumericPauliString[ p:numericCoeffPauliProdPatt ] :=
             {p[[1]], getOpCode /@ Rest[List@@p][[All,1]], Rest[List@@p][[All,2]], Length[p]-1}
         (* .5 X1 X2 + X1 X2 + X1 + .5 X1 *)
-        getEncodedNumericPauliString[ s_Plus ] /; AllTrue[List@@s, MatchQ[numericPauliProdPatt]] :=
+        getEncodedNumericPauliString[ s_Plus ] /; AllTrue[List@@s, MatchQ[numericCoeffPauliProdPatt]] :=
             Join @@@ Transpose[getEncodedNumericPauliString /@ (List @@ s)]
         (* 0.` X1 ... *)
-        getEncodedNumericPauliString[ s:Verbatim[Plus][ 0.`, numericPauliProdPatt..] ] :=
+        getEncodedNumericPauliString[ s:Verbatim[Plus][ 0.`, numericCoeffPauliProdPatt..] ] :=
             getEncodedNumericPauliString @ s[[2;;]]
 
 
@@ -703,13 +713,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * recognising symbolic Pauli strings
          *)
          
-        symbolicPauliProdPatt = pauliOpPatt | Verbatim[Times][___, pauliOpPatt, ___];
+        symbolicCoeffPauliProdPatt = pauliOpPatt | Verbatim[Times][___, pauliOpPatt, ___];
 
         isValidSymbolicPauliString[expr_] := 
             Switch[expr,
                 pauliOpPatt, 
                     Last[expr] >= 0,
-                symbolicPauliProdPatt,
+                symbolicCoeffPauliProdPatt,
                     With[
                         {qubits = Cases[expr, Subscript[pauliCodePatt, q_Integer] :> q]},
                         And[
@@ -1364,7 +1374,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                         Partition[ data[[3]], data[[1]]]}]]]
         SampleClassicalShadow[___] := invalidArgError[SampleClassicalShadow]
     
-        CalcExpecPauliProdsFromClassicalShadow[shadow_List, prods:{__:numericPauliProdPatt}, numBatches_Integer:10] := 
+        CalcExpecPauliProdsFromClassicalShadow[shadow_List, prods:{__:numericCoeffPauliProdPatt}, numBatches_Integer:10] := 
             If[
                 Not @ MatchQ[Dimensions[shadow], {nSamps_, 2, nQb_}],
                 (Message[CalcExpecPauliProdsFromClassicalShadow::error, "The classical shadow input must be a list " <>
@@ -3832,8 +3842,6 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         GetPauliStringFromIndex[___] := invalidArgError[GetPauliStringFromIndex]
 
-
-
         
 
         separatePauliStringIntoProdsAndCoeffs[pauli:pauliOpPatt] :=
@@ -3848,23 +3856,37 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         separatePauliStringIntoProdsAndCoeffs[sum_Plus] :=
             Join @@ (separatePauliStringIntoProdsAndCoeffs /@ List @@ sum)
 
-        GetIndexOfPauliString[ Subscript[s:pauliCodePatt, q_Integer] ] /; (q>=0) :=
+        GetIndexOfPauliString[ Subscript[s:pauliCodePatt, q_Integer?NonNegative] ] :=
             (s /. {Id->0,X->1,Y->2,Z->3}) * 4^q
 
-        GetIndexOfPauliString[ prod:Verbatim[Times][Subscript[pauliCodePatt, _Integer]..] ] /; isValidSymbolicPauliString[prod] :=
+        GetIndexOfPauliString[ prod:pauliProdPatt?isValidSymbolicPauliString ] :=
             Total[GetIndexOfPauliString /@ List @@ prod]
 
-        GetIndexOfPauliString[ string_?isValidSymbolicPauliString ] := Module[
-            {prods, badTerms},
-            prods = separatePauliStringIntoProdsAndCoeffs[string];
-            badTerms = Select[prods, (Head[#] === separatePauliStringIntoProdsAndCoeffs &)];
-            If[Length @ badTerms > 0,
-                Message[GetIndexOfPauliString::error, "The given Pauli string contained a term which did not resemble a Pauli product."];
-                Return @ $Failed];
-            MapAt[GetIndexOfPauliString, prods, {All, 1}]
-        ]
+        GetIndexOfPauliString[ string_?isValidSymbolicPauliString ] := 
+            MapAt[GetIndexOfPauliString, separatePauliStringIntoProdsAndCoeffs[string], {All, 1}]
             
         GetIndexOfPauliString[___] := invalidArgError[GetIndexOfPauliString]
+
+
+
+        GetKroneckerOfPauliString[ prod:(pauliOpPatt|pauliProdPatt)?isValidSymbolicPauliString, numQubits_Integer?Positive ] :=
+            If[
+                getNumQubitsInPauliString[prod] > numQubits,
+                Message[GetKroneckerOfPauliString::error, "The given Pauli string targeted a larger index qubit than the number of qubits specified."]; Return @ $Failed,
+                CircleTimes @@ {Id,X,Y,Z}[[ 1 + getNthPauliTensor[GetIndexOfPauliString @ prod, numQubits] ]] ]
+
+        GetKroneckerOfPauliString[ string_?isValidSymbolicPauliString, numQubits_Integer?Positive ] := 
+            Module[
+                {prods},
+                prods = separatePauliStringIntoProdsAndCoeffs[string];
+                Enclose[
+                    MapAt[(GetKroneckerOfPauliString[#,numQubits]&), prods, {All, 1}] // ConfirmQuiet,
+                    ReleaseHold @ # @ "HeldMessageCall" &]]  
+
+        GetKroneckerOfPauliString[ string_?isValidSymbolicPauliString ] :=
+            GetKroneckerOfPauliString[string, getNumQubitsInPauliString @ string]
+        
+        GetKroneckerOfPauliString[___] := invalidArgError[GetKroneckerOfPauliString]
 
 
 
