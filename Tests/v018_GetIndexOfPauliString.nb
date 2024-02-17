@@ -1,0 +1,687 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     26564,        679]
+NotebookOptionsPosition[     23228,        612]
+NotebookOutlinePosition[     23625,        628]
+CellTagsIndexPosition[     23582,        625]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["GetIndexOfPauliString", "Title",
+ CellChangeTimes->{{3.913273690088934*^9, 3.913273712038406*^9}, {
+  3.915199103735641*^9, 3.915199106675872*^9}, {3.917086155647716*^9, 
+  3.917086158759173*^9}, {3.9171638604366302`*^9, 3.917163862967925*^9}, {
+  3.917166520749667*^9, 
+  3.91716652399856*^9}},ExpressionUUID->"9bfe36dd-a76c-4a9a-a159-\
+785284647ef5"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", " ", "@", " ", 
+   RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Import", "[", "\"\<../Link/QuESTlink.m\>\"", "]"}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.91451986218738*^9, 3.91451987324094*^9}, {
+  3.91519911126755*^9, 3.915199111502734*^9}},
+ CellLabel->
+  "In[135]:=",ExpressionUUID->"1652301b-a274-4e2e-863c-d01315d2828c"],
+
+Cell[CellGroupData[{
+
+Cell["Doc", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 
+  3.9151991786465263`*^9}},ExpressionUUID->"0f3a8cf5-efed-43c2-b3e4-\
+61f6f5df579a"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "GetIndexOfPauliString"}]], "Input",
+ CellChangeTimes->{{3.917163871858261*^9, 3.917163874322421*^9}, {
+  3.917166541053545*^9, 3.917166541954846*^9}},
+ CellLabel->
+  "In[175]:=",ExpressionUUID->"f6a60145-b0b5-45a6-b0c1-2c2f3b45ec31"],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   FrameBox[
+    DynamicModuleBox[{System`InformationDump`open$$ = False, 
+     System`InformationDump`mouseOver$$ = False}, 
+     PaneSelectorBox[{True->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False,
+             BaseStyle -> None],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetIndexOfPauliString[pauliString] returns the \
+index of the given Pauli string in the ordered basis of Pauli strings. The \
+zero target is treated as least significant.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          PaneBox[
+           TagBox[GridBox[{
+              {
+               StyleBox[
+                TagBox[
+                 TooltipBox[
+                  StyleBox["\<\" Definitions\"\>", "InformationRowLabel",
+                   StripOnInput->False],
+                  "\"Definitions\"",
+                  TooltipStyle->"TextStyling"],
+                 Annotation[#, "Definitions", "Tooltip"]& ], "DialogStyle",
+                StripOnInput->False]},
+              {
+               TemplateBox[{"\"\[ThinSpace]\"", 
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"GetIndexOfPauliString", "[", 
+                    SubscriptBox[
+                    RowBox[{"QuEST`Private`s", ":", 
+                    RowBox[{"Id", "|", "X", "|", "Y", "|", "Z"}]}], 
+                    "QuEST`Private`q_Integer"], "]"}], ":=", 
+                    RowBox[{
+                    RowBox[{"(", 
+                    RowBox[{"QuEST`Private`s", "/.", "\[VeryThinSpace]", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"Id", "\[Rule]", "0"}], ",", 
+                    RowBox[{"X", "\[Rule]", "1"}], ",", 
+                    RowBox[{"Y", "\[Rule]", "2"}], ",", 
+                    RowBox[{"Z", "\[Rule]", "3"}]}], "}"}]}], ")"}], " ", 
+                    SuperscriptBox["4", "QuEST`Private`q"]}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetIndexOfPauliString", "[", 
+                    RowBox[{"QuEST`Private`prod", ":", 
+                    RowBox[{
+                    RowBox[{"Verbatim", "[", "Times", "]"}], "[", 
+                    RowBox[{
+                    RowBox[{"(", 
+                    SubscriptBox[
+                    RowBox[{"Id", "|", "X", "|", "Y", "|", "Z"}], "_Integer"],
+                     ")"}], ".."}], "]"}]}], "]"}], ":=", 
+                    RowBox[{"(", 
+                    RowBox[{
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"!", 
+                    RowBox[{"DuplicateFreeQ", "[", 
+                    RowBox[{
+                    RowBox[{"(", 
+                    RowBox[{"List", "@@", "QuEST`Private`prod"}], ")"}], 
+                    "\[LeftDoubleBracket]", 
+                    RowBox[{"All", ",", "2"}], "\[RightDoubleBracket]"}], 
+                    "]"}]}], ",", 
+                    RowBox[{
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"GetIndexOfPauliString", "::", "error"}], 
+                    "MessageName"], ",", 
+                    "\"Multiple Pauli operators targeted the same qubit.\""}],
+                     "]"}], ";", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}]}], "]"}], ";", 
+                    RowBox[{"Total", "[", 
+                    RowBox[{"GetIndexOfPauliString", "/@", 
+                    RowBox[{"List", "@@", "QuEST`Private`prod"}]}], "]"}]}], 
+                    ")"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetIndexOfPauliString", "[", "___", "]"}], ":=", 
+                    
+                    
+                    RowBox[{
+                    "QuEST`Private`invalidArgError", "[", 
+                    "GetIndexOfPauliString", "]"}]}]}, {" "}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]},
+                "RowDefault"]}
+             },
+             DefaultBaseStyle->"Column",
+             GridBoxAlignment->{"Columns" -> {{Left}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+            "Column"],
+           FrameMargins->{{6, 0}, {3, 6}}], "\<\"\"\>"},
+         {
+          PaneBox[GridBox[{
+             {
+              
+              DynamicModuleBox[{System`InformationDump`open$$ = {
+               False, False, False, False, False, False}}, 
+               StyleBox[GridBox[{
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Full Name\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"FullName\"",
+                    TooltipStyle->"TextStyling"],
+                    
+                    Annotation[#, "FullName", 
+                    "Tooltip"]& ], "\<\"QuEST`GetIndexOfPauliString\"\>"}
+                 },
+                 AutoDelete->False,
+                 GridBoxAlignment->{"Columns" -> {Right, Left}},
+                 GridBoxDividers->None,
+                 GridBoxItemSize->{"Columns" -> {Automatic, Automatic}},
+                 GridBoxSpacings->{"Columns" -> {
+                    Offset[0.27999999999999997`], {
+                    Offset[0.5599999999999999]}, 
+                    Offset[0.27999999999999997`]}, "Rows" -> {
+                    Offset[0.2], {
+                    Offset[0.8]}, 
+                    Offset[0.2]}}], "DialogStyle",
+                StripOnInput->False],
+               DynamicModuleValues:>{}]}
+            },
+            DefaultBaseStyle->"Column",
+            GridBoxAlignment->{"Columns" -> {{Left}}},
+            GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings->{"Columns" -> {
+                Offset[0.27999999999999997`], {
+                 Offset[0.5599999999999999]}, 
+                Offset[0.27999999999999997`]}, "Rows" -> {
+                Offset[0.2], {
+                 Offset[3.6]}, 
+                Offset[0.2]}}],
+           FrameMargins->{{6, 6}, {6, 3}}], ""},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpener"]], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpenerHot"]]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, False],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"], False->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetIndexOfPauliString[pauliString] returns the \
+index of the given Pauli string in the ordered basis of Pauli strings. The \
+zero target is treated as least significant.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {2., 8.}}], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpenerHot"],
+               ImageSizeCache->{10., {2., 8.}}]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, True],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}, Dynamic[System`InformationDump`open$$],
+      BaselinePosition->Baseline,
+      FrameMargins->0,
+      ImageSize->Automatic],
+     DynamicModuleValues:>{}],
+    BaseStyle->"InformationGridFrame",
+    StripOnInput->False], "InformationGridPlain",
+   StripOnInput->False],
+  InformationData[<|
+   "ObjectType" -> "Symbol", "Usage" -> 
+    "GetIndexOfPauliString[pauliString] returns the index of the given Pauli \
+string in the ordered basis of Pauli strings. The zero target is treated as \
+least significant.", "Documentation" -> None, "OwnValues" -> None, "UpValues" -> 
+    None, "DownValues" -> 
+    Information`InformationValueForm[
+     DownValues, QuEST`GetIndexOfPauliString, {QuEST`GetIndexOfPauliString[
+         Subscript[
+          Pattern[QuEST`Private`s, 
+           Alternatives[
+           QuEST`Gate`Id, QuEST`Gate`X, QuEST`Gate`Y, QuEST`Gate`Z]], 
+          Pattern[QuEST`Private`q, 
+           Blank[Integer]]]] :> 
+       ReplaceAll[
+         QuEST`Private`s, {
+          QuEST`Gate`Id -> 0, QuEST`Gate`X -> 1, QuEST`Gate`Y -> 2, 
+           QuEST`Gate`Z -> 3}] 4^QuEST`Private`q, 
+       QuEST`GetIndexOfPauliString[
+         Pattern[QuEST`Private`prod, 
+          Verbatim[Times][
+           Repeated[
+            Subscript[
+             Alternatives[
+             QuEST`Gate`Id, QuEST`Gate`X, QuEST`Gate`Y, QuEST`Gate`Z], 
+             Blank[Integer]]]]]] :> (If[
+          Not[
+           DuplicateFreeQ[
+            Part[
+             Apply[List, QuEST`Private`prod], All, 2]]], Message[
+            MessageName[QuEST`GetIndexOfPauliString, "error"], 
+            "Multiple Pauli operators targeted the same qubit."]; 
+          Return[$Failed]]; Total[
+          Map[QuEST`GetIndexOfPauliString, 
+           Apply[List, QuEST`Private`prod]]]), QuEST`GetIndexOfPauliString[
+         BlankNullSequence[]] :> 
+       QuEST`Private`invalidArgError[QuEST`GetIndexOfPauliString]}], 
+    "SubValues" -> None, "DefaultValues" -> None, "NValues" -> None, 
+    "FormatValues" -> None, "Options" -> None, "Attributes" -> {}, "FullName" -> 
+    "QuEST`GetIndexOfPauliString"|>, False]]], "Output",
+ CellChangeTimes->{
+  3.917163874882135*^9, 3.917166542357284*^9, {3.917166600454777*^9, 
+   3.917166603677062*^9}, 3.917167005208736*^9},
+ CellLabel->
+  "Out[175]=",ExpressionUUID->"18ca748c-b98f-41f9-86e8-f6cdec166ced"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Correctness", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.9151992172292128`*^9, 3.915199229407743*^9}, {3.9170862812813473`*^9, 
+  3.917086282645287*^9}, {3.917087209671797*^9, 3.91708721024879*^9}, {
+  3.917093118360723*^9, 
+  3.917093119516344*^9}},ExpressionUUID->"edbf9899-3b88-4c59-8352-\
+5f6125bb5435"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetIndexOfPauliString", "[", 
+  SubscriptBox["Id", "4"], "]"}]], "Input",
+ CellChangeTimes->{{3.917166649393647*^9, 3.9171666530706387`*^9}},
+ CellLabel->
+  "In[141]:=",ExpressionUUID->"1d3fd0b4-2de2-4856-a7c1-77c113df7ea9"],
+
+Cell[BoxData["0"], "Output",
+ CellChangeTimes->{3.91716665353474*^9},
+ CellLabel->
+  "Out[141]=",ExpressionUUID->"2b15c609-bfb6-4746-85db-c3d42625a73b"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetIndexOfPauliString", "[", 
+  SubscriptBox["X", "0"], "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetIndexOfPauliString", "[", 
+  SubscriptBox["Y", "0"], "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetIndexOfPauliString", "[", 
+  SubscriptBox["Z", "0"], "]"}]}], "Input",
+ CellChangeTimes->{{3.9171666581047287`*^9, 3.917166666687619*^9}},
+ CellLabel->
+  "In[143]:=",ExpressionUUID->"273957a9-de92-48d7-8906-3fd27aaf8245"],
+
+Cell[BoxData["1"], "Output",
+ CellChangeTimes->{{3.917166660019755*^9, 3.9171666670553913`*^9}},
+ CellLabel->
+  "Out[143]=",ExpressionUUID->"bde46875-30f1-4dd3-889c-3fe2f601522e"],
+
+Cell[BoxData["2"], "Output",
+ CellChangeTimes->{{3.917166660019755*^9, 3.9171666670566273`*^9}},
+ CellLabel->
+  "Out[144]=",ExpressionUUID->"b9e2d89d-dc2f-4d02-abfe-a224c6fbc5d8"],
+
+Cell[BoxData["3"], "Output",
+ CellChangeTimes->{{3.917166660019755*^9, 3.9171666670578823`*^9}},
+ CellLabel->
+  "Out[145]=",ExpressionUUID->"9f58a164-b25f-45d7-b2cd-86c9a578c7ca"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetIndexOfPauliString", "[", 
+  SubscriptBox["X", "1"], "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetIndexOfPauliString", "[", 
+  RowBox[{
+   SubscriptBox["X", "1"], 
+   SubscriptBox["Id", "0"]}], "]"}]}], "Input",
+ CellChangeTimes->{{3.917166687016666*^9, 3.91716669141661*^9}},
+ CellLabel->
+  "In[147]:=",ExpressionUUID->"d37acb68-3510-4dc2-bdeb-4703065c848c"],
+
+Cell[BoxData["4"], "Output",
+ CellChangeTimes->{{3.917166687478321*^9, 3.9171666916351633`*^9}},
+ CellLabel->
+  "Out[147]=",ExpressionUUID->"a30ef6c2-703a-4a3d-9f50-aa8c9020e38a"],
+
+Cell[BoxData["4"], "Output",
+ CellChangeTimes->{{3.917166687478321*^9, 3.9171666916372147`*^9}},
+ CellLabel->
+  "Out[148]=",ExpressionUUID->"855ce36e-da81-4b00-a8eb-1aa9bc9d0a4f"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"GetIndexOfPauliString", "[", 
+   SubscriptBox["Z", "34"], "]"}], " ", "===", " ", 
+  RowBox[{"3", " ", 
+   SuperscriptBox["4", "34"]}]}]], "Input",
+ CellChangeTimes->{{3.917166792884757*^9, 3.917166814554521*^9}, {
+  3.917166945873969*^9, 3.9171669514272327`*^9}},
+ CellLabel->
+  "In[171]:=",ExpressionUUID->"a37ea4bb-d6a1-44b6-baf1-4f52b1113c8e"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{{3.9171667955773573`*^9, 3.9171668149810457`*^9}, 
+   3.917166952016756*^9},
+ CellLabel->
+  "Out[171]=",ExpressionUUID->"2d379901-5513-481d-baeb-2b600b547d32"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"GetIndexOfPauliString", "[", "  ", 
+   RowBox[{"Product", "[", 
+    RowBox[{
+     SubscriptBox["Z", "t"], ",", 
+     RowBox[{"{", 
+      RowBox[{"t", ",", "0", ",", "34"}], "}"}]}], "]"}], " ", "]"}], " ", "===",
+   " ", 
+  RowBox[{
+   SuperscriptBox["4", 
+    RowBox[{"34", "+", "1"}]], "-", "1"}]}]], "Input",
+ CellChangeTimes->{{3.9171669629848957`*^9, 3.917166996015401*^9}},
+ CellLabel->
+  "In[174]:=",ExpressionUUID->"da392573-b2a9-40ef-a8e4-c516f2d6ed99"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{{3.917166984358028*^9, 3.917166996329615*^9}},
+ CellLabel->
+  "Out[174]=",ExpressionUUID->"e0c6536d-8002-471c-bb6f-71f9596d1c3e"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"ind", " ", "=", " ", "1245194"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"ind", " ", "===", " ", 
+  RowBox[{"GetIndexOfPauliString", " ", "@", " ", 
+   RowBox[{"GetPauliStringFromIndex", "[", "ind", "]"}]}]}]}], "Input",
+ CellChangeTimes->{{3.917166729844304*^9, 3.917166775135661*^9}},
+ CellLabel->
+  "In[156]:=",ExpressionUUID->"4c792e16-2d22-4d15-8c68-09c6a8e17d2c"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{{3.917166738275065*^9, 3.9171667755805273`*^9}},
+ CellLabel->
+  "Out[157]=",ExpressionUUID->"c0b91500-4f36-4997-9fe4-5a7e6414c72b"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Errors", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.9151992172292128`*^9, 3.915199229407743*^9}, {3.9170862812813473`*^9, 
+  3.917086282645287*^9}, {3.917087209671797*^9, 3.91708721024879*^9}, {
+  3.917093118360723*^9, 3.917093119516344*^9}, {3.917163898899314*^9, 
+  3.917163899456995*^9}},ExpressionUUID->"06d2362f-2d5a-471a-b5d6-\
+757ec737ed4c"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetIndexOfPauliString", "[", 
+  SubscriptBox["Plop", "3"], "]"}]], "Input",
+ CellChangeTimes->{{3.9171666428496428`*^9, 3.917166643955756*^9}},
+ CellLabel->
+  "In[140]:=",ExpressionUUID->"ab9ded81-3f9a-4019-8ce0-8a7a2169e5ca"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetIndexOfPauliString", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetIndexOfPauliString\\\\\\\"\\\"}]\\)\"", 2, 140, 13, 32435425484957780969, 
+   "Local", "QuEST`GetIndexOfPauliString"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.917166644223505*^9},
+ CellLabel->
+  "During evaluation of \
+In[140]:=",ExpressionUUID->"8a365073-893d-4766-b729-1e58b31da228"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.9171666442326527`*^9},
+ CellLabel->
+  "Out[140]=",ExpressionUUID->"e31f609a-387c-4559-9e7c-162b3b0f07b9"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetIndexOfPauliString", "[", 
+  RowBox[{"-", "1"}], "]"}]], "Input",
+ CellChangeTimes->{{3.9171646159620447`*^9, 3.917164628012457*^9}, 
+   3.917166631329486*^9},
+ CellLabel->
+  "In[139]:=",ExpressionUUID->"9191aa5a-a39c-4301-ae1d-f17d277c6b7d"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetIndexOfPauliString", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetIndexOfPauliString\\\\\\\"\\\"}]\\)\"", 2, 139, 12, 32435425484957780969, 
+   "Local", "QuEST`GetIndexOfPauliString"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917164628305578*^9, 3.9171646697450037`*^9}, 
+   3.917164732093623*^9, 3.917166631679718*^9},
+ CellLabel->
+  "During evaluation of \
+In[139]:=",ExpressionUUID->"71cce222-1b1b-4845-a162-b026d749450d"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.91716461644136*^9, 3.9171646697559566`*^9}, 
+   3.9171647321016607`*^9, 3.9171666316906023`*^9},
+ CellLabel->
+  "Out[139]=",ExpressionUUID->"06a913bb-fd4b-4449-9517-05babd91bf52"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{808, 708},
+WindowMargins->{{Automatic, 148}, {28, Automatic}},
+FrontEndVersion->"13.0 for Mac OS X x86 (64-bit) (February 4, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"1ef59c78-b1b9-42d6-aa0d-8cd802659042"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 358, 6, 98, "Title",ExpressionUUID->"9bfe36dd-a76c-4a9a-a159-785284647ef5"],
+Cell[941, 30, 432, 10, 52, "Input",ExpressionUUID->"1652301b-a274-4e2e-863c-d01315d2828c"],
+Cell[CellGroupData[{
+Cell[1398, 44, 296, 5, 69, "Chapter",ExpressionUUID->"0f3a8cf5-efed-43c2-b3e4-61f6f5df579a"],
+Cell[CellGroupData[{
+Cell[1719, 53, 262, 5, 30, "Input",ExpressionUUID->"f6a60145-b0b5-45a6-b0c1-2c2f3b45ec31"],
+Cell[1984, 60, 13907, 334, 119, "Output",ExpressionUUID->"18ca748c-b98f-41f9-86e8-f6cdec166ced"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[15940, 400, 500, 8, 69, "Chapter",ExpressionUUID->"edbf9899-3b88-4c59-8352-5f6125bb5435"],
+Cell[CellGroupData[{
+Cell[16465, 412, 248, 5, 30, "Input",ExpressionUUID->"1d3fd0b4-2de2-4856-a7c1-77c113df7ea9"],
+Cell[16716, 419, 152, 3, 34, "Output",ExpressionUUID->"2b15c609-bfb6-4746-85db-c3d42625a73b"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16905, 427, 443, 9, 73, "Input",ExpressionUUID->"273957a9-de92-48d7-8906-3fd27aaf8245"],
+Cell[17351, 438, 179, 3, 34, "Output",ExpressionUUID->"bde46875-30f1-4dd3-889c-3fe2f601522e"],
+Cell[17533, 443, 179, 3, 34, "Output",ExpressionUUID->"b9e2d89d-dc2f-4d02-abfe-a224c6fbc5d8"],
+Cell[17715, 448, 179, 3, 34, "Output",ExpressionUUID->"9f58a164-b25f-45d7-b2cd-86c9a578c7ca"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[17931, 456, 386, 9, 52, "Input",ExpressionUUID->"d37acb68-3510-4dc2-bdeb-4703065c848c"],
+Cell[18320, 467, 179, 3, 34, "Output",ExpressionUUID->"a30ef6c2-703a-4a3d-9f50-aa8c9020e38a"],
+Cell[18502, 472, 179, 3, 34, "Output",ExpressionUUID->"855ce36e-da81-4b00-a8eb-1aa9bc9d0a4f"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[18718, 480, 382, 9, 30, "Input",ExpressionUUID->"a37ea4bb-d6a1-44b6-baf1-4f52b1113c8e"],
+Cell[19103, 491, 210, 4, 34, "Output",ExpressionUUID->"2d379901-5513-481d-baeb-2b600b547d32"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[19350, 500, 497, 14, 30, "Input",ExpressionUUID->"da392573-b2a9-40ef-a8e4-c516f2d6ed99"],
+Cell[19850, 516, 180, 3, 34, "Output",ExpressionUUID->"e0c6536d-8002-471c-bb6f-71f9596d1c3e"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[20067, 524, 406, 8, 52, "Input",ExpressionUUID->"4c792e16-2d22-4d15-8c68-09c6a8e17d2c"],
+Cell[20476, 534, 182, 3, 34, "Output",ExpressionUUID->"c0b91500-4f36-4997-9fe4-5a7e6414c72b"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[20707, 543, 541, 8, 69, "Chapter",ExpressionUUID->"06d2362f-2d5a-471a-b5d6-757ec737ed4c"],
+Cell[CellGroupData[{
+Cell[21273, 555, 250, 5, 32, "Input",ExpressionUUID->"ab9ded81-3f9a-4019-8ce0-8a7a2169e5ca"],
+Cell[21526, 562, 438, 10, 28, "Message",ExpressionUUID->"8a365073-893d-4766-b729-1e58b31da228"],
+Cell[21967, 574, 161, 3, 34, "Output",ExpressionUUID->"e31f609a-387c-4559-9e7c-162b3b0f07b9"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[22165, 582, 269, 6, 30, "Input",ExpressionUUID->"9191aa5a-a39c-4301-ae1d-f17d277c6b7d"],
+Cell[22437, 590, 512, 11, 28, "Message",ExpressionUUID->"71cce222-1b1b-4845-a162-b026d749450d"],
+Cell[22952, 603, 236, 4, 34, "Output",ExpressionUUID->"06a913bb-fd4b-4449-9517-05babd91bf52"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
