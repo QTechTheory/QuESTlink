@@ -149,6 +149,9 @@ The state is likely no longer a valid density matrix but is useful as a persiste
 GetPauliStringFromIndex[n] returns the n-th ordered m-Pauli string, where m is inferred as the minimum to support index n.
 GetPauliStringFromIndex accepts optional argument \"RemoveIds\" -> False (default True) which retains otherwise removed Id operators, so that the returned string has an explicit Pauli operator on every qubit."
     GetPauliStringFromIndex::error = "`1`"
+
+    GetIndexOfPauliString::usage = "GetIndexOfPauliString[pauliString] returns the index of the given Pauli string in the ordered basis of Pauli strings. The zero target is treated as least significant."
+    GetIndexOfPauliString::error = "`1`"
     
     GetRandomPauliString::usage = "GetRandomPauliString[numQubits, numTerms, {minCoeff, maxCoeff}] generates a random Pauli string with unique Pauli tensors.
 GetRandomPauliString[numQubits, All, {minCoeff, maxCoeff}] will generate all 4^numQubits unique Pauli tensors.
@@ -3791,6 +3794,21 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         ]
 
         GetPauliStringFromIndex[___] := invalidArgError[GetPauliStringFromIndex]
+
+
+
+        GetIndexOfPauliString[ Subscript[s:Id|X|Y|Z, q_Integer] ] :=
+            (s /. {Id->0,X->1,Y->2,Z->3}) * 4^q
+
+        GetIndexOfPauliString[ prod:Verbatim[Times][Subscript[Id|X|Y|Z, _Integer]..] ] := (
+            If[
+                Not @ DuplicateFreeQ[ (List @@ prod)[[All,2]] ],
+                Message[GetIndexOfPauliString::error, "Multiple Pauli operators targeted the same qubit."];
+                Return @ $Failed
+            ];
+            Total[GetIndexOfPauliString /@ List @@ prod])
+        
+        GetIndexOfPauliString[___] := invalidArgError[GetIndexOfPauliString]
 
 
 
