@@ -144,6 +144,11 @@ The state is likely no longer a valid density matrix but is useful as a persiste
     
     GetPauliStringFromCoeffs::usage = "GetPauliStringFromCoeffs[addr] opens or downloads the file at addr (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes, converting this to a symbolic weighted sum of Pauli tensors. Each line of the file is a separate term (a Pauli product), with format {coeff code1 code2 ... codeN} (exclude braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z term in the product respectively), for an N-qubit operator. Each line must have N+1 terms (including the real decimal coefficient at the beginning)."
     GetPauliStringFromCoeffs::error = "`1`"
+
+    GetPauliStringFromIndex::usage = "GetPauliStringFromIndex[n, m] returns the n-th ordered m-Pauli string, where the zero-th qubit (or subscripted index) is treated as the least significant.
+GetPauliStringFromIndex[n] returns the n-th ordered m-Pauli string, where m is inferred as the minimum to support index n.
+GetPauliStringFromIndex accepts optional argument \"RemoveIds\" -> False (default True) which retains otherwise removed Id operators, so that the returned string has an explicit Pauli operator on every qubit."
+    GetPauliStringFromIndex::error = "`1`"
     
     GetRandomPauliString::usage = "GetRandomPauliString[numQubits, numTerms, {minCoeff, maxCoeff}] generates a random Pauli string with unique Pauli tensors.
 GetRandomPauliString[numQubits, All, {minCoeff, maxCoeff}] will generate all 4^numQubits unique Pauli tensors.
@@ -3639,12 +3644,15 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         getNthPauliTensorMatrix[n_, numQubits_] /; n < 4^numQubits :=
             KroneckerProduct @@ PauliMatrix /@ getNthPauliTensor[n, numQubits]
             
-        getNthPauliTensorSymbols[0, numQubits_] :=
-            Subscript[Id, numQubits-1]
-        getNthPauliTensorSymbols[n_, numQubits_] :=
+        getNthPauliTensorSymbols[0, numQubits_, removeIds_:True] :=
+            If[removeIds,
+                Subscript[Id, numQubits-1],
+                Times @@ (Subscript[Id, #]& /@ Range[0,numQubits-1])
+            ]
+        getNthPauliTensorSymbols[n_, numQubits_, removeIds_:True] :=
             Times @@ (MapThread[Subscript, {
                 getNthPauliTensor[n, numQubits] /. {0->Id,1->X,2->Y,3->Z}, 
-                Reverse @ Range[numQubits] - 1}] /. Subscript[Id, _] -> Nothing)
+                Reverse @ Range[numQubits] - 1}] /. If[removeIds, Subscript[Id, _] -> Nothing, {}])
 
         isPowerOfTwoSquareMatrix[m_] := 
             And[SquareMatrixQ @ m, BitAnd[Length@m, Length@m - 1] === 0]
@@ -3740,6 +3748,49 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             CalcCircuitGenerator[{gate}, opts]
 
         CalcCircuitGenerator[___] := invalidArgError[CalcCircuitGenerator]
+
+
+
+        (* 
+         * Front-end functions for obtaining Pauli strings 
+         * from indices, and vice versa
+         *)
+
+        Options[GetPauliStringFromIndex] = {
+            "RemoveIds" -> True
+        }
+
+        GetPauliStringFromIndex[ind_Integer, opts:OptionsPattern[]] :=
+            GetPauliStringFromIndex[ind, If[ind <= 0, 1, 1 + Floor[Log[4, ind]]], opts]
+
+        GetPauliStringFromIndex[ind_Integer, numPaulis_Integer, OptionsPattern[]] := With[
+            {maxInd = 4^numPaulis - 1},
+
+            Check[OptionValue["RemoveIds"], Return @ $Failed];
+
+            If[Not @ MemberQ[{True,False}, OptionValue["RemoveIds"]],
+                Message[GetPauliStringFromIndex::error, "Option \"RemoveIds\" must be True or False."];
+                Return @ $Failed];
+
+            If[ind < 0,
+                Message[GetPauliStringFromIndex::error, "Index must be positive or zero."];
+                Return @ $Failed];
+
+            If[numPaulis < 1,
+                Message[GetPauliStringFromIndex::error, "The number of Paulis must be positive."];
+                Return @ $Failed];
+
+            If[ind > maxInd, 
+                Message[GetPauliStringFromIndex::error, 
+                    "The given index (" <> ToString[ind] <> ") exceeds the maximum possible (" <> 
+                    ToString[maxInd] <> " = 4^" <> ToString[numPaulis] <> "-1) for the given " <>
+                    "number of Pauli operators (" <> ToString[numPaulis] <> ")."]; 
+                Return @ $Failed];
+
+            getNthPauliTensorSymbols[ind, numPaulis, OptionValue["RemoveIds"]]
+        ]
+
+        GetPauliStringFromIndex[___] := invalidArgError[GetPauliStringFromIndex]
 
 
 
