@@ -331,7 +331,8 @@ The original circuit is restored by GetCircuitRetargeted[out, map]."
 Note that the returned circuits are not necessarily optimal/minimal, and may benefit from a subsequent call to SimplifyCircuit[]. "
     RecompileCircuit::error = "`1`"
 
-    CalcPauliTransferMatrix::usage = "CalcPauliTransferMatrix[circuit] returns a PTM operator equivalent to the given circuit.
+    CalcPauliTransferMatrix::usage = "CalcPauliTransferMatrix[circuit] returns a single PTM operator equivalent to the given circuit.
+CalcPauliTranferMatrix /@ circuit returns an equivalent sequence of individual (and likely smaller) PTM operators.
 CalcPauliTransferMatrix accepts optional argument AssertValidChannels."
     CalcPauliTransferMatrix::error = "`1`"
     
