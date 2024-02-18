@@ -141,9 +141,6 @@ It is often convenient to pass the returned structure to Chop[] in order to remo
     SetQuregToPauliString::usage = "SetQuregToPauliString[qureg, pauliString] overwrites the given density matrix to become a dense matrix representation of the given pauli string.
 The state is likely no longer a valid density matrix but is useful as a persistent Z-basis representation of the pauli string, to be used in functions like CalcDensityInnerProduct[] and CalcExpecPauliStringDerivs[]."
     SetQuregToPauliString::error = "`1`"
-    
-    GetPauliStringFromCoeffs::usage = "GetPauliStringFromCoeffs[addr] opens or downloads the file at addr (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes, converting this to a symbolic weighted sum of Pauli tensors. Each line of the file is a separate term (a Pauli product), with format {coeff code1 code2 ... codeN} (exclude braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z term in the product respectively), for an N-qubit operator. Each line must have N+1 terms (including the real decimal coefficient at the beginning)."
-    GetPauliStringFromCoeffs::error = "`1`"
 
     GetPauliStringFromIndex::usage = "GetPauliStringFromIndex[n, m] returns the n-th ordered m-Pauli string, where the zero-th qubit (or subscripted index) is treated as the least significant.
 GetPauliStringFromIndex[n] returns the n-th ordered m-Pauli string, where m is inferred as the minimum to support index n.
@@ -577,7 +574,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
     CalcExpecPauliSum::usage = "This function is deprecated. Please instead use CalcExpecPauliString."
     ApplyPauliSum::usage = "This function is deprecated. Please instead use ApplyPauliString."
     CalcPauliSumMatrix::usage = "This function is deprecated. Please instead use CalcPauliStringMatrix."
-    GetPauliSumFromCoeffs::usage = "This function is deprecated. Please instead use GetPauliStringFromCoeffs."
+    GetPauliSumFromCoeffs::usage = "This function is deprecated. Please instead use GetPauliString."
     MixDamping::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Damp."
     MixDephasing::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Deph."
     MixDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
@@ -616,9 +613,12 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Message[CalcPauliStringMatrix::error, "The function CalcPauliSumMatrix[] is deprecated. Use CalcPauliStringMatrix[] or temporarily hide this message using Quiet[]."]; 
             CalcPauliStringMatrix[args])
         GetPauliSumFromCoeffs[args___] := (
-            Message[GetPauliStringFromCoeffs::error, "The function GetPauliSumFromCoeffs[] is deprecated. Use GetPauliStringFromCoeffs[] or temporarily hide this message using Quiet[]."]; 
-            GetPauliStringFromCoeffs[args])
-            
+            Message[GetPauliString::error, "The function GetPauliSumFromCoeffs[] is deprecated. Use GetPauliString[] or temporarily hide this message using Quiet[]."]; 
+            GetPauliString[args])
+
+        GetPauliStringFromCoeffs[args___] := (
+            Message[GetPauliString::error, "The function GetPauliStringFromCoeffs[] is deprecated. Use GetPauliString[] or temporarily hide this message using Quiet[]."]; 
+            GetPauliString[args])
         MixDamping[qureg_Integer, qb_Integer, prob_Real] := (
             Message[ApplyCircuit::error, "The function MixDamping[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Damp[] gate instead, or temporarily hide this message using Quiet[]."];
             ApplyCircuit[qureg, Subscript[Damp,qb][prob]];
@@ -1248,20 +1248,6 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         CalcPauliStringMatrix[Verbatim[Plus][_?NumericQ, ___]] :=
             invalidPauliScalarError[CalcPauliStringMatrix]
         CalcPauliStringMatrix[___] := invalidArgError[CalcPauliStringMatrix]
-        
-
-
-        GetPauliStringFromCoeffs[addr_String] :=
-            Plus @@ (#[[1]] If[ 
-                    AllTrue[ #[[2;;]], PossibleZeroQ ],
-                    Subscript[Id, 0],
-                    Times @@ MapThread[
-                    (   Subscript[Switch[#2, 0, Id, 1, X, 2, Y, 3, Z], #1 - 1] /. 
-                        Subscript[Id, _] ->  Sequence[] & ), 
-                        {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
-                    ]
-                ] &) /@ ReadList[addr, Number, RecordLists -> True];
-        GetPauliStringFromCoeffs[___] := invalidArgError[GetPauliStringFromCoeffs]
         
 
 
