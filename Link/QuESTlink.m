@@ -352,6 +352,14 @@ For instance GetPauliStringRetargeted[..., {0->1, 1->0}] swaps the first and sec
 This function modifies only the qubits in the Pauli string and avoids modifying coefficients, so it is a safe alternative to simply evaluating (string /. rules)."
     GetPauliStringRetargeted::error = "`1`"
 
+    GetPauliString::usage = "Returns a Pauli string or a weighted sum of symbolic Pauli tensors from a variety of input formats.
+GetPauliString[matrix] returns a complex-weighted sum of Pauli tensors equivalent to the given matrix. If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components.
+GetPauliString[index] returns the basis Pauli string corresponding to the given index, where the returned Pauli operator targeting 0 is informed by the least significant bit(s) of the index. 
+GetPauliString[address] opens or downloads the file at address (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes. Each line of the file is assumed a separate Pauli tensor with format {coeff code1 code2 ... codeN} (excluding braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z), for an N-qubit Pauli string, and are given in order of increasing significance (zero qubit left). Each line must have N+1 terms, which includes the initial real decimal coefficient. For an example, see \"https://qtechtheory.org/hamil_6qbLiH.txt\".
+GetPauliString[..., numQubits] overrides the inferred number of qubits, introducing additional Id operators upon un-targeted qubits (unless explicitly removed with \"RemoveIds\"->False).
+GetPauliString[..., {targets}] specifies a list of qubits which the returned Pauli string should target (in the given order), instead of the default targets {0, 1, 2, ...}.
+GetPauliString accepts optional argument \"RemoveIds\" -> True or False (default Automatic) which when True, retains otherwise removed Id operators so that the returned string has an explicit Pauli operator acting upon every qubit."
+    GetPauliString::error = "`1`"
     
     (*
      * optional arguments to public functions
@@ -1295,6 +1303,48 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
 
 
+        (*
+         * Creating Pauli strings from other structures
+         *)
+
+
+        getPauliStringFromAddress[addr_String, removeIds_:True] :=
+            Enclose[
+                ConfirmQuiet[
+                    Plus @@ (#[[1]] If[ 
+                            AllTrue[ #[[2;;]], PossibleZeroQ ],
+                            If[removeIds,
+                                Subscript[Id, 0],
+                                Product[Subscript[Id,q], {q,0,Length@#-2}]
+                            ],
+                            Times @@ MapThread[
+                            (   Subscript[Switch[#2, 0, Id, 1, X, 2, Y, 3, Z], #1 - 1] /. 
+                                If[removeIds, Subscript[Id, _] ->  Sequence[], {}] & ), 
+                                {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
+                            ]
+                        ] &) /@ ReadList[addr, Number, RecordLists -> True]],
+                Function[{failObj},
+                    Message[GetPauliString::error, "Parsing the file failed due to the below error:"];
+                    ReleaseHold @ failObj @ "HeldMessageCall";
+                    $Failed]]
+
+        getPauliStringFromAddress[addr_String, numQb_Integer, removeIds:True] :=
+            getPauliStringFromAddress[addr, removeIds]
+
+        getPauliStringFromAddress[addr_String, numQbOut_Integer, removeIds:False] := With[
+            {pauliStr = Check[getPauliStringFromAddress[addr, removeIds], Return @ $Failed]},
+            {strNumQb = getNumQubitsInPauliString[pauliStr]},
+            If[ numQbOut < strNumQb,
+                Message[GetPauliString::error, 
+                    "The specified number of qubits (" <> ToString[numQbOut] <> ") was fewer than that " <>
+                    "encoded in the file (" <> ToString[strNumQb] <> ")."];
+                Return @ $Failed];
+            If[numQbOut === strNumQb,
+                Return @ pauliStr];
+            Expand[ Product[Subscript[Id,q], {q,strNumQb,numQbOut-1}] * pauliStr ]
+        ]
+
+
         getNthPauliTensor[n_, numQubits_] :=
             PadLeft[IntegerDigits[n,4], numQubits, 0]
             
@@ -1316,52 +1366,109 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         isPowerOfTwoSquareMatrix[m_] := 
             And[SquareMatrixQ @ m, BitAnd[Length@m, Length@m - 1] === 0]
 
-        GetPauliStringFromMatrix[m_?isPowerOfTwoSquareMatrix] := With[
-            {nQb = Log2 @ Length @ m},
-            {coeffs =  1/2^nQb Table[
-                Tr[getNthPauliTensorMatrix[i,nQb] . m],  
-                {i, 0, 4^nQb - 1}]},
-            coeffs . Table[getNthPauliTensorSymbols[n,nQb], {n, 0, 4^nQb-1}]]
+        getPauliStringFromMatrix[m_?isPowerOfTwoSquareMatrix, removeIds_:True] := 
+            getPauliStringFromMatrix[m, Log2 @ Length @ m, removeIds]
 
-        GetPauliStringFromMatrix[_] := (
-            Message[GetPauliStringFromMatrix::error, "The input must be a square matrix with power-of-2 dimensions."];
+        getPauliStringFromMatrix[m_?isPowerOfTwoSquareMatrix, nQbOut_Integer, removeIds_:True] := Module[
+            {nQbMatr, coeffs},
+            nQbMatr = Log2 @ Length @ m;
+            If[nQbOut < nQbMatr,
+                Message[GetPauliString::error, 
+                    "The specified number of qubits (" <> ToString[nQbOut] <> ") was fewer than that " <>
+                    "suggested (" <> ToString[nQbMatr] <> ") by the matrix's dimension."];
+                Return @ $Failed];
+            coeffs =  1/2^nQbMatr Table[
+                Tr[getNthPauliTensorMatrix[i,nQbMatr] . m],  
+                {i, 0, 4^nQbMatr - 1}];
+            coeffs . Table[getNthPauliTensorSymbols[n,nQbOut,removeIds], {n, 0, 4^nQbMatr-1}]]
+
+        getPauliStringFromMatrix[___] := (
+            Message[GetPauliString::error, "Matrix must be square with a power-of-2 number of rows and columns."];
             $Failed)
-        GetPauliStringFromMatrix[___] := invalidArgError[GetPauliStringFromMatrix]
+        
 
+        getPauliStringFromIndex[ind_Integer, removeIds_:True] :=
+            getPauliStringFromIndex[ind, If[ind <= 0, 1, 1 + Floor[Log[4, ind]]], removeIds]
 
-        GetPauliStringFromIndex[ind_Integer, opts:OptionsPattern[]] :=
-            GetPauliStringFromIndex[ind, If[ind <= 0, 1, 1 + Floor[Log[4, ind]]], opts]
-
-        GetPauliStringFromIndex[ind_Integer, numPaulis_Integer, OptionsPattern[]] := With[
+        getPauliStringFromIndex[ind_Integer, numPaulis_Integer, removeIds_:True] := With[
             {maxInd = 4^numPaulis - 1},
 
-            Check[OptionValue["RemoveIds"], Return @ $Failed];
-
-            If[Not @ MemberQ[{True,False}, OptionValue["RemoveIds"]],
-                Message[GetPauliStringFromIndex::error, "Option \"RemoveIds\" must be True or False."];
-                Return @ $Failed];
-
             If[ind < 0,
-                Message[GetPauliStringFromIndex::error, "Index must be positive or zero."];
-                Return @ $Failed];
-
-            If[numPaulis < 1,
-                Message[GetPauliStringFromIndex::error, "The number of Paulis must be positive."];
+                Message[GetPauliString::error, "Index must be positive or zero."];
                 Return @ $Failed];
 
             If[ind > maxInd, 
-                Message[GetPauliStringFromIndex::error, 
+                Message[GetPauliString::error, 
                     "The given index (" <> ToString[ind] <> ") exceeds the maximum possible (" <> 
                     ToString[maxInd] <> " = 4^" <> ToString[numPaulis] <> "-1) for the given " <>
                     "number of Pauli operators (" <> ToString[numPaulis] <> ")."]; 
                 Return @ $Failed];
 
-            getNthPauliTensorSymbols[ind, numPaulis, OptionValue["RemoveIds"]]
+            getNthPauliTensorSymbols[ind, numPaulis, removeIds]
         ]
 
-        GetPauliStringFromIndex[___] := invalidArgError[GetPauliStringFromIndex]
+
+        Options[GetPauliString] = {
+            "RemoveIds" -> Automatic
+        }
+
+        (* decide whether to automatically remove Ids from returned product (i.e. whether numPaulis was specified) *)
+        shouldRemovePauliStringIds[opts:OptionsPattern[GetPauliString]] :=
+            OptionValue["RemoveIds"] /. Automatic->True
+        shouldRemovePauliStringIds[numPaulis_Integer, opts:OptionsPattern[GetPauliString]] :=
+            OptionValue["RemoveIds"] /. Automatic->False
+
+        optionalNumQbPatt = _Integer?Positive|PatternSequence[];
+
+        (* catching a specific invalid empty-target list case, which Mathematica otherwise accepts as a valid option list *)
+        GetPauliString[_String|_?MatrixQ|_Integer, OrderlessPatternSequence[{}, nQb:optionalNumQbPatt], opts___] := (
+            Message[GetPauliString::error, "Optional list of target qubits must not be empty."];
+            $Failed)
+
+        (* accept files, matrices or basis indices, and an optional numPaulis specifier *)
+        GetPauliString[address_String, numPaulis:optionalNumQbPatt, opts:OptionsPattern[]] :=
+            getPauliStringFromAddress[address, numPaulis, shouldRemovePauliStringIds[numPaulis, opts]]
+
+        GetPauliString[matrix_?MatrixQ, numPaulis:optionalNumQbPatt, opts:OptionsPattern[]] :=
+            getPauliStringFromMatrix[matrix, numPaulis, shouldRemovePauliStringIds[numPaulis, opts]]
+
+        GetPauliString[index_Integer, numPaulis:optionalNumQbPatt, opts:OptionsPattern[]] :=
+            getPauliStringFromIndex[index, numPaulis, shouldRemovePauliStringIds[numPaulis, opts]]
+
+        (* optionally remap the returned Pauli string to a custom set of targets *)
+        GetPauliString[obj:(_String|_?MatrixQ|_Integer), OrderlessPatternSequence[targs:{___Integer}, nQb:optionalNumQbPatt], opts___] :=
+            Module[
+                {pauliStr, numQbInStr, map},
+
+                (* partially validate targs *)
+                If[ Not @ AllTrue[targs, NonNegative] || Not @ DuplicateFreeQ[targs],
+                    Message[GetPauliString::error, "The list of target qubits must be non-negative and unique."];
+                    Return @ $Failed
+                ];
+
+                (* produce Pauli string with indices from 0, possibly enlarged by nQb *)
+                pauliStr = Check[GetPauliString[obj, nQb, opts], Return @ $Failed];
+                numQbInStr = getNumQubitsInPauliString[pauliStr];
+
+                (* require user gave precisely the right number of targets *)
+                If[ Length[targs] =!= numQbInStr,
+                    Message[GetPauliString::error, 
+                        "A different number of target qubits was given (" <> ToString@Length@targs <> 
+                        ") than exists in the Pauli string (" <> ToString@numQbInStr <> ")."];
+                    Return @ $Failed];
+
+                (* modify the Pauli string to the users target qubits *)
+                map = MapThread[Rule, {Range[numQbInStr]-1, targs}];
+                GetPauliStringRetargeted[pauliStr, map]
+            ]
+
+        GetPauliString[___] := invalidArgError[GetPauliString]
 
 
+
+        (*
+         * Converting Pauli strings between formats
+         *)
         
         separatePauliStringIntoProdsAndCoeffs[pauli:pauliOpPatt] :=
             {{pauli, 1}}
@@ -3902,7 +4009,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 Return @ $Failed];
 
             (* project generator matrix into Pauli strings on smallest qubits *)
-            str = GetPauliStringFromMatrix[matr];
+            str = getPauliStringFromMatrix[matr];
 
             (* remap Pauli string qubits back to original circuit qubits*)
             str /. Subscript[(s:(X|Y|Z)), t__] :> Subscript[s, t /. map]
