@@ -359,6 +359,11 @@ CalcPauliTransferMap accepts options \"KroneckerForm\"->True which replaces the 
 CalcPauliTransferMap also accepts option AssertValidChannels->False to disable the automatic simplification of the map's coefficients through the assertion of valid channel parameters. See ?AssertValidChannels."
     CalcPauliTransferMap::error = "`1`"
     
+    GetPauliStringRetargeted::usage = "GetPauliStringRetargeted[string, rules] returns the given Pauli string but with its target qubits modified as per the given rules. The rules can be anything accepted by ReplaceAll.
+For instance GetPauliStringRetargeted[..., {0->1, 1->0}] swaps the first and second qubits, and GetPauliStringRetargeted[..., q_ -> q + 10] shifts every qubit up by 10.
+This function modifies only the qubits in the Pauli string and avoids modifying coefficients, so it is a safe alternative to simply evaluating (string /. rules)."
+    GetPauliStringRetargeted::error = "`1`"
+
     
     (*
      * optional arguments to public functions
@@ -1289,6 +1294,22 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetRandomPauliString[numQubits_Integer?Positive, numTerms:(_Integer?Positive|Automatic|All):Automatic] :=
             GetRandomPauliString[numQubits, numTerms, {-1,1}]
         GetRandomPauliString[___] := invalidArgError[GetRandomPauliString]
+
+
+
+        (*
+         * Augmenting Pauli strings
+         *)
+
+        GetPauliStringRetargeted[str_?isValidSymbolicPauliString, map_] := 
+            Enclose[
+                ReplaceAll[str, Subscript[p:pauliCodePatt, q_] :> Subscript[p, q /. map]] // ConfirmQuiet,
+                Function[{failObj},
+                    Message[GetPauliStringRetargeted::error, "Invalid rules caused the below ReplaceAll error:"]; 
+                    ReleaseHold @ failObj @ "HeldMessageCall";
+                    $Failed]]
+
+        GetPauliStringRetargeted[___] := invalidArgError[GetPauliStringRetargeted]
 
 
 
