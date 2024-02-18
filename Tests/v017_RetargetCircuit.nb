@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[     61365,       1566]
-NotebookOptionsPosition[     55659,       1455]
-NotebookOutlinePosition[     56053,       1471]
-CellTagsIndexPosition[     56010,       1468]
+NotebookDataLength[     91019,       2284]
+NotebookOptionsPosition[     84307,       2156]
+NotebookOutlinePosition[     84701,       2172]
+CellTagsIndexPosition[     84658,       2169]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -36,6 +36,707 @@ Cell[BoxData[{
  CellChangeTimes->{{3.91451986218738*^9, 3.91451987324094*^9}, {
   3.915269087976445*^9, 3.915269088235178*^9}},
  CellLabel->"In[1]:=",ExpressionUUID->"630d3d6a-6e61-4efb-95f7-ae191fa9191e"],
+
+Cell[CellGroupData[{
+
+Cell["Deprecation", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.9172756736198893`*^9, 
+  3.917275689564331*^9}},ExpressionUUID->"3515b510-3869-46e4-9347-\
+65eaeeb0a3c6"],
+
+Cell[TextData[{
+ "Renamed to ",
+ StyleBox["GetCircuitRetargeted ",
+  FontWeight->"Bold"],
+ "as",
+ " of v0.18"
+}], "Text",
+ CellChangeTimes->{{3.917275697215149*^9, 3.917275718947805*^9}},
+ Background->RGBColor[
+  1, 0.85, 0.85],ExpressionUUID->"ff6b729d-422e-4613-9525-670d5342456c"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "RetargetCircuit"}]], "Input",
+ CellChangeTimes->{{3.9172756909517727`*^9, 3.9172756938476133`*^9}},
+ CellLabel->"In[4]:=",ExpressionUUID->"96115383-c4b8-45c6-bd96-3fde7167312d"],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   FrameBox[
+    DynamicModuleBox[{System`InformationDump`open$$ = False, 
+     System`InformationDump`mouseOver$$ = False}, 
+     PaneSelectorBox[{True->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False,
+             BaseStyle -> None],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"This function is deprecated. Please instead use \
+GetCircuitRetargeted.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          PaneBox[
+           TagBox[GridBox[{
+              {
+               StyleBox[
+                TagBox[
+                 TooltipBox[
+                  StyleBox["\<\" Definitions\"\>", "InformationRowLabel",
+                   StripOnInput->False],
+                  "\"Definitions\"",
+                  TooltipStyle->"TextStyling"],
+                 Annotation[#, "Definitions", "Tooltip"]& ], "DialogStyle",
+                StripOnInput->False]},
+              {
+               TemplateBox[{"\"\[ThinSpace]\"", 
+                 GridBox[{{
+                    RowBox[{
+                    
+                    RowBox[{
+                    "RetargetCircuit", "[", "QuEST`Private`args___", "]"}], 
+                    ":=", 
+                    RowBox[{"(", 
+                    RowBox[{
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"GetCircuitRetargeted", "::", "error"}], 
+                    "MessageName"], ",", 
+                    "\"The function RetargetCircuit[] is deprecated, though \
+has still been attemptedly performed. In future, please use \
+GetCircuitRetargeted[], or temporarily hide this message using Quiet[].\""}], 
+                    "]"}], ";", 
+                    
+                    RowBox[{
+                    "GetCircuitRetargeted", "[", "QuEST`Private`args", 
+                    "]"}]}], ")"}]}]}, {" "}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]},
+                "RowDefault"]}
+             },
+             DefaultBaseStyle->"Column",
+             GridBoxAlignment->{"Columns" -> {{Left}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+            "Column"],
+           FrameMargins->{{6, 0}, {3, 6}}], "\<\"\"\>"},
+         {
+          PaneBox[GridBox[{
+             {
+              
+              DynamicModuleBox[{System`InformationDump`open$$ = {
+               False, False, False, False, False, False}}, 
+               StyleBox[GridBox[{
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Full Name\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"FullName\"",
+                    TooltipStyle->"TextStyling"],
+                    
+                    Annotation[#, "FullName", 
+                    "Tooltip"]& ], \
+"\<\"QuEST`Deprecated`RetargetCircuit\"\>"}
+                 },
+                 AutoDelete->False,
+                 GridBoxAlignment->{"Columns" -> {Right, Left}},
+                 GridBoxDividers->None,
+                 GridBoxItemSize->{"Columns" -> {Automatic, Automatic}},
+                 GridBoxSpacings->{"Columns" -> {
+                    Offset[0.27999999999999997`], {
+                    Offset[0.5599999999999999]}, 
+                    Offset[0.27999999999999997`]}, "Rows" -> {
+                    Offset[0.2], {
+                    Offset[0.8]}, 
+                    Offset[0.2]}}], "DialogStyle",
+                StripOnInput->False],
+               DynamicModuleValues:>{}]}
+            },
+            DefaultBaseStyle->"Column",
+            GridBoxAlignment->{"Columns" -> {{Left}}},
+            GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings->{"Columns" -> {
+                Offset[0.27999999999999997`], {
+                 Offset[0.5599999999999999]}, 
+                Offset[0.27999999999999997`]}, "Rows" -> {
+                Offset[0.2], {
+                 Offset[3.6]}, 
+                Offset[0.2]}}],
+           FrameMargins->{{6, 6}, {6, 3}}], ""},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpener"]], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpenerHot"]]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, False],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"], False->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"This function is deprecated. Please instead use \
+GetCircuitRetargeted.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {2., 8.}}], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpenerHot"],
+               ImageSizeCache->{10., {2., 8.}}]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, True],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}, Dynamic[System`InformationDump`open$$],
+      BaselinePosition->Baseline,
+      FrameMargins->0,
+      ImageSize->Automatic],
+     DynamicModuleValues:>{}],
+    BaseStyle->"InformationGridFrame",
+    StripOnInput->False], "InformationGridPlain",
+   StripOnInput->False],
+  InformationData[<|
+   "ObjectType" -> "Symbol", "Usage" -> 
+    "This function is deprecated. Please instead use GetCircuitRetargeted.", 
+    "Documentation" -> None, "OwnValues" -> None, "UpValues" -> None, 
+    "DownValues" -> 
+    Information`InformationValueForm[
+     DownValues, QuEST`Deprecated`RetargetCircuit, {
+      QuEST`Deprecated`RetargetCircuit[
+         Pattern[QuEST`Private`args, 
+          BlankNullSequence[]]] :> (Message[
+          MessageName[QuEST`GetCircuitRetargeted, "error"], 
+          
+          "The function RetargetCircuit[] is deprecated, though has still \
+been attemptedly performed. In future, please use GetCircuitRetargeted[], or \
+temporarily hide this message using Quiet[]."]; 
+        QuEST`GetCircuitRetargeted[QuEST`Private`args])}], "SubValues" -> 
+    None, "DefaultValues" -> None, "NValues" -> None, "FormatValues" -> None, 
+    "Options" -> None, "Attributes" -> {}, "FullName" -> 
+    "QuEST`Deprecated`RetargetCircuit"|>, False]]], "Output",
+ CellChangeTimes->{3.917275694227314*^9},
+ CellLabel->"Out[4]=",ExpressionUUID->"7da5e1ac-9973-4ddd-8d52-75d54fb8dca8"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"RetargetCircuit", "[", 
+  RowBox[{
+   SubscriptBox["X", "2"], ",", " ", 
+   RowBox[{"2", "->", "1"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.917275723722266*^9, 3.917275733954505*^9}},
+ CellLabel->"In[6]:=",ExpressionUUID->"d43e3135-4093-4981-afa6-f65e5adb1349"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetCircuitRetargeted", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"The function RetargetCircuit[] is \
+deprecated, though has still been attemptedly performed. In future, please \
+use GetCircuitRetargeted[], or temporarily hide this message using Quiet[].\\\
+\\\\\"\\\"}]\\)\"", 2, 6, 2, 32436153001554395802, "Local", 
+   "QuEST`GetCircuitRetargeted"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.9172757314086857`*^9, 3.917275734461609*^9}},
+ CellLabel->
+  "During evaluation of \
+In[6]:=",ExpressionUUID->"c7fd098c-2347-4c20-8e61-aa99960c796f"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  SubscriptBox["X", "1"], "}"}]], "Output",
+ CellChangeTimes->{{3.917275731419561*^9, 3.917275734469324*^9}},
+ CellLabel->"Out[6]=",ExpressionUUID->"d9ed7862-1d49-4f66-b6df-07a21441f92f"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "GetCircuitRetargeted"}]], "Input",
+ CellChangeTimes->{{3.917275738545689*^9, 3.9172757398395643`*^9}},
+ CellLabel->"In[7]:=",ExpressionUUID->"8d7b2d73-fc5a-4a32-95d6-7abcc35fcc81"],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   FrameBox[
+    DynamicModuleBox[{System`InformationDump`open$$ = False, 
+     System`InformationDump`mouseOver$$ = False}, 
+     PaneSelectorBox[{True->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False,
+             BaseStyle -> None],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetCircuitRetargeted[circuit, rules] returns the \
+given circuit but with its target and control qubits modified as per the \
+given rules. The rules can be anything accepted by ReplaceAll.\\nFor instance \
+GetCircuitRetargeted[..., {0->1, 1->0}] swaps the first and second qubits, \
+and GetCircuitRetargeted[..., q_ -> q + 10] shifts every qubit up by \
+10.\\nThis function modifies only the qubits in the circuit, carefully \
+avoiding modifying gate arguments and other data, so it is a safe alternative \
+to simply evaluating (circuit /. rules).\\nCustom user gates are supported \
+provided they adhere to the standard QuESTlink subscript format.\"\>", 
+             "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          PaneBox[
+           TagBox[GridBox[{
+              {
+               StyleBox[
+                TagBox[
+                 TooltipBox[
+                  StyleBox["\<\" Definitions\"\>", "InformationRowLabel",
+                   StripOnInput->False],
+                  "\"Definitions\"",
+                  TooltipStyle->"TextStyling"],
+                 Annotation[#, "Definitions", "Tooltip"]& ], "DialogStyle",
+                StripOnInput->False]},
+              {
+               TemplateBox[{"\"\[ThinSpace]\"", 
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"GetCircuitRetargeted", "[", 
+                    RowBox[{"_", ",", "QuEST`Private`map_"}], "]"}], "/;", 
+                    RowBox[{
+                    RowBox[{"Head", "[", 
+                    
+                    RowBox[{"0", "/.", "\[VeryThinSpace]", 
+                    "QuEST`Private`map"}], "]"}], "===", "ReplaceAll"}]}], 
+                    ":=", 
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"GetCircuitRetargeted", "::", "error"}], 
+                    "MessageName"], ",", 
+                    "\"Failed to re-target the circuit due to the above \
+ReplaceAll error\""}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetCircuitRetargeted", "[", 
+                    
+                    RowBox[{
+                    "QuEST`Private`circ_List", ",", "QuEST`Private`map_"}], 
+                    "]"}], ":=", 
+                    RowBox[{"With", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    RowBox[{"QuEST`Private`newCirc", "=", 
+                    RowBox[{"Catch", "[", 
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`retargetGate", "[", 
+                    "QuEST`Private`map", "]"}], "/@", "QuEST`Private`circ"}], 
+                    "]"}]}], "}"}], ",", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"!", 
+                    RowBox[{"StringQ", "[", "QuEST`Private`newCirc", "]"}]}], 
+                    ",", "QuEST`Private`newCirc", ",", 
+                    RowBox[{
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"GetCircuitRetargeted", "::", "error"}], 
+                    "MessageName"], ",", "QuEST`Private`newCirc"}], "]"}], 
+                    ";", "$Failed"}]}], "]"}]}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetCircuitRetargeted", "[", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`gate_", "?", 
+                    "QuEST`Private`isGateFormat"}], ",", 
+                    "QuEST`Private`map_"}], "]"}], ":=", 
+                    RowBox[{"GetCircuitRetargeted", "[", 
+                    RowBox[{
+                    RowBox[{"{", "QuEST`Private`gate", "}"}], ",", 
+                    "QuEST`Private`map"}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetCircuitRetargeted", "[", "___", "]"}], ":=", 
+                    
+                    RowBox[{
+                    "QuEST`Private`invalidArgError", "[", 
+                    "GetCircuitRetargeted", "]"}]}]}, {" "}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]},
+                "RowDefault"]}
+             },
+             DefaultBaseStyle->"Column",
+             GridBoxAlignment->{"Columns" -> {{Left}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+            "Column"],
+           FrameMargins->{{6, 0}, {3, 6}}], "\<\"\"\>"},
+         {
+          PaneBox[GridBox[{
+             {
+              
+              DynamicModuleBox[{System`InformationDump`open$$ = {
+               False, False, False, False, False, False}}, 
+               StyleBox[GridBox[{
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Full Name\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"FullName\"",
+                    TooltipStyle->"TextStyling"],
+                    
+                    Annotation[#, "FullName", 
+                    "Tooltip"]& ], "\<\"QuEST`GetCircuitRetargeted\"\>"}
+                 },
+                 AutoDelete->False,
+                 GridBoxAlignment->{"Columns" -> {Right, Left}},
+                 GridBoxDividers->None,
+                 GridBoxItemSize->{"Columns" -> {Automatic, Automatic}},
+                 GridBoxSpacings->{"Columns" -> {
+                    Offset[0.27999999999999997`], {
+                    Offset[0.5599999999999999]}, 
+                    Offset[0.27999999999999997`]}, "Rows" -> {
+                    Offset[0.2], {
+                    Offset[0.8]}, 
+                    Offset[0.2]}}], "DialogStyle",
+                StripOnInput->False],
+               DynamicModuleValues:>{}]}
+            },
+            DefaultBaseStyle->"Column",
+            GridBoxAlignment->{"Columns" -> {{Left}}},
+            GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings->{"Columns" -> {
+                Offset[0.27999999999999997`], {
+                 Offset[0.5599999999999999]}, 
+                Offset[0.27999999999999997`]}, "Rows" -> {
+                Offset[0.2], {
+                 Offset[3.6]}, 
+                Offset[0.2]}}],
+           FrameMargins->{{6, 6}, {6, 3}}], ""},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpener"]], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpenerHot"]]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, False],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"], False->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetCircuitRetargeted[circuit, rules] returns the \
+given circuit but with its target and control qubits modified as per the \
+given rules. The rules can be anything accepted by ReplaceAll.\\nFor instance \
+GetCircuitRetargeted[..., {0->1, 1->0}] swaps the first and second qubits, \
+and GetCircuitRetargeted[..., q_ -> q + 10] shifts every qubit up by \
+10.\\nThis function modifies only the qubits in the circuit, carefully \
+avoiding modifying gate arguments and other data, so it is a safe alternative \
+to simply evaluating (circuit /. rules).\\nCustom user gates are supported \
+provided they adhere to the standard QuESTlink subscript format.\"\>", 
+             "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {2., 8.}}], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpenerHot"],
+               ImageSizeCache->{10., {2., 8.}}]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, True],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}, Dynamic[System`InformationDump`open$$],
+      BaselinePosition->Baseline,
+      FrameMargins->0,
+      ImageSize->Automatic],
+     DynamicModuleValues:>{}],
+    BaseStyle->"InformationGridFrame",
+    StripOnInput->False], "InformationGridPlain",
+   StripOnInput->False],
+  InformationData[<|
+   "ObjectType" -> "Symbol", "Usage" -> 
+    "GetCircuitRetargeted[circuit, rules] returns the given circuit but with \
+its target and control qubits modified as per the given rules. The rules can \
+be anything accepted by ReplaceAll.\nFor instance GetCircuitRetargeted[..., \
+{0->1, 1->0}] swaps the first and second qubits, and \
+GetCircuitRetargeted[..., q_ -> q + 10] shifts every qubit up by 10.\nThis \
+function modifies only the qubits in the circuit, carefully avoiding \
+modifying gate arguments and other data, so it is a safe alternative to \
+simply evaluating (circuit /. rules).\nCustom user gates are supported \
+provided they adhere to the standard QuESTlink subscript format.", 
+    "Documentation" -> None, "OwnValues" -> None, "UpValues" -> None, 
+    "DownValues" -> 
+    Information`InformationValueForm[
+     DownValues, QuEST`GetCircuitRetargeted, {Condition[
+         QuEST`GetCircuitRetargeted[
+          Blank[], 
+          Pattern[QuEST`Private`map, 
+           Blank[]]], Head[
+           ReplaceAll[0, QuEST`Private`map]] === ReplaceAll] :> Message[
+         MessageName[QuEST`GetCircuitRetargeted, "error"], 
+         "Failed to re-target the circuit due to the above ReplaceAll error"],
+        QuEST`GetCircuitRetargeted[
+         Pattern[QuEST`Private`circ, 
+          Blank[List]], 
+         Pattern[QuEST`Private`map, 
+          Blank[]]] :> With[{QuEST`Private`newCirc = Catch[
+            Map[
+             QuEST`Private`retargetGate[QuEST`Private`map], 
+             QuEST`Private`circ]]}, 
+         If[
+          Not[
+           StringQ[QuEST`Private`newCirc]], QuEST`Private`newCirc, Message[
+            MessageName[QuEST`GetCircuitRetargeted, "error"], 
+            QuEST`Private`newCirc]; $Failed]], QuEST`GetCircuitRetargeted[
+         PatternTest[
+          Pattern[QuEST`Private`gate, 
+           Blank[]], QuEST`Private`isGateFormat], 
+         Pattern[QuEST`Private`map, 
+          Blank[]]] :> 
+       QuEST`GetCircuitRetargeted[{QuEST`Private`gate}, QuEST`Private`map], 
+       QuEST`GetCircuitRetargeted[
+         BlankNullSequence[]] :> 
+       QuEST`Private`invalidArgError[QuEST`GetCircuitRetargeted]}], 
+    "SubValues" -> None, "DefaultValues" -> None, "NValues" -> None, 
+    "FormatValues" -> None, "Options" -> None, "Attributes" -> {}, "FullName" -> 
+    "QuEST`GetCircuitRetargeted"|>, False]]], "Output",
+ CellChangeTimes->{3.917275740119687*^9},
+ CellLabel->"Out[7]=",ExpressionUUID->"77c319d3-e441-4f8a-8501-8392e413b4a8"]
+}, Open  ]]
+}, Open  ]],
 
 Cell[CellGroupData[{
 
@@ -1474,97 +2175,114 @@ Cell[CellGroupData[{
 Cell[580, 22, 255, 4, 98, "Title",ExpressionUUID->"223c5e93-f36d-46eb-ad55-20d3c4e4558d"],
 Cell[838, 28, 428, 9, 52, "Input",ExpressionUUID->"630d3d6a-6e61-4efb-95f7-ae191fa9191e"],
 Cell[CellGroupData[{
-Cell[1291, 41, 296, 5, 69, "Chapter",ExpressionUUID->"1fd36cfc-fa1b-431f-91d7-5039b9c56c51"],
+Cell[1291, 41, 355, 6, 69, "Chapter",ExpressionUUID->"3515b510-3869-46e4-9347-65eaeeb0a3c6"],
+Cell[1649, 49, 283, 9, 51, "Text",ExpressionUUID->"ff6b729d-422e-4613-9525-670d5342456c"],
 Cell[CellGroupData[{
-Cell[1612, 50, 253, 4, 30, "Input",ExpressionUUID->"48aa9e4e-f4e8-4d85-b3b2-b0fb265148fe"],
-Cell[1868, 56, 14333, 334, 239, "Output",ExpressionUUID->"87f491dd-3ecf-419c-9e5e-1b12cd7f602b"]
+Cell[1957, 62, 206, 3, 30, "Input",ExpressionUUID->"96115383-c4b8-45c6-bd96-3fde7167312d"],
+Cell[2166, 67, 10883, 271, 95, "Output",ExpressionUUID->"7da5e1ac-9973-4ddd-8d52-75d54fb8dca8"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[13086, 343, 288, 6, 30, "Input",ExpressionUUID->"d43e3135-4093-4981-afa6-f65e5adb1349"],
+Cell[13377, 351, 600, 12, 63, "Message",ExpressionUUID->"c7fd098c-2347-4c20-8e61-aa99960c796f"],
+Cell[13980, 365, 216, 4, 34, "Output",ExpressionUUID->"d9ed7862-1d49-4f66-b6df-07a21441f92f"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[14233, 374, 209, 3, 30, "Input",ExpressionUUID->"8d7b2d73-fc5a-4a32-95d6-7abcc35fcc81"],
+Cell[14445, 379, 15445, 357, 239, "Output",ExpressionUUID->"77c319d3-e441-4f8a-8501-8392e413b4a8"]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[16250, 396, 394, 6, 69, "Chapter",ExpressionUUID->"57f2b7d5-15dc-4b27-aff0-df07ae9b9436"],
+Cell[29939, 742, 296, 5, 69, "Chapter",ExpressionUUID->"1fd36cfc-fa1b-431f-91d7-5039b9c56c51"],
 Cell[CellGroupData[{
-Cell[16669, 406, 202, 3, 30, "Input",ExpressionUUID->"dbd66156-4b91-4406-a043-fde287dd0c37"],
-Cell[16874, 411, 12800, 311, 180, "Output",ExpressionUUID->"692e297c-73f5-42cb-9df1-d276411145f4"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[29711, 727, 309, 5, 54, "Subsection",ExpressionUUID->"a65778b5-8be7-4349-8976-aa2f8378fe22"],
-Cell[CellGroupData[{
-Cell[30045, 736, 840, 22, 55, "Input",ExpressionUUID->"c46bf92d-f358-4abd-80ad-63d02f4da33e"],
-Cell[30888, 760, 1602, 29, 123, "Output",ExpressionUUID->"6fdd0b58-f08f-4b38-9962-fa1c1b787bdc"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[32527, 794, 453, 10, 52, "Input",ExpressionUUID->"39709590-3c6f-429f-a362-731ba383fb10"],
-Cell[32983, 806, 644, 19, 38, "Output",ExpressionUUID->"c2799d57-8034-4aca-8cea-c96cff8c7f40"],
-Cell[33630, 827, 1553, 28, 123, "Output",ExpressionUUID->"bf2fb294-2c74-451c-b835-bbd9a6cd2de1"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[35220, 860, 409, 8, 52, "Input",ExpressionUUID->"ebbc580e-caaf-4fa1-9b63-3497e232a81f"],
-Cell[35632, 870, 666, 19, 38, "Output",ExpressionUUID->"24708f2c-61c4-4018-ab1a-2e0c4cd6cb37"],
-Cell[36301, 891, 1713, 30, 145, "Output",ExpressionUUID->"9f59f6b2-b121-400d-b699-1d05a9e32777"]
+Cell[30260, 751, 253, 4, 30, "Input",ExpressionUUID->"48aa9e4e-f4e8-4d85-b3b2-b0fb265148fe"],
+Cell[30516, 757, 14333, 334, 239, "Output",ExpressionUUID->"87f491dd-3ecf-419c-9e5e-1b12cd7f602b"]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[38063, 927, 291, 4, 54, "Subsection",ExpressionUUID->"66a7eb09-f599-4efa-8702-50444435770a"],
+Cell[44898, 1097, 394, 6, 69, "Chapter",ExpressionUUID->"57f2b7d5-15dc-4b27-aff0-df07ae9b9436"],
 Cell[CellGroupData[{
-Cell[38379, 935, 2602, 73, 173, "Input",ExpressionUUID->"a434cc3b-b6a7-4b7b-81b3-e88e52fd5604"],
-Cell[40984, 1010, 2261, 71, 108, "Output",ExpressionUUID->"e83e1e78-8b9a-4d76-9858-178629e817f9"]
+Cell[45317, 1107, 202, 3, 30, "Input",ExpressionUUID->"dbd66156-4b91-4406-a043-fde287dd0c37"],
+Cell[45522, 1112, 12800, 311, 180, "Output",ExpressionUUID->"692e297c-73f5-42cb-9df1-d276411145f4"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[58359, 1428, 309, 5, 54, "Subsection",ExpressionUUID->"a65778b5-8be7-4349-8976-aa2f8378fe22"],
+Cell[CellGroupData[{
+Cell[58693, 1437, 840, 22, 55, "Input",ExpressionUUID->"c46bf92d-f358-4abd-80ad-63d02f4da33e"],
+Cell[59536, 1461, 1602, 29, 123, "Output",ExpressionUUID->"6fdd0b58-f08f-4b38-9962-fa1c1b787bdc"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[61175, 1495, 453, 10, 52, "Input",ExpressionUUID->"39709590-3c6f-429f-a362-731ba383fb10"],
+Cell[61631, 1507, 644, 19, 38, "Output",ExpressionUUID->"c2799d57-8034-4aca-8cea-c96cff8c7f40"],
+Cell[62278, 1528, 1553, 28, 123, "Output",ExpressionUUID->"bf2fb294-2c74-451c-b835-bbd9a6cd2de1"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[63868, 1561, 409, 8, 52, "Input",ExpressionUUID->"ebbc580e-caaf-4fa1-9b63-3497e232a81f"],
+Cell[64280, 1571, 666, 19, 38, "Output",ExpressionUUID->"24708f2c-61c4-4018-ab1a-2e0c4cd6cb37"],
+Cell[64949, 1592, 1713, 30, 145, "Output",ExpressionUUID->"9f59f6b2-b121-400d-b699-1d05a9e32777"]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[43294, 1087, 207, 4, 54, "Subsection",ExpressionUUID->"e4613dd8-951c-4129-bb2c-cf7dbfb5c4de"],
+Cell[66711, 1628, 291, 4, 54, "Subsection",ExpressionUUID->"66a7eb09-f599-4efa-8702-50444435770a"],
 Cell[CellGroupData[{
-Cell[43526, 1095, 462, 12, 33, "Input",ExpressionUUID->"e0d0b034-9046-47f5-8b1d-19cdec37267c"],
-Cell[43991, 1109, 304, 7, 37, "Output",ExpressionUUID->"3a744d86-4c4e-4803-9448-c983d534a2be"]
+Cell[67027, 1636, 2602, 73, 173, "Input",ExpressionUUID->"a434cc3b-b6a7-4b7b-81b3-e88e52fd5604"],
+Cell[69632, 1711, 2261, 71, 108, "Output",ExpressionUUID->"e83e1e78-8b9a-4d76-9858-178629e817f9"]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[44344, 1122, 240, 4, 54, "Subsection",ExpressionUUID->"e57c7873-02cc-4ac3-a7c5-5a3d707eaae6"],
+Cell[71942, 1788, 207, 4, 54, "Subsection",ExpressionUUID->"e4613dd8-951c-4129-bb2c-cf7dbfb5c4de"],
 Cell[CellGroupData[{
-Cell[44609, 1130, 559, 15, 33, "Input",ExpressionUUID->"6a89518b-bb4c-4d6a-b2ac-bae9f21cb7ce"],
-Cell[45171, 1147, 480, 13, 37, "Output",ExpressionUUID->"42f37959-9735-4f00-91fa-35bc05b19458"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[45688, 1165, 944, 24, 33, "Input",ExpressionUUID->"358efe28-a6a8-410c-8999-9bb4a48fef87"],
-Cell[46635, 1191, 626, 17, 37, "Output",ExpressionUUID->"7157f519-0fb7-4368-ae79-8bd0c632980f"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[47298, 1213, 633, 17, 30, "Input",ExpressionUUID->"dd4733cb-b709-4461-8b7e-c06ae204387a"],
-Cell[47934, 1232, 492, 14, 34, "Output",ExpressionUUID->"379d8342-d5fa-46ea-bfd7-083f425d21c3"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[48463, 1251, 749, 22, 33, "Input",ExpressionUUID->"9aeaa7af-4a4c-465e-9e17-67297c029216"],
-Cell[49215, 1275, 661, 20, 37, "Output",ExpressionUUID->"221a3108-fb98-48e8-83dd-a5ec088debf7"]
+Cell[72174, 1796, 462, 12, 33, "Input",ExpressionUUID->"e0d0b034-9046-47f5-8b1d-19cdec37267c"],
+Cell[72639, 1810, 304, 7, 37, "Output",ExpressionUUID->"3a744d86-4c4e-4803-9448-c983d534a2be"]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[49925, 1301, 263, 4, 54, "Subsection",ExpressionUUID->"35d072ee-9907-451d-9d40-cd0c8abd3df3"],
+Cell[72992, 1823, 240, 4, 54, "Subsection",ExpressionUUID->"e57c7873-02cc-4ac3-a7c5-5a3d707eaae6"],
 Cell[CellGroupData[{
-Cell[50213, 1309, 397, 9, 30, "Input",ExpressionUUID->"8325c78b-f0bd-45da-bc9b-765a5132d8a1"],
-Cell[50613, 1320, 323, 6, 34, "Output",ExpressionUUID->"2121e79c-71cb-4f3f-af74-1db23259845f"]
+Cell[73257, 1831, 559, 15, 33, "Input",ExpressionUUID->"6a89518b-bb4c-4d6a-b2ac-bae9f21cb7ce"],
+Cell[73819, 1848, 480, 13, 37, "Output",ExpressionUUID->"42f37959-9735-4f00-91fa-35bc05b19458"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[74336, 1866, 944, 24, 33, "Input",ExpressionUUID->"358efe28-a6a8-410c-8999-9bb4a48fef87"],
+Cell[75283, 1892, 626, 17, 37, "Output",ExpressionUUID->"7157f519-0fb7-4368-ae79-8bd0c632980f"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[75946, 1914, 633, 17, 30, "Input",ExpressionUUID->"dd4733cb-b709-4461-8b7e-c06ae204387a"],
+Cell[76582, 1933, 492, 14, 34, "Output",ExpressionUUID->"379d8342-d5fa-46ea-bfd7-083f425d21c3"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[77111, 1952, 749, 22, 33, "Input",ExpressionUUID->"9aeaa7af-4a4c-465e-9e17-67297c029216"],
+Cell[77863, 1976, 661, 20, 37, "Output",ExpressionUUID->"221a3108-fb98-48e8-83dd-a5ec088debf7"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[78573, 2002, 263, 4, 54, "Subsection",ExpressionUUID->"35d072ee-9907-451d-9d40-cd0c8abd3df3"],
+Cell[CellGroupData[{
+Cell[78861, 2010, 397, 9, 30, "Input",ExpressionUUID->"8325c78b-f0bd-45da-bc9b-765a5132d8a1"],
+Cell[79261, 2021, 323, 6, 34, "Output",ExpressionUUID->"2121e79c-71cb-4f3f-af74-1db23259845f"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[50997, 1333, 347, 6, 69, "Chapter",ExpressionUUID->"72f1f0e8-812d-4567-a588-dfbce9602247"],
+Cell[79645, 2034, 347, 6, 69, "Chapter",ExpressionUUID->"72f1f0e8-812d-4567-a588-dfbce9602247"],
 Cell[CellGroupData[{
-Cell[51369, 1343, 397, 9, 30, "Input",ExpressionUUID->"ec8e0cc7-7591-4da4-ad95-7506b05dade9"],
-Cell[51769, 1354, 557, 11, 46, "Message",ExpressionUUID->"12d5e222-b447-428b-8efb-7a0ee43acf51"],
-Cell[52329, 1367, 255, 3, 34, "Output",ExpressionUUID->"28460cfb-b414-452b-9a4d-0e0f88c2a3d3"]
+Cell[80017, 2044, 397, 9, 30, "Input",ExpressionUUID->"ec8e0cc7-7591-4da4-ad95-7506b05dade9"],
+Cell[80417, 2055, 557, 11, 46, "Message",ExpressionUUID->"12d5e222-b447-428b-8efb-7a0ee43acf51"],
+Cell[80977, 2068, 255, 3, 34, "Output",ExpressionUUID->"28460cfb-b414-452b-9a4d-0e0f88c2a3d3"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[52621, 1375, 293, 6, 30, "Input",ExpressionUUID->"75601796-a303-4526-a5d3-56715762c89f"],
-Cell[52917, 1383, 539, 11, 28, "Message",ExpressionUUID->"74df796e-716e-4447-ae19-80a7b6ae1c63"],
-Cell[53459, 1396, 183, 2, 34, "Output",ExpressionUUID->"831dfa80-86ba-4b2e-8cdc-cf6b879a82b8"]
+Cell[81269, 2076, 293, 6, 30, "Input",ExpressionUUID->"75601796-a303-4526-a5d3-56715762c89f"],
+Cell[81565, 2084, 539, 11, 24, "Message",ExpressionUUID->"74df796e-716e-4447-ae19-80a7b6ae1c63"],
+Cell[82107, 2097, 183, 2, 34, "Output",ExpressionUUID->"831dfa80-86ba-4b2e-8cdc-cf6b879a82b8"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[53679, 1403, 214, 3, 30, "Input",ExpressionUUID->"79ec97ab-604c-4797-817d-57532131ee9e"],
-Cell[53896, 1408, 510, 11, 28, "Message",ExpressionUUID->"1ebd3065-d72f-41da-a979-9a2405d5ce63"],
-Cell[54409, 1421, 275, 4, 34, "Output",ExpressionUUID->"b9cbb693-b805-4886-823e-e737d0630005"]
+Cell[82327, 2104, 214, 3, 30, "Input",ExpressionUUID->"79ec97ab-604c-4797-817d-57532131ee9e"],
+Cell[82544, 2109, 510, 11, 24, "Message",ExpressionUUID->"1ebd3065-d72f-41da-a979-9a2405d5ce63"],
+Cell[83057, 2122, 275, 4, 34, "Output",ExpressionUUID->"b9cbb693-b805-4886-823e-e737d0630005"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[54721, 1430, 269, 4, 30, "Input",ExpressionUUID->"9e4e7e60-2fad-4238-b8e3-4229a8724b9e"],
-Cell[54993, 1436, 443, 10, 28, "Message",ExpressionUUID->"56c6be2b-fb5a-409f-b8a3-ddbb500b7048"],
-Cell[55439, 1448, 180, 2, 34, "Output",ExpressionUUID->"aa6d54f2-15f5-4809-9b6a-bed0f0dd0afa"]
+Cell[83369, 2131, 269, 4, 30, "Input",ExpressionUUID->"9e4e7e60-2fad-4238-b8e3-4229a8724b9e"],
+Cell[83641, 2137, 443, 10, 24, "Message",ExpressionUUID->"56c6be2b-fb5a-409f-b8a3-ddbb500b7048"],
+Cell[84087, 2149, 180, 2, 34, "Output",ExpressionUUID->"aa6d54f2-15f5-4809-9b6a-bed0f0dd0afa"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
