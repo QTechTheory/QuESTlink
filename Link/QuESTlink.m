@@ -1169,20 +1169,23 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             SetQuregToPauliStringInternal[qureg, Sequence @@ getEncodedNumericPauliString[hamil]]
         SetQuregToPauliString[___] := invalidArgError[SetQuregToPauliString]
         
+
         
         (*
-         * Pauli strings
+         * Numeric Pauli strings
          *)
 
         invalidPauliScalarError[caller_] := (
             Message[caller::error, "The Pauli string contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; 
             $Failed)
             
+
         CalcExpecPauliString[qureg_Integer, paulis_?isValidNumericPauliString, workspace_Integer] :=
             CalcExpecPauliStringInternal[qureg, workspace, Sequence @@ getEncodedNumericPauliString[paulis]]
         CalcExpecPauliString[_Integer, Verbatim[Plus][_?NumericQ, ___], _Integer] := 
             invalidPauliScalarError[CalcExpecPauliString]
         CalcExpecPauliString[___] := invalidArgError[CalcExpecPauliString]
+
 
         ApplyPauliString[inQureg_Integer, paulis_?isValidNumericPauliString, outQureg_Integer] :=
             ApplyPauliStringInternal[inQureg, outQureg, Sequence @@ getEncodedNumericPauliString[paulis]]
@@ -1190,6 +1193,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             invalidPauliScalarError[ApplyPauliString]
         ApplyPauliString[___] := invalidArgError[ApplyPauliString]
         
+
+
+        (*
+         * Analytic Pauli strings
+         *)
+
+
         getFullHilbertPauliMatrix[numQ_][Subscript[s_,q_]] := Module[
         	{m=ConstantArray[SparseArray @ IdentityMatrix[2], numQ]},
         	m[[q+1]] = SparseArray @ PauliMatrix[s /. {Id->0, X->1,Y->2,Z->3}];
@@ -1210,6 +1220,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             CalcPauliExpressionMatrix[hFlat, nQb]]
         CalcPauliExpressionMatrix[___] := invalidArgError[CalcPauliExpressionMatrix]
         
+
+
         CalcPauliStringMinEigVal[paulis_?isValidNumericPauliString, MaxIterations -> its_Integer] := With[
             {matr = CalcPauliExpressionMatrix[paulis]},
             - First @ Eigenvalues[- matr, 1, Method -> {"Arnoldi", MaxIterations -> its, "Criteria" -> "RealPart"}]]
@@ -1217,6 +1229,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             CalcPauliStringMinEigVal[paulis, MaxIterations -> 10^5]
         CalcPauliStringMinEigVal[___] := invalidArgError[CalcPauliStringMinEigVal]
         
+
+
         CalcPauliStringMatrix[paulis_?isValidNumericPauliString] := With[
             {pauliCodes = getEncodedNumericPauliString[paulis]},
             {elems = CalcPauliStringMatrixInternal[1+Max@pauliCodes[[3]], Sequence @@ pauliCodes]},
@@ -1226,6 +1240,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             invalidPauliScalarError[CalcPauliStringMatrix]
         CalcPauliStringMatrix[___] := invalidArgError[CalcPauliStringMatrix]
         
+
+
         GetPauliStringFromCoeffs[addr_String] :=
             Plus @@ (#[[1]] If[ 
                     AllTrue[ #[[2;;]], PossibleZeroQ ],
@@ -1238,6 +1254,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 ] &) /@ ReadList[addr, Number, RecordLists -> True];
         GetPauliStringFromCoeffs[___] := invalidArgError[GetPauliStringFromCoeffs]
         
+
+
         GetRandomPauliString[
             numQubits_Integer?Positive, numTerms:(_Integer?Positive|Automatic|All):Automatic, 
             {minCoeff_?Internal`RealValuedNumericQ, maxCoeff_?Internal`RealValuedNumericQ}
@@ -1267,8 +1285,127 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetRandomPauliString[numQubits_Integer?Positive, numTerms:(_Integer?Positive|Automatic|All):Automatic] :=
             GetRandomPauliString[numQubits, numTerms, {-1,1}]
         GetRandomPauliString[___] := invalidArgError[GetRandomPauliString]
+
+
+
+        getNthPauliTensor[n_, numQubits_] :=
+            PadLeft[IntegerDigits[n,4], numQubits, 0]
+            
+        getNthPauliTensorMatrix[n_, 1] /; n < 4 :=
+            PauliMatrix[n]
+        getNthPauliTensorMatrix[n_, numQubits_] /; n < 4^numQubits :=
+            KroneckerProduct @@ PauliMatrix /@ getNthPauliTensor[n, numQubits]
+            
+        getNthPauliTensorSymbols[0, numQubits_, removeIds_:True] :=
+            If[removeIds,
+                Subscript[Id, numQubits-1],
+                Times @@ (Subscript[Id, #]& /@ Range[0,numQubits-1])
+            ]
+        getNthPauliTensorSymbols[n_, numQubits_, removeIds_:True] :=
+            Times @@ (MapThread[Subscript, {
+                getNthPauliTensor[n, numQubits] /. {0->Id,1->X,2->Y,3->Z}, 
+                Reverse @ Range[numQubits] - 1}] /. If[removeIds, Subscript[Id, _] -> Nothing, {}])
+
+        isPowerOfTwoSquareMatrix[m_] := 
+            And[SquareMatrixQ @ m, BitAnd[Length@m, Length@m - 1] === 0]
+
+        GetPauliStringFromMatrix[m_?isPowerOfTwoSquareMatrix] := With[
+            {nQb = Log2 @ Length @ m},
+            {coeffs =  1/2^nQb Table[
+                Tr[getNthPauliTensorMatrix[i,nQb] . m],  
+                {i, 0, 4^nQb - 1}]},
+            coeffs . Table[getNthPauliTensorSymbols[n,nQb], {n, 0, 4^nQb-1}]]
+
+        GetPauliStringFromMatrix[_] := (
+            Message[GetPauliStringFromMatrix::error, "The input must be a square matrix with power-of-2 dimensions."];
+            $Failed)
+        GetPauliStringFromMatrix[___] := invalidArgError[GetPauliStringFromMatrix]
+
+
+
+        Options[GetPauliStringFromIndex] = {
+            "RemoveIds" -> True
+        }
+
+        GetPauliStringFromIndex[ind_Integer, opts:OptionsPattern[]] :=
+            GetPauliStringFromIndex[ind, If[ind <= 0, 1, 1 + Floor[Log[4, ind]]], opts]
+
+        GetPauliStringFromIndex[ind_Integer, numPaulis_Integer, OptionsPattern[]] := With[
+            {maxInd = 4^numPaulis - 1},
+
+            Check[OptionValue["RemoveIds"], Return @ $Failed];
+
+            If[Not @ MemberQ[{True,False}, OptionValue["RemoveIds"]],
+                Message[GetPauliStringFromIndex::error, "Option \"RemoveIds\" must be True or False."];
+                Return @ $Failed];
+
+            If[ind < 0,
+                Message[GetPauliStringFromIndex::error, "Index must be positive or zero."];
+                Return @ $Failed];
+
+            If[numPaulis < 1,
+                Message[GetPauliStringFromIndex::error, "The number of Paulis must be positive."];
+                Return @ $Failed];
+
+            If[ind > maxInd, 
+                Message[GetPauliStringFromIndex::error, 
+                    "The given index (" <> ToString[ind] <> ") exceeds the maximum possible (" <> 
+                    ToString[maxInd] <> " = 4^" <> ToString[numPaulis] <> "-1) for the given " <>
+                    "number of Pauli operators (" <> ToString[numPaulis] <> ")."]; 
+                Return @ $Failed];
+
+            getNthPauliTensorSymbols[ind, numPaulis, OptionValue["RemoveIds"]]
+        ]
+
+        GetPauliStringFromIndex[___] := invalidArgError[GetPauliStringFromIndex]
+
+
         
+        separatePauliStringIntoProdsAndCoeffs[pauli:pauliOpPatt] :=
+            {{pauli, 1}}
+
+        separatePauliStringIntoProdsAndCoeffs[prod:Verbatim[Times][___, pauliOpPatt, ___]] :=
+            {{
+                Times @@ Cases[prod, pauliOpPatt],
+                Times @@ Cases[prod, Except @ pauliOpPatt]
+            }}
+
+        separatePauliStringIntoProdsAndCoeffs[sum_Plus] :=
+            Join @@ (separatePauliStringIntoProdsAndCoeffs /@ List @@ sum)
+
+        GetIndexOfPauliString[ Subscript[s:pauliCodePatt, q_Integer?NonNegative] ] :=
+            (s /. {Id->0,X->1,Y->2,Z->3}) * 4^q
+
+        GetIndexOfPauliString[ prod:pauliProdPatt?isValidSymbolicPauliString ] :=
+            Total[GetIndexOfPauliString /@ List @@ prod]
+
+        GetIndexOfPauliString[ string_?isValidSymbolicPauliString ] := 
+            MapAt[GetIndexOfPauliString, separatePauliStringIntoProdsAndCoeffs[string], {All, 1}]
+            
+        GetIndexOfPauliString[___] := invalidArgError[GetIndexOfPauliString]
+
+
+
+        GetKroneckerOfPauliString[ prod:(pauliOpPatt|pauliProdPatt)?isValidSymbolicPauliString, numQubits_Integer?Positive ] :=
+            If[
+                getNumQubitsInPauliString[prod] > numQubits,
+                Message[GetKroneckerOfPauliString::error, "The given Pauli string targeted a larger index qubit than the number of qubits specified."]; Return @ $Failed,
+                CircleTimes @@ {Id,X,Y,Z}[[ 1 + getNthPauliTensor[GetIndexOfPauliString @ prod, numQubits] ]] ]
+
+        GetKroneckerOfPauliString[ string_?isValidSymbolicPauliString, numQubits_Integer?Positive ] := 
+            Module[
+                {prods},
+                prods = separatePauliStringIntoProdsAndCoeffs[string];
+                Enclose[
+                    MapAt[(GetKroneckerOfPauliString[#,numQubits]&), prods, {All, 1}] // ConfirmQuiet,
+                    ReleaseHold @ # @ "HeldMessageCall" &]]  
+
+        GetKroneckerOfPauliString[ string_?isValidSymbolicPauliString ] :=
+            GetKroneckerOfPauliString[string, getNumQubitsInPauliString @ string]
         
+        GetKroneckerOfPauliString[___] := invalidArgError[GetKroneckerOfPauliString]
+
+
         
         (*
          * Analytic and numerical channel decompositions for statevector simulation
@@ -3689,44 +3826,10 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
 
         (* 
-         * Front-end functions for converting
-         * gates and matrices into Pauli strings
+         * Front-end functions for getting
+         * generators of operators, in the
+         * Pauli string basis
          *)
-
-        getNthPauliTensor[n_, numQubits_] :=
-            PadLeft[IntegerDigits[n,4], numQubits, 0]
-            
-        getNthPauliTensorMatrix[n_, 1] /; n < 4 :=
-            PauliMatrix[n]
-        getNthPauliTensorMatrix[n_, numQubits_] /; n < 4^numQubits :=
-            KroneckerProduct @@ PauliMatrix /@ getNthPauliTensor[n, numQubits]
-            
-        getNthPauliTensorSymbols[0, numQubits_, removeIds_:True] :=
-            If[removeIds,
-                Subscript[Id, numQubits-1],
-                Times @@ (Subscript[Id, #]& /@ Range[0,numQubits-1])
-            ]
-        getNthPauliTensorSymbols[n_, numQubits_, removeIds_:True] :=
-            Times @@ (MapThread[Subscript, {
-                getNthPauliTensor[n, numQubits] /. {0->Id,1->X,2->Y,3->Z}, 
-                Reverse @ Range[numQubits] - 1}] /. If[removeIds, Subscript[Id, _] -> Nothing, {}])
-
-        isPowerOfTwoSquareMatrix[m_] := 
-            And[SquareMatrixQ @ m, BitAnd[Length@m, Length@m - 1] === 0]
-
-        GetPauliStringFromMatrix[m_?isPowerOfTwoSquareMatrix] := With[
-            {nQb = Log2 @ Length @ m},
-            {coeffs =  1/2^nQb Table[
-                Tr[getNthPauliTensorMatrix[i,nQb] . m],  
-                {i, 0, 4^nQb - 1}]},
-            coeffs . Table[getNthPauliTensorSymbols[n,nQb], {n, 0, 4^nQb-1}]]
-
-        GetPauliStringFromMatrix[_] := (
-            Message[GetPauliStringFromMatrix::error, "The input must be a square matrix with power-of-2 dimensions."];
-            $Failed)
-        GetPauliStringFromMatrix[___] := invalidArgError[GetPauliStringFromMatrix]
-
-
 
         (* functions for forceful simplification of a finite set of expressions produced within the below generators *)
         simplifyLogsInGenerator[expr_] := expr /. {
@@ -3805,95 +3908,6 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             CalcCircuitGenerator[{gate}, opts]
 
         CalcCircuitGenerator[___] := invalidArgError[CalcCircuitGenerator]
-
-
-
-        (* 
-         * Front-end functions for obtaining Pauli strings 
-         * from indices, and vice versa
-         *)
-
-        Options[GetPauliStringFromIndex] = {
-            "RemoveIds" -> True
-        }
-
-        GetPauliStringFromIndex[ind_Integer, opts:OptionsPattern[]] :=
-            GetPauliStringFromIndex[ind, If[ind <= 0, 1, 1 + Floor[Log[4, ind]]], opts]
-
-        GetPauliStringFromIndex[ind_Integer, numPaulis_Integer, OptionsPattern[]] := With[
-            {maxInd = 4^numPaulis - 1},
-
-            Check[OptionValue["RemoveIds"], Return @ $Failed];
-
-            If[Not @ MemberQ[{True,False}, OptionValue["RemoveIds"]],
-                Message[GetPauliStringFromIndex::error, "Option \"RemoveIds\" must be True or False."];
-                Return @ $Failed];
-
-            If[ind < 0,
-                Message[GetPauliStringFromIndex::error, "Index must be positive or zero."];
-                Return @ $Failed];
-
-            If[numPaulis < 1,
-                Message[GetPauliStringFromIndex::error, "The number of Paulis must be positive."];
-                Return @ $Failed];
-
-            If[ind > maxInd, 
-                Message[GetPauliStringFromIndex::error, 
-                    "The given index (" <> ToString[ind] <> ") exceeds the maximum possible (" <> 
-                    ToString[maxInd] <> " = 4^" <> ToString[numPaulis] <> "-1) for the given " <>
-                    "number of Pauli operators (" <> ToString[numPaulis] <> ")."]; 
-                Return @ $Failed];
-
-            getNthPauliTensorSymbols[ind, numPaulis, OptionValue["RemoveIds"]]
-        ]
-
-        GetPauliStringFromIndex[___] := invalidArgError[GetPauliStringFromIndex]
-
-        
-
-        separatePauliStringIntoProdsAndCoeffs[pauli:pauliOpPatt] :=
-            {{pauli, 1}}
-
-        separatePauliStringIntoProdsAndCoeffs[prod:Verbatim[Times][___, pauliOpPatt, ___]] :=
-            {{
-                Times @@ Cases[prod, pauliOpPatt],
-                Times @@ Cases[prod, Except @ pauliOpPatt]
-            }}
-
-        separatePauliStringIntoProdsAndCoeffs[sum_Plus] :=
-            Join @@ (separatePauliStringIntoProdsAndCoeffs /@ List @@ sum)
-
-        GetIndexOfPauliString[ Subscript[s:pauliCodePatt, q_Integer?NonNegative] ] :=
-            (s /. {Id->0,X->1,Y->2,Z->3}) * 4^q
-
-        GetIndexOfPauliString[ prod:pauliProdPatt?isValidSymbolicPauliString ] :=
-            Total[GetIndexOfPauliString /@ List @@ prod]
-
-        GetIndexOfPauliString[ string_?isValidSymbolicPauliString ] := 
-            MapAt[GetIndexOfPauliString, separatePauliStringIntoProdsAndCoeffs[string], {All, 1}]
-            
-        GetIndexOfPauliString[___] := invalidArgError[GetIndexOfPauliString]
-
-
-
-        GetKroneckerOfPauliString[ prod:(pauliOpPatt|pauliProdPatt)?isValidSymbolicPauliString, numQubits_Integer?Positive ] :=
-            If[
-                getNumQubitsInPauliString[prod] > numQubits,
-                Message[GetKroneckerOfPauliString::error, "The given Pauli string targeted a larger index qubit than the number of qubits specified."]; Return @ $Failed,
-                CircleTimes @@ {Id,X,Y,Z}[[ 1 + getNthPauliTensor[GetIndexOfPauliString @ prod, numQubits] ]] ]
-
-        GetKroneckerOfPauliString[ string_?isValidSymbolicPauliString, numQubits_Integer?Positive ] := 
-            Module[
-                {prods},
-                prods = separatePauliStringIntoProdsAndCoeffs[string];
-                Enclose[
-                    MapAt[(GetKroneckerOfPauliString[#,numQubits]&), prods, {All, 1}] // ConfirmQuiet,
-                    ReleaseHold @ # @ "HeldMessageCall" &]]  
-
-        GetKroneckerOfPauliString[ string_?isValidSymbolicPauliString ] :=
-            GetKroneckerOfPauliString[string, getNumQubitsInPauliString @ string]
-        
-        GetKroneckerOfPauliString[___] := invalidArgError[GetKroneckerOfPauliString]
 
 
 
@@ -4799,7 +4813,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 $Failed)
 
         CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] /; 
-            Not[SquareMatrixQ[m]] || Length[m] =!= 4^Length@{q} := (
+            Not @ SquareMatrixQ[m] || Length[m] =!= 4^Length@{q} := (
                 Message[CalcPauliTransferMap::error, "The PTM matrix was not a compatibly-sized square matrix."];
                 $Failed)
 
