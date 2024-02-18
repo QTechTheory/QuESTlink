@@ -142,11 +142,6 @@ It is often convenient to pass the returned structure to Chop[] in order to remo
 The state is likely no longer a valid density matrix but is useful as a persistent Z-basis representation of the pauli string, to be used in functions like CalcDensityInnerProduct[] and CalcExpecPauliStringDerivs[]."
     SetQuregToPauliString::error = "`1`"
 
-    GetPauliStringFromIndex::usage = "GetPauliStringFromIndex[n, m] returns the n-th ordered m-Pauli string, where the zero-th qubit (or subscripted index) is treated as the least significant.
-GetPauliStringFromIndex[n] returns the n-th ordered m-Pauli string, where m is inferred as the minimum to support index n.
-GetPauliStringFromIndex accepts optional argument \"RemoveIds\" -> False (default True) which retains otherwise removed Id operators, so that the returned string has an explicit Pauli operator on every qubit."
-    GetPauliStringFromIndex::error = "`1`"
-
     GetIndexOfPauliString::usage = "GetIndexOfPauliString[product] returns the integer index of the given Pauli product in the ordered basis of Pauli products. The zero target is treated as least significant.
 GetIndexOfPauliString[string] returns a list of {index, coefficient} pairs which describe all Pauli products in the given string.
 To force GetIndexOfPauliString[product] to return the same format as GetIndexOfPauliString[string], simply call GetIndexOfPauliString[ 1. product ]."
@@ -347,7 +342,7 @@ CalcPauliTransferMatrix accepts optional argument AssertValidChannels."
 
     CalcPauliTransferMap::usage = "CalcPauliTransferMap[ptm] produces a PTMap equivalent to the given PTM operator. See ?PTM.
 CalcPauliTransferMap[circuit] produces a PTMap from a given gate or circuit, and merely first invokes CalcPauliTransferMatrix.
-By default, this returned map is from a Pauli-string index to a list of {index, coefficient} pairs, encoding how the PTM would modify the indexed Pauli string. The indexing is the same as used by GetIndexOfPauliString[] and GetPauliStringFromIndex[], where the subscripted qubits of the PTM are treated as though given in order of increasing significance.
+By default, this returned map is from a Pauli-string index to a list of {index, coefficient} pairs, encoding how the PTM would modify the indexed Pauli string. The indexing is the same as used by GetPauliString[] where the subscripted qubits of the PTM are treated as though given in order of increasing significance.
 CalcPauliTransferMap accepts options \"KroneckerForm\"->True which replaces the Pauli-string indices with their corresponding Pauli-string in the form produced by GetKroneckerOfPauliString[].
 CalcPauliTransferMap also accepts option AssertValidChannels->False to disable the automatic simplification of the map's coefficients through the assertion of valid channel parameters. See ?AssertValidChannels."
     CalcPauliTransferMap::error = "`1`"
@@ -1333,11 +1328,6 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             $Failed)
         GetPauliStringFromMatrix[___] := invalidArgError[GetPauliStringFromMatrix]
 
-
-
-        Options[GetPauliStringFromIndex] = {
-            "RemoveIds" -> True
-        }
 
         GetPauliStringFromIndex[ind_Integer, opts:OptionsPattern[]] :=
             GetPauliStringFromIndex[ind, If[ind <= 0, 1, 1 + Floor[Log[4, ind]]], opts]
@@ -4812,7 +4802,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 indMap = getMapOfPauliIndicesFromPTM[m];
                 pauliFunc = Function[{ind}, 
                     GetKroneckerOfPauliString @ 
-                        GetPauliStringFromIndex[ind, Length@{q}, "RemoveIds"->False]];
+                        GetPauliString[ind, Length@{q}, "RemoveIds"->False]];
                 Subscript[PTMap, q] @@ If[
                     Not @ OptionValue["KroneckerForm"],
                     indMap,
