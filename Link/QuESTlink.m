@@ -312,10 +312,6 @@ CalcExpecPauliProdsFromClassicalShadow[shadow, prods, numBatches] divides the sh
 This is the procedure outlined in Nat. Phys. 16, 1050–1057 (2020)."
     CalcExpecPauliProdsFromClassicalShadow::error = "`1`"
 
-    GetPauliStringFromMatrix::usage = "GetPauliStringFromMatrix[m] returns a complex-weighted sum of Pauli tensors equivalent to the given square, power-of-2 length matrix m.
-If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components."
-    GetPauliStringFromMatrix::error = "`1`"
-
     CalcCircuitGenerator::usage = "CalcCircuitGenerator[circuit] computes the Pauli string generator G of the given circuit, whereby circuit = Exp[i G]. 
 \[Bullet] If circuit contains decoherence operators, the generator of the circuit's superoperator is returned. See ?GetCircuitSuperoperator.
 \[Bullet] If circuit is unitary, the resulting coefficients may have non-zero imaginary components due to numerical error; these can be removed with Chop[].
@@ -575,6 +571,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
     ApplyPauliSum::usage = "This function is deprecated. Please instead use ApplyPauliString."
     CalcPauliSumMatrix::usage = "This function is deprecated. Please instead use CalcPauliStringMatrix."
     GetPauliSumFromCoeffs::usage = "This function is deprecated. Please instead use GetPauliString."
+    GetPauliStringFromMatrix::usage = "This function is deprecated. Please instead use GetPauliString."
     MixDamping::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Damp."
     MixDephasing::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Deph."
     MixDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
@@ -619,6 +616,10 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetPauliStringFromCoeffs[args___] := (
             Message[GetPauliString::error, "The function GetPauliStringFromCoeffs[] is deprecated. Use GetPauliString[] or temporarily hide this message using Quiet[]."]; 
             GetPauliString[args])
+        GetPauliStringFromMatrix[args___] := (
+            Message[GetPauliString::error, "The function GetPauliStringFromMatrix[] is deprecated. Use GetPauliString[] or temporarily hide this message using Quiet[]."]; 
+            GetPauliString[args])
+
         MixDamping[qureg_Integer, qb_Integer, prob_Real] := (
             Message[ApplyCircuit::error, "The function MixDamping[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Damp[] gate instead, or temporarily hide this message using Quiet[]."];
             ApplyCircuit[qureg, Subscript[Damp,qb][prob]];
