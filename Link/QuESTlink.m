@@ -580,6 +580,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
     MixTwoQubitDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
     CalcQuregDerivs::usage = "This function is deprecated. Please instead use ApplyCircuitDerivs."
     GetQuregMatrix::usage = "This function is deprecated. Please instead use GetQuregState."
+    RetargetCircuit::usage = "This function is deprecated. Please instead use GetCircuitRetargeted."
     
     EndPackage[]
  
@@ -638,7 +639,10 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Message[ApplyCircuitDerivs::error, "The function CalcQuregDerivs[] is deprecated, though has still been attemptedly performed. In future, please use ApplyCircuitDerivs[], or temporarily hide this message using Quiet[]."];
             ApplyCircuitDerivs[initQureg, circuit, varVals, derivQuregs, workQuregs])
             
-            
+        RetargetCircuit[args___] := (
+            Message[GetCircuitRetargeted::error, "The function RetargetCircuit[] is deprecated, though has still been attemptedly performed. In future, please use GetCircuitRetargeted[], or temporarily hide this message using Quiet[]."];
+            GetCircuitRetargeted[args])
+
 
         GetQuregMatrix[args___] := (
             (* temporarily hide the deprecation notice, so existing code doesn't yet need to be updated *)
