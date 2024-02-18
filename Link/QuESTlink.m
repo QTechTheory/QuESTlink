@@ -677,7 +677,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * encoding numerical Pauli strings
          *)
          
-        pauliCodePatt = X|Y|Z|Id;
+        pauliCodePatt = Id|X|Y|Z;
         pauliOpPatt = Subscript[pauliCodePatt, _Integer];
         pauliProdPatt = Verbatim[Times][pauliOpPatt..];
         numericCoeffPauliProdPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?Internal`RealValuedNumericQ,{0,1}], pauliOpPatt.. ];
@@ -1847,8 +1847,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
          
          (* post-processing step to combine Pauli products that have identical symbols and indices... *)
-        getPauliSig[ a: Subscript[(X|Y|Z|Id), _Integer] ] := {a}
-        getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, Subscript[(X|Y|Z|Id), _]]
+        getPauliSig[ a: pauliOpPatt ] := {a}
+        getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, pauliOpPatt]
         getPauliSig[ _ ] := {}
         (* which works by splitting a sum into groups containing the same Pauli tensor, and simplifying each *)
         factorPaulis[s_Plus] := Total[Simplify /@ Plus @@@ GatherBy[List @@ s, getPauliSig]] /. Complex[0.`, 0.`] -> 0
@@ -1861,7 +1861,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
         SetAttributes[SimplifyPaulis, HoldAll]
         
-        SimplifyPaulis[ a:Subscript[(X|Y|Z|Id), _] ] := 
+        (* below, we deliberately do not constrain indices to be _Integer (ergo avoid pauliOpPatt), to permit symbols *)
+
+        SimplifyPaulis[ a:Subscript[pauliCodePatt, _] ] :=  
             a
 
         SimplifyPaulis[ (a:Subscript[(X|Y|Z), q_])^n_Integer ] /; (n >= 0) :=
@@ -1876,7 +1878,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         	(* pass product (which now contains no powers of pauli expressions) to simplify *)
         	SimplifyPaulis[nc]]
 
-        SimplifyPaulis[ Power[b_, n_Integer] ] /; (Not[FreeQ[b,Subscript[(X|Y|Z|Id), _]]] && n >= 0) :=
+        SimplifyPaulis[ Power[b_, n_Integer] ] /; (Not[FreeQ[b,Subscript[pauliCodePatt, _]]] && n >= 0) :=
         	(* simplify the base, then pass a (non-expanded) product to simplify (to trigger above def) *)
         	With[{s=ConstantArray[SimplifyPaulis[b], n]}, 
         		SimplifyPaulis @@ (Times @@@ Hold[s])]
@@ -1894,7 +1896,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         	(* expand all multiplication into non-commuting; this means ex can be a sum now *)
         	{ex = Distribute[s /. Times -> NonCommutativeMultiply]},
         	(* notation shortcuts *)
-        	{xyz = X|Y|Z, xyzi = X|Y|Z|Id, ncm = NonCommutativeMultiply}, 
+        	{xyz = X|Y|Z, xyzi = pauliCodePatt, ncm = NonCommutativeMultiply}, 
         	(* since ex can now be a sum, after below transformation, factorise *)
         	factorPaulis[
         		ex //. {
@@ -2058,13 +2060,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
          
         (* convert symbolic gate form to {symbol, ctrls, targets} *)
-        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Verbatim[Times][paulis:Subscript[pauliCodePatt, _Integer]..]] ]] := {Join[{R}, {paulis}[[All,1]]], {ctrls}, {paulis}[[All,2]]}
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Verbatim[Times][paulis:pauliOpPatt..]] ]] := {Join[{R}, {paulis}[[All,1]]], {ctrls}, {paulis}[[All,2]]}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Subscript[pauli:pauliCodePatt, targ_Integer]] ]] := {{R,pauli}, {ctrls}, {targ}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] := {gate, {},{targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] := {gate, {}, {targs}}
-        getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:Subscript[pauliCodePatt, _Integer]..]]] := {Join[{R}, {paulis}[[All,1]]], {}, {paulis}[[All,2]]}
+        getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:pauliOpPatt..]]] := {Join[{R}, {paulis}[[All,1]]], {}, {paulis}[[All,2]]}
         getSymbCtrlsTargs[R[arg_, Subscript[pauli:(X|Y|Z), targ_Integer]]] := {{R,pauli}, {}, {targ}}
             (* little hack to enable G[x] and Fac[y] in GetCircuitColumns *)
             getSymbCtrlsTargs[G[x_]] := {G, {}, {}}
@@ -3786,8 +3788,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             
         separateCoeffAndPauliTensor[pauli_Subscript] := {1, pauli}
         separateCoeffAndPauliTensor[prod_Times] := {
-        	Times@@Cases[prod, c:Except[Subscript[(X|Y|Z|Id), _Integer]]:>c],
-        	Times@@Cases[prod, p:Subscript[(X|Y|Z|Id), _Integer]:>p] }
+        	Times@@Cases[prod, c:Except[pauliOpPatt]:>c],
+        	Times@@Cases[prod, p:pauliOpPatt:>p] }
         separateTermsOfPauliHamil[hamil_Plus] := 
         	separateCoeffAndPauliTensor /@ (List @@ hamil)
         separateTermsOfPauliHamil[term_] := 
@@ -3983,7 +3985,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         (* catch invalid maps with trigger ReplaceAll errors*)
         GetCircuitRetargeted[_, map_] /; (Head[0 /. map] === ReplaceAll) := 
-            $Failed
+            Message[GetCircuitRetargeted::error, "Failed to re-target the circuit due to the above ReplaceAll error"];
             
         GetCircuitRetargeted[circ_List, map_] := With[
             {newCirc = Catch[retargetGate[map] /@ circ]},
