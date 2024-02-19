@@ -330,9 +330,8 @@ CalcPauliTransferMatrix accepts optional argument AssertValidChannels."
     CalcPauliTransferMatrix::error = "`1`"
 
     CalcPauliTransferMap::usage = "CalcPauliTransferMap[ptm] produces a PTMap equivalent to the given PTM operator. See ?PTM.
-CalcPauliTransferMap[circuit] produces a PTMap from a given gate or circuit, and merely first invokes CalcPauliTransferMatrix.
-By default, this returned map is from a Pauli-string index to a list of {index, coefficient} pairs, encoding how the PTM would modify the indexed Pauli string. The indexing is the same as used by GetPauliString[] where the subscripted qubits of the PTM are treated as though given in order of increasing significance.
-CalcPauliTransferMap accepts options \"KroneckerForm\"->True which replaces the Pauli-string indices with their corresponding Pauli-string in the form produced by GetKroneckerOfPauliString[].
+CalcPauliTransferMap[circuit] produces a PTMap from the given gate or circuit, by merely first invoking CalcPauliTransferMatrix[].
+The returned map encodes how each basis Pauli-string (encoded by its integer index) is mapped to a weighted sum of other strings (encoded as {index, coefficient} pairs) by the PTM. The indexing convention is the same as used by GetPauliString[] where the subscripted qubits of the PTM are treated as though given in order of increasing significance.
 CalcPauliTransferMap also accepts option AssertValidChannels->False to disable the automatic simplification of the map's coefficients through the assertion of valid channel parameters. See ?AssertValidChannels."
     CalcPauliTransferMap::error = "`1`"
 
@@ -2643,7 +2642,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 {legLabels = DeleteDuplicates @ Flatten @ Values @ edgeLabels},
                 {legStyles = If[
                         OptionValue[DistinguishedStyles] === Automatic,
-                        ColorData["Rainbow"] /@ Range[0,1,1/(Length[legLabels]-1)],
+                        ColorData["Rainbow"] /@ Range[0,1,If[Length[legLabels] === 1, 2 (* force single Range *), 1/(Length[legLabels]-1)]],
                         PadRight[OptionValue[DistinguishedStyles], Length[legLabels], OptionValue[DistinguishedStyles]]
                 ]},
                 {edgeStyles = Rule @@@ Transpose[{legLabels, legStyles}]},
@@ -4923,24 +4922,12 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
 
         Options[CalcPauliTransferMap] = {
-            "KroneckerForm" -> False,
             AssertValidChannels -> True
         };
 
-        CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] :=
-            Module[
-                {indMap, pauliFunc},
-                indMap = getMapOfPauliIndicesFromPTM[m];
-                pauliFunc = Function[{ind}, 
-                    getKroneckerFormOfPauliString @ 
-                        GetPauliString[ind, Length@{q}, "RemoveIds"->False]];
-                Subscript[PTMap, q] @@ If[
-                    Not @ OptionValue["KroneckerForm"],
-                    indMap,
-                    Table[
-                        pauliFunc @ First @ rule -> MapAt[pauliFunc, Last @ rule, {All,1}],
-                        {rule, indMap}]]
-            ]
+        CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] := (
+            Check[ OptionValue[AssertValidChannels], Return @ $Failed];
+            Subscript[PTMap, q] @@ getMapOfPauliIndicesFromPTM[m] )
 
         CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] /; 
             Not[ And@@(NonNegative/@{q}) ] || Not @ DuplicateFreeQ[{q}] := (
@@ -4954,6 +4941,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         CalcPauliTransferMap[circ_?isCircuitFormat, opts:OptionsPattern[]] := Module[
             {ptm},
+            Check[ OptionValue[AssertValidChannels], Return @ $Failed];
+
             ptm = Check[
                 CalcPauliTransferMatrix[circ, FilterRules[{opts}, Options @ CalcPauliTransferMatrix]], 
                 Message[CalcPauliTransferMap::error, "Unable to determine PTM as per the above error."];
