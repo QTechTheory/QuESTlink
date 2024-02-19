@@ -335,6 +335,15 @@ The returned map encodes how each basis Pauli-string (encoded by its integer ind
 CalcPauliTransferMap also accepts option AssertValidChannels->False to disable the automatic simplification of the map's coefficients through the assertion of valid channel parameters. See ?AssertValidChannels."
     CalcPauliTransferMap::error = "`1`"
 
+    DrawPauliTransferMap::usage = "DrawPauliTransferMap[map] visualises the given PTMap as a graph where nodes are basis Pauli strings, and edges indicate the transformative action of the map.
+DrawPauliTransferMap also accepts PTM, circuit and gate instances, for which the corresponding PTMap is automatically calculated.
+DrawPauliTransferMap accepts options \"PauliStringForm\", \"ShowCoefficients\" and \"NodeDegreeEdgeStyles\", in addition to all options accepted by Graph[].
+\[Bullet] \"ShowCoefficients\" -> False hides the map's Pauli string coefficients which are otherwise shown as edge labels.
+\[Bullet] \"PauliStringForm\" sets the vertex label format to one of \"Subscript\" (default), \"Index\", \"Kronecker\" or \"String\". These are the formats supported by GetPauliStringReformatted[].
+\[Bullet] \"NodeDegreeEdgeStyles\" specifies a list of styles (default informed by ColorData[\"Rainbow\"]) to set upon edges from nodes with increasing outdegree. For example, \"NodeDegreeEdgeStyles\"->{Red,Green,Blue} sets edges from Pauli states which are mapped to a single other state to the colour Red, but two-outdegree node out-edges become Green, and three-outdegree become Blue. The list is assumed repeated for higher outdegree nodes than specified.
+\[Bullet] Graph[] options override these settings, so specifying EdgeStyle -> Black will set all edges to Black regardless of their node's outdegree."
+    DrawPauliTransferMap::error = "`1`"
+
     GetPauliString::usage = "Returns a Pauli string or a weighted sum of symbolic Pauli tensors from a variety of input formats.
 GetPauliString[matrix] returns a complex-weighted sum of Pauli tensors equivalent to the given matrix. If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components.
 GetPauliString[index] returns the basis Pauli string corresponding to the given index, where the returned Pauli operator targeting 0 is informed by the least significant bit(s) of the index. 
@@ -4950,6 +4959,104 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             
             CalcPauliTransferMap[ptm, FilterRules[{opts}, Options @ CalcPauliTransferMap]]
         ]
+
+
+
+        (* 
+         * Front-end functions for visualising
+         * Pauli transfer maps
+         *)
+
+        getPTMapGraph[edgeLabels_, edgeStyles_, opts___] :=
+            Graph[
+                edgeLabels[[All,1]],
+                opts,
+                EdgeLabels -> edgeLabels,
+                EdgeStyle -> edgeStyles,
+                VertexStyle -> White,
+                VertexLabels -> Automatic
+            ]
+        
+        getIndexToPauliStrFormFunc[form_, targs_] := 
+            Switch[form,
+                "Subscript",
+                    GetPauliStringRetargeted[
+                        GetPauliString[#, Length[targs]],
+                        MapThread[Rule, {Range @ Length @ targs - 1, targs}]] &,
+                "Index",
+                    Identity,
+                "Kronecker",
+                    GetPauliStringReformatted[GetPauliString[#], Length[targs], "Kronecker"] &,
+                "String",
+                    GetPauliStringReformatted[GetPauliString[#], Length[targs], "String"] &,
+                _,
+                    Message[DrawPauliTransferMap::error, "Unrecognised value for option \"PauliStringForm\". See ?DrawPauliTransferMap"]
+            ]
+
+        Options[DrawPauliTransferMap] = {
+            "PauliStringForm" -> "Subscript", (* or "Index", "Kronecker", "String" *)
+            "ShowCoefficients" -> True,
+            "NodeDegreeEdgeStyles" -> Automatic (* or a list of styles *),
+            AssertValidChannels -> True
+        };
+
+        DrawPauliTransferMap[ Subscript[PTMap, q__Integer?NonNegative][rules__], opts:OptionsPattern[{DrawPauliTransferMap,Graph}] ] := Module[
+            {edgeLabels, vertPauliStr, vertFormFunc, vertDegrees, maxDegree, degreeStyles, edgeStyles},
+
+            (* fail immediately if given unrecognised option *)
+            Check[OptionValue["PauliStringForm"], Return @ $Failed];
+            
+            (* reformat rules to { (v1->v2)->coeff, ...} *)
+            edgeLabels = Flatten @ Table[( rule[[1]]->rhs[[1]] ) -> rhs[[2]] , {rule,{rules}}, {rhs,rule[[2]]}];
+            
+            (* optionally erase coefficients *)
+            If[Not @ OptionValue["ShowCoefficients"], 
+                edgeLabels = (#[[1]]->"")& /@ edgeLabels];
+            
+            (* change vertex format *)
+            vertFormFunc = Check[getIndexToPauliStrFormFunc[OptionValue["PauliStringForm"], {q}], Return @ $Failed];
+            edgeLabels = MapAt[vertFormFunc, edgeLabels, {All,1,All}];
+            
+            (* count degree of each edge's FROM node *)
+            vertDegrees = Table[
+                vert -> Count[edgeLabels, (vert->_)->_],
+                {vert, DeleteDuplicates @ edgeLabels[[All, 1, 1]]}];
+            maxDegree = Max @ vertDegrees[[All, 2]];
+
+            (* accept (and pad) user override of per-degree edge colours *)
+            degreeStyles = If[
+                OptionValue["NodeDegreeEdgeStyles"] === Automatic,
+                ColorData["Pastel"] /@ Range[0, 1, If[maxDegree === 1, 1, 1/(maxDegree-1)]],
+                PadRight[OptionValue["NodeDegreeEdgeStyles"], maxDegree, OptionValue["NodeDegreeEdgeStyles"]]];
+
+            (* assign a style to each edge according to their FROM node degree *)
+            edgeStyles = Table[
+                edge[[1]] -> degreeStyles[[ edge[[1,1]] /. vertDegrees ]],
+                {edge, edgeLabels}];
+            
+            (* obtain and return the Graph (is rendered immediately) *)
+            getPTMapGraph[edgeLabels, edgeStyles, Sequence @@ FilterRules[{opts}, Options[Graph]] ]
+        ]
+
+        DrawPauliTransferMap[ ptmOrGate:(Subscript[PTM,_][_] | _?isCircuitFormat), opts:OptionsPattern[{CalcPauliTransferMap,DrawPauliTransferMap,Graph}] ] :=
+            Module[
+                {map, calcOpts, drawOpts, errFlag=False},
+
+                calcOpts = FilterRules[{opts}, Options[CalcPauliTransferMap]];
+                map = Enclose[ 
+                    ConfirmQuiet @ CalcPauliTransferMap[ptmOrGate, Sequence @@ calcOpts],
+                    ( Message[DrawPauliTransferMap::error, "Failed to automatically obtain the PTMap due to the below error:"]; 
+                      ReleaseHold @ # @ "HeldMessageCall";
+                      errFlag = True; ) & ];
+
+                If[errFlag, Return @ $Failed];
+
+                drawOpts = FilterRules[{opts}, Options[DrawPauliTransferMap] ~Join~ Options[Graph]];
+                DrawPauliTransferMap[map, Sequence @@ drawOpts]
+            ]
+
+
+        DrawPauliTransferMap[___] := invalidArgError[DrawPauliTransferMap]
 
 
 
