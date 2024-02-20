@@ -347,6 +347,7 @@ DrawPauliTransferMap accepts options \"PauliStringForm\", \"ShowCoefficients\" a
     GetPauliString::usage = "Returns a Pauli string or a weighted sum of symbolic Pauli tensors from a variety of input formats.
 GetPauliString[matrix] returns a complex-weighted sum of Pauli tensors equivalent to the given matrix. If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components.
 GetPauliString[index] returns the basis Pauli string corresponding to the given index, where the returned Pauli operator targeting 0 is informed by the least significant bit(s) of the index. 
+GetPauliString[digits] specifies the Pauli product via the base-4 digits of its index, where the rightmost digit is the least significant.
 GetPauliString[address] opens or downloads the file at address (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes. Each line of the file is assumed a separate Pauli tensor with format {coeff code1 code2 ... codeN} (excluding braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z), for an N-qubit Pauli string, and are given in order of increasing significance (zero qubit left). Each line must have N+1 terms, which includes the initial real decimal coefficient. For an example, see \"https://qtechtheory.org/hamil_6qbLiH.txt\".
 GetPauliString[..., numQubits] overrides the inferred number of qubits, introducing additional Id operators upon un-targeted qubits (unless explicitly removed with \"RemoveIds\"->False).
 GetPauliString[..., {targets}] specifies a list of qubits which the returned Pauli string should target (in the given order), instead of the default targets {0, 1, 2, ...}.
@@ -1415,6 +1416,15 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         ]
 
 
+        getPauliStringFromDigits[digits_List, nQb:optionalNumQbPatt, removeIds_:True] :=
+            If[
+                And[ And @@ GreaterEqualThan[0] /@ digits, And @@ LessThan[4] /@ digits ],
+                getPauliStringFromIndex[FromDigits[digits, 4], nQb, removeIds],
+                Message[GetPauliString::error, "Each individual digit must be one of 0 (denoting Id), 1 (X), 2 (Y) or 3 (Z)."];
+                $Failed
+            ]
+
+
         Options[GetPauliString] = {
             "RemoveIds" -> Automatic
         }
@@ -1442,8 +1452,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetPauliString[index_Integer, numPaulis:optionalNumQbPatt, opts:OptionsPattern[]] :=
             getPauliStringFromIndex[index, numPaulis, shouldRemovePauliStringIds[numPaulis, opts]]
 
+        GetPauliString[{digits__Integer}, numPaulis:optionalNumQbPatt, opts:OptionsPattern[]] :=
+            If[ Length@{numPaulis}===1 && numPaulis<Length@{digits},
+                Message[GetPauliString::error, "The overriden number of qubits was fewer than the number of given digits."];
+                    Return @ $Failed,
+                getPauliStringFromDigits[{digits}, numPaulis, shouldRemovePauliStringIds[numPaulis, opts]]]
+
         (* optionally remap the returned Pauli string to a custom set of targets *)
-        GetPauliString[obj:(_String|_?MatrixQ|_Integer), OrderlessPatternSequence[targs:{___Integer}, nQb:optionalNumQbPatt], opts___] :=
+        GetPauliString[obj:(_String|_?MatrixQ|_Integer|{__Integer}), OrderlessPatternSequence[targs:{___Integer}, nQb:optionalNumQbPatt], opts___] :=
             Module[
                 {pauliStr, numQbInStr, map},
 
