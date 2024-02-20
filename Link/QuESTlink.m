@@ -361,10 +361,10 @@ This function modifies only the qubits in the Pauli string and avoids modifying 
     GetPauliStringReformatted::usage = "Reformats symbolic Pauli strings into a variety of other formats convenient for processing.
 GetPauliStringReformatted[product, \"Index\"] returns the integer index of the given Pauli product in the ordered basis of Pauli products. The zero target is treated as least significant.
 GetPauliStringReformatted[string, \"Index\"] returns a list of {index, coefficient} pairs which describe all Pauli products in the given string.
-GetPauliStringReformatted[product, \"Kronecker\"] expands the Pauli product into an explicit Kronecker form. The zero target in the given product corresponds to the rightmost Pauli in the Kronecker form. 
-GetPauliStringReformatted[string, \"Kronecker\"] returns a list of {kronecker, coefficient} pairs; one for each term in the given Pauli string.
+GetPauliStringReformatted[..., \"Digits\"] returns the individual digits of the basis Pauli string's index (or indices), in base 4, where the rightmost digit is the least significant. 
+GetPauliStringReformatted[..., \"Kronecker\"] expands the Pauli string into an explicit Kronecker form. The zero target in the given product corresponds to the rightmost Pauli in the Kronecker form. 
 GetPauliStringReformatted[..., \"String\"] returns a compact, string-form of the \"Kronecker\" format.
-GetPauliStringReformatted[..., numQubits] expands the \"Kronecker\" and \"String\" formats to the specified number of qubits, by padding with Id operators."
+GetPauliStringReformatted[..., numQubits] expands the \"Digits\", \"Kronecker\" and \"String\" formats to the specified number of qubits, by padding with '0' digits or 'Id' operators."
     GetPauliStringReformatted::error = "`1`"
 
     
@@ -1500,19 +1500,23 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             MapAt[getIndexOfPauliString, separatePauliStringIntoProdsAndCoeffs[string], {All, 1}]
 
 
+        getDigitsOfPauliString[ prod:(pauliOpPatt|pauliProdPatt)?isValidSymbolicPauliString, numQubits_  ] :=
+            getNthPauliTensor[getIndexOfPauliString @ prod, numQubits];
+
+        getDigitsOfPauliString[ string_?isValidSymbolicPauliString, numQubits_  ] := 
+            MapAt[getDigitsOfPauliString[#,numQubits]&, separatePauliStringIntoProdsAndCoeffs[string], {All, 1}]
+
+        getDigitsOfPauliString[ string_?isValidSymbolicPauliString ] :=
+            getDigitsOfPauliString[string, getNumQubitsInPauliString @ string]
+
+
         getKroneckerFormOfPauliString[ prod:(pauliOpPatt|pauliProdPatt)?isValidSymbolicPauliString, numQubits_ ] :=
-            If[
-                getNumQubitsInPauliString[prod] > numQubits,
-                Message[GetPauliStringReformatted::error, "The given Pauli string targeted a larger index qubit than the number of qubits specified."]; Return @ $Failed,
-                CircleTimes @@ {Id,X,Y,Z}[[ 1 + getNthPauliTensor[getIndexOfPauliString @ prod, numQubits] ]] ]
+            CircleTimes @@ {Id,X,Y,Z}[[ getDigitsOfPauliString[prod] + 1 ]]
 
         getKroneckerFormOfPauliString[ string_?isValidSymbolicPauliString, numQubits_ ] := 
-            Module[
-                {prods},
-                prods = separatePauliStringIntoProdsAndCoeffs[string];
-                Enclose[
-                    MapAt[(getKroneckerFormOfPauliString[#,numQubits]&), prods, {All, 1}] // ConfirmQuiet,
-                    ReleaseHold @ # @ "HeldMessageCall" &]]  
+            With[
+                {prods = separatePauliStringIntoProdsAndCoeffs[string]},
+                MapAt[(getKroneckerFormOfPauliString[#,numQubits]&), prods, {All, 1}]]
 
         getKroneckerFormOfPauliString[ string_?isValidSymbolicPauliString ] :=
             getKroneckerFormOfPauliString[string, getNumQubitsInPauliString @ string]
@@ -1524,19 +1528,24 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 StringReplace[StringJoin @@ ToString /@ kron, "Id" -> "I"]]
 
         getCompactStringFormOfPauliString[ string_?isValidSymbolicPauliString, numQubits_ ] :=
-            Module[
-                {prods},
-                prods = separatePauliStringIntoProdsAndCoeffs[string];
-                Enclose[
-                    MapAt[(getCompactStringFormOfPauliString[#,numQubits]&), prods, {All, 1}] // ConfirmQuiet,
-                    ReleaseHold @ # @ "HeldMessageCall" &]]  
+            With[
+                {prods = separatePauliStringIntoProdsAndCoeffs[string]},
+                MapAt[(getCompactStringFormOfPauliString[#,numQubits]&), prods, {All, 1}]]
         
         getCompactStringFormOfPauliString[ string_?isValidSymbolicPauliString ] :=
             getCompactStringFormOfPauliString[string, getNumQubitsInPauliString @ string]
 
 
-        GetPauliStringReformatted[ string_?isValidSymbolicPauliString, "Index" ] :=
-            getIndexOfPauliString[string]
+        GetPauliStringReformatted[ string_?isValidSymbolicPauliString, OrderlessPatternSequence[numQubits_Integer?Positive, _String|PatternSequence[]] ] /; 
+            (getNumQubitsInPauliString[string] > numQubits) := (
+                Message[GetPauliStringReformatted::error, "The given Pauli string targeted a larger index qubit than the number of qubits specified."]; 
+                Return @ $Failed)
+
+        GetPauliStringReformatted[ string_?isValidSymbolicPauliString, OrderlessPatternSequence[nQb:optionalNumQbPatt, "Index"] ] :=
+            getIndexOfPauliString[string]  (* nQb isn't used but it's still passable for user convenience *)
+
+        GetPauliStringReformatted[ string_?isValidSymbolicPauliString, OrderlessPatternSequence[nQb:optionalNumQbPatt, "Digits"] ] :=
+            getDigitsOfPauliString[string, nQb]
 
         GetPauliStringReformatted[ string_?isValidSymbolicPauliString, OrderlessPatternSequence[nQb:optionalNumQbPatt, "Kronecker"] ] :=
             getKroneckerFormOfPauliString[string, nQb]
