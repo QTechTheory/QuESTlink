@@ -1316,6 +1316,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
 
 
+        optionalNumQbPatt = _Integer?Positive|PatternSequence[];
+
         getPauliStringFromAddress[addr_String, removeIds_:True] :=
             Enclose[
                 ConfirmQuiet[
@@ -1435,8 +1437,6 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         shouldRemovePauliStringIds[numPaulis_Integer, opts:OptionsPattern[GetPauliString]] :=
             OptionValue["RemoveIds"] /. Automatic->False
 
-        optionalNumQbPatt = _Integer?Positive|PatternSequence[];
-
         (* catching a specific invalid empty-target list case, which Mathematica otherwise accepts as a valid option list *)
         GetPauliString[_String|_?MatrixQ|_Integer, OrderlessPatternSequence[{}, nQb:optionalNumQbPatt], opts___] := (
             Message[GetPauliString::error, "Optional list of target qubits must not be empty."];
@@ -1527,7 +1527,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
 
         getKroneckerFormOfPauliString[ prod:(pauliOpPatt|pauliProdPatt)?isValidSymbolicPauliString, numQubits_ ] :=
-            CircleTimes @@ {Id,X,Y,Z}[[ getDigitsOfPauliString[prod] + 1 ]]
+            CircleTimes @@ {Id,X,Y,Z}[[ getDigitsOfPauliString[prod,numQubits] + 1 ]]
 
         getKroneckerFormOfPauliString[ string_?isValidSymbolicPauliString, numQubits_ ] := 
             With[
@@ -5063,23 +5063,25 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             getPTMapGraph[edgeLabels, edgeStyles, Sequence @@ FilterRules[{opts}, Options[Graph]] ]
         ]
 
-        DrawPauliTransferMap[ ptmOrGate:(Subscript[PTM,_][_] | _?isCircuitFormat), opts:OptionsPattern[{CalcPauliTransferMap,DrawPauliTransferMap,Graph}] ] :=
+        DrawPauliTransferMap[ ptmOrCirc:(Subscript[PTM,_][_] | _?isCircuitFormat), opts:OptionsPattern[{CalcPauliTransferMap,DrawPauliTransferMap,Graph}] ] :=
             Module[
                 {map, calcOpts, drawOpts, errFlag=False},
 
+                (* attempt to auto-generate PTM of circuit, passing along CalcPauliTransferMap[] options *)
                 calcOpts = FilterRules[{opts}, Options[CalcPauliTransferMap]];
                 map = Enclose[ 
-                    ConfirmQuiet @ CalcPauliTransferMap[ptmOrGate, Sequence @@ calcOpts],
+                    ConfirmQuiet @ CalcPauliTransferMap[ptmOrCirc, Sequence @@ calcOpts],
                     ( Message[DrawPauliTransferMap::error, "Failed to automatically obtain the PTMap due to the below error:"]; 
                       ReleaseHold @ # @ "HeldMessageCall";
                       errFlag = True; ) & ];
 
+                (* return immediately if PTM generation failed *)
                 If[errFlag, Return @ $Failed];
 
+                (* otherwise recurse, passing along Graph styling options *)
                 drawOpts = FilterRules[{opts}, Options[DrawPauliTransferMap] ~Join~ Options[Graph]];
                 DrawPauliTransferMap[map, Sequence @@ drawOpts]
             ]
-
 
         DrawPauliTransferMap[___] := invalidArgError[DrawPauliTransferMap]
 
