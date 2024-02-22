@@ -344,6 +344,15 @@ DrawPauliTransferMap accepts options \"PauliStringForm\", \"ShowCoefficients\" a
 \[Bullet] Graph[] options override these settings, so specifying EdgeStyle -> Black will set all edges to Black regardless of their node's outdegree."
     DrawPauliTransferMap::error = "`1`"
 
+    ApplyPauliTransferMap::usage = "ApplyPauliTransferMap[pauliString, ptMap] returns the Pauli string produced by the given PTMap acting upon the given initial Pauli string.
+ApplyPauliTransferMap[pauliString, circuit] automatically transforms the given circuit (composed of gates, channels, and PTMs, possibly intermixed) into PTMaps before applying them to the given Pauli string.
+This method uses automatic caching to avoid needless re-computation of an operator's PTMap, agnostic to the targeted and controlled qubits, at the cost of additional memory usage. Caching behaviour can be controlled using option \"CacheMaps\":
+\[Bullet] \"CacheMaps\" -> \"UntilCallEnd\" (default) caches all computed PTMaps but clears the cache when ApplyPauliTransferMap[] returns.
+\[Bullet] \"CacheMaps\" -> \"Forever\" maintains the cache even between multiple calls to ApplyPauliTransferMap[].
+\[Bullet] \"CacheMaps\" -> \"Never\" disables caching (and clears the existing cache before computation), re-computing each operqtors' PTMap when encountered in the circuit.
+ApplyPauliTransferMap also accepts all options of CalcPauliTransferMap, like AssertValidChannels. See ?AssertValidChannels."
+    ApplyPauliTransferMap::error = "`1`"
+
     GetPauliString::usage = "Returns a Pauli string or a weighted sum of symbolic Pauli tensors from a variety of input formats.
 GetPauliString[matrix] returns a complex-weighted sum of Pauli tensors equivalent to the given matrix. If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components.
 GetPauliString[index] returns the basis Pauli string corresponding to the given index, where the returned Pauli operator targeting 0 is informed by the least significant bit(s) of the index. 
@@ -5099,6 +5108,171 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ]
 
         DrawPauliTransferMap[___] := invalidArgError[DrawPauliTransferMap]
+
+
+
+        (* 
+         * Front-end functions for effecting
+         * Pauli transfer maps upon Pauli strings
+         *)
+
+
+        Options[ApplyPauliTransferMap] = {
+            "CacheMaps" -> "UntilCallEnd" (* or "UntilCallEnd" or "Never" *)
+        };
+
+
+        ptmapPatt = Subscript[PTMap, __Integer][__Rule];
+        ptmatrPatt = Subscript[PTM, __Integer][_?SquareMatrixQ];
+        mixedGatesAndMapsPatt = { (_?isGateFormat | ptmatrPatt | ptmapPatt) .. };
+
+        ptmOptionFuncs = {CalcPauliTransferMap, ApplyPauliTransferMap};
+
+
+        resetCachedPTMaps[] := (
+
+            (* clear all overloads, including the base definition *)
+            Clear[obtainCachedPTMap];
+
+            (* restore the base definition, which ... *)
+            obtainCachedPTMap[compGate_, opts___] := 
+
+                (* computes maps, and saves them as an overload, specific to the options *)
+                obtainCachedPTMap[compGate, opts] =
+                     CalcPauliTransferMap[compGate, Sequence @@ FilterRules[{opts},Options@CalcPauliTransferMap] ]
+        )
+
+        (* immediately call clear to create initial definition *)
+        resetCachedPTMaps[];
+
+        calcAndCachePTMaps[mixed_List, cacheOpt_String, opts___ ] :=
+            Table[
+                Switch[item,
+
+                    (* keep PTMaps, and convert all PTMs to PTMaps*)
+                    ptmapPatt, item,
+                    ptmatrPatt, CalcPauliTransferMap[item],
+
+                    (* but for gates and sub-circuits... *)
+                    _, If[
+                        (* if user requests caching ... *)
+                        MatchQ[cacheOpt, "Forever"|"UntilCallEnd"],
+
+                        (* then cache the compacted gate's PTMap *)
+                        Module[{comp, rules, ptmap},
+                            {comp, rules} = GetCircuitCompacted[item]; (* may throw error *)
+                            ptmap = obtainCachedPTMap[comp, opts];
+                            First @ GetCircuitRetargeted[ptmap, rules]
+                        ],
+                        (* else compute the map afresh *)
+                        CalcPauliTransferMap[item]]
+                ],
+                {item, mixed}
+            ]
+
+        validatePauliTransferMapOptions[caller_Symbol, OptionsPattern@ptmOptionFuncs] := (
+
+            (* validate all options are recognised *)
+            Check[ OptionValue@"CacheMaps", Return @ $Failed];
+
+            (* validate cache setting is valid *)
+            If[Not @ MemberQ[{"Forever", "UntilCallEnd", "Never"}, OptionValue@"CacheMaps"],
+                Message[caller::error, "Option \"CacheMaps\" must be one of \"Forever\", \"UntilCallEnd\" or \"Never\"."]; 
+                Return @ $Failed];
+        )
+
+        getAndValidateAllGatesAsPTMaps[mixed_List, caller_Symbol, opts:OptionsPattern@ptmOptionFuncs] :=
+            Module[{cacheOpt=Opt, maps=$Failed},
+                cacheOpt = OptionValue["CacheMaps"]; (* gauranteed not to throw; prior validated *)
+
+                (* optionally pre-clear cache *)
+                If[ cacheOpt === "Never", resetCachedPTMaps[] ];
+                
+                (* attempt to precompute all maps ... *)
+                Enclose[
+                    maps = calcAndCachePTMaps[mixed, cacheOpt, opts] // ConfirmQuiet,
+
+                    (* and abort immediately if any fail, to avoid caching errors *)
+                    ( Message[caller::error, "Could not pre-compute the Pauli transfer maps due to the below error:"]; 
+                      ReleaseHold @ # @ "HeldMessageCall" ) & ];
+
+                (* optionally clear cache (even if failed), then return maps (which might be $Failed) *)
+                If[ cacheOpt === "UntilCallEnd", resetCachedPTMaps[] ];
+                maps
+            ]
+
+
+        applyPTMapToPauliState[inDigits:{__Integer}, Subscript[PTMap, q__][rules__]] := 
+            Module[{numQb,inInd},
+
+                (* extract base-4 index of targeted inDigits *)
+                numQb = Length @ {q};
+                inInd = FromDigits[Reverse @ inDigits[[-{q}-1]], 4];	
+                
+                MapAt[
+                    (* which maps to a list of outInds. For each... *)
+                    Function[{outInd},
+                    
+                        (* replace the targeted inDigits with their mapped values *)
+                        ReplacePart[inDigits,
+                            MapThread[Rule, {Reverse[-{q}-1], IntegerDigits[outInd,4,numQb]}]]],
+                
+                    inInd /. {rules}, {All,1}]
+            ]
+
+        getPauliStringInitStatesForPTMapSim[pauliStr_, maps_List] := 
+            With[
+                (* ensure we use sufficiently many digits to represent the initial pauli products *)
+                {numQb = Max[ getNumQubitsInPauliString @ pauliStr, 1 + (List @@@ maps[[All, 0]])[[All, 2 ;;]] ]},
+                {states = GetPauliStringReformatted[pauliStr, numQb, "Digits"]},
+
+                (* ensure return format is {{pauli, coeff}, ...} even for a single product*)
+                If[ MatchQ[pauliStr, pauliOpPatt|pauliProdPatt], {{states,1}}, states]
+            ]
+
+        ApplyPauliTransferMap[ pauliStr_?isValidSymbolicPauliString, map:ptmapPatt, opts:OptionsPattern[] ] :=
+            (
+                (* we don't actually use the options (they inform PTMap gen), but we still validate them *)
+                Check[ validatePauliTransferMapOptions[ApplyPauliTransferMap, opts], Return @ $Failed];
+
+                (* apply the PTM to each input pauli product ... *)
+                Plus @@ Flatten[ Table[
+
+                    (* multiplying the input and output coefficients *)
+                    inState[[2]] * outState[[2]] * GetPauliString @ outState[[1]], 
+
+                    (* (iterate each input product) *)
+                    {inState, getPauliStringInitStatesForPTMapSim[pauliStr, {map}]},
+
+                    (* (iterate each resulting output product) **)
+                    {outState, applyPTMapToPauliState[inState[[1]], map]}], 1]
+            )
+
+        ApplyPauliTransferMap[ pauliStr_?isValidSymbolicPauliString, maps:{ptmapPatt..}, opts:OptionsPattern[] ] :=
+            (
+                (* we don't use nor pass on the options (they inform PTMap gen), but we still validate them  *)
+                Check[ validatePauliTransferMapOptions[ApplyPauliTransferMap, opts], Return @ $Failed];
+
+                (* apply each map in turn to the growing pauli string, and simplify the end result *)
+                SimplifyPaulis @ Fold[ApplyPauliTransferMap, pauliStr, maps]
+            )
+
+        ApplyPauliTransferMap[ pauliStr_?isValidSymbolicPauliString, mixed:mixedGatesAndMapsPatt, opts:OptionsPattern[] ] := 
+            Module[{maps},
+                (* validate the options *)
+                Check[ validatePauliTransferMapOptions[ApplyPauliTransferMap, opts], Return @ $Failed];
+
+                (* validate and pre-compute all PTMaps, managing all caching *)
+                maps = Check[ getAndValidateAllGatesAsPTMaps[mixed, ApplyPauliTransferMap, opts], Return @ $Failed ];
+
+                (* obtain output pauli string; no options need to be propogated *)
+                ApplyPauliTransferMap[pauliStr, maps]]
+
+        ApplyPauliTransferMap[ pauliStr_, gate_?isGateFormat, opts___ ] :=
+            (* permit passing single gate for user convenience *)
+            ApplyPauliTransferMap[ pauliStr, {gate}, opts ]
+
+        ApplyPauliTransferMap[___] := invalidArgError[ApplyPauliTransferMap]
 
 
 
