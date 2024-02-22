@@ -353,6 +353,15 @@ This method uses automatic caching to avoid needless re-computation of an operat
 ApplyPauliTransferMap also accepts all options of CalcPauliTransferMap, like AssertValidChannels. See ?AssertValidChannels."
     ApplyPauliTransferMap::error = "`1`"
 
+    CalcPauliTransferEval::usage = "CalcPauliTransferEval[pauliString, ptMaps] returns the full evolution of the given Pauli string under the given list of PTMap operators. This is often unnecessary to call directly - most users can call ApplyPauliTransferMap[] or DrawPauliTransferEval[] instead - unless you wish to store or process the evaluation history.
+The output is a list of sublists, each corresponding to a layer in the evaluation history (i.e. the operation of a PTMap upon the current Pauli string) including the initial Pauli string. Each item therein represents a Pauli product state and has form {prod,id,ancestors} where prod is a Pauli basis state expressed in base-4 digits (see ?GetPauliStringReformatted), id is a unique integer identifying the state, and ancestors is a list of tuples of form {ancId, factor}. These indicate the ancestor Pauli states from which the id'd state was produced under the action of the previous PTMap, and the factor that the map multiplies upon that ancestor state. The basis products of the initial state have ancId=0.
+Given the output of CalcPauliTransferEval is stored in variable 'out', it may be easier to interpret the expression resulting from Column @ MapAt[GetPauliString, out, {All,All,1}].
+CalcPauliTransferEval accepts the below options:
+\[Bullet] \"CombineStates\" -> False which disables combining incident Pauli strings so that the result is an acyclic tree. This means each 'ancestors' list is length-1.
+\[Bullet] \"CacheMaps\" (see ?ApplyPauliTransferMap) which controls the automatic caching of generated PTMaps.
+\[Bullet] AssertValidChannels -> False which disables the simplification of symbolic Pauli string coefficients (see ?AssertValidChannels)."
+    CalcPauliTransferEval::error = "`1`"
+
     GetPauliString::usage = "Returns a Pauli string or a weighted sum of symbolic Pauli tensors from a variety of input formats.
 GetPauliString[matrix] returns a complex-weighted sum of Pauli tensors equivalent to the given matrix. If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components.
 GetPauliString[index] returns the basis Pauli string corresponding to the given index, where the returned Pauli operator targeting 0 is informed by the least significant bit(s) of the index. 
@@ -5273,6 +5282,94 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ApplyPauliTransferMap[ pauliStr, {gate}, opts ]
 
         ApplyPauliTransferMap[___] := invalidArgError[ApplyPauliTransferMap]
+
+
+
+        (* 
+         * Front-end functions for obtaining
+         * the full tree evluation of PTMaps
+         * operating upon a Pauli string.
+         *)
+                
+        getPTMapEvaluationGraph[inStates:{ {{__Integer}, _} ..}, maps_List, mergeStates_:True] := 
+            Module[
+                {layers={}, currLayer, newLayer, id=1},
+
+                (* add initial states where non-existent ancestor has id 0 *)
+                AppendTo[layers, Table[{First@s, id++, {{0,Last@s}}}, {s,inStates}]];
+                
+                (* apply each map in-turn to the last layer *)
+                Do[
+                    currLayer = Last @ layers;
+                    
+                    (* label each returned state by the input state which created it *)
+                    newLayer = Table[
+                        {state[[1]], id++, {{currLayer[[i,2]], state[[2]]}}},
+                        {i, Length @ currLayer},
+                        {state, applyPTMapToPauliState[currLayer[[i,1]], map]}
+                    ];
+                    newLayer = Flatten[newLayer, 1];
+                    
+                    (* merge colliding Pauli states, arbitrarily picking one id of each group *)
+                    If[mergeStates,
+                        newLayer = Table[
+                            {group[[1,1]], group[[1,2]], Join @@ group[[All,3]]},
+                            {group, GatherBy[newLayer, First]}]];
+                    
+                    (* record the new layer *)
+                    AppendTo[layers, newLayer],
+                    {map,maps}
+                ];
+                
+                (* return all layers, where layer[[i]] = { 
+                * {paulis, id, {{ancestor,coeff}, {ancestor,coeff},...}, ...  } *)
+                layers
+            ]
+
+        Options[CalcPauliTransferEval] = {
+            "CombineStates" -> True
+        };
+
+        calcPTEvalOptPatt = OptionsPattern @ {CalcPauliTransferEval, Sequence @@ ptmOptionFuncs};
+
+        validateCalcPauliTransferEvalOptions[opts:calcPTEvalOptPatt] := 
+            With[
+                {otherOpts = FilterRules[{opts}, Except @ Options @ CalcPauliTransferEval]},
+
+                (* validate the the PTMap eval options *)
+                Check[ validatePauliTransferMapOptions[CalcPauliTransferEval, Sequence @@ otherOpts], Return @ $Failed];
+
+                (* validate the the CalcPauliTransferEval specific options *)
+                If[ Not @ BooleanQ @ OptionValue @ "CombineStates",
+                    Message[CalcPauliTransferEval::error, "Option \"CombineStates\" must be True or False."];
+                    Return @ $Failed];
+            ]
+
+        CalcPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, maps:{ptmapPatt..}, opts:calcPTEvalOptPatt ] := 
+            With[
+                {inStates = getPauliStringInitStatesForPTMapSim[pauliStr, maps]},
+                Check[validateCalcPauliTransferEvalOptions[opts], Return @ $Failed];
+
+                getPTMapEvaluationGraph[inStates, maps, OptionValue @ "CombineStates"]
+            ]
+
+        CalcPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, mixed:mixedGatesAndMapsPatt, opts:calcPTEvalOptPatt ] := 
+            Module[{maps,mapGenOpts},
+
+                (* validate CalcPauliTransferEval options, and those needed by subsequent PTMap generation *)
+                Check[validateCalcPauliTransferEvalOptions[opts], Return @ $Failed];
+
+                (* validate and pre-compute all PTMaps, managing all caching *)
+                mapGenOpts = FilterRules[{opts}, Except @ Options @ CalcPauliTransferEval];
+                maps = Check[ getAndValidateAllGatesAsPTMaps[mixed, CalcPauliTransferEval, mapGenOpts], Return @ $Failed ];
+
+                CalcPauliTransferEval[pauliStr, maps, opts]
+            ]
+
+        CalcPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, gate_?isGateFormat, opts:calcPTEvalOptPatt ] :=
+            CalcPauliTransferEval[pauliStr, {gate}, opts]
+
+        CalcPauliTransferEval[___] := invalidArgError[CalcPauliTransferEval]
 
 
 
