@@ -362,12 +362,29 @@ This method uses automatic caching to avoid needless re-computation of an operat
 ApplyPauliTransferMap also accepts all options of CalcPauliTransferMap, like AssertValidChannels. See ?AssertValidChannels."
     ApplyPauliTransferMap::error = "`1`"
 
-    CalcPauliTransferEval::usage = "CalcPauliTransferEval[pauliString, ptMaps] returns the full evolution of the given Pauli string under the given list of PTMap operators. This is often unnecessary to call directly - most users can call ApplyPauliTransferMap[] or DrawPauliTransferEval[] instead - unless you wish to store or process the evaluation history.
-The output is a list of sublists, each corresponding to a layer in the evaluation history (i.e. the operation of a PTMap upon the current Pauli string) including the initial Pauli string. Each item therein represents a Pauli product state and has form {prod,id,ancestors} where prod is a Pauli basis state expressed in base-4 digits (see ?GetPauliStringReformatted), id is a unique integer identifying the state, and ancestors is a list of tuples of form {ancId, factor}. These indicate the ancestor Pauli states from which the id'd state was produced under the action of the previous PTMap, and the factor that the map multiplies upon that ancestor state. The basis products of the initial state have ancId=0.
-Given the output of CalcPauliTransferEval is stored in variable 'out', it may be easier to interpret the expression resulting from Column @ MapAt[GetPauliString, out, {All,All,1}].
+    CalcPauliTransferEval::usage = "CalcPauliTransferEval[pauliString, ptMaps] returns the full evolution history of the given Pauli string under the given list of PTMap operators. This is often unnecessary to call directly - most users can call ApplyPauliTransferMap[] or DrawPauliTransferEval[] instead - unless you wish to store or process the evaluation history.
+CalcPauliTransferEval[pauliString, circuit] evolves the Pauli string under the PTMaps automatically calculated from the given circuit. 
+There are two possible return formats, informed by option \"OutputForm\", which are respectively fast and slow to evaluate, and both of which can be passed to functions like DrawPauliTransferEval[].
+The \"Simple\" output is a list of sublists, each corresponding to a layer in the evaluation history (i.e. the operation of a PTMap upon the current Pauli string) including the initial Pauli string. Each item therein represents a Pauli product state and has form {prod,id,parents} where 'prod' is a Pauli basis state expressed in base-4 digits (see ?GetPauliStringReformatted), 'id' is a unique integer identifying the state, and 'parents' is a list of tuples of form {parentId, factor}. These indicate the ancestor Pauli states from which the id'd state was produced under the action of the previous PTMap, and the factor that the map multiplies upon that parent state. The basis products of the initial state have parentId=0.
+The \"Detailed\" output is an Association with the following items:
+\[Bullet] \"Ids\" is a list of integers uniquely identifying each node in the evaluation graph. Note these are not gauranteed to be contiguous due to the merging of incident Pauli states (see \"CombineStates\" below).
+\[Bullet] \"Layers\" groups \"Ids\" into sublists according to their depth in the graph, i.e. which ptMap produced the node. There are Length[ptMaps]+1 layers, including the initial pauliString layer.
+\[Bullet] \"States\" is an Association of id -> pauliProduct, identifying the Pauli basis state associated with the id'd node.
+\[Bullet] \"Parents\" is an Association of id -> list of parent ids. A node's parents are the states of the previous layer who were modified by the previous layer's PTMap to the node's state.
+\[Bullet] \"Children\" is an Association of id -> list of child ids. A node's children are the states the node is transformed to when modified by the next layer's PTMap.
+\[Bullet] \"ParentFactors\" is an Association of id -> Association, where the inner Association is of parentId -> coefficient. The inner Association records the factors multiplied upon the parents when the PTMap produced the node's state.
+\[Bullet] \"Weights\" is an Association of id -> weight, where weight is the number of non-identity Paulis in the id'd nodes state.
+\[Bullet] \"Indegree\" is an Association of id -> degree, indicating the number of parents. 
+\[Bullet] \"Outdegree\" is an Association of id -> degree, indicating the number of children.
+\[Bullet] \"Coefficients\" is an Association of id -> coeff, where coeff is the coefficient of the id'd node's Pauli basis state at the node's layer of evaluation.
+\[Bullet] \"Strings\" is a list of sums of weighted Pauli strings; one for each layer of evaluation. The resulting Pauli string of the full circuit upon the initial Pauli string is the Last item of this list. The strings are not automatically simplified, so each might be worth passing to SimplifyPaulis[].
+\[Bullet] \"NumQubits\" is the number of qubits assumed during the evaluation, informed by the initial Pauli string and PTMaps.
+\[Bullet] \"NumNodes\" is the total number of nodes (or basis Pauli states) processed during evaluation. This is merely the length of \"Ids\".
+\[Bullet] \"NumLeaves\" is the number of nodes in the final layer, equivalent to the number of Pauli products in the output string.
 CalcPauliTransferEval accepts the below options:
-\[Bullet] \"CombineStates\" -> False which disables combining incident Pauli strings so that the result is an acyclic tree. This means each 'ancestors' list is length-1.
-\[Bullet] \"CacheMaps\" (see ?ApplyPauliTransferMap) which controls the automatic caching of generated PTMaps.
+\[Bullet] \"OutputForm\" -> \"Simple\" (default) or \"Detailed\", as explained above.
+\[Bullet] \"CombineStates\" -> False which disables combining incident Pauli strings, so that the result is an acyclic tree, and each node has a single parent.
+\[Bullet] \"CacheMaps\" which controls the automatic caching of generated PTMaps (see ?ApplyPauliTransferMap).
 \[Bullet] AssertValidChannels -> False which disables the simplification of symbolic Pauli string coefficients (see ?AssertValidChannels)."
     CalcPauliTransferEval::error = "`1`"
 
@@ -5251,7 +5268,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
 
         Options[ApplyPauliTransferMap] = {
-            "CacheMaps" -> "UntilCallEnd" (* or "UntilCallEnd" or "Never" *)
+            "CacheMaps" -> "UntilCallEnd" (* or "Forever" or "Never" *)
         };
 
 
@@ -5291,10 +5308,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                         (* if user requests caching ... *)
                         MatchQ[cacheOpt, "Forever"|"UntilCallEnd"],
 
-                        (* then cache the compacted gate's PTMap *)
-                        Module[{comp, rules, ptmap},
+                        (* then cache the compacted parameterised gate's PTMap *)
+                        Module[{comp,rules, paramed,subs, ptmap},
                             {comp, rules} = GetCircuitCompacted[item]; (* may throw error *)
-                            ptmap = obtainCachedPTMap[comp, opts];
+                            {paramed, subs} = GetCircuitParameterised[comp, TEMPINTERNALPARAM];
+                            ptmap = obtainCachedPTMap[paramed, opts] /. subs;
                             First @ GetCircuitRetargeted[ptmap, rules]
                         ],
                         (* else compute the map afresh *)
@@ -5415,7 +5433,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * operating upon a Pauli string.
          *)
                 
-        getPTMapEvaluationGraph[inStates:{ {{__Integer}, _} ..}, maps_List, mergeStates_:True] := 
+        getSimplePTMapEvaluationGraph[inStates:{ {{__Integer}, _} ..}, maps_List, mergeStates_:True] := 
             Module[
                 {layers={}, currLayer, newLayer, id=1},
 
@@ -5442,7 +5460,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     
                     (* record the new layer *)
                     AppendTo[layers, newLayer],
-                    {map,maps}
+                    {map, maps}
                 ];
                 
                 (* return all layers, where layer[[i]] = { 
@@ -5450,8 +5468,61 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 layers
             ]
 
+        getDetailedPTMapEvaluationGraph[simpleGraph_] := 
+            Module[
+                {data=<||>, states},
+
+                (* states[[i]] = {paulis, id, {{ancestor id, coeff}, ...}} *)
+                states = Flatten[simpleGraph, 1];
+
+                (* {id, id, id, ...} *)
+                data["Ids"] = Flatten @ simpleGraph[[All, All, 2]];
+                
+                (* one sublist per layer; { {id,id}, {id,id,id}, ... } *)
+                data["Layers"] = simpleGraph[[All, All, 2]];
+                
+                (* <| id -> X0 Y1, ... |> *)
+                data["States"] = <|Table[ s[[2]] -> GetPauliString @ s[[1]], {s,states} ]|>;
+
+                (* <| id -> {id,id}, ... |> *)
+                data["Parents"] = <|Table[ s[[2]] -> s[[3,All,1]] /. 0->Nothing, {s,states} ]|>;
+                data["Children"] = <|Table[ s[[2]] -> Cases[states, c_?(MemberQ[#[[3,All,1]],s[[2]]]&):>c[[2]]], {s,states} ]|>;
+
+                (* <| id -> <|id->(expr), id->(expr)|> ... |> *)
+                data["ParentFactors"] = <|Table[ s[[2]] -> <|Table[Rule@@p, {p,s[[3]]}]|>, {s,states}]|>;
+
+                (* <| id -> 0, id->4, ... |> *)
+                data["Weights"] = <|Table[ s[[2]] -> Count[s[[1]], _?Positive], {s,states} ]|>;
+                data["Indegree"] = <|Table[ id -> Length @ data["Parents"] @ id, {id, data["Ids"]} ]|>;
+                data["Outdegree"] = <|Table[ id -> Length @ data["Children"] @ id, {id, data["Ids"]} ]|>;
+                
+                (* <| id -> (symbolic expression), ... |> *)
+                data["Coefficients"] = <|Table[ state[[2]]->state[[3,1,2]], {state, First@simpleGraph} ]|>;
+                Do[
+                    data["Coefficients"][state[[2]]] = Sum[
+                        parent[[2]] * data["Coefficients"][parent[[1]]], 
+                        {parent, state[[3]]}],
+                    {layer, Rest[simpleGraph]},
+                    {state, layer}
+                ];
+                
+                (* one symbolically weighted sum of Pauli strings per layer *)
+                data["Strings"] = Table[
+                    (data["Coefficients"]/@ids) . (data["States"]/@ids),
+                    {ids, data["Layers"]}];
+
+                (* scalars *)
+                data["NumQubits"] = Length @ First @ First @ states;
+                data["NumNodes"] = Length @ data["Ids"];
+                data["NumLeaves"] = Length @ Last @ data["Layers"];
+                
+                (* return *)
+                data
+            ]
+
         Options[CalcPauliTransferEval] = {
-            "CombineStates" -> True
+            "CombineStates" -> True,
+            "OutputForm" -> "Simple" (* or "Simple" *)
         };
 
         calcPTEvalOptPatt = OptionsPattern @ {CalcPauliTransferEval, Sequence @@ ptmOptionFuncs};
@@ -5466,15 +5537,30 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 (* validate the the CalcPauliTransferEval specific options *)
                 If[ Not @ BooleanQ @ OptionValue @ "CombineStates",
                     Message[CalcPauliTransferEval::error, "Option \"CombineStates\" must be True or False."];
-                    Return @ $Failed];
+                    Return @ $Failed ];
+
+                (* validate the OutputForm option *)
+                If[ Not @ MemberQ[{"Simple","Detailed"}, OptionValue @ "OutputForm"],
+                    Message[CalcPauliTransferEval::error, "Option \"OutputForm\" must be \"Detailed\" or \"Simple\"."];
+                    Return @ $Failed ];
             ]
 
         CalcPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, maps:{ptmapPatt..}, opts:calcPTEvalOptPatt ] := 
-            With[
-                {inStates = getPauliStringInitStatesForPTMapSim[pauliStr, maps]},
+            Module[
+                {inStates, outEval},
+
+                (* validate options (including those for inner functions like CalcPauliTransferMap) *)
                 Check[validateCalcPauliTransferEvalOptions[opts], Return @ $Failed];
 
-                getPTMapEvaluationGraph[inStates, maps, OptionValue @ "CombineStates"]
+                (* compute simple evaluation graph *)
+                inStates = getPauliStringInitStatesForPTMapSim[pauliStr, maps];
+                outEval = getSimplePTMapEvaluationGraph[inStates, maps, OptionValue @ "CombineStates"];
+
+                (* optionally post-process graph *)
+                If[ OptionValue @ "OutputForm" === "Detailed",
+                    outEval = getDetailedPTMapEvaluationGraph[outEval]];
+
+                outEval
             ]
 
         CalcPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, mixed:mixedGatesAndMapsPatt, opts:calcPTEvalOptPatt ] := 
