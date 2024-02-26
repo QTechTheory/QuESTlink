@@ -318,6 +318,15 @@ The order of the target and control qubits in the first returned gate are strict
 The original circuit is restored by GetCircuitRetargeted[out, map]."
     GetCircuitCompacted::error = "`1`"
 
+    GetCircuitParameterised::usage = "GetCircuitParameterised[circuit, paramSymbol] returns {out, paramValues} where out is an equivalent circuit whereby each scalar gate parameter (like those to Rx, R, G, etc) has been substituted with paramSymbol[i]. The returned paramValues is a list of symbol substitutions, so that the original circuit is obtained with out /. paramValues.
+This function is useful for tasks like obtaining gate strengths, finding repeated parameters, or transforming circuits into variational ansatze. Note that custom gates in the QuESTlink format are permitted, but will not be considered for parameterisation.
+GetCircuitParameterised accepts the below options.
+\[Bullet] \"UniqueParameters\" -> True will force every substituted gate to receive a unique symbol (i.e. paramSymbol[i] for unique i), even if multiple gates have the same scalar parameter. Otherwise, gates with the same scalar parameter will automatically use the same repeated symbol, shrinking the length of paramValues.
+\[Bullet] \"ExcludeChannels\" -> False will permit scalar-parameterised decoherence channels (like Damp, Depol, etc) to be parameterised in the output.
+\[Bullet] \"ExcludeGates\" -> gatePattern(s) will prevent gates matching the given pattern (or list of patterns) from being parameterised. Note that gates and their controlled variants are treated separately.
+\[Bullet] \"ExcludeParameters\" -> paramPattern(s) will prevent any gate parameter matching the given pattern (or list of patterns) from being substituted."
+    GetCircuitParameterised::error = "`1`"
+
     RecompileCircuit::usage = "RecompileCircuit[circuit, method] returns an equivalent circuit, transpiled to a differnet gate set. The input circuit can contain any unitary gate, with any number of control qubits. Supported methods include:
 \[Bullet] \"SingleQubitAndCNOT\" decompiles the circuit into canonical single-qubit gates (H, Ph, T, S, X, Y, Z, Rx, Ry, Rz), a global phase G, and two-qubit C[X] gates. This method uses a combination of 23 analytic and numerical decompositions.
 \[Bullet] \"CliffordAndRz\" decompiles the circuit into Clifford gates (H, S, X, Y, Z, CX, CY, CZ, SWAP), a global phase G, and non-Clifford Rz.
@@ -4177,6 +4186,121 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             {GetCircuitRetargeted[circuit, map], Reverse /@ map}
         ]
         GetCircuitCompacted[___] := invalidArgError[GetCircuitCompacted]
+
+
+
+        (*
+         * front-end functions for mapping explicit
+         * parameter circuits to symbolic parameterised ones
+        *)
+
+        Options[GetCircuitParameterised] = {
+            "UniqueParameters" -> False,
+            "ExcludeChannels" -> True,
+            "ExcludeGates" -> {}, (* list of patterns *)
+            "ExcludeParameters" -> {} (* list of patterns *)
+        };
+
+        (* don't change excluded gate patterns *)
+        getGateParameterised[_, exclGatesPatt_, _, g_] /; MatchQ[g, exclGatesPatt] :=
+            {g, None}
+
+        isParamInExcludeList[exclParamsPatt_, Subcript[C,__][g_]] :=
+            isParamInExcludeList[exclParamsPatt, g]
+        
+        isParamInExcludeList[exclParamsPatt_, _[x_, ___]] :=
+            MatchQ[x, exclParamsPatt]
+
+        (* don't change excluded arg patterns *)
+        getGateParameterised[r_, _, exclParamsPatt_, g_ ] /; isParamInExcludeList[exclParamsPatt, g] :=
+            {g, None}
+
+        (* re-paramaterise non-controlled gates *)
+        getGateParameterised[r_, _,_, (g:Subscript[Damp|Deph|Depol|Ph|Rx|Ry|Rz, __])[x_]] := 
+            {g[r], x}
+        getGateParameterised[r_, _,_, (g:Fac|G)[x_]] := 
+            {g[r], x}
+        getGateParameterised[r_, _,_, R[x_, p_]] := 
+            {R[r,p], x}
+
+        (* re-param control gates, removing excludes *)
+        getGateParameterised[r_, _, exclParamsPatt_, (c:Subscript[C,__])[g_] ] /; Not @ isParamInExcludeList[exclParamsPatt, g] := 
+            With[
+                {gx = getGateParameterised[r, None,None, g]},
+                {c @ First @ gx, Last @ gx}]
+
+        (* non-param gates are unmodified *)
+        getGateParameterised[r_, _,_, g_] :=
+            {g, None}
+
+        GetCircuitParameterised[gate_?isGateFormat, s_Symbol, opts:OptionsPattern[]] :=
+            GetCircuitParameterised[{gate}, s, opts]
+
+        GetCircuitParameterised[circuit_?isCircuitFormat, s_Symbol, OptionsPattern[]] := Module[
+            {exclGatesPatt,exclParamsPatt, paramInd,outGate,paramVal, outCircuit,outParams, newSymb,newParams,symbSubs},
+
+            (* validate all options are recognised *)
+            Check[ OptionValue @ "ExcludeChannels", Return @ $Failed];
+            If[ Not @ BooleanQ @ OptionValue @ "ExcludeChannels", 
+                Message[GetCircuitParameterised::error, "Option \"ExcludeChannels\" must be True or False"];
+                Return @ $Failed];
+            If[ Not @ BooleanQ @ OptionValue @ "UniqueParameters", 
+                Message[GetCircuitParameterised::error, "Option \"UniqueParameters\" must be True or False"];
+                Return @ $Failed];
+
+            (* build patterns of excluded gates and params *)
+            exclGatesPatt = OptionValue @ "ExcludeGates";
+            exclParamsPatt = OptionValue @ "ExcludeParameters";
+            If[ Head @ exclGatesPatt === List, 
+                exclGatesPatt = Alternatives @@ exclGatesPatt];
+            If[ Head @ exclParamsPatt === List, 
+                exclParamsPatt = Alternatives @@ exclParamsPatt];
+            If[ OptionValue @ "ExcludeChannels", 
+                exclGatesPatt = exclGatesPatt | Subscript[Damp|Deph|Depol,__][_]];
+
+            paramInd = 1;
+            outCircuit = {};
+            outParams = {};
+            Do[
+                (* conditionally insert symbolic param from each gate... *)
+                {outGate, paramVal} = getGateParameterised[
+                    s[paramInd], exclGatesPatt, exclParamsPatt, inGate];
+                AppendTo[outCircuit, outGate];
+
+                (* and if performed, increment the symbolic param counter *)
+                If[paramVal =!= None, AppendTo[outParams, s[paramInd++] -> paramVal]],
+                {inGate, circuit}];
+
+            paramInd = 1;
+            newParams = {};
+            symbSubs = {};
+
+            (* optionally merge duplicate parameter values *)
+            If[ Not @ OptionValue @ "UniqueParameters",
+                Do[
+                    (* by creating a new temp param replacing all duplicates *)
+                    newSymb = TEMPSYMBOL[paramInd++];
+                    AppendTo[newParams, newSymb -> Last @ First @ group];
+
+                    (* and recording how to substitute out the old params *)
+                    AppendTo[symbSubs, Table[oldSymb -> newSymb, {oldSymb, First /@ group}]],
+
+                    (* (enumerate rules with same value substitution) *)
+                    {group, GatherBy[outParams, Last]}
+                ];
+
+                (* re-param circuit to TEMPSYMBOL *)
+                outCircuit = outCircuit /. Flatten @ symbSubs;
+
+                (* re-param circuit and subs back to user symbol*)
+                outCircuit = outCircuit /. TEMPSYMBOL[i_] :> s[i];
+                outParams = newParams /. TEMPSYMBOL[i_] :> s[i];
+            ];
+
+            {outCircuit, outParams}
+        ]
+
+        GetCircuitParameterised[___] := invalidArgError[GetCircuitParameterised]
 
 
 

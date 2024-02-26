@@ -1,0 +1,3942 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[    138071,       3934]
+NotebookOptionsPosition[    125185,       3677]
+NotebookOutlinePosition[    125579,       3693]
+CellTagsIndexPosition[    125536,       3690]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["GetCircuitParameterised", "Title",
+ CellChangeTimes->{{3.913273690088934*^9, 3.913273712038406*^9}, {
+   3.915199103735641*^9, 3.915199106675872*^9}, {3.917086155647716*^9, 
+   3.917086158759173*^9}, {3.9171594220183487`*^9, 3.917159422219205*^9}, {
+   3.917274433487973*^9, 3.917274435404172*^9}, 3.917277665796289*^9, {
+   3.917280864184389*^9, 3.9172808649949007`*^9}, {3.9172828199639874`*^9, 
+   3.9172828467690277`*^9}, {3.917341838255602*^9, 3.917341850354156*^9}, {
+   3.917950612966815*^9, 
+   3.9179506155351133`*^9}},ExpressionUUID->"6938d66c-fd87-4c29-80c7-\
+54a335769732"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", " ", "@", " ", 
+   RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Import", "[", "\"\<../Link/QuESTlink.m\>\"", "]"}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.917262759745018*^9, 3.91726277723568*^9}, 
+   3.917269684118362*^9, {3.9173536840330057`*^9, 3.917353684694158*^9}, 
+   3.917354542295987*^9, {3.9175999115892153`*^9, 3.917599928884646*^9}, {
+   3.917600007230752*^9, 3.917600054463784*^9}, {3.917600168723633*^9, 
+   3.917600168949111*^9}},
+ CellLabel->"In[1]:=",ExpressionUUID->"944c7fc0-80c9-4b71-a1e7-e437a830e4d1"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"test", "[", 
+   RowBox[{"circ_", ",", " ", "opts___"}], "]"}], " ", ":=", " ", 
+  RowBox[{"Module", "[", "\n", "\t", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"out", ",", " ", "subs", ",", " ", "check"}], "}"}], ",", "\n", 
+    "\t", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"out", ",", " ", "subs"}], "}"}], " ", "=", " ", 
+      RowBox[{"GetCircuitParameterised", "[", 
+       RowBox[{"circ", ",", " ", "\[Theta]", ",", " ", "opts"}], "]"}]}], ";",
+      "\n", "\t", 
+     RowBox[{"Echo", "[", 
+      RowBox[{"out", ",", " ", "\"\<output circuit: \>\""}], "]"}], ";", "\n",
+      "\t", 
+     RowBox[{"Echo", "[", 
+      RowBox[{"subs", ",", " ", "\"\<output params: \>\""}], "]"}], ";", "\n",
+      "\t", 
+     RowBox[{"check", " ", "=", " ", 
+      RowBox[{"circ", " ", "===", " ", 
+       RowBox[{"(", 
+        RowBox[{"out", " ", "/.", " ", "subs"}], ")"}]}]}], ";", "\n", "\t", 
+     RowBox[{"If", "[", 
+      RowBox[{
+       RowBox[{"Not", " ", "@", " ", "check"}], ",", " ", 
+       RowBox[{"Style", "[", 
+        RowBox[{"\"\<ERRONEOUS OUTPUT\>\"", ",", " ", "Red"}], "]"}]}], 
+      "]"}]}]}], "]"}]}]], "Code",
+ CellChangeTimes->{{3.917953108611199*^9, 3.917953241588601*^9}, {
+  3.917953293639509*^9, 3.9179533022588177`*^9}, {3.917953447293735*^9, 
+  3.91795345075913*^9}, {3.917954262010887*^9, 3.9179542624957733`*^9}},
+ CellLabel->"In[3]:=",ExpressionUUID->"05ac5ed7-a168-499a-9c40-e6b20e0f77b3"],
+
+Cell[CellGroupData[{
+
+Cell["Doc", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 
+  3.9151991786465263`*^9}},ExpressionUUID->"73820f91-e0cc-4264-8b42-\
+85df3e58eb20"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "GetCircuitParameterised"}]], "Input",
+ CellChangeTimes->{{3.9179506277824*^9, 3.917950630337861*^9}},
+ CellLabel->"In[4]:=",ExpressionUUID->"fb250a6c-f3be-428b-a803-771c08ae1d03"],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   FrameBox[
+    DynamicModuleBox[{System`InformationDump`open$$ = False, 
+     System`InformationDump`mouseOver$$ = False}, 
+     PaneSelectorBox[{True->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False,
+             BaseStyle -> None],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetCircuitParameterised[circuit, paramSymbol] \
+returns {out, paramValues} where out is an equivalent circuit whereby each \
+scalar gate parameter (like those to Rx, R, G, etc) has been substituted with \
+paramSymbol[i]. The returned paramValues is a list of symbol substitutions, \
+so that the original circuit is obtained with out /. paramValues.\\nThis \
+function is useful for tasks like obtaining gate strengths, finding repeated \
+parameters, or transforming circuits into variational ansatze. Note that \
+custom gates in the QuESTlink format are permitted, but will not be \
+considered for parameterisation.\\nGetCircuitParameterised accepts the below \
+options.\\n\[Bullet] \\\"UniqueParameters\\\" -> True will force every \
+substituted gate to receive a unique symbol (i.e. paramSymbol[i] for unique \
+i), even if multiple gates have the same scalar parameter. Otherwise, gates \
+with the same scalar parameter will automatically use the same repeated \
+symbol, shrinking the length of paramValues.\\n\[Bullet] \
+\\\"ExcludeChannels\\\" -> False will permit scalar-parameterised decoherence \
+channels (like Damp, Depol, etc) to be parameterised in the output.\\n\
+\[Bullet] \\\"ExcludeGates\\\" -> gatePattern(s) will prevent gates matching \
+the given pattern (or list of patterns) from being parameterised. Note that \
+gates and their controlled variants are treated separately.\\n\[Bullet] \
+\\\"ExcludeParameters\\\" -> paramPattern(s) will prevent any gate parameter \
+matching the given pattern (or list of patterns) from being substituted.\"\>",
+              "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          PaneBox[
+           TagBox[GridBox[{
+              {
+               StyleBox[
+                TagBox[
+                 TooltipBox[
+                  StyleBox["\<\" Definitions\"\>", "InformationRowLabel",
+                   StripOnInput->False],
+                  "\"Definitions\"",
+                  TooltipStyle->"TextStyling"],
+                 Annotation[#, "Definitions", "Tooltip"]& ], "DialogStyle",
+                StripOnInput->False]},
+              {
+               TemplateBox[{"\"\[ThinSpace]\"", 
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"GetCircuitParameterised", "[", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`gate_", "?", 
+                    "QuEST`Private`isGateFormat"}], ",", 
+                    "QuEST`Private`s_Symbol", ",", 
+                    RowBox[{"QuEST`Private`opts", ":", 
+                    RowBox[{"OptionsPattern", "[", "]"}]}]}], "]"}], ":=", 
+                    RowBox[{"GetCircuitParameterised", "[", 
+                    RowBox[{
+                    RowBox[{"{", "QuEST`Private`gate", "}"}], ",", 
+                    "QuEST`Private`s", ",", "QuEST`Private`opts"}], 
+                    "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetCircuitParameterised", "[", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`circuit_", "?", 
+                    "QuEST`Private`isCircuitFormat"}], ",", 
+                    "QuEST`Private`s_Symbol", ",", 
+                    RowBox[{"OptionsPattern", "[", "]"}]}], "]"}], ":=", 
+                    RowBox[{"Module", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    
+                    RowBox[{"QuEST`Private`exclGatesPatt", ",", 
+                    "QuEST`Private`exclParamsPatt", ",", 
+                    "QuEST`Private`paramInd", ",", "QuEST`Private`outGate", 
+                    ",", "QuEST`Private`paramVal", ",", 
+                    "QuEST`Private`outCircuit", ",", 
+                    "QuEST`Private`outParams", ",", "QuEST`Private`newSymb", 
+                    ",", "QuEST`Private`newParams", ",", 
+                    "QuEST`Private`symbSubs"}], "}"}], ",", 
+                    RowBox[{
+                    RowBox[{"Check", "[", 
+                    RowBox[{
+                    RowBox[{"OptionValue", "[", "\"ExcludeChannels\"", "]"}], 
+                    ",", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}], "]"}], ";", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"!", 
+                    RowBox[{"BooleanQ", "[", 
+                    RowBox[{"OptionValue", "[", "\"ExcludeChannels\"", "]"}], 
+                    "]"}]}], ",", 
+                    RowBox[{
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"GetCircuitParameterised", "::", "error"}], 
+                    "MessageName"], ",", 
+                    "\"Option \\\"ExcludeChannels\\\" must be True or \
+False\""}], "]"}], ";", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}]}], "]"}], ";", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"!", 
+                    RowBox[{"BooleanQ", "[", 
+                    RowBox[{"OptionValue", "[", "\"UniqueParameters\"", "]"}],
+                     "]"}]}], ",", 
+                    RowBox[{
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"GetCircuitParameterised", "::", "error"}], 
+                    "MessageName"], ",", 
+                    "\"Option \\\"UniqueParameters\\\" must be True or \
+False\""}], "]"}], ";", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}]}], "]"}], ";", 
+                    RowBox[{"QuEST`Private`exclGatesPatt", "=", 
+                    RowBox[{"OptionValue", "[", "\"ExcludeGates\"", "]"}]}], 
+                    ";", 
+                    RowBox[{"QuEST`Private`exclParamsPatt", "=", 
+                    
+                    RowBox[{"OptionValue", "[", "\"ExcludeParameters\"", 
+                    "]"}]}], ";", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Head", "[", "QuEST`Private`exclGatesPatt", "]"}],
+                     "===", "List"}], ",", 
+                    RowBox[{"QuEST`Private`exclGatesPatt", "=", 
+                    
+                    RowBox[{"Alternatives", "@@", 
+                    "QuEST`Private`exclGatesPatt"}]}]}], "]"}], ";", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{
+                    
+                    RowBox[{"Head", "[", "QuEST`Private`exclParamsPatt", 
+                    "]"}], "===", "List"}], ",", 
+                    RowBox[{"QuEST`Private`exclParamsPatt", "=", 
+                    
+                    RowBox[{"Alternatives", "@@", 
+                    "QuEST`Private`exclParamsPatt"}]}]}], "]"}], ";", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"OptionValue", "[", "\"ExcludeChannels\"", "]"}], 
+                    ",", 
+                    RowBox[{"QuEST`Private`exclGatesPatt", "=", 
+                    RowBox[{"QuEST`Private`exclGatesPatt", "|", 
+                    RowBox[{
+                    RowBox[{"(", 
+                    SubscriptBox[
+                    RowBox[{"Damp", "|", "Deph", "|", "Depol"}], "__"], ")"}],
+                     "[", "_", "]"}]}]}]}], "]"}], ";", 
+                    RowBox[{"QuEST`Private`paramInd", "=", "1"}], ";", 
+                    RowBox[{"QuEST`Private`outCircuit", "=", 
+                    RowBox[{"{", "}"}]}], ";", 
+                    RowBox[{"QuEST`Private`outParams", "=", 
+                    RowBox[{"{", "}"}]}], ";", 
+                    RowBox[{"Do", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"{", 
+                    
+                    RowBox[{"QuEST`Private`outGate", ",", 
+                    "QuEST`Private`paramVal"}], "}"}], "=", 
+                    RowBox[{"QuEST`Private`getGateParameterised", "[", 
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`s", "[", "QuEST`Private`paramInd", 
+                    "]"}], ",", "QuEST`Private`exclGatesPatt", ",", 
+                    "QuEST`Private`exclParamsPatt", ",", 
+                    "QuEST`Private`inGate"}], "]"}]}], ";", 
+                    RowBox[{"AppendTo", "[", 
+                    
+                    RowBox[{"QuEST`Private`outCircuit", ",", 
+                    "QuEST`Private`outGate"}], "]"}], ";", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"QuEST`Private`paramVal", "=!=", "None"}], ",", 
+                    RowBox[{"AppendTo", "[", 
+                    RowBox[{"QuEST`Private`outParams", ",", 
+                    RowBox[{
+                    RowBox[{"QuEST`Private`s", "[", 
+                    RowBox[{"QuEST`Private`paramInd", "++"}], "]"}], 
+                    "\[Rule]", "QuEST`Private`paramVal"}]}], "]"}]}], "]"}]}],
+                     ",", 
+                    RowBox[{"{", 
+                    
+                    RowBox[{"QuEST`Private`inGate", ",", 
+                    "QuEST`Private`circuit"}], "}"}]}], "]"}], ";", 
+                    RowBox[{"QuEST`Private`paramInd", "=", "1"}], ";", 
+                    RowBox[{"QuEST`Private`newParams", "=", 
+                    RowBox[{"{", "}"}]}], ";", 
+                    RowBox[{"QuEST`Private`symbSubs", "=", 
+                    RowBox[{"{", "}"}]}], ";", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{"!", 
+                    
+                    RowBox[{"OptionValue", "[", "\"UniqueParameters\"", 
+                    "]"}]}], ",", 
+                    RowBox[{
+                    RowBox[{"Do", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"QuEST`Private`newSymb", "=", 
+                    RowBox[{"QuEST`Private`TEMPSYMBOL", "[", 
+                    RowBox[{"QuEST`Private`paramInd", "++"}], "]"}]}], ";", 
+                    RowBox[{"AppendTo", "[", 
+                    RowBox[{"QuEST`Private`newParams", ",", 
+                    RowBox[{"QuEST`Private`newSymb", "\[Rule]", 
+                    RowBox[{"Last", "[", 
+                    RowBox[{"First", "[", "QuEST`Private`group", "]"}], 
+                    "]"}]}]}], "]"}], ";", 
+                    RowBox[{"AppendTo", "[", 
+                    RowBox[{"QuEST`Private`symbSubs", ",", 
+                    RowBox[{"Table", "[", 
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`oldSymb", "\[Rule]", 
+                    "QuEST`Private`newSymb"}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"QuEST`Private`oldSymb", ",", 
+                    RowBox[{"First", "/@", "QuEST`Private`group"}]}], "}"}]}],
+                     "]"}]}], "]"}]}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"QuEST`Private`group", ",", 
+                    RowBox[{"GatherBy", "[", 
+                    RowBox[{"QuEST`Private`outParams", ",", "Last"}], "]"}]}],
+                     "}"}]}], "]"}], ";", 
+                    RowBox[{"QuEST`Private`outCircuit", "=", 
+                    
+                    RowBox[{"QuEST`Private`outCircuit", "/.", 
+                    "\[VeryThinSpace]", 
+                    
+                    RowBox[{"Flatten", "[", "QuEST`Private`symbSubs", 
+                    "]"}]}]}], ";", 
+                    RowBox[{"QuEST`Private`outCircuit", "=", 
+                    
+                    RowBox[{"QuEST`Private`outCircuit", "/.", 
+                    "\[VeryThinSpace]", 
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`TEMPSYMBOL", "[", 
+                    "QuEST`Private`i_", "]"}], "\[RuleDelayed]", 
+                    
+                    RowBox[{"QuEST`Private`s", "[", "QuEST`Private`i", 
+                    "]"}]}]}]}], ";", 
+                    RowBox[{"QuEST`Private`outParams", "=", 
+                    
+                    RowBox[{"QuEST`Private`newParams", "/.", 
+                    "\[VeryThinSpace]", 
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`TEMPSYMBOL", "[", 
+                    "QuEST`Private`i_", "]"}], "\[RuleDelayed]", 
+                    
+                    RowBox[{"QuEST`Private`s", "[", "QuEST`Private`i", 
+                    "]"}]}]}]}], ";"}]}], "]"}], ";", 
+                    RowBox[{"{", 
+                    
+                    RowBox[{"QuEST`Private`outCircuit", ",", 
+                    "QuEST`Private`outParams"}], "}"}]}]}], "]"}]}]}, {" "}, {
+                   
+                    RowBox[{
+                    RowBox[{"GetCircuitParameterised", "[", "___", "]"}], 
+                    ":=", 
+                    
+                    RowBox[{
+                    "QuEST`Private`invalidArgError", "[", 
+                    "GetCircuitParameterised", "]"}]}]}, {" "}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]},
+                "RowDefault"]}
+             },
+             DefaultBaseStyle->"Column",
+             GridBoxAlignment->{"Columns" -> {{Left}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+            "Column"],
+           FrameMargins->{{6, 0}, {3, 6}}], "\<\"\"\>"},
+         {
+          PaneBox[GridBox[{
+             {
+              
+              DynamicModuleBox[{System`InformationDump`open$$ = {
+               False, False, False, False, False, False}}, 
+               StyleBox[GridBox[{
+                  {
+                   PaneSelectorBox[{True->
+                    ButtonBox[
+                    PaneSelectorBox[{False->
+                    TemplateBox[{"\[ThickSpace]", "\"\[ThickSpace]\"", 
+                    StyleBox[
+                    "\"Options\"", "InformationRowLabel", StripOnInput -> 
+                    False], 
+                    DynamicBox[
+                    FEPrivate`FrontEndResource[
+                    "FEBitmaps", "DownPointerOpener"]]},
+                    "RowWithSeparators"], True->
+                    TemplateBox[{"\[ThickSpace]", "\"\[ThickSpace]\"", 
+                    StyleBox[
+                    "\"Options\"", "InformationRowLabel", StripOnInput -> 
+                    False], 
+                    DynamicBox[
+                    FEPrivate`FrontEndResource[
+                    "FEBitmaps", "DownPointerOpenerHot"]]},
+                    "RowWithSeparators"]}, Dynamic[
+                    CurrentValue["MouseOver"]],
+                    FrameMargins->0,
+                    ImageSize->Automatic],
+                    Appearance->None,
+                    BaseStyle->None,
+                    
+                    ButtonFunction:>(Part[System`InformationDump`open$$, 3] = 
+                    False),
+                    Evaluator->Automatic,
+                    FrameMargins->0,
+                    ImageMargins->0,
+                    Method->"Preemptive"], False->
+                    ButtonBox[
+                    PaneSelectorBox[{False->
+                    TemplateBox[{"\[ThickSpace]", "\"\[ThickSpace]\"", 
+                    StyleBox[
+                    "\"Options\"", "InformationRowLabel", StripOnInput -> 
+                    False], 
+                    DynamicBox[
+                    FEPrivate`FrontEndResource[
+                    "FEBitmaps", "RightPointerOpener"]]},
+                    "RowWithSeparators"], True->
+                    TemplateBox[{"\[ThickSpace]", "\"\[ThickSpace]\"", 
+                    StyleBox[
+                    "\"Options\"", "InformationRowLabel", StripOnInput -> 
+                    False], 
+                    DynamicBox[
+                    FEPrivate`FrontEndResource[
+                    "FEBitmaps", "RightPointerOpenerHot"]]},
+                    "RowWithSeparators"]}, Dynamic[
+                    CurrentValue["MouseOver"]],
+                    FrameMargins->0,
+                    ImageSize->Automatic],
+                    Appearance->None,
+                    BaseStyle->None,
+                    
+                    ButtonFunction:>(Part[System`InformationDump`open$$, 3] = 
+                    True),
+                    Evaluator->Automatic,
+                    FrameMargins->0,
+                    ImageMargins->0,
+                    Method->"Preemptive"]}, Dynamic[
+                    FEPrivate`Part[System`InformationDump`open$$, 3]]], 
+                   PaneSelectorBox[{True->GridBox[{
+                    {
+                    
+                    RowBox[{"\<\"UniqueParameters\"\>", "\[Rule]", 
+                    "False"}]},
+                    {
+                    RowBox[{"\<\"ExcludeChannels\"\>", "\[Rule]", "True"}]},
+                    {
+                    RowBox[{"\<\"ExcludeGates\"\>", "\[Rule]", 
+                    RowBox[{"{", "}"}]}]},
+                    {
+                    RowBox[{"\<\"ExcludeParameters\"\>", "\[Rule]", 
+                    RowBox[{"{", "}"}]}]},
+                    {
+                    StyleBox[
+                    
+                    TemplateBox[{
+                    "\"(\"", "\"\[InvisibleSpace]\"", "4", "\" total)\""},
+                    "RowDefault"], "InformationRowOpener",
+                    StripOnInput->False]}
+                    },
+                    BaselinePosition->{Baseline, {1, 1}},
+                    DefaultBaseStyle->"Column",
+                    GridBoxAlignment->{"Columns" -> {{Left}}},
+                    
+                    GridBoxItemSize->{
+                    "Columns" -> {{Automatic}}, "Rows" -> {{1.}}}], False->
+                    RowBox[{
+                    RowBox[{"\<\"UniqueParameters\"\>", "\[Rule]", "False"}], 
+                    "\[ThinSpace]", 
+                    StyleBox["\<\"\[Ellipsis]\"\>", "InformationRowOpener",
+                    StripOnInput->False], "\[ThinSpace]", 
+                    StyleBox[
+                    
+                    TemplateBox[{
+                    "\"(\"", "\"\[InvisibleSpace]\"", "4", "\" total)\""},
+                    "RowDefault"], "InformationRowOpener",
+                    StripOnInput->False]}]}, Dynamic[
+                    FEPrivate`Part[System`InformationDump`open$$, 3]],
+                    BaselinePosition->Baseline,
+                    ImageSize->Automatic]},
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Full Name\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"FullName\"",
+                    TooltipStyle->"TextStyling"],
+                    
+                    Annotation[#, "FullName", 
+                    "Tooltip"]& ], "\<\"QuEST`GetCircuitParameterised\"\>"}
+                 },
+                 AutoDelete->False,
+                 GridBoxAlignment->{"Columns" -> {Right, Left}},
+                 GridBoxDividers->None,
+                 GridBoxItemSize->{"Columns" -> {Automatic, Automatic}},
+                 GridBoxSpacings->{"Columns" -> {
+                    Offset[0.27999999999999997`], {
+                    Offset[0.5599999999999999]}, 
+                    Offset[0.27999999999999997`]}, "Rows" -> {
+                    Offset[0.2], {
+                    Offset[0.8]}, 
+                    Offset[0.2]}}], "DialogStyle",
+                StripOnInput->False],
+               DynamicModuleValues:>{}]}
+            },
+            DefaultBaseStyle->"Column",
+            GridBoxAlignment->{"Columns" -> {{Left}}},
+            GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings->{"Columns" -> {
+                Offset[0.27999999999999997`], {
+                 Offset[0.5599999999999999]}, 
+                Offset[0.27999999999999997`]}, "Rows" -> {
+                Offset[0.2], {
+                 Offset[3.6]}, 
+                Offset[0.2]}}],
+           FrameMargins->{{6, 6}, {6, 3}}], ""},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpener"]], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpenerHot"]]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, False],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"], False->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetCircuitParameterised[circuit, paramSymbol] \
+returns {out, paramValues} where out is an equivalent circuit whereby each \
+scalar gate parameter (like those to Rx, R, G, etc) has been substituted with \
+paramSymbol[i]. The returned paramValues is a list of symbol substitutions, \
+so that the original circuit is obtained with out /. paramValues.\\nThis \
+function is useful for tasks like obtaining gate strengths, finding repeated \
+parameters, or transforming circuits into variational ansatze. Note that \
+custom gates in the QuESTlink format are permitted, but will not be \
+considered for parameterisation.\\nGetCircuitParameterised accepts the below \
+options.\\n\[Bullet] \\\"UniqueParameters\\\" -> True will force every \
+substituted gate to receive a unique symbol (i.e. paramSymbol[i] for unique \
+i), even if multiple gates have the same scalar parameter. Otherwise, gates \
+with the same scalar parameter will automatically use the same repeated \
+symbol, shrinking the length of paramValues.\\n\[Bullet] \
+\\\"ExcludeChannels\\\" -> False will permit scalar-parameterised decoherence \
+channels (like Damp, Depol, etc) to be parameterised in the output.\\n\
+\[Bullet] \\\"ExcludeGates\\\" -> gatePattern(s) will prevent gates matching \
+the given pattern (or list of patterns) from being parameterised. Note that \
+gates and their controlled variants are treated separately.\\n\[Bullet] \
+\\\"ExcludeParameters\\\" -> paramPattern(s) will prevent any gate parameter \
+matching the given pattern (or list of patterns) from being substituted.\"\>",
+              "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {2., 8.}}], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpenerHot"],
+               ImageSizeCache->{10., {2., 8.}}]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, True],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}, Dynamic[System`InformationDump`open$$],
+      BaselinePosition->Baseline,
+      FrameMargins->0,
+      ImageSize->Automatic],
+     DynamicModuleValues:>{}],
+    BaseStyle->"InformationGridFrame",
+    StripOnInput->False], "InformationGridPlain",
+   StripOnInput->False],
+  InformationData[<|
+   "ObjectType" -> "Symbol", "Usage" -> 
+    "GetCircuitParameterised[circuit, paramSymbol] returns {out, paramValues} \
+where out is an equivalent circuit whereby each scalar gate parameter (like \
+those to Rx, R, G, etc) has been substituted with paramSymbol[i]. The \
+returned paramValues is a list of symbol substitutions, so that the original \
+circuit is obtained with out /. paramValues.\nThis function is useful for \
+tasks like obtaining gate strengths, finding repeated parameters, or \
+transforming circuits into variational ansatze. Note that custom gates in the \
+QuESTlink format are permitted, but will not be considered for \
+parameterisation.\nGetCircuitParameterised accepts the below options.\n\
+\[Bullet] \"UniqueParameters\" -> True will force every substituted gate to \
+receive a unique symbol (i.e. paramSymbol[i] for unique i), even if multiple \
+gates have the same scalar parameter. Otherwise, gates with the same scalar \
+parameter will automatically use the same repeated symbol, shrinking the \
+length of paramValues.\n\[Bullet] \"ExcludeChannels\" -> False will permit \
+scalar-parameterised decoherence channels (like Damp, Depol, etc) to be \
+parameterised in the output.\n\[Bullet] \"ExcludeGates\" -> gatePattern(s) \
+will prevent gates matching the given pattern (or list of patterns) from \
+being parameterised. Note that gates and their controlled variants are \
+treated separately.\n\[Bullet] \"ExcludeParameters\" -> paramPattern(s) will \
+prevent any gate parameter matching the given pattern (or list of patterns) \
+from being substituted.", "Documentation" -> None, "OwnValues" -> None, 
+    "UpValues" -> None, "DownValues" -> 
+    Information`InformationValueForm[
+     DownValues, QuEST`GetCircuitParameterised, {QuEST`GetCircuitParameterised[
+         PatternTest[
+          Pattern[QuEST`Private`gate, 
+           Blank[]], QuEST`Private`isGateFormat], 
+         Pattern[QuEST`Private`s, 
+          Blank[Symbol]], 
+         Pattern[QuEST`Private`opts, 
+          OptionsPattern[]]] :> 
+       QuEST`GetCircuitParameterised[{QuEST`Private`gate}, QuEST`Private`s, 
+         QuEST`Private`opts], QuEST`GetCircuitParameterised[
+         PatternTest[
+          Pattern[QuEST`Private`circuit, 
+           Blank[]], QuEST`Private`isCircuitFormat], 
+         Pattern[QuEST`Private`s, 
+          Blank[Symbol]], 
+         OptionsPattern[]] :> 
+       Module[{QuEST`Private`exclGatesPatt, QuEST`Private`exclParamsPatt, 
+          QuEST`Private`paramInd, QuEST`Private`outGate, 
+          QuEST`Private`paramVal, QuEST`Private`outCircuit, 
+          QuEST`Private`outParams, QuEST`Private`newSymb, 
+          QuEST`Private`newParams, QuEST`Private`symbSubs}, Check[
+           OptionValue["ExcludeChannels"], 
+           Return[$Failed]]; If[
+           Not[
+            BooleanQ[
+             OptionValue["ExcludeChannels"]]], Message[
+             MessageName[QuEST`GetCircuitParameterised, "error"], 
+             "Option \"ExcludeChannels\" must be True or False"]; 
+           Return[$Failed]]; If[
+           Not[
+            BooleanQ[
+             OptionValue["UniqueParameters"]]], Message[
+             MessageName[QuEST`GetCircuitParameterised, "error"], 
+             "Option \"UniqueParameters\" must be True or False"]; 
+           Return[$Failed]]; 
+         QuEST`Private`exclGatesPatt = OptionValue["ExcludeGates"]; 
+         QuEST`Private`exclParamsPatt = OptionValue["ExcludeParameters"]; 
+         If[Head[QuEST`Private`exclGatesPatt] === List, 
+           QuEST`Private`exclGatesPatt = 
+           Apply[Alternatives, QuEST`Private`exclGatesPatt]]; 
+         If[Head[QuEST`Private`exclParamsPatt] === List, 
+           QuEST`Private`exclParamsPatt = 
+           Apply[Alternatives, QuEST`Private`exclParamsPatt]]; If[
+           OptionValue["ExcludeChannels"], QuEST`Private`exclGatesPatt = 
+           Alternatives[QuEST`Private`exclGatesPatt, 
+             Subscript[
+              Alternatives[
+              QuEST`Gate`Damp, QuEST`Gate`Deph, QuEST`Gate`Depol], 
+              BlankSequence[]][
+              Blank[]]]]; QuEST`Private`paramInd = 1; 
+         QuEST`Private`outCircuit = {}; QuEST`Private`outParams = {}; 
+         Do[{QuEST`Private`outGate, QuEST`Private`paramVal} = 
+            QuEST`Private`getGateParameterised[
+              QuEST`Private`s[QuEST`Private`paramInd], 
+              QuEST`Private`exclGatesPatt, QuEST`Private`exclParamsPatt, 
+              QuEST`Private`inGate]; 
+           AppendTo[QuEST`Private`outCircuit, QuEST`Private`outGate]; 
+           If[QuEST`Private`paramVal =!= None, 
+             AppendTo[QuEST`Private`outParams, QuEST`Private`s[
+                Increment[QuEST`Private`paramInd]] -> 
+              QuEST`Private`paramVal]], {
+           QuEST`Private`inGate, QuEST`Private`circuit}]; 
+         QuEST`Private`paramInd = 1; QuEST`Private`newParams = {}; 
+         QuEST`Private`symbSubs = {}; If[
+           Not[
+            OptionValue["UniqueParameters"]], 
+           Do[QuEST`Private`newSymb = QuEST`Private`TEMPSYMBOL[
+                Increment[QuEST`Private`paramInd]]; 
+             AppendTo[QuEST`Private`newParams, QuEST`Private`newSymb -> Last[
+                 First[QuEST`Private`group]]]; 
+             AppendTo[QuEST`Private`symbSubs, 
+               Table[
+               QuEST`Private`oldSymb -> QuEST`Private`newSymb, {
+                QuEST`Private`oldSymb, 
+                 Map[First, QuEST`Private`group]}]], {QuEST`Private`group, 
+              GatherBy[QuEST`Private`outParams, Last]}]; 
+           QuEST`Private`outCircuit = ReplaceAll[QuEST`Private`outCircuit, 
+              Flatten[QuEST`Private`symbSubs]]; 
+           QuEST`Private`outCircuit = 
+            ReplaceAll[QuEST`Private`outCircuit, QuEST`Private`TEMPSYMBOL[
+                Pattern[QuEST`Private`i, 
+                 Blank[]]] :> QuEST`Private`s[QuEST`Private`i]]; 
+           QuEST`Private`outParams = 
+            ReplaceAll[QuEST`Private`newParams, QuEST`Private`TEMPSYMBOL[
+                Pattern[QuEST`Private`i, 
+                 Blank[]]] :> QuEST`Private`s[QuEST`Private`i]]; Null]; {
+          QuEST`Private`outCircuit, QuEST`Private`outParams}], 
+       QuEST`GetCircuitParameterised[
+         BlankNullSequence[]] :> 
+       QuEST`Private`invalidArgError[QuEST`GetCircuitParameterised]}], 
+    "SubValues" -> None, "DefaultValues" -> None, "NValues" -> None, 
+    "FormatValues" -> None, 
+    "Options" -> {
+     "UniqueParameters" -> False, "ExcludeChannels" -> True, 
+      "ExcludeGates" -> {}, "ExcludeParameters" -> {}}, "Attributes" -> {}, 
+    "FullName" -> "QuEST`GetCircuitParameterised"|>, False]]], "Output",
+ CellChangeTimes->{3.9179506323183823`*^9, 3.917952463337275*^9, 
+  3.917952560973537*^9, 3.917952677005989*^9, 3.91795426554941*^9, 
+  3.917954299627574*^9, 3.917954388956118*^9},
+ CellLabel->"Out[4]=",ExpressionUUID->"69e082dc-3a5b-44bd-acc2-225ecaf962b3"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Correctness", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.9173418805860863`*^9, 
+  3.917341881626457*^9}},ExpressionUUID->"bdb47584-f11d-439c-a117-\
+8a6fa0a6a397"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", " ", "@", " ", 
+  RowBox[{"{", 
+   SubscriptBox["X", "0"], "}"}]}]], "Input",
+ CellChangeTimes->{{3.9179525776558113`*^9, 3.9179525836364803`*^9}, {
+  3.917953263318055*^9, 3.9179532721483593`*^9}},
+ CellLabel->"In[5]:=",ExpressionUUID->"e688c77f-f0b3-465d-a614-1e1764b2a3bf"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   SubscriptBox["X", "0"], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.9179543890324078`*^9},ExpressionUUID->"0ae4ada7-2207-4a55-901b-\
+1b16b7351b58"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954389079568*^9},ExpressionUUID->"7aa40c44-ed8e-458c-aafc-\
+54ef9112870a"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", " ", "@", " ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Ignored", "0"], "[", "x", "]"}], ",", " ", 
+    RowBox[{
+     SubscriptBox["Rx", "0"], "[", "x", "]"}]}], "}"}]}]], "Input",
+ CellChangeTimes->{{3.917953228275333*^9, 3.9179532292669363`*^9}},
+ CellLabel->"In[6]:=",ExpressionUUID->"e9f95c04-3cbb-4de7-8ce5-8f2ec0355995"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Ignored", "0"], "[", "x", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rx", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954389155196*^9},ExpressionUUID->"fbb31c89-1a53-4ab5-865a-\
+eb9827c85072"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "x"}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954389233156*^9},ExpressionUUID->"98f8c8a7-f7d3-4aa9-9b70-\
+952a1ccfe6cf"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", " ", "@", " ", 
+  RowBox[{"Circuit", "[", " ", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     RowBox[{"3", "/", "2"}], "]"}], " ", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", "a", "]"}], "]"}], " ", 
+    RowBox[{"R", "[", 
+     RowBox[{"b", ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], 
+       SubscriptBox["Y", "1"]}]}], "]"}], " ", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"a", "+", "c"}], "]"}], "]"}], " ", 
+    RowBox[{"G", "[", "d", "]"}], " ", 
+    RowBox[{"Fac", "[", "e", "]"}], " ", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], " ", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "@", 
+     RowBox[{"R", "[", 
+      RowBox[{"b", ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], 
+        SubscriptBox["Y", "1"]}]}], "]"}]}]}], " ", "]"}]}]], "Input",
+ CellChangeTimes->{{3.917953005500361*^9, 3.917953061227289*^9}, {
+  3.917953278794573*^9, 3.917953281292938*^9}, {3.917953313279108*^9, 
+  3.917953341662796*^9}, {3.917953375187711*^9, 3.917953380232212*^9}},
+ CellLabel->"In[7]:=",ExpressionUUID->"6d7886e7-3cc4-4dc1-8927-5b22a6ef54e8"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", 
+      RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", 
+     RowBox[{"\[Theta]", "[", "5", "]"}], "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "6", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{
+       RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.9179543893187637`*^9},ExpressionUUID->"fdfcefc4-7326-47f7-a4c6-\
+b613b2b26c8d"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     FractionBox["3", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", 
+     RowBox[{"a", "+", "c"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", "d"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "6", "]"}], "\[Rule]", "e"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.9179543893643293`*^9},ExpressionUUID->"c118256a-cc31-40a2-b945-\
+dd9cfa930512"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", " ", "@", " ", 
+  RowBox[{"GetKnownCircuit", "[", 
+   RowBox[{"\"\<QFT\>\"", ",", "5"}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.917952852332485*^9, 3.917952902744956*^9}, 
+   3.9179529452585697`*^9, {3.9179533901652822`*^9, 3.917953391978953*^9}},
+ CellLabel->"In[8]:=",ExpressionUUID->"de0e8097-6d84-400d-8f4d-c9610602e505"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    SubscriptBox["H", "4"], ",", 
+    RowBox[{
+     SubscriptBox["Ph", 
+      RowBox[{"4", ",", "3"}]], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Ph", 
+      RowBox[{"4", ",", "2"}]], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Ph", 
+      RowBox[{"4", ",", "1"}]], "[", 
+     RowBox[{"\[Theta]", "[", "3", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Ph", 
+      RowBox[{"4", ",", "0"}]], "[", 
+     RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], ",", 
+    SubscriptBox["H", "3"], ",", 
+    RowBox[{
+     SubscriptBox["Ph", 
+      RowBox[{"3", ",", "2"}]], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Ph", 
+      RowBox[{"3", ",", "1"}]], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Ph", 
+      RowBox[{"3", ",", "0"}]], "[", 
+     RowBox[{"\[Theta]", "[", "3", "]"}], "]"}], ",", 
+    SubscriptBox["H", "2"], ",", 
+    RowBox[{
+     SubscriptBox["Ph", 
+      RowBox[{"2", ",", "1"}]], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Ph", 
+      RowBox[{"2", ",", "0"}]], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    SubscriptBox["H", "1"], ",", 
+    RowBox[{
+     SubscriptBox["Ph", 
+      RowBox[{"1", ",", "0"}]], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    SubscriptBox["H", "0"], ",", 
+    SubscriptBox["SWAP", 
+     RowBox[{"0", ",", "4"}]], ",", 
+    SubscriptBox["SWAP", 
+     RowBox[{"1", ",", "3"}]]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954389473735*^9},ExpressionUUID->"9828fa6d-1441-4097-8018-\
+76bd05989f0a"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "4"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "8"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "16"]}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954389555458*^9},ExpressionUUID->"e147429c-02fb-4511-af3b-\
+d15c85235ded"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", " ", 
+  RowBox[{
+   SubscriptBox["C", 
+    RowBox[{"5", ",", "6"}]], " ", "/@", " ", 
+   RowBox[{"GetKnownCircuit", "[", 
+    RowBox[{"\"\<QFT\>\"", ",", "5"}], "]"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.917952920936027*^9, 3.917952943060327*^9}, {
+  3.917953406893108*^9, 3.917953419454739*^9}},
+ CellLabel->"In[9]:=",ExpressionUUID->"0fba1212-1148-4af5-9133-54487e48c649"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["H", "4"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"4", ",", "3"}]], "[", 
+      RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"4", ",", "2"}]], "[", 
+      RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"4", ",", "1"}]], "[", 
+      RowBox[{"\[Theta]", "[", "3", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"4", ",", "0"}]], "[", 
+      RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["H", "3"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"3", ",", "2"}]], "[", 
+      RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"3", ",", "1"}]], "[", 
+      RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"3", ",", "0"}]], "[", 
+      RowBox[{"\[Theta]", "[", "3", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["H", "2"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"2", ",", "1"}]], "[", 
+      RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"2", ",", "0"}]], "[", 
+      RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["H", "1"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"1", ",", "0"}]], "[", 
+      RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["H", "0"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["SWAP", 
+      RowBox[{"0", ",", "4"}]], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["SWAP", 
+      RowBox[{"1", ",", "3"}]], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.9179543897384987`*^9},ExpressionUUID->"2087d4ae-f579-430d-85bb-\
+6581ce461a87"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "4"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "8"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "16"]}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954389782371*^9},ExpressionUUID->"b4385b75-703e-4746-8069-\
+f3e06bfafeed"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Options", "Section",
+ CellChangeTimes->{{3.9179527921509237`*^9, 
+  3.917952794299172*^9}},ExpressionUUID->"676fc040-1465-4cf4-9790-\
+24fb18553c90"],
+
+Cell[CellGroupData[{
+
+Cell["\[OpenCurlyDoubleQuote]UniqueParameters\[CloseCurlyDoubleQuote]", \
+"Subsection",
+ CellChangeTimes->{{3.9179527921509237`*^9, 3.917952816985643*^9}, {
+  3.917954273762841*^9, 
+  3.9179542742586517`*^9}},ExpressionUUID->"9e3409ae-6bc5-412b-b7e6-\
+1b4d6b5ae576"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", " ", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["C", 
+     RowBox[{"5", ",", "6"}]], " ", "/@", " ", 
+    RowBox[{"GetKnownCircuit", "[", 
+     RowBox[{"\"\<QFT\>\"", ",", "5"}], "]"}]}], ",", " ", 
+   RowBox[{"\"\<UniqueParameters\>\"", "->", "True"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9179534597493258`*^9, 3.917953477021181*^9}, 
+   3.9179542768394823`*^9},
+ CellLabel->"In[10]:=",ExpressionUUID->"c5440a24-f4f7-46dc-a528-abf79a056168"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["H", "4"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"4", ",", "3"}]], "[", 
+      RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"4", ",", "2"}]], "[", 
+      RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"4", ",", "1"}]], "[", 
+      RowBox[{"\[Theta]", "[", "3", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"4", ",", "0"}]], "[", 
+      RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["H", "3"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"3", ",", "2"}]], "[", 
+      RowBox[{"\[Theta]", "[", "5", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"3", ",", "1"}]], "[", 
+      RowBox[{"\[Theta]", "[", "6", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"3", ",", "0"}]], "[", 
+      RowBox[{"\[Theta]", "[", "7", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["H", "2"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"2", ",", "1"}]], "[", 
+      RowBox[{"\[Theta]", "[", "8", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"2", ",", "0"}]], "[", 
+      RowBox[{"\[Theta]", "[", "9", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["H", "1"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", 
+       RowBox[{"1", ",", "0"}]], "[", 
+      RowBox[{"\[Theta]", "[", "10", "]"}], "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["H", "0"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["SWAP", 
+      RowBox[{"0", ",", "4"}]], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"5", ",", "6"}]], "[", 
+     SubscriptBox["SWAP", 
+      RowBox[{"1", ",", "3"}]], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954389996649*^9},ExpressionUUID->"8b9eb23e-eceb-4eda-b363-\
+4a086c26e248"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "4"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "8"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "16"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "6", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "4"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "7", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "8"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "8", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "9", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "4"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "10", "]"}], "\[Rule]", 
+     FractionBox["\[Pi]", "2"]}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954390047584*^9},ExpressionUUID->"dfae63b8-e5d5-4ed8-abc8-\
+fa35a4911f26"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"h", " ", "=", " ", 
+   RowBox[{"GetRandomPauliString", "[", 
+    RowBox[{"5", ",", "4"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"u", " ", "=", " ", 
+    RowBox[{"GetKnownCircuit", "[", 
+     RowBox[{
+     "\"\<Trotter\>\"", ",", " ", "h", ",", " ", "1", ",", " ", "5", ",", " ",
+       "t"}], "]"}]}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<UniqueParameters\>\"", "->", "True"}]}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<UniqueParameters\>\"", "->", "False"}]}], "]"}]}], "Input",
+ CellChangeTimes->{{3.917953494264368*^9, 3.91795355687327*^9}, {
+  3.917954319526166*^9, 3.91795432366641*^9}},
+ CellLabel->"In[11]:=",ExpressionUUID->"5dedc04a-0b87-490f-912e-abcc538e224f"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "1", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "1"], " ", 
+       SubscriptBox["Y", "2"], " ", 
+       SubscriptBox["Z", "0"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "2", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "3"], " ", 
+       SubscriptBox["Z", "1"], " ", 
+       SubscriptBox["Z", "2"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Z", "0"], " ", 
+       SubscriptBox["Z", "2"], " ", 
+       SubscriptBox["Z", "3"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "4", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["Z", "3"], " ", 
+       SubscriptBox["Z", "4"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "5", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "1"], " ", 
+       SubscriptBox["Y", "2"], " ", 
+       SubscriptBox["Z", "0"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "6", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "3"], " ", 
+       SubscriptBox["Z", "1"], " ", 
+       SubscriptBox["Z", "2"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "7", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Z", "0"], " ", 
+       SubscriptBox["Z", "2"], " ", 
+       SubscriptBox["Z", "3"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "8", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["Z", "3"], " ", 
+       SubscriptBox["Z", "4"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "9", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "1"], " ", 
+       SubscriptBox["Y", "2"], " ", 
+       SubscriptBox["Z", "0"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "10", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "3"], " ", 
+       SubscriptBox["Z", "1"], " ", 
+       SubscriptBox["Z", "2"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "11", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Z", "0"], " ", 
+       SubscriptBox["Z", "2"], " ", 
+       SubscriptBox["Z", "3"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "12", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["Z", "3"], " ", 
+       SubscriptBox["Z", "4"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "13", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "1"], " ", 
+       SubscriptBox["Y", "2"], " ", 
+       SubscriptBox["Z", "0"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "14", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "3"], " ", 
+       SubscriptBox["Z", "1"], " ", 
+       SubscriptBox["Z", "2"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "15", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Z", "0"], " ", 
+       SubscriptBox["Z", "2"], " ", 
+       SubscriptBox["Z", "3"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "16", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["Z", "3"], " ", 
+       SubscriptBox["Z", "4"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "17", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "1"], " ", 
+       SubscriptBox["Y", "2"], " ", 
+       SubscriptBox["Z", "0"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "18", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "3"], " ", 
+       SubscriptBox["Z", "1"], " ", 
+       SubscriptBox["Z", "2"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "19", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Z", "0"], " ", 
+       SubscriptBox["Z", "2"], " ", 
+       SubscriptBox["Z", "3"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "20", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["Z", "3"], " ", 
+       SubscriptBox["Z", "4"]}]}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954390184535*^9},ExpressionUUID->"8d21e28b-d2ff-4197-a659-\
+773c7be409ee"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.18076099573303886`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.3060078126648545`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.1902636360207536`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", 
+     RowBox[{"0.19332623811965047`", " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.18076099573303886`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "6", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.3060078126648545`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "7", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.1902636360207536`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "8", "]"}], "\[Rule]", 
+     RowBox[{"0.19332623811965047`", " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "9", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.18076099573303886`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "10", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.3060078126648545`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "11", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.1902636360207536`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "12", "]"}], "\[Rule]", 
+     RowBox[{"0.19332623811965047`", " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "13", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.18076099573303886`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "14", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.3060078126648545`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "15", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.1902636360207536`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "16", "]"}], "\[Rule]", 
+     RowBox[{"0.19332623811965047`", " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "17", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.18076099573303886`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "18", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.3060078126648545`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "19", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.1902636360207536`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "20", "]"}], "\[Rule]", 
+     RowBox[{"0.19332623811965047`", " ", "t"}]}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954390290176*^9},ExpressionUUID->"c3523e01-9150-420d-8650-\
+bab2f2f9ad7a"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "1", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "1"], " ", 
+       SubscriptBox["Y", "2"], " ", 
+       SubscriptBox["Z", "0"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "2", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "3"], " ", 
+       SubscriptBox["Z", "1"], " ", 
+       SubscriptBox["Z", "2"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Z", "0"], " ", 
+       SubscriptBox["Z", "2"], " ", 
+       SubscriptBox["Z", "3"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "4", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["Z", "3"], " ", 
+       SubscriptBox["Z", "4"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "1", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "1"], " ", 
+       SubscriptBox["Y", "2"], " ", 
+       SubscriptBox["Z", "0"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "2", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "3"], " ", 
+       SubscriptBox["Z", "1"], " ", 
+       SubscriptBox["Z", "2"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Z", "0"], " ", 
+       SubscriptBox["Z", "2"], " ", 
+       SubscriptBox["Z", "3"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "4", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["Z", "3"], " ", 
+       SubscriptBox["Z", "4"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "1", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "1"], " ", 
+       SubscriptBox["Y", "2"], " ", 
+       SubscriptBox["Z", "0"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "2", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "3"], " ", 
+       SubscriptBox["Z", "1"], " ", 
+       SubscriptBox["Z", "2"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Z", "0"], " ", 
+       SubscriptBox["Z", "2"], " ", 
+       SubscriptBox["Z", "3"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "4", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["Z", "3"], " ", 
+       SubscriptBox["Z", "4"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "1", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "1"], " ", 
+       SubscriptBox["Y", "2"], " ", 
+       SubscriptBox["Z", "0"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "2", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "3"], " ", 
+       SubscriptBox["Z", "1"], " ", 
+       SubscriptBox["Z", "2"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Z", "0"], " ", 
+       SubscriptBox["Z", "2"], " ", 
+       SubscriptBox["Z", "3"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "4", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["Z", "3"], " ", 
+       SubscriptBox["Z", "4"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "1", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "1"], " ", 
+       SubscriptBox["Y", "2"], " ", 
+       SubscriptBox["Z", "0"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "2", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Y", "3"], " ", 
+       SubscriptBox["Z", "1"], " ", 
+       SubscriptBox["Z", "2"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["X", "4"], " ", 
+       SubscriptBox["Z", "0"], " ", 
+       SubscriptBox["Z", "2"], " ", 
+       SubscriptBox["Z", "3"]}]}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "4", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["X", "1"], " ", 
+       SubscriptBox["Z", "3"], " ", 
+       SubscriptBox["Z", "4"]}]}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954390367318*^9},ExpressionUUID->"26316f95-f569-4562-8956-\
+0fb6a13a088f"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.18076099573303886`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.3060078126648545`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", 
+     RowBox[{
+      RowBox[{"-", "0.1902636360207536`"}], " ", "t"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", 
+     RowBox[{"0.19332623811965047`", " ", "t"}]}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.9179543904633512`*^9},ExpressionUUID->"b22fe3ff-7344-49a5-acd3-\
+7b43184d4d57"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\[OpenCurlyDoubleQuote]ExcludeChannels\[CloseCurlyDoubleQuote]", \
+"Subsection",
+ CellChangeTimes->{{3.9179527921509237`*^9, 
+  3.917952819376093*^9}},ExpressionUUID->"5f312508-e97c-40dc-b1a6-\
+0b179ee17a11"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"u", " ", "=", " ", 
+   RowBox[{"Circuit", "[", " ", 
+    RowBox[{
+     RowBox[{
+      SubscriptBox["Damp", "0"], "[", "a", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Deph", "0"], "[", "b", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Depol", 
+       RowBox[{"1", ",", "2"}]], "[", "b", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Depol", "5"], "[", "b", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Deph", 
+       RowBox[{"2", ",", "1"}]], "[", "a", "]"}]}], "]"}]}], ";"}]], "Input",
+ CellChangeTimes->{{3.917953574249649*^9, 3.917953623776988*^9}},
+ CellLabel->"In[15]:=",ExpressionUUID->"15b8f2cf-4f76-4627-be35-cd49fcbba5de"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", "u", "]"}]], "Input",
+ CellChangeTimes->{{3.917953624961973*^9, 3.917953625773634*^9}},
+ CellLabel->"In[16]:=",ExpressionUUID->"f62f8975-2ebb-4488-8b41-2d3911ac6d12"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "a", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", "0"], "[", "b", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "b", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", "5"], "[", "b", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", 
+      RowBox[{"2", ",", "1"}]], "[", "a", "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954390578623*^9},ExpressionUUID->"b9c67b44-484c-4479-a269-\
+537cf52eb71d"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954390599258*^9},ExpressionUUID->"d2c9661d-daa9-4f88-bf38-\
+c3633730fff8"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeChannels\>\"", "->", "False"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.917953630482582*^9, 3.9179536399165907`*^9}},
+ CellLabel->"In[17]:=",ExpressionUUID->"41695534-1815-4af3-9475-e7df25152dbb"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", "5"], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", 
+      RowBox[{"2", ",", "1"}]], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954390780258*^9},ExpressionUUID->"cf934e75-71e2-4a36-9fb2-\
+940400be4bb1"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "b"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.917954390870906*^9},ExpressionUUID->"6d3d8531-65e2-4503-8238-\
+6b6f390e53e6"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeChannels\>\"", "->", "False"}], ",", " ", 
+   RowBox[{"\"\<UniqueParameters\>\"", "->", "True"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.917953648912607*^9, 3.917953653751964*^9}, 
+   3.917954346601233*^9},
+ CellLabel->"In[18]:=",ExpressionUUID->"545803fa-3527-4ce7-abf9-059c91540143"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{"\[Theta]", "[", "3", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", "5"], "[", 
+     RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", 
+      RowBox[{"2", ",", "1"}]], "[", 
+     RowBox[{"\[Theta]", "[", "5", "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954390983624*^9},ExpressionUUID->"a9229441-b609-4a13-af42-\
+099e217c3ad3"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", "a"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.917954391021873*^9},ExpressionUUID->"2c3d94bb-0cf5-427d-9dbe-\
+14b8c29855dd"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\[OpenCurlyDoubleQuote]ExcludeGates\[CloseCurlyDoubleQuote]", \
+"Subsection",
+ CellChangeTimes->{{3.9179527921509237`*^9, 
+  3.917952825933157*^9}},ExpressionUUID->"c4c5d4d2-22a4-4eba-a0ee-\
+c8fa9ed70ef0"],
+
+Cell[CellGroupData[{
+
+Cell["Gates", "Subsubsection",
+ CellChangeTimes->{{3.917953765823637*^9, 
+  3.917953766179842*^9}},ExpressionUUID->"efb35415-6f04-4258-9a49-\
+231b831698dd"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"u", " ", "=", " ", 
+   RowBox[{"Circuit", "[", " ", 
+    RowBox[{
+     RowBox[{
+      SubscriptBox["Rz", "0"], "[", 
+      RowBox[{"3", "/", "2"}], "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Rz", "1"], "[", "4", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["C", "0"], "[", 
+      RowBox[{
+       SubscriptBox["Rx", "1"], "[", "a", "]"}], "]"}], " ", 
+     RowBox[{"R", "[", 
+      RowBox[{"b", ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], 
+        SubscriptBox["Y", "1"]}]}], "]"}], " ", 
+     RowBox[{
+      SubscriptBox["C", 
+       RowBox[{"1", ",", "2"}]], "[", 
+      RowBox[{
+       SubscriptBox["Ph", "0"], "[", 
+       RowBox[{"a", "+", "c"}], "]"}], "]"}], " ", 
+     RowBox[{"G", "[", "d", "]"}], " ", 
+     RowBox[{"Fac", "[", "e", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Damp", "0"], "[", "1", "]"}], 
+     RowBox[{
+      SubscriptBox["Depol", 
+       RowBox[{"1", ",", "2"}]], "[", "2", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["C", 
+       RowBox[{"2", ",", "3"}]], "@", 
+      RowBox[{"R", "[", 
+       RowBox[{"b", ",", 
+        RowBox[{
+         SubscriptBox["X", "0"], 
+         SubscriptBox["Y", "1"]}]}], "]"}]}]}], " ", "]"}]}], ";"}]], "Input",\
+
+ CellChangeTimes->{{3.9179537864037952`*^9, 3.9179537899553833`*^9}, {
+  3.917953867253031*^9, 3.9179538708233767`*^9}},
+ CellLabel->"In[19]:=",ExpressionUUID->"cf8c5947-b27f-4371-94fd-36c49940f109"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", "u", "]"}]], "Input",
+ CellChangeTimes->{{3.917953790522243*^9, 3.9179537910736523`*^9}},
+ CellLabel->"In[20]:=",ExpressionUUID->"db37f396-6096-420f-99d5-1cc9a387ff34"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", 
+      RowBox[{"\[Theta]", "[", "3", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "4", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"\[Theta]", "[", "5", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", 
+     RowBox[{"\[Theta]", "[", "6", "]"}], "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "7", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{
+       RowBox[{"\[Theta]", "[", "4", "]"}], ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954391137624*^9},ExpressionUUID->"2eb19a57-0e2f-4f8a-aaf9-\
+5b1d5ee7eeee"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     FractionBox["3", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "4"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", 
+     RowBox[{"a", "+", "c"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "6", "]"}], "\[Rule]", "d"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "7", "]"}], "\[Rule]", "e"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.91795439117957*^9},ExpressionUUID->"146557b8-bd4a-44aa-b501-49708da38aed"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeGates\>\"", "->", 
+    RowBox[{
+     SubscriptBox["Rz", "_"], "[", "_", "]"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.917953797718598*^9, 3.9179538055703173`*^9}},
+ CellLabel->"In[21]:=",ExpressionUUID->"f208a27e-6db6-4e1f-bb6b-768af1d58963"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     FractionBox["3", "2"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", "4", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", 
+      RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "2", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"\[Theta]", "[", "3", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", 
+     RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "5", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{
+       RowBox[{"\[Theta]", "[", "2", "]"}], ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954391261037*^9},ExpressionUUID->"8be83847-547a-422c-b8f4-\
+c5cfea29c413"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", 
+     RowBox[{"a", "+", "c"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", "d"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", "e"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.917954391314371*^9},ExpressionUUID->"5726dbe3-f44b-4e24-b451-\
+c9e6a8b8264c"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeGates\>\"", "->", 
+    RowBox[{"{", 
+     RowBox[{
+      SubscriptBox["Rz", "0"], "[", "_", "]"}], "}"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.917953855445215*^9, 3.9179538866997013`*^9}},
+ CellLabel->"In[22]:=",ExpressionUUID->"779f7d0b-fd82-4ffb-b5af-3941a0212811"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     FractionBox["3", "2"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", 
+      RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", 
+     RowBox[{"\[Theta]", "[", "5", "]"}], "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "6", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{
+       RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954391379422*^9},ExpressionUUID->"991edd5b-3048-4571-863e-\
+bfc2460fb9fd"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "4"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", 
+     RowBox[{"a", "+", "c"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", "d"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "6", "]"}], "\[Rule]", "e"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.917954391407373*^9},ExpressionUUID->"9d419ce3-93d7-4397-a736-\
+e65134cb4251"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeGates\>\"", "->", 
+    RowBox[{"{", 
+     RowBox[{
+      SubscriptBox["Rz", "_"], "[", "4", "]"}], "}"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9179538925714607`*^9, 3.9179538948259*^9}},
+ CellLabel->"In[23]:=",ExpressionUUID->"f51a0d30-0750-4183-8455-6ef322bbd888"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", "4", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", 
+      RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", 
+     RowBox[{"\[Theta]", "[", "5", "]"}], "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "6", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{
+       RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954391470818*^9},ExpressionUUID->"6918cb35-df9f-4139-aa36-\
+a22d67ab4d18"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     FractionBox["3", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", 
+     RowBox[{"a", "+", "c"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", "d"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "6", "]"}], "\[Rule]", "e"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.917954391521668*^9},ExpressionUUID->"10b1d8c8-fd0c-453f-b943-\
+41d86a20fdcc"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeGates\>\"", "->", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", "_", "]"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9179538185120287`*^9, 3.917953822305851*^9}},
+ CellLabel->"In[24]:=",ExpressionUUID->"4dd547df-f78e-4807-8610-424279747e84"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", 
+      RowBox[{"\[Theta]", "[", "3", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "4", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"\[Theta]", "[", "5", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", 
+     RowBox[{"\[Theta]", "[", "6", "]"}], "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "7", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{"b", ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954391584235*^9},ExpressionUUID->"192ddac1-8787-42f9-ade2-\
+68451ee759af"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     FractionBox["3", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "4"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", 
+     RowBox[{"a", "+", "c"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "6", "]"}], "\[Rule]", "d"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "7", "]"}], "\[Rule]", "e"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.917954391614788*^9},ExpressionUUID->"3e1dd156-627b-47f9-a4c4-\
+337dbdbf3096"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeGates\>\"", "->", 
+    RowBox[{
+     SubscriptBox["C", "__"], "[", "_", "]"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.917953844396757*^9, 3.917953845147187*^9}},
+ CellLabel->"In[25]:=",ExpressionUUID->"ed0481e5-595e-475b-8a2d-10ffa507e5ea"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", "a", "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"a", "+", "c"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", 
+     RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "5", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{"b", ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.9179543916747093`*^9},ExpressionUUID->"a2201d70-2f39-407e-a952-\
+874a96811336"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     FractionBox["3", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "4"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", "d"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", "e"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.917954391729844*^9},ExpressionUUID->"924594a1-308f-4970-a76a-\
+84ca222218de"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeGates\>\"", "->", 
+    RowBox[{"{", 
+     RowBox[{
+      RowBox[{"R", "[", 
+       RowBox[{"_", ",", "_"}], "]"}], ",", " ", 
+      RowBox[{
+       SubscriptBox["Rz", "_"], "[", "_", "]"}], ",", " ", 
+      RowBox[{
+       SubscriptBox["C", "__"], "[", "_", "]"}], ",", " ", 
+      RowBox[{"G", "[", "_", "]"}]}], "}"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.91795391387704*^9, 3.9179539544424477`*^9}},
+ CellLabel->"In[26]:=",ExpressionUUID->"4c61388a-21b2-4894-8738-5cd139a3cf77"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     FractionBox["3", "2"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", "4", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", "a", "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{"b", ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"a", "+", "c"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", "d", "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{"b", ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954391805031*^9},ExpressionUUID->"8b482509-591a-4c73-b76a-\
+25b21b135a2c"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "e"}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.9179543918337727`*^9},ExpressionUUID->"fc80c716-2007-4d30-8aba-\
+9ae6f65577ad"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Channels", "Subsubsection",
+ CellChangeTimes->{{3.917953765823637*^9, 
+  3.9179537705436687`*^9}},ExpressionUUID->"0d95b949-8a6d-462a-930b-\
+c93a5d97491d"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"u", " ", "=", " ", 
+   RowBox[{"Circuit", "[", " ", 
+    RowBox[{
+     RowBox[{
+      SubscriptBox["Damp", "0"], "[", "a", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Deph", "0"], "[", "b", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Depol", 
+       RowBox[{"1", ",", "2"}]], "[", "b", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Depol", "5"], "[", "b", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Deph", 
+       RowBox[{"2", ",", "1"}]], "[", "a", "]"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeChannels\>\"", "->", "False"}], ",", " ", 
+   RowBox[{"\"\<ExcludeGates\>\"", "->", 
+    RowBox[{"{", 
+     RowBox[{
+      SubscriptBox["Deph", "0"], "[", "_", "]"}], "}"}]}]}], "]"}]}], "Input",\
+
+ CellChangeTimes->{{3.917953670964363*^9, 3.917953689266893*^9}, {
+  3.9179539836988564`*^9, 3.917953991255479*^9}},
+ CellLabel->"In[27]:=",ExpressionUUID->"d664502f-47a2-404e-b0b0-213a0250b959"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", "0"], "[", "b", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", "5"], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", 
+      RowBox[{"2", ",", "1"}]], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.9179543918950043`*^9},ExpressionUUID->"90e231ac-4b93-42c1-80d2-\
+2f8012c8bfe3"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "b"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.917954391950515*^9},ExpressionUUID->"c100bf19-3df3-43d0-85d7-\
+7497bf22486e"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeChannels\>\"", "->", "False"}], ",", " ", 
+   RowBox[{"\"\<ExcludeGates\>\"", "->", 
+    RowBox[{
+     SubscriptBox[
+      RowBox[{"(", 
+       RowBox[{"Damp", "|", "Deph"}], ")"}], "_"], "[", "_", "]"}]}]}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.917953697153799*^9, 3.917953742134964*^9}},
+ CellLabel->"In[29]:=",ExpressionUUID->"33a71761-d7f9-4539-8832-c505eb176b8f"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "a", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", "0"], "[", "b", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", "5"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", 
+      RowBox[{"2", ",", "1"}]], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954392012183*^9},ExpressionUUID->"685d23d7-bb80-46b7-9580-\
+dd2f6a3e7124"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "a"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.917954392041273*^9},ExpressionUUID->"75862cec-36a0-4111-a5cc-\
+8fb6687279d5"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["\[OpenCurlyDoubleQuote]ExcludeParameters\[CloseCurlyDoubleQuote]", \
+"Subsection",
+ CellChangeTimes->{{3.9179527921509237`*^9, 
+  3.917952830031897*^9}},ExpressionUUID->"35b41d70-934b-4725-ad80-\
+76fe178ae7d0"],
+
+Cell[CellGroupData[{
+
+Cell["Gates", "Subsubsection",
+ CellChangeTimes->{{3.917953765823637*^9, 3.9179537705436687`*^9}, {
+  3.917954059685792*^9, 
+  3.917954060025621*^9}},ExpressionUUID->"36ce27fd-0599-4a1f-bd7d-\
+b088adbdec09"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"u", " ", "=", " ", 
+   RowBox[{"Circuit", "[", " ", 
+    RowBox[{
+     RowBox[{
+      SubscriptBox["Rz", "0"], "[", 
+      RowBox[{"3", "/", "2"}], "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Rz", "1"], "[", "4", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["C", "0"], "[", 
+      RowBox[{
+       SubscriptBox["Rx", "1"], "[", "a", "]"}], "]"}], " ", 
+     RowBox[{"R", "[", 
+      RowBox[{"b", ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], 
+        SubscriptBox["Y", "1"]}]}], "]"}], " ", 
+     RowBox[{
+      SubscriptBox["C", 
+       RowBox[{"1", ",", "2"}]], "[", 
+      RowBox[{
+       SubscriptBox["Ph", "0"], "[", 
+       RowBox[{"a", "+", "c"}], "]"}], "]"}], " ", 
+     RowBox[{"G", "[", "d", "]"}], " ", 
+     RowBox[{"Fac", "[", "e", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Damp", "0"], "[", "1", "]"}], 
+     RowBox[{
+      SubscriptBox["Depol", 
+       RowBox[{"1", ",", "2"}]], "[", "2", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["C", 
+       RowBox[{"2", ",", "3"}]], "@", 
+      RowBox[{"R", "[", 
+       RowBox[{"b", ",", 
+        RowBox[{
+         SubscriptBox["X", "0"], 
+         SubscriptBox["Y", "1"]}]}], "]"}]}]}], " ", "]"}]}], ";"}]], "Input",\
+
+ CellChangeTimes->{{3.9179537864037952`*^9, 3.9179537899553833`*^9}, {
+  3.917953867253031*^9, 3.9179538708233767`*^9}, {3.917954062272377*^9, 
+  3.91795408394421*^9}},
+ CellLabel->"In[30]:=",ExpressionUUID->"76c58c48-9d7d-4b6f-95de-c21a2c8931da"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeParameters\>\"", "->", 
+    RowBox[{"3", "/", "2"}]}]}], "]"}]], "Input",
+ CellLabel->"In[31]:=",ExpressionUUID->"480738b8-7586-438a-8511-4af774d3aeeb"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     FractionBox["3", "2"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", 
+      RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", 
+     RowBox[{"\[Theta]", "[", "5", "]"}], "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "6", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{
+       RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954392113553*^9},ExpressionUUID->"b8c0f0e1-6732-400f-978c-\
+dce42ecb3ea4"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "4"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", 
+     RowBox[{"a", "+", "c"}]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", "d"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "6", "]"}], "\[Rule]", "e"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.917954392140967*^9},ExpressionUUID->"374044ec-c9e0-49dd-8e75-\
+e1f431a55d4b"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeParameters\>\"", "->", 
+    RowBox[{"{", 
+     RowBox[{"a", ",", "b", ",", 
+      RowBox[{"a", "+", "c"}]}], "}"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.917954088371196*^9, 3.917954091761516*^9}},
+ CellLabel->"In[32]:=",ExpressionUUID->"937a70a2-415c-456c-87fc-33f43db80fdc"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", "a", "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{"b", ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"a", "+", "c"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", 
+     RowBox[{"\[Theta]", "[", "3", "]"}], "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{"b", ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954392203824*^9},ExpressionUUID->"f22a259f-11de-439f-91f5-\
+c16444df6102"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     FractionBox["3", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "4"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", "d"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", "e"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.9179543922551107`*^9},ExpressionUUID->"c7554ab9-1b5f-4e2f-9773-\
+a7d1d5b953c6"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeParameters\>\"", "->", "_"}]}], "]"}]], "Input",
+ CellChangeTimes->{3.917954101722328*^9},
+ CellLabel->"In[33]:=",ExpressionUUID->"ce509485-7257-4b86-aaed-0a9a1f6e8172"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     FractionBox["3", "2"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", "4", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", "a", "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{"b", ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"a", "+", "c"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", "d", "]"}], ",", 
+    RowBox[{"Fac", "[", "e", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{"b", ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954392318357*^9},ExpressionUUID->"2a464b16-1f58-403c-a9d4-\
+4ab27c09e2a0"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954392349815*^9},ExpressionUUID->"a1eaf4fd-84ef-4279-839a-\
+4a125a16d771"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeParameters\>\"", "->", "_Plus"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.917954113746561*^9, 3.917954116059759*^9}},
+ CellLabel->"In[34]:=",ExpressionUUID->"6fb4b5ae-8add-4ff9-bfa9-4787ea9ace34"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", 
+      RowBox[{"\[Theta]", "[", "3", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "4", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"a", "+", "c"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", 
+     RowBox[{"\[Theta]", "[", "5", "]"}], "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "6", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{
+       RowBox[{"\[Theta]", "[", "4", "]"}], ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.9179543924135523`*^9},ExpressionUUID->"33feabb1-9bb1-4d14-aa7d-\
+4c2c2143004d"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", 
+     FractionBox["3", "2"]}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "4"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", "d"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "6", "]"}], "\[Rule]", "e"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.9179543924669657`*^9},ExpressionUUID->"b516dcfa-3e25-4d17-ba98-\
+b9f102c79a48"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeParameters\>\"", "->", 
+    RowBox[{"(", 
+     RowBox[{"_Plus", "|", "_Rational"}], ")"}]}], ",", " ", 
+   RowBox[{"\"\<UniqueParameters\>\"", "->", "True"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9179541549381523`*^9, 3.917954169516513*^9}, {
+  3.9179543547523413`*^9, 3.917954358945656*^9}},
+ CellLabel->"In[35]:=",ExpressionUUID->"0c0b6863-9d0b-4b69-98fe-371eee786c8e"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Rz", "0"], "[", 
+     FractionBox["3", "2"], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Rz", "1"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", "0"], "[", 
+     RowBox[{
+      SubscriptBox["Rx", "1"], "[", 
+      RowBox[{"\[Theta]", "[", "2", "]"}], "]"}], "]"}], ",", 
+    RowBox[{"R", "[", 
+     RowBox[{
+      RowBox[{"\[Theta]", "[", "3", "]"}], ",", 
+      RowBox[{
+       SubscriptBox["X", "0"], " ", 
+       SubscriptBox["Y", "1"]}]}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{
+      SubscriptBox["Ph", "0"], "[", 
+      RowBox[{"a", "+", "c"}], "]"}], "]"}], ",", 
+    RowBox[{"G", "[", 
+     RowBox[{"\[Theta]", "[", "4", "]"}], "]"}], ",", 
+    RowBox[{"Fac", "[", 
+     RowBox[{"\[Theta]", "[", "5", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "1", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "2", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["C", 
+      RowBox[{"2", ",", "3"}]], "[", 
+     RowBox[{"R", "[", 
+      RowBox[{
+       RowBox[{"\[Theta]", "[", "6", "]"}], ",", 
+       RowBox[{
+        SubscriptBox["X", "0"], " ", 
+        SubscriptBox["Y", "1"]}]}], "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954392532707*^9},ExpressionUUID->"5f427b82-5899-4276-8188-\
+1ff2e02e8012"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "4"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "a"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "3", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "4", "]"}], "\[Rule]", "d"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "5", "]"}], "\[Rule]", "e"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "6", "]"}], "\[Rule]", "b"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.9179543925629787`*^9},ExpressionUUID->"7031dd00-97d6-49ee-b633-\
+fbc9ce52d39a"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Channels", "Subsubsection",
+ CellChangeTimes->{{3.917953765823637*^9, 
+  3.9179537705436687`*^9}},ExpressionUUID->"3bd46e74-4639-4809-9897-\
+43049a111112"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"u", " ", "=", " ", 
+   RowBox[{"Circuit", "[", " ", 
+    RowBox[{
+     RowBox[{
+      SubscriptBox["Damp", "0"], "[", "a", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Deph", "0"], "[", "b", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Depol", 
+       RowBox[{"1", ",", "2"}]], "[", "b", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Depol", "5"], "[", "b", "]"}], " ", 
+     RowBox[{
+      SubscriptBox["Deph", 
+       RowBox[{"2", ",", "1"}]], "[", "c", "]"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeChannels\>\"", "->", "False"}], ",", " ", 
+   RowBox[{"\"\<ExcludeParameters\>\"", "->", "a"}]}], "]"}]}], "Input",
+ CellChangeTimes->{{3.917953670964363*^9, 3.917953689266893*^9}, {
+  3.917954037881193*^9, 3.9179540379553633`*^9}},
+ CellLabel->"In[36]:=",ExpressionUUID->"d14db04b-b774-4e13-aff6-388ca96ca473"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "a", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", "0"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", "5"], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", 
+      RowBox[{"2", ",", "1"}]], "[", 
+     RowBox[{"\[Theta]", "[", "2", "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.9179543926208563`*^9},ExpressionUUID->"3c95ef41-2296-4e42-a4f3-\
+4409c52f85ac"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "b"}], ",", 
+    RowBox[{
+     RowBox[{"\[Theta]", "[", "2", "]"}], "\[Rule]", "c"}]}], "}"}]}]], "Echo",\
+
+ CellChangeTimes->{
+  3.917954392667261*^9},ExpressionUUID->"14b9190d-80f5-4454-a963-\
+1fdeed6a1641"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"test", "[", 
+  RowBox[{"u", ",", " ", 
+   RowBox[{"\"\<ExcludeChannels\>\"", "->", "False"}], ",", " ", 
+   RowBox[{"\"\<ExcludeParameters\>\"", "->", 
+    RowBox[{"{", 
+     RowBox[{"a", ",", "b"}], "}"}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.917953697153799*^9, 3.917953742134964*^9}, {
+  3.917954022966217*^9, 3.917954027485743*^9}},
+ CellLabel->"In[38]:=",ExpressionUUID->"9243296f-71a1-417b-9cf2-1edf2b8c4a18"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output circuit: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+     SubscriptBox["Damp", "0"], "[", "a", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", "0"], "[", "b", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", 
+      RowBox[{"1", ",", "2"}]], "[", "b", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Depol", "5"], "[", "b", "]"}], ",", 
+    RowBox[{
+     SubscriptBox["Deph", 
+      RowBox[{"2", ",", "1"}]], "[", 
+     RowBox[{"\[Theta]", "[", "1", "]"}], "]"}]}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.9179543927273703`*^9},ExpressionUUID->"d55b9e24-1309-4080-9c4c-\
+e711cd970757"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox["\<\"output params: \"\>",
+   "EchoLabel"], "  ", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"\[Theta]", "[", "1", "]"}], "\[Rule]", "c"}], "}"}]}]], "Echo",
+ CellChangeTimes->{
+  3.917954392755125*^9},ExpressionUUID->"60e12f1a-707d-4c2c-9ef0-\
+4e8c4da334f2"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Errors", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.9173418805860863`*^9, 3.917341881626457*^9}, {3.917950683167663*^9, 
+  3.917950684188311*^9}},ExpressionUUID->"37d5b7f7-65a6-45a2-b573-\
+15a7f973d83f"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetCircuitParameterised", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", "x", ",", " ", 
+   RowBox[{"\"\<UniqueParameters\>\"", "->", "bad"}]}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetCircuitParameterised", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", "x", ",", " ", 
+   RowBox[{"\"\<ExcludeChannels\>\"", "->", "bad"}]}], "]"}]}], "Input",
+ CellChangeTimes->{{3.9179527476261168`*^9, 3.917952765330579*^9}, {
+  3.917954365336307*^9, 3.917954369884033*^9}},
+ CellLabel->"In[39]:=",ExpressionUUID->"5d0488c0-cb78-41e6-81fc-f12fb7be924c"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetCircuitParameterised", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Option \
+\\\\\\\\\\\\\\\"UniqueParameters\\\\\\\\\\\\\\\" must be True or \
+False\\\\\\\"\\\"}]\\)\"", 2, 39, 1, 32440601176717949525, "Local", 
+   "QuEST`GetCircuitParameterised"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.9179527582156887`*^9, 3.917952765693161*^9}, 
+   3.917954304099579*^9, {3.917954370605702*^9, 3.917954392858409*^9}},
+ CellLabel->
+  "During evaluation of \
+In[39]:=",ExpressionUUID->"dcc97c12-a914-40cd-a515-484e68024f72"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917952748486347*^9, 3.917952765705476*^9}, 
+   3.9179543041104927`*^9, {3.917954370619594*^9, 3.917954392872787*^9}},
+ CellLabel->"Out[39]=",ExpressionUUID->"f1b8467d-f5e1-4023-9f4d-d095abe19bbb"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetCircuitParameterised", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Option \\\\\\\\\\\\\\\"ExcludeChannels\\\\\
+\\\\\\\\\\\" must be True or False\\\\\\\"\\\"}]\\)\"", 2, 40, 2, 
+   32440601176717949525, "Local", "QuEST`GetCircuitParameterised"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.9179527582156887`*^9, 3.917952765693161*^9}, 
+   3.917954304099579*^9, {3.917954370605702*^9, 3.917954392876072*^9}},
+ CellLabel->
+  "During evaluation of \
+In[39]:=",ExpressionUUID->"531fec32-8e37-4edd-8c7a-b5d9158fd234"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917952748486347*^9, 3.917952765705476*^9}, 
+   3.9179543041104927`*^9, {3.917954370619594*^9, 3.91795439288516*^9}},
+ CellLabel->"Out[40]=",ExpressionUUID->"fa81df15-8f70-4a06-9aaf-cb1170a8edca"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetCircuitParameterised", "[", 
+  RowBox[{"bad", ",", " ", "x"}], "]"}]], "Input",
+ CellChangeTimes->{{3.9179525776558113`*^9, 3.9179526104806633`*^9}, {
+  3.917952741537138*^9, 3.91795274304732*^9}},
+ CellLabel->"In[41]:=",ExpressionUUID->"d5296f80-f33c-4329-a95c-541ba64e4a76"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetCircuitParameterised", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetCircuitParameterised\\\\\\\"\\\"}]\\)\"", 2, 41, 3, 32440601176717949525, 
+   "Local", "QuEST`GetCircuitParameterised"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.9179527432410088`*^9, 3.917954304158186*^9, 
+  3.9179543928942327`*^9},
+ CellLabel->
+  "During evaluation of \
+In[41]:=",ExpressionUUID->"ed69561f-3dfb-4f08-b8cb-6bf19346b33b"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.9179525839462347`*^9, 3.9179526108856993`*^9}, 
+   3.917952743254971*^9, 3.917954304169284*^9, 3.917954392903419*^9},
+ CellLabel->"Out[41]=",ExpressionUUID->"bf3d8475-dfb0-48d1-903d-ed0f25418a70"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{720, 812},
+WindowMargins->{{Automatic, 0}, {Automatic, 0}},
+FrontEndVersion->"13.0 for Mac OS X x86 (64-bit) (February 4, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"8fe4a9da-4495-4308-a067-070710fc30b4"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 591, 9, 98, "Title",ExpressionUUID->"6938d66c-fd87-4c29-80c7-54a335769732"],
+Cell[1174, 33, 628, 12, 52, "Input",ExpressionUUID->"944c7fc0-80c9-4b71-a1e7-e437a830e4d1"],
+Cell[1805, 47, 1471, 35, 167, "Code",ExpressionUUID->"05ac5ed7-a168-499a-9c40-e6b20e0f77b3"],
+Cell[CellGroupData[{
+Cell[3301, 86, 296, 5, 69, "Chapter",ExpressionUUID->"73820f91-e0cc-4264-8b42-85df3e58eb20"],
+Cell[CellGroupData[{
+Cell[3622, 95, 208, 3, 30, "Input",ExpressionUUID->"fb250a6c-f3be-428b-a803-771c08ae1d03"],
+Cell[3833, 100, 34434, 726, 501, "Output",ExpressionUUID->"69e082dc-3a5b-44bd-acc2-225ecaf962b3"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[38316, 832, 355, 6, 69, "Chapter",ExpressionUUID->"bdb47584-f11d-439c-a117-8a6fa0a6a397"],
+Cell[CellGroupData[{
+Cell[38696, 842, 307, 6, 30, "Input",ExpressionUUID->"e688c77f-f0b3-465d-a614-1e1764b2a3bf"],
+Cell[CellGroupData[{
+Cell[39028, 852, 249, 8, 25, "Echo",ExpressionUUID->"0ae4ada7-2207-4a55-901b-1b16b7351b58"],
+Cell[39280, 862, 218, 7, 25, "Echo",ExpressionUUID->"7aa40c44-ed8e-458c-aafc-54ef9112870a"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[39547, 875, 377, 9, 32, "Input",ExpressionUUID->"e9f95c04-3cbb-4de7-8ce5-8f2ec0355995"],
+Cell[CellGroupData[{
+Cell[39949, 888, 403, 13, 26, "Echo",ExpressionUUID->"fbb31c89-1a53-4ab5-865a-eb9827c85072"],
+Cell[40355, 903, 290, 9, 25, "Echo",ExpressionUUID->"98f8c8a7-f7d3-4aa9-9b70-952a1ccfe6cf"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[40694, 918, 1397, 40, 57, "Input",ExpressionUUID->"6d7886e7-3cc4-4dc1-8927-5b22a6ef54e8"],
+Cell[CellGroupData[{
+Cell[42116, 962, 1467, 46, 50, "Echo",ExpressionUUID->"fdfcefc4-7326-47f7-a4c6-b613b2b26c8d"],
+Cell[43586, 1010, 755, 23, 39, "Echo",ExpressionUUID->"c118256a-cc31-40a2-b945-dd9cfa930512"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[44390, 1039, 358, 6, 30, "Input",ExpressionUUID->"de0e8097-6d84-400d-8f4d-c9610602e505"],
+Cell[CellGroupData[{
+Cell[44773, 1049, 1834, 57, 69, "Echo",ExpressionUUID->"9828fa6d-1441-4097-8018-76bd05989f0a"],
+Cell[46610, 1108, 656, 20, 37, "Echo",ExpressionUUID->"e147429c-02fb-4511-af3b-d15c85235ded"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[47315, 1134, 415, 9, 33, "Input",ExpressionUUID->"0fba1212-1148-4af5-9133-54487e48c649"],
+Cell[CellGroupData[{
+Cell[47755, 1147, 3279, 108, 93, "Echo",ExpressionUUID->"2087d4ae-f579-430d-85bb-6581ce461a87"],
+Cell[51037, 1257, 656, 20, 37, "Echo",ExpressionUUID->"b4385b75-703e-4746-8069-f3e06bfafeed"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[51742, 1283, 154, 3, 67, "Section",ExpressionUUID->"676fc040-1465-4cf4-9790-24fb18553c90"],
+Cell[CellGroupData[{
+Cell[51921, 1290, 266, 5, 54, "Subsection",ExpressionUUID->"9e3409ae-6bc5-412b-b7e6-1b4d6b5ae576"],
+Cell[CellGroupData[{
+Cell[52212, 1299, 481, 11, 33, "Input",ExpressionUUID->"c5440a24-f4f7-46dc-a528-abf79a056168"],
+Cell[CellGroupData[{
+Cell[52718, 1314, 3278, 108, 93, "Echo",ExpressionUUID->"8b9eb23e-eceb-4eda-b363-4a086c26e248"],
+Cell[55999, 1424, 1299, 38, 71, "Echo",ExpressionUUID->"dfae63b8-e5d5-4ed8-abc8-fa35a4911f26"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[57347, 1468, 887, 22, 115, "Input",ExpressionUUID->"5dedc04a-0b87-490f-912e-abcc538e224f"],
+Cell[CellGroupData[{
+Cell[58259, 1494, 5624, 173, 120, "Echo",ExpressionUUID->"8d21e28b-d2ff-4197-a659-773c7be409ee"],
+Cell[63886, 1669, 3038, 83, 120, "Echo",ExpressionUUID->"c3523e01-9150-420d-8650-bab2f2f9ad7a"],
+Cell[66927, 1754, 5613, 173, 120, "Echo",ExpressionUUID->"26316f95-f569-4562-8956-0fb6a13a088f"],
+Cell[72543, 1929, 789, 23, 44, "Echo",ExpressionUUID->"b22fe3ff-7344-49a5-acd3-7b43184d4d57"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[73393, 1959, 214, 4, 54, "Subsection",ExpressionUUID->"5f312508-e97c-40dc-b1a6-0b179ee17a11"],
+Cell[73610, 1965, 675, 18, 34, "Input",ExpressionUUID->"15b8f2cf-4f76-4627-be35-cd49fcbba5de"],
+Cell[CellGroupData[{
+Cell[74310, 1987, 202, 3, 30, "Input",ExpressionUUID->"f62f8975-2ebb-4488-8b41-2d3911ac6d12"],
+Cell[CellGroupData[{
+Cell[74537, 1994, 624, 20, 28, "Echo",ExpressionUUID->"b9c67b44-484c-4479-a269-537cf52eb71d"],
+Cell[75164, 2016, 218, 7, 25, "Echo",ExpressionUUID->"d2c9661d-daa9-4f88-bf38-c3633730fff8"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[75431, 2029, 283, 5, 30, "Input",ExpressionUUID->"41695534-1815-4af3-9475-e7df25152dbb"],
+Cell[CellGroupData[{
+Cell[75739, 2038, 814, 25, 28, "Echo",ExpressionUUID->"cf934e75-71e2-4a36-9fb2-940400be4bb1"],
+Cell[76556, 2065, 387, 13, 25, "Echo",ExpressionUUID->"6d3d8531-65e2-4503-8238-6b6f390e53e6"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[76992, 2084, 373, 7, 30, "Input",ExpressionUUID->"545803fa-3527-4ce7-abf9-059c91540143"],
+Cell[CellGroupData[{
+Cell[77390, 2095, 814, 25, 28, "Echo",ExpressionUUID->"a9229441-b609-4a13-af42-099e217c3ad3"],
+Cell[78207, 2122, 624, 19, 25, "Echo",ExpressionUUID->"2c3d94bb-0cf5-427d-9dbe-14b8c29855dd"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[78892, 2148, 211, 4, 54, "Subsection",ExpressionUUID->"c4c5d4d2-22a4-4eba-a0ee-c8fa9ed70ef0"],
+Cell[CellGroupData[{
+Cell[79128, 2156, 156, 3, 45, "Subsubsection",ExpressionUUID->"efb35415-6f04-4258-9a49-231b831698dd"],
+Cell[79287, 2161, 1429, 43, 57, "Input",ExpressionUUID->"cf8c5947-b27f-4371-94fd-36c49940f109"],
+Cell[CellGroupData[{
+Cell[80741, 2208, 204, 3, 30, "Input",ExpressionUUID->"db37f396-6096-420f-99d5-1cc9a387ff34"],
+Cell[CellGroupData[{
+Cell[80970, 2215, 1569, 49, 50, "Echo",ExpressionUUID->"2eb19a57-0e2f-4f8a-aaf9-5b1d5ee7eeee"],
+Cell[82542, 2266, 829, 24, 39, "Echo",ExpressionUUID->"146557b8-bd4a-44aa-b501-49708da38aed"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[83420, 2296, 332, 7, 33, "Input",ExpressionUUID->"f208a27e-6db6-4e1f-bb6b-768af1d58963"],
+Cell[CellGroupData[{
+Cell[83777, 2307, 1517, 48, 66, "Echo",ExpressionUUID->"8be83847-547a-422c-b8f4-c5cfea29c413"],
+Cell[85297, 2357, 650, 20, 25, "Echo",ExpressionUUID->"5726dbe3-f44b-4e24-b451-c9e6a8b8264c"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[85996, 2383, 359, 8, 30, "Input",ExpressionUUID->"779f7d0b-fd82-4ffb-b5af-3941a0212811"],
+Cell[CellGroupData[{
+Cell[86380, 2395, 1555, 49, 66, "Echo",ExpressionUUID->"991edd5b-3048-4571-863e-bfc2460fb9fd"],
+Cell[87938, 2446, 729, 22, 25, "Echo",ExpressionUUID->"9d419ce3-93d7-4397-a736-e65134cb4251"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[88716, 2474, 357, 8, 33, "Input",ExpressionUUID->"f51a0d30-0750-4183-8455-6ef322bbd888"],
+Cell[CellGroupData[{
+Cell[89098, 2486, 1531, 48, 50, "Echo",ExpressionUUID->"6918cb35-df9f-4139-aa36-a22d67ab4d18"],
+Cell[90632, 2536, 753, 23, 39, "Echo",ExpressionUUID->"10b1d8c8-fd0c-453f-b943-41d86a20fdcc"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[91434, 2565, 358, 8, 33, "Input",ExpressionUUID->"4dd547df-f78e-4807-8610-424279747e84"],
+Cell[CellGroupData[{
+Cell[91817, 2577, 1529, 48, 50, "Echo",ExpressionUUID->"192ddac1-8787-42f9-ade2-68451ee759af"],
+Cell[93349, 2627, 832, 25, 39, "Echo",ExpressionUUID->"3e1dd156-627b-47f9-a4c4-337dbdbf3096"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[94230, 2658, 330, 7, 33, "Input",ExpressionUUID->"ed0481e5-595e-475b-8a2d-10ffa507e5ea"],
+Cell[CellGroupData[{
+Cell[94585, 2669, 1480, 47, 50, "Echo",ExpressionUUID->"a2201d70-2f39-407e-a952-874a96811336"],
+Cell[96068, 2718, 648, 20, 39, "Echo",ExpressionUUID->"924594a1-308f-4970-a76a-84ca222218de"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[96765, 2744, 573, 14, 33, "Input",ExpressionUUID->"4c61388a-21b2-4894-8738-5cd139a3cf77"],
+Cell[CellGroupData[{
+Cell[97363, 2762, 1349, 44, 66, "Echo",ExpressionUUID->"8b482509-591a-4c73-b76a-25b21b135a2c"],
+Cell[98715, 2808, 292, 9, 25, "Echo",ExpressionUUID->"fc80c716-2007-4d30-8aba-9ae6f65577ad"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[99068, 2824, 161, 3, 45, "Subsubsection",ExpressionUUID->"0d95b949-8a6d-462a-930b-c93a5d97491d"],
+Cell[CellGroupData[{
+Cell[99254, 2831, 1014, 28, 56, "Input",ExpressionUUID->"d664502f-47a2-404e-b0b0-213a0250b959"],
+Cell[CellGroupData[{
+Cell[100293, 2863, 778, 24, 28, "Echo",ExpressionUUID->"90e231ac-4b93-42c1-80d2-2f8012c8bfe3"],
+Cell[101074, 2889, 387, 13, 25, "Echo",ExpressionUUID->"c100bf19-3df3-43d0-85d7-7497bf22486e"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[101510, 2908, 459, 11, 33, "Input",ExpressionUUID->"33a71761-d7f9-4539-8832-c505eb176b8f"],
+Cell[CellGroupData[{
+Cell[101994, 2923, 738, 23, 28, "Echo",ExpressionUUID->"685d23d7-bb80-46b7-9580-dd2f6a3e7124"],
+Cell[102735, 2948, 387, 13, 25, "Echo",ExpressionUUID->"75862cec-36a0-4111-a5cc-8fb6687279d5"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[103195, 2969, 216, 4, 54, "Subsection",ExpressionUUID->"35b41d70-934b-4725-ad80-76fe178ae7d0"],
+Cell[CellGroupData[{
+Cell[103436, 2977, 207, 4, 45, "Subsubsection",ExpressionUUID->"36ce27fd-0599-4a1f-bd7d-b088adbdec09"],
+Cell[103646, 2983, 1477, 44, 57, "Input",ExpressionUUID->"76c58c48-9d7d-4b6f-95de-c21a2c8931da"],
+Cell[CellGroupData[{
+Cell[105148, 3031, 238, 5, 30, "Input",ExpressionUUID->"480738b8-7586-438a-8511-4af774d3aeeb"],
+Cell[CellGroupData[{
+Cell[105411, 3040, 1555, 49, 66, "Echo",ExpressionUUID->"b8c0f0e1-6732-400f-978c-dce42ecb3ea4"],
+Cell[106969, 3091, 729, 22, 25, "Echo",ExpressionUUID->"374044ec-c9e0-49dd-8e75-e1f431a55d4b"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[107747, 3119, 367, 8, 30, "Input",ExpressionUUID->"937a70a2-415c-456c-87fc-33f43db80fdc"],
+Cell[CellGroupData[{
+Cell[108139, 3131, 1439, 46, 50, "Echo",ExpressionUUID->"f22a259f-11de-439f-91f5-c16444df6102"],
+Cell[109581, 3179, 571, 18, 39, "Echo",ExpressionUUID->"c7554ab9-1b5f-4e2f-9773-a7d1d5b953c6"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[110201, 3203, 255, 5, 30, "Input",ExpressionUUID->"ce509485-7257-4b86-aaed-0a9a1f6e8172"],
+Cell[CellGroupData[{
+Cell[110481, 3212, 1311, 43, 66, "Echo",ExpressionUUID->"2a464b16-1f58-403c-a9d4-4ab27c09e2a0"],
+Cell[111795, 3257, 218, 7, 25, "Echo",ExpressionUUID->"a1eaf4fd-84ef-4279-839a-4a125a16d771"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[112062, 3270, 283, 5, 30, "Input",ExpressionUUID->"6fb4b5ae-8add-4ff9-bfa9-4787ea9ace34"],
+Cell[CellGroupData[{
+Cell[112370, 3279, 1559, 49, 50, "Echo",ExpressionUUID->"33feabb1-9bb1-4d14-aa7d-4c2c2143004d"],
+Cell[113932, 3330, 729, 22, 39, "Echo",ExpressionUUID->"b516dcfa-3e25-4d17-ba98-b9f102c79a48"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[114710, 3358, 461, 9, 52, "Input",ExpressionUUID->"0c0b6863-9d0b-4b69-98fe-371eee786c8e"],
+Cell[CellGroupData[{
+Cell[115196, 3371, 1543, 49, 66, "Echo",ExpressionUUID->"5f427b82-5899-4276-8188-1ff2e02e8012"],
+Cell[116742, 3422, 705, 21, 25, "Echo",ExpressionUUID->"7031dd00-97d6-49ee-b633-fbc9ce52d39a"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[117508, 3450, 161, 3, 45, "Subsubsection",ExpressionUUID->"3bd46e74-4639-4809-9897-43049a111112"],
+Cell[CellGroupData[{
+Cell[117694, 3457, 932, 24, 55, "Input",ExpressionUUID->"d14db04b-b774-4e13-aff6-388ca96ca473"],
+Cell[CellGroupData[{
+Cell[118651, 3485, 778, 24, 28, "Echo",ExpressionUUID->"3c95ef41-2296-4e42-a4f3-4409c52f85ac"],
+Cell[119432, 3511, 387, 13, 25, "Echo",ExpressionUUID->"14b9190d-80f5-4454-a963-1fdeed6a1641"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[119868, 3530, 445, 9, 30, "Input",ExpressionUUID->"9243296f-71a1-417b-9cf2-1edf2b8c4a18"],
+Cell[CellGroupData[{
+Cell[120338, 3543, 664, 21, 28, "Echo",ExpressionUUID->"d55b9e24-1309-4080-9c4c-e711cd970757"],
+Cell[121005, 3566, 290, 9, 25, "Echo",ExpressionUUID->"60e12f1a-707d-4c2c-9ef0-4e8c4da334f2"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[121392, 3585, 396, 6, 69, "Chapter",ExpressionUUID->"37d5b7f7-65a6-45a2-b573-15a7f973d83f"],
+Cell[CellGroupData[{
+Cell[121813, 3595, 585, 12, 52, "Input",ExpressionUUID->"5d0488c0-cb78-41e6-81fc-f12fb7be924c"],
+Cell[122401, 3609, 571, 12, 28, "Message",ExpressionUUID->"dcc97c12-a914-40cd-a515-484e68024f72"],
+Cell[122975, 3623, 253, 3, 34, "Output",ExpressionUUID->"f1b8467d-f5e1-4023-9f4d-d095abe19bbb"],
+Cell[123231, 3628, 568, 11, 28, "Message",ExpressionUUID->"531fec32-8e37-4edd-8c7a-b5d9158fd234"],
+Cell[123802, 3641, 252, 3, 34, "Output",ExpressionUUID->"fa81df15-8f70-4a06-9aaf-cb1170a8edca"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[124091, 3649, 303, 5, 30, "Input",ExpressionUUID->"d5296f80-f33c-4329-a95c-541ba64e4a76"],
+Cell[124397, 3656, 492, 11, 28, "Message",ExpressionUUID->"ed69561f-3dfb-4f08-b8cb-6bf19346b33b"],
+Cell[124892, 3669, 253, 3, 34, "Output",ExpressionUUID->"bf3d8475-dfb0-48d1-903d-ed0f25418a70"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
