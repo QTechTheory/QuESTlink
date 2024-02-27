@@ -1,0 +1,971 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     37505,        963]
+NotebookOptionsPosition[     31917,        856]
+NotebookOutlinePosition[     32365,        874]
+CellTagsIndexPosition[     32322,        871]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["GetPauliStringOverlap", "Title",
+ CellChangeTimes->{{3.913273690088934*^9, 3.913273712038406*^9}, {
+   3.915199103735641*^9, 3.915199106675872*^9}, {3.917086155647716*^9, 
+   3.917086158759173*^9}, {3.9171594220183487`*^9, 3.917159422219205*^9}, {
+   3.917274433487973*^9, 3.917274435404172*^9}, 3.917277665796289*^9, {
+   3.917280864184389*^9, 3.9172808649949007`*^9}, {3.9172828199639874`*^9, 
+   3.9172828467690277`*^9}, {3.917341838255602*^9, 3.917341850354156*^9}, {
+   3.91745168386106*^9, 3.917451684259018*^9}, {3.9175179917457037`*^9, 
+   3.917517994827326*^9}, {3.91805612716295*^9, 
+   3.918056130790144*^9}},ExpressionUUID->"2b47d8c8-40d5-4b16-ad38-\
+229dd3fa65b0"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", " ", "@", " ", 
+   RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Import", "[", "\"\<../Link/QuESTlink.m\>\"", "]"}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.917451655155184*^9, 3.9174517069438953`*^9}},
+ CellLabel->"In[30]:=",ExpressionUUID->"52406a81-6d02-4b59-9b7d-f1f9323f2340"],
+
+Cell[CellGroupData[{
+
+Cell["Doc", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 
+  3.9151991786465263`*^9}},ExpressionUUID->"10ec834e-27a5-47e6-b63b-\
+99673ea97891"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "GetPauliStringOverlap"}]], "Input",
+ CellChangeTimes->{{3.9180561604739103`*^9, 3.918056163939005*^9}},
+ CellLabel->"In[32]:=",ExpressionUUID->"d0a39276-8d5d-4c7f-b468-a21e4032d02f"],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   FrameBox[
+    DynamicModuleBox[{System`InformationDump`open$$ = False, 
+     System`InformationDump`mouseOver$$ = False}, 
+     PaneSelectorBox[{True->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False,
+             BaseStyle -> None],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetPauliStringOverlap[a, b] returns the Pauli \
+products common to both given weighted sums of Pauli strings, with \
+coefficients equal to the conjugate of the 'a' coefficients multiplied by \
+those of 'b'.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          PaneBox[
+           TagBox[GridBox[{
+              {
+               StyleBox[
+                TagBox[
+                 TooltipBox[
+                  StyleBox["\<\" Definitions\"\>", "InformationRowLabel",
+                   StripOnInput->False],
+                  "\"Definitions\"",
+                  TooltipStyle->"TextStyling"],
+                 Annotation[#, "Definitions", "Tooltip"]& ], "DialogStyle",
+                StripOnInput->False]},
+              {
+               TemplateBox[{"\"\[ThinSpace]\"", 
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"GetPauliStringOverlap", "[", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`a_", "?", 
+                    "QuEST`Private`isValidSymbolicPauliString"}], ",", 
+                    
+                    RowBox[{
+                    "QuEST`Private`b_", "?", 
+                    "QuEST`Private`isValidSymbolicPauliString"}]}], "]"}], 
+                    ":=", 
+                    RowBox[{"Module", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    
+                    RowBox[{"QuEST`Private`aInds", ",", "QuEST`Private`bInds",
+                     ",", "QuEST`Private`aAssoc", ",", "QuEST`Private`bAssoc",
+                     ",", "QuEST`Private`overlap"}], "}"}], ",", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"{", 
+                    
+                    RowBox[{"QuEST`Private`aInds", ",", 
+                    "QuEST`Private`bInds"}], "}"}], "=", 
+                    RowBox[{
+                    RowBox[{"(", 
+                    RowBox[{
+                    RowBox[{"GetPauliStringReformatted", "[", 
+                    RowBox[{"#1", ",", "\"Index\""}], "]"}], "&"}], ")"}], 
+                    "/@", 
+                    RowBox[{"{", 
+                    RowBox[{"QuEST`Private`a", ",", "QuEST`Private`b"}], 
+                    "}"}]}]}], ";", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Head", "[", "QuEST`Private`aInds", "]"}], "===", 
+                    "Integer"}], ",", 
+                    RowBox[{"QuEST`Private`aInds", "=", 
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"QuEST`Private`aInds", ",", "1"}], "}"}], 
+                    "}"}]}]}], "]"}], ";", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Head", "[", "QuEST`Private`bInds", "]"}], "===", 
+                    "Integer"}], ",", 
+                    RowBox[{"QuEST`Private`bInds", "=", 
+                    RowBox[{"{", 
+                    RowBox[{"{", 
+                    RowBox[{"QuEST`Private`bInds", ",", "1"}], "}"}], 
+                    "}"}]}]}], "]"}], ";", 
+                    RowBox[{"QuEST`Private`aAssoc", "=", 
+                    RowBox[{"Merge", "[", 
+                    RowBox[{
+                    RowBox[{"Apply", "[", 
+                    RowBox[{"Rule", ",", "QuEST`Private`aInds", ",", 
+                    RowBox[{"{", "1", "}"}]}], "]"}], ",", "Total"}], "]"}]}],
+                     ";", 
+                    RowBox[{"QuEST`Private`bAssoc", "=", 
+                    RowBox[{"Merge", "[", 
+                    RowBox[{
+                    RowBox[{"Apply", "[", 
+                    RowBox[{"Rule", ",", "QuEST`Private`bInds", ",", 
+                    RowBox[{"{", "1", "}"}]}], "]"}], ",", "Total"}], "]"}]}],
+                     ";", 
+                    RowBox[{"QuEST`Private`overlap", "=", 
+                    RowBox[{"Merge", "[", 
+                    RowBox[{
+                    RowBox[{"KeyIntersection", "[", 
+                    RowBox[{"{", 
+                    
+                    RowBox[{"QuEST`Private`aAssoc", ",", 
+                    "QuEST`Private`bAssoc"}], "}"}], "]"}], ",", 
+                    RowBox[{
+                    RowBox[{
+                    
+                    RowBox[{"#1", "\[LeftDoubleBracket]", "2", 
+                    "\[RightDoubleBracket]"}], " ", 
+                    RowBox[{"Conjugate", "[", 
+                    
+                    RowBox[{"#1", "\[LeftDoubleBracket]", "1", 
+                    "\[RightDoubleBracket]"}], "]"}]}], "&"}]}], "]"}]}], ";", 
+                    RowBox[{"Total", "[", 
+                    RowBox[{"KeyValueMap", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"#2", " ", 
+                    RowBox[{"GetPauliString", "[", "#1", "]"}]}], "&"}], ",", 
+                    "QuEST`Private`overlap"}], "]"}], "]"}]}]}], "]"}]}]}, {
+                   " "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliStringOverlap", "[", "___", "]"}], ":=", 
+                    
+                    
+                    RowBox[{
+                    "QuEST`Private`invalidArgError", "[", 
+                    "GetPauliStringOverlap", "]"}]}]}, {" "}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]},
+                "RowDefault"]}
+             },
+             DefaultBaseStyle->"Column",
+             GridBoxAlignment->{"Columns" -> {{Left}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+            "Column"],
+           FrameMargins->{{6, 0}, {3, 6}}], "\<\"\"\>"},
+         {
+          PaneBox[GridBox[{
+             {
+              
+              DynamicModuleBox[{System`InformationDump`open$$ = {
+               False, False, False, False, False, False}}, 
+               StyleBox[GridBox[{
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Full Name\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"FullName\"",
+                    TooltipStyle->"TextStyling"],
+                    
+                    Annotation[#, "FullName", 
+                    "Tooltip"]& ], "\<\"QuEST`GetPauliStringOverlap\"\>"}
+                 },
+                 AutoDelete->False,
+                 GridBoxAlignment->{"Columns" -> {Right, Left}},
+                 GridBoxDividers->None,
+                 GridBoxItemSize->{"Columns" -> {Automatic, Automatic}},
+                 GridBoxSpacings->{"Columns" -> {
+                    Offset[0.27999999999999997`], {
+                    Offset[0.5599999999999999]}, 
+                    Offset[0.27999999999999997`]}, "Rows" -> {
+                    Offset[0.2], {
+                    Offset[0.8]}, 
+                    Offset[0.2]}}], "DialogStyle",
+                StripOnInput->False],
+               DynamicModuleValues:>{}]}
+            },
+            DefaultBaseStyle->"Column",
+            GridBoxAlignment->{"Columns" -> {{Left}}},
+            GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings->{"Columns" -> {
+                Offset[0.27999999999999997`], {
+                 Offset[0.5599999999999999]}, 
+                Offset[0.27999999999999997`]}, "Rows" -> {
+                Offset[0.2], {
+                 Offset[3.6]}, 
+                Offset[0.2]}}],
+           FrameMargins->{{6, 6}, {6, 3}}], ""},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpener"]], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpenerHot"]]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, False],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"], False->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"GetPauliStringOverlap[a, b] returns the Pauli \
+products common to both given weighted sums of Pauli strings, with \
+coefficients equal to the conjugate of the 'a' coefficients multiplied by \
+those of 'b'.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {2., 8.}}], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpenerHot"],
+               ImageSizeCache->{10., {2., 8.}}]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, True],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}, Dynamic[System`InformationDump`open$$],
+      BaselinePosition->Baseline,
+      FrameMargins->0,
+      ImageSize->Automatic],
+     DynamicModuleValues:>{}],
+    BaseStyle->"InformationGridFrame",
+    StripOnInput->False], "InformationGridPlain",
+   StripOnInput->False],
+  InformationData[<|
+   "ObjectType" -> "Symbol", "Usage" -> 
+    "GetPauliStringOverlap[a, b] returns the Pauli products common to both \
+given weighted sums of Pauli strings, with coefficients equal to the \
+conjugate of the 'a' coefficients multiplied by those of 'b'.", 
+    "Documentation" -> None, "OwnValues" -> None, "UpValues" -> None, 
+    "DownValues" -> 
+    Information`InformationValueForm[
+     DownValues, QuEST`GetPauliStringOverlap, {QuEST`GetPauliStringOverlap[
+         PatternTest[
+          Pattern[QuEST`Private`a, 
+           Blank[]], QuEST`Private`isValidSymbolicPauliString], 
+         PatternTest[
+          Pattern[QuEST`Private`b, 
+           Blank[]], QuEST`Private`isValidSymbolicPauliString]] :> 
+       Module[{QuEST`Private`aInds, QuEST`Private`bInds, QuEST`Private`aAssoc,
+           QuEST`Private`bAssoc, 
+          QuEST`Private`overlap}, {QuEST`Private`aInds, QuEST`Private`bInds} = 
+          Map[QuEST`GetPauliStringReformatted[#, "Index"]& , {
+            QuEST`Private`a, QuEST`Private`b}]; 
+         If[Head[QuEST`Private`aInds] === Integer, 
+           QuEST`Private`aInds = {{QuEST`Private`aInds, 1}}]; 
+         If[Head[QuEST`Private`bInds] === Integer, 
+           QuEST`Private`bInds = {{QuEST`Private`bInds, 1}}]; 
+         QuEST`Private`aAssoc = Merge[
+            Apply[Rule, QuEST`Private`aInds, {1}], Total]; 
+         QuEST`Private`bAssoc = Merge[
+            Apply[Rule, QuEST`Private`bInds, {1}], Total]; 
+         QuEST`Private`overlap = Merge[
+            KeyIntersection[{QuEST`Private`aAssoc, QuEST`Private`bAssoc}], 
+            Part[#, 2] Conjugate[
+              Part[#, 1]]& ]; Total[
+           KeyValueMap[#2 QuEST`GetPauliString[#]& , QuEST`Private`overlap]]],
+        QuEST`GetPauliStringOverlap[
+         BlankNullSequence[]] :> 
+       QuEST`Private`invalidArgError[QuEST`GetPauliStringOverlap]}], 
+    "SubValues" -> None, "DefaultValues" -> None, "NValues" -> None, 
+    "FormatValues" -> None, "Options" -> None, "Attributes" -> {}, "FullName" -> 
+    "QuEST`GetPauliStringOverlap"|>, False]]], "Output",
+ CellChangeTimes->{{3.918056164263816*^9, 3.9180561773592176`*^9}},
+ CellLabel->"Out[32]=",ExpressionUUID->"e87c5783-1af4-4e97-ab39-cef5ec141448"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Correctness", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.918056262376452*^9, 
+  3.918056264386137*^9}},ExpressionUUID->"297a31e4-59df-480e-8bb6-\
+5e27da7b0a4f"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   SubscriptBox["Id", "0"], ",", " ", 
+   SubscriptBox["X", "0"]}], "]"}]], "Input",
+ CellChangeTimes->{{3.918056272379394*^9, 3.918056277881278*^9}},
+ CellLabel->"In[33]:=",ExpressionUUID->"6644c35e-ee49-4525-9abc-ba0f1928b7fd"],
+
+Cell[BoxData["0"], "Output",
+ CellChangeTimes->{3.918056278230898*^9},
+ CellLabel->"Out[33]=",ExpressionUUID->"b920e832-fb48-400b-8f09-b3943e9906fc"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   SubscriptBox["X", "0"]}], "]"}]], "Input",
+ CellChangeTimes->{3.918056282238481*^9, 3.918065869013365*^9},
+ CellLabel->"In[34]:=",ExpressionUUID->"e52cc9b6-de5b-41ae-8cb3-0187a3474f4d"],
+
+Cell[BoxData[
+ SubscriptBox["X", "0"]], "Output",
+ CellChangeTimes->{3.918056282860508*^9},
+ CellLabel->"Out[34]=",ExpressionUUID->"a227570d-59a3-4dfc-92d3-9a32835d419a"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   SubscriptBox["X", "2000"], ",", " ", 
+   SubscriptBox["X", "2000"]}], "]"}]], "Input",
+ CellChangeTimes->{{3.918065872882917*^9, 3.918065875894648*^9}},
+ CellLabel->"In[22]:=",ExpressionUUID->"1ec4cd08-033b-4aa1-a7cd-03579a3ee6a6"],
+
+Cell[BoxData[
+ SubscriptBox["X", "2000"]], "Output",
+ CellChangeTimes->{3.918065876380797*^9},
+ CellLabel->"Out[22]=",ExpressionUUID->"2289aa77-9efe-45c2-adb8-11883b6eb7ae"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   SubscriptBox["X", "1"]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9180562990267076`*^9, 3.9180562991065693`*^9}},
+ CellLabel->"In[35]:=",ExpressionUUID->"4ad28702-f698-4f03-9917-3c77761d862a"],
+
+Cell[BoxData["0"], "Output",
+ CellChangeTimes->{3.9180562993803387`*^9},
+ CellLabel->"Out[35]=",ExpressionUUID->"e8f9aeed-a6de-465f-9b2d-3ee8cb55b300"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   RowBox[{"a", " ", 
+    SubscriptBox["Z", "10"]}], ",", " ", 
+   RowBox[{"b", " ", 
+    SubscriptBox["Z", "10"]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.918056286569202*^9, 3.918056306383473*^9}},
+ CellLabel->"In[36]:=",ExpressionUUID->"bca1bae8-998e-4107-9ba2-645a965b525a"],
+
+Cell[BoxData[
+ RowBox[{"b", " ", 
+  RowBox[{"Conjugate", "[", "a", "]"}], " ", 
+  SubscriptBox["Z", "10"]}]], "Output",
+ CellChangeTimes->{3.9180563071497297`*^9},
+ CellLabel->"Out[36]=",ExpressionUUID->"6e81f316-477d-48be-9012-12feaa612095"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"a", " ", 
+     SubscriptBox["X", "0"], 
+     SubscriptBox["Y", "1"], 
+     SubscriptBox["Z", "2"]}], " ", "+", " ", 
+    RowBox[{"b", " ", 
+     SubscriptBox["X", "0"]}]}], ",", " ", 
+   RowBox[{
+    RowBox[{"c", " ", 
+     SubscriptBox["X", "0"], 
+     SubscriptBox["Y", "1"], 
+     SubscriptBox["Z", "2"]}], " ", "+", " ", 
+    RowBox[{"d", " ", 
+     SubscriptBox["Z", "10"]}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.918056317270029*^9, 3.918056341399702*^9}},
+ CellLabel->"In[37]:=",ExpressionUUID->"5e004aa4-6c22-424f-9330-8adf977cfd22"],
+
+Cell[BoxData[
+ RowBox[{"c", " ", 
+  RowBox[{"Conjugate", "[", "a", "]"}], " ", 
+  SubscriptBox["X", "0"], " ", 
+  SubscriptBox["Y", "1"], " ", 
+  SubscriptBox["Z", "2"]}]], "Output",
+ CellChangeTimes->{3.918056341904274*^9},
+ CellLabel->"Out[37]=",ExpressionUUID->"785fab5d-f55d-4581-a738-8beb083af556"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   SubscriptBox["Id", "0"], ",", " ", 
+   SubscriptBox["Id", "10"]}], "]"}]], "Input",
+ CellChangeTimes->{{3.918056416755541*^9, 3.9180564181225767`*^9}},
+ CellLabel->"In[43]:=",ExpressionUUID->"ba2724c9-b584-47a2-af72-746c8ed6b1ed"],
+
+Cell[BoxData[
+ SubscriptBox["Id", "0"]], "Output",
+ CellChangeTimes->{3.918056418516122*^9},
+ CellLabel->"Out[43]=",ExpressionUUID->"77f7af19-c7ef-454c-ae6c-98e614a4d3c9"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["Id", "2"], 
+    SubscriptBox["X", "1"], 
+    SubscriptBox["Id", "0"]}], ",", " ", 
+   SubscriptBox["X", "1"]}], "]"}]], "Input",
+ CellChangeTimes->{{3.918056425714559*^9, 3.9180564319932013`*^9}},
+ CellLabel->"In[44]:=",ExpressionUUID->"8db244e5-3aaf-47cf-9ae7-3f1683a695b2"],
+
+Cell[BoxData[
+ SubscriptBox["X", "1"]], "Output",
+ CellChangeTimes->{3.918056432341524*^9},
+ CellLabel->"Out[44]=",ExpressionUUID->"f43a5677-5d77-47c3-b38b-735ae031a09a"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"a", " ", 
+     SubscriptBox["X", "0"]}], " ", "+", " ", 
+    RowBox[{"b", " ", 
+     SubscriptBox["X", "0"]}], " ", "+", " ", 
+    RowBox[{"c", " ", 
+     SubscriptBox["X", "0"]}]}], ",", " ", 
+   SubscriptBox["X", "0"]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9180564074646263`*^9, 3.9180564089377203`*^9}, {
+  3.9180564393259697`*^9, 3.918056450363542*^9}},
+ CellLabel->"In[45]:=",ExpressionUUID->"35c76181-9b4c-4d7b-afab-c4fb7a961a47"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Conjugate", "[", 
+   RowBox[{"a", "+", "b", "+", "c"}], "]"}], " ", 
+  SubscriptBox["X", "0"]}]], "Output",
+ CellChangeTimes->{3.918056450699114*^9},
+ CellLabel->"Out[45]=",ExpressionUUID->"bbcb6eb2-6ee8-40f8-9a4d-4404b758851e"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"a", " ", 
+     SubscriptBox["Id", "0"]}], " ", "+", " ", 
+    RowBox[{"b", " ", 
+     SubscriptBox["Id", "2"]}]}], ",", " ", 
+   RowBox[{
+    RowBox[{"b", " ", 
+     SubscriptBox["Id", "10"]}], " ", "+", " ", 
+    RowBox[{"d", " ", 
+     SubscriptBox["Id", "50"]}]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.918056357751834*^9, 3.918056400200905*^9}},
+ CellLabel->"In[42]:=",ExpressionUUID->"f62b5abd-addb-402f-ba18-ba3226d1005b"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(", 
+   RowBox[{"b", "+", "d"}], ")"}], " ", 
+  RowBox[{"Conjugate", "[", 
+   RowBox[{"a", "+", "b"}], "]"}], " ", 
+  SubscriptBox["Id", "0"]}]], "Output",
+ CellChangeTimes->{{3.918056376400853*^9, 3.918056400545677*^9}},
+ CellLabel->"Out[42]=",ExpressionUUID->"b9c4176d-1388-4c3d-8376-20eafb82c7d3"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Errors", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.918056260403339*^9, 
+  3.918056261505934*^9}},ExpressionUUID->"6ca67fdd-40a7-4b80-9435-\
+37f30b3f3905"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", "]"}]], "Input",
+ CellChangeTimes->{{3.918056463506733*^9, 3.918056464743676*^9}},
+ CellLabel->"In[47]:=",ExpressionUUID->"a815e3ed-8bbf-4458-b2db-cdfceb796f78"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringOverlap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringOverlap\\\\\\\"\\\"}]\\)\"", 2, 47, 23, 32441265034215338571, 
+   "Local", "QuEST`GetPauliStringOverlap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.9180564649958344`*^9},
+ CellLabel->
+  "During evaluation of \
+In[47]:=",ExpressionUUID->"749cd19d-2fd3-44f9-931d-2c5fdc83a7fe"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.9180564650099792`*^9},
+ CellLabel->"Out[47]=",ExpressionUUID->"afb5abb9-4921-4e45-be73-b43195b1026f"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  SubscriptBox["X", "0"], "]"}]], "Input",
+ CellChangeTimes->{{3.9180564582409573`*^9, 3.918056460773837*^9}},
+ CellLabel->"In[46]:=",ExpressionUUID->"52aa572d-b3f7-4841-bb6f-bd927712b078"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringOverlap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringOverlap\\\\\\\"\\\"}]\\)\"", 2, 46, 22, 32441265034215338571, 
+   "Local", "QuEST`GetPauliStringOverlap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.918056461014845*^9},
+ CellLabel->
+  "During evaluation of \
+In[46]:=",ExpressionUUID->"b886283d-4a6b-47cd-8c86-71d9f18d8ae9"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.918056461030056*^9},
+ CellLabel->"Out[46]=",ExpressionUUID->"f6127b19-74fa-47f4-b184-21165719b6ab"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], "+", "1"}], ",", " ", 
+   SubscriptBox["Z", "0"]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9180565126060047`*^9, 3.918056519628948*^9}},
+ CellLabel->"In[52]:=",ExpressionUUID->"fddbb6e8-3bc7-41f5-8b83-b9f5c25347e7"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringOverlap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringOverlap\\\\\\\"\\\"}]\\)\"", 2, 52, 28, 32441265034215338571, 
+   "Local", "QuEST`GetPauliStringOverlap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.9180565200381613`*^9},
+ CellLabel->
+  "During evaluation of \
+In[52]:=",ExpressionUUID->"a7274482-3df3-45f3-8ad3-dd45a8c59304"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.9180565200532417`*^9},
+ CellLabel->"Out[52]=",ExpressionUUID->"1decd3f2-1718-4862-844f-3eb8068d6192"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   SubscriptBox["X", 
+    RowBox[{"-", "1"}]], ",", " ", 
+   SubscriptBox["X", 
+    RowBox[{"-", "1"}]]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9180565248598146`*^9, 3.918056529368787*^9}},
+ CellLabel->"In[53]:=",ExpressionUUID->"8f4a01ea-9d61-47b6-9bd8-cf2d3c02fba8"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringOverlap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringOverlap\\\\\\\"\\\"}]\\)\"", 2, 53, 29, 32441265034215338571, 
+   "Local", "QuEST`GetPauliStringOverlap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.918056529853374*^9},
+ CellLabel->
+  "During evaluation of \
+In[53]:=",ExpressionUUID->"9466a023-6435-417d-9774-a3dcee8e6cdf"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.918056529868327*^9},
+ CellLabel->"Out[53]=",ExpressionUUID->"a3db0001-8ecd-45e0-93da-516b5bae50e0"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "0"]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9180564682063828`*^9, 3.9180564858401814`*^9}},
+ CellLabel->"In[49]:=",ExpressionUUID->"489d442b-a09d-4d3a-8de3-7662afd80848"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringOverlap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringOverlap\\\\\\\"\\\"}]\\)\"", 2, 49, 25, 32441265034215338571, 
+   "Local", "QuEST`GetPauliStringOverlap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.918056474572793*^9, 3.91805648634525*^9}},
+ CellLabel->
+  "During evaluation of \
+In[49]:=",ExpressionUUID->"03275e87-aa51-41a6-9834-d1cfe161a6f4"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.918056474587743*^9, 3.9180564863580513`*^9}},
+ CellLabel->"Out[49]=",ExpressionUUID->"d5ff6de9-f730-4913-a32a-7f8fd6705297"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["X", "0"]}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9180564918875923`*^9, 3.918056492030546*^9}},
+ CellLabel->"In[50]:=",ExpressionUUID->"b5881ad1-3195-4641-9e3c-08d7022f9019"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringOverlap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringOverlap\\\\\\\"\\\"}]\\)\"", 2, 50, 26, 32441265034215338571, 
+   "Local", "QuEST`GetPauliStringOverlap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.918056492517964*^9},
+ CellLabel->
+  "During evaluation of \
+In[50]:=",ExpressionUUID->"8e2fa9a7-68b7-46bc-97ed-7cf689fdd4fe"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.918056492533058*^9},
+ CellLabel->"Out[50]=",ExpressionUUID->"d9d8705b-d9f8-4074-8bb0-0bd46b837e4e"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringOverlap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   SubscriptBox["Unknown", "0"]}], "]"}]], "Input",
+ CellChangeTimes->{{3.918056500231737*^9, 3.918056504777156*^9}},
+ CellLabel->"In[51]:=",ExpressionUUID->"003bc232-be83-400d-9c6e-fcbcf8538208"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringOverlap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringOverlap\\\\\\\"\\\"}]\\)\"", 2, 51, 27, 32441265034215338571, 
+   "Local", "QuEST`GetPauliStringOverlap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.9180565051697283`*^9},
+ CellLabel->
+  "During evaluation of \
+In[51]:=",ExpressionUUID->"e7dcafee-e61f-467c-88eb-c40f44d49834"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.9180565051829767`*^9},
+ CellLabel->"Out[51]=",ExpressionUUID->"1102b717-1db3-4681-9aa2-d6d4f0499fdf"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{720, 811},
+WindowMargins->{{Automatic, 0}, {Automatic, 0}},
+PrintingCopies->1,
+PrintingPageRange->{1, Automatic},
+FrontEndVersion->"13.0 for Mac OS X x86 (64-bit) (February 4, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"435bc8da-b813-4013-b315-68dded5f5157"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 683, 10, 98, "Title",ExpressionUUID->"2b47d8c8-40d5-4b16-ad38-229dd3fa65b0"],
+Cell[1266, 34, 384, 8, 52, "Input",ExpressionUUID->"52406a81-6d02-4b59-9b7d-f1f9323f2340"],
+Cell[CellGroupData[{
+Cell[1675, 46, 296, 5, 69, "Chapter",ExpressionUUID->"10ec834e-27a5-47e6-b63b-99673ea97891"],
+Cell[CellGroupData[{
+Cell[1996, 55, 211, 3, 30, "Input",ExpressionUUID->"d0a39276-8d5d-4c7f-b468-a21e4032d02f"],
+Cell[2210, 60, 15895, 374, 119, "Output",ExpressionUUID->"e87c5783-1af4-4e97-ab39-cef5ec141448"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[18154, 440, 353, 6, 69, "Chapter",ExpressionUUID->"297a31e4-59df-480e-8bb6-5e27da7b0a4f"],
+Cell[CellGroupData[{
+Cell[18532, 450, 294, 6, 30, "Input",ExpressionUUID->"6644c35e-ee49-4525-9abc-ba0f1928b7fd"],
+Cell[18829, 458, 149, 2, 34, "Output",ExpressionUUID->"b920e832-fb48-400b-8f09-b3943e9906fc"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[19015, 465, 291, 6, 30, "Input",ExpressionUUID->"e52cc9b6-de5b-41ae-8cb3-0187a3474f4d"],
+Cell[19309, 473, 170, 3, 34, "Output",ExpressionUUID->"a227570d-59a3-4dfc-92d3-9a32835d419a"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[19516, 481, 299, 6, 30, "Input",ExpressionUUID->"1ec4cd08-033b-4aa1-a7cd-03579a3ee6a6"],
+Cell[19818, 489, 173, 3, 34, "Output",ExpressionUUID->"2289aa77-9efe-45c2-adb8-11883b6eb7ae"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[20028, 497, 297, 6, 30, "Input",ExpressionUUID->"4ad28702-f698-4f03-9917-3c77761d862a"],
+Cell[20328, 505, 151, 2, 34, "Output",ExpressionUUID->"e8f9aeed-a6de-465f-9b2d-3ee8cb55b300"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[20516, 512, 345, 8, 30, "Input",ExpressionUUID->"bca1bae8-998e-4107-9ba2-645a965b525a"],
+Cell[20864, 522, 242, 5, 34, "Output",ExpressionUUID->"6e81f316-477d-48be-9012-12feaa612095"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[21143, 532, 636, 18, 30, "Input",ExpressionUUID->"5e004aa4-6c22-424f-9330-8adf977cfd22"],
+Cell[21782, 552, 303, 7, 34, "Output",ExpressionUUID->"785fab5d-f55d-4581-a738-8beb083af556"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[22122, 564, 298, 6, 30, "Input",ExpressionUUID->"ba2724c9-b584-47a2-af72-746c8ed6b1ed"],
+Cell[22423, 572, 171, 3, 34, "Output",ExpressionUUID->"77f7af19-c7ef-454c-ae6c-98e614a4d3c9"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[22631, 580, 370, 9, 30, "Input",ExpressionUUID->"8db244e5-3aaf-47cf-9ae7-3f1683a695b2"],
+Cell[23004, 591, 170, 3, 34, "Output",ExpressionUUID->"f43a5677-5d77-47c3-b38b-735ae031a09a"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[23211, 599, 529, 13, 30, "Input",ExpressionUUID->"35c76181-9b4c-4d7b-afab-c4fb7a961a47"],
+Cell[23743, 614, 263, 6, 34, "Output",ExpressionUUID->"bbcb6eb2-6ee8-40f8-9a4d-4404b758851e"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[24043, 625, 521, 14, 30, "Input",ExpressionUUID->"f62b5abd-addb-402f-ba18-ba3226d1005b"],
+Cell[24567, 641, 335, 8, 34, "Output",ExpressionUUID->"b9c4176d-1388-4c3d-8376-20eafb82c7d3"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[24951, 655, 348, 6, 69, "Chapter",ExpressionUUID->"6ca67fdd-40a7-4b80-9435-37f30b3f3905"],
+Cell[CellGroupData[{
+Cell[25324, 665, 214, 3, 30, "Input",ExpressionUUID->"a815e3ed-8bbf-4458-b2db-cdfceb796f78"],
+Cell[25541, 670, 438, 10, 28, "Message",ExpressionUUID->"749cd19d-2fd3-44f9-931d-2c5fdc83a7fe"],
+Cell[25982, 682, 157, 2, 34, "Output",ExpressionUUID->"afb5abb9-4921-4e45-be73-b43195b1026f"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[26176, 689, 243, 4, 30, "Input",ExpressionUUID->"52aa572d-b3f7-4841-bb6f-bd927712b078"],
+Cell[26422, 695, 436, 10, 28, "Message",ExpressionUUID->"b886283d-4a6b-47cd-8c86-71d9f18d8ae9"],
+Cell[26861, 707, 155, 2, 34, "Output",ExpressionUUID->"f6127b19-74fa-47f4-b184-21165719b6ab"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[27053, 714, 320, 7, 30, "Input",ExpressionUUID->"fddbb6e8-3bc7-41f5-8b83-b9f5c25347e7"],
+Cell[27376, 723, 438, 10, 28, "Message",ExpressionUUID->"a7274482-3df3-45f3-8ad3-dd45a8c59304"],
+Cell[27817, 735, 157, 2, 34, "Output",ExpressionUUID->"1decd3f2-1718-4862-844f-3eb8068d6192"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[28011, 742, 335, 8, 30, "Input",ExpressionUUID->"8f4a01ea-9d61-47b6-9bd8-cf2d3c02fba8"],
+Cell[28349, 752, 436, 10, 28, "Message",ExpressionUUID->"9466a023-6435-417d-9774-a3dcee8e6cdf"],
+Cell[28788, 764, 155, 2, 34, "Output",ExpressionUUID->"a3db0001-8ecd-45e0-93da-516b5bae50e0"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[28980, 771, 341, 8, 30, "Input",ExpressionUUID->"489d442b-a09d-4d3a-8de3-7662afd80848"],
+Cell[29324, 781, 459, 10, 28, "Message",ExpressionUUID->"03275e87-aa51-41a6-9834-d1cfe161a6f4"],
+Cell[29786, 793, 181, 2, 34, "Output",ExpressionUUID->"d5ff6de9-f730-4913-a32a-7f8fd6705297"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[30004, 800, 339, 8, 30, "Input",ExpressionUUID->"b5881ad1-3195-4641-9e3c-08d7022f9019"],
+Cell[30346, 810, 436, 10, 28, "Message",ExpressionUUID->"8e2fa9a7-68b7-46bc-97ed-7cf689fdd4fe"],
+Cell[30785, 822, 155, 2, 34, "Output",ExpressionUUID->"d9d8705b-d9f8-4074-8bb0-0bd46b837e4e"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[30977, 829, 299, 6, 30, "Input",ExpressionUUID->"003bc232-be83-400d-9c6e-fcbcf8538208"],
+Cell[31279, 837, 438, 10, 28, "Message",ExpressionUUID->"e7dcafee-e61f-467c-88eb-c40f44d49834"],
+Cell[31720, 849, 157, 2, 34, "Output",ExpressionUUID->"1102b717-1db3-4681-9aa2-d6d4f0499fdf"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+

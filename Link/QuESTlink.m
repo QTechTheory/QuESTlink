@@ -412,6 +412,9 @@ GetPauliStringReformatted[..., \"String\"] returns a compact, string-form of the
 GetPauliStringReformatted[..., numQubits] expands the \"Digits\", \"Kronecker\" and \"String\" formats to the specified number of qubits, by padding with '0' digits or 'Id' operators."
     GetPauliStringReformatted::error = "`1`"
 
+    GetPauliStringOverlap::usage = "GetPauliStringOverlap[a, b] returns the Pauli products common to both given weighted sums of Pauli strings, with coefficients equal to the conjugate of the 'a' coefficients multiplied by those of 'b'."
+    GetPauliStringOverlap::error = "`1`"
+
     
     (*
      * optional arguments to public functions
@@ -1257,11 +1260,29 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         ApplyPauliString[_Integer, Verbatim[Plus][_?NumericQ, ___], _Integer] := 
             invalidPauliScalarError[ApplyPauliString]
         ApplyPauliString[___] := invalidArgError[ApplyPauliString]
+
+
+        CalcPauliStringMinEigVal[paulis_?isValidNumericPauliString, MaxIterations -> its_Integer] := With[
+            {matr = CalcPauliExpressionMatrix[paulis]},
+            - First @ Eigenvalues[- matr, 1, Method -> {"Arnoldi", MaxIterations -> its, "Criteria" -> "RealPart"}]]
+        CalcPauliStringMinEigVal[paulis_?isValidNumericPauliString] :=
+            CalcPauliStringMinEigVal[paulis, MaxIterations -> 10^5]
+        CalcPauliStringMinEigVal[___] := invalidArgError[CalcPauliStringMinEigVal]
+        
+
+        CalcPauliStringMatrix[paulis_?isValidNumericPauliString] := With[
+            {pauliCodes = getEncodedNumericPauliString[paulis]},
+            {elems = CalcPauliStringMatrixInternal[1+Max@pauliCodes[[3]], Sequence @@ pauliCodes]},
+            If[elems === $Failed, elems, 
+                (#[[1]] + I #[[2]])& /@ Partition[elems,2] // Transpose]]
+        CalcPauliStringMatrix[Verbatim[Plus][_?NumericQ, ___]] :=
+            invalidPauliScalarError[CalcPauliStringMatrix]
+        CalcPauliStringMatrix[___] := invalidArgError[CalcPauliStringMatrix]
         
 
 
         (*
-         * Analytic Pauli strings
+         * Symbolic Pauli strings
          *)
 
 
@@ -1284,27 +1305,28 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             {nQb = Max[1 + Cases[{hFlat}, Subscript[(Id|X|Y|Z), q_]:>q, Infinity]]},
             CalcPauliExpressionMatrix[hFlat, nQb]]
         CalcPauliExpressionMatrix[___] := invalidArgError[CalcPauliExpressionMatrix]
-        
 
 
-        CalcPauliStringMinEigVal[paulis_?isValidNumericPauliString, MaxIterations -> its_Integer] := With[
-            {matr = CalcPauliExpressionMatrix[paulis]},
-            - First @ Eigenvalues[- matr, 1, Method -> {"Arnoldi", MaxIterations -> its, "Criteria" -> "RealPart"}]]
-        CalcPauliStringMinEigVal[paulis_?isValidNumericPauliString] :=
-            CalcPauliStringMinEigVal[paulis, MaxIterations -> 10^5]
-        CalcPauliStringMinEigVal[___] := invalidArgError[CalcPauliStringMinEigVal]
-        
+        GetPauliStringOverlap[a_?isValidSymbolicPauliString, b_?isValidSymbolicPauliString] :=
+            Module[
+                {aInds,bInds, aAssoc,bAssoc, overlap},
+                {aInds, bInds} = GetPauliStringReformatted[#, "Index"]& /@ {a,b};
 
+                (* handle when a (or b) was a single unweighted product *)
+                If[Head[aInds] === Integer, aInds = {{aInds,1}}];
+                If[Head[bInds] === Integer, bInds = {{bInds,1}}];
 
-        CalcPauliStringMatrix[paulis_?isValidNumericPauliString] := With[
-            {pauliCodes = getEncodedNumericPauliString[paulis]},
-            {elems = CalcPauliStringMatrixInternal[1+Max@pauliCodes[[3]], Sequence @@ pauliCodes]},
-            If[elems === $Failed, elems, 
-                (#[[1]] + I #[[2]])& /@ Partition[elems,2] // Transpose]]
-        CalcPauliStringMatrix[Verbatim[Plus][_?NumericQ, ___]] :=
-            invalidPauliScalarError[CalcPauliStringMatrix]
-        CalcPauliStringMatrix[___] := invalidArgError[CalcPauliStringMatrix]
-        
+                (* pre-sum duplicated terms in each string *)
+                aAssoc = Merge[Rule @@@ aInds, Total];
+                bAssoc = Merge[Rule @@@ bInds, Total];
+
+                (* conj-multiply common strings between each list *)
+                overlap = Merge[KeyIntersection @ {aAssoc, bAssoc}, #[[2]] Conjugate @ #[[1]] &];
+
+                (* and return the result as a Pauli string *)
+                Total @ KeyValueMap[#2 GetPauliString @ #1 &, overlap]
+            ]
+        GetPauliStringOverlap[___] := invalidArgError[GetPauliStringOverlap]
 
 
         GetRandomPauliString[
