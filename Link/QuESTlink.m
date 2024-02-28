@@ -346,10 +346,10 @@ CalcPauliTransferMap also accepts option AssertValidChannels->False to disable t
 
     DrawPauliTransferMap::usage = "DrawPauliTransferMap[map] visualises the given PTMap as a graph where nodes are basis Pauli strings, and edges indicate the transformative action of the map.
 DrawPauliTransferMap also accepts PTM, circuit and gate instances, for which the corresponding PTMap is automatically calculated.
-DrawPauliTransferMap accepts options \"PauliStringForm\", \"ShowCoefficients\" and \"NodeDegreeEdgeStyles\", in addition to all options accepted by Graph[].
+DrawPauliTransferMap accepts options \"PauliStringForm\", \"ShowCoefficients\" and \"EdgeDegreeStyles\", in addition to all options accepted by Graph[].
 \[Bullet] \"ShowCoefficients\" -> False hides the map's Pauli string coefficients which are otherwise shown as edge labels.
 \[Bullet] \"PauliStringForm\" sets the vertex label format to one of \"Subscript\" (default), \"Index\", \"Kronecker\", \"String\" or \"Hidden\". These (except the latter) are the formats are supported by GetPauliStringReformatted[].
-\[Bullet] \"NodeDegreeEdgeStyles\" specifies a list of styles (default informed by ColorData[\"Pastel\"]) to set upon edges from nodes with increasing outdegree. For example, \"NodeDegreeEdgeStyles\"->{Red,Green,Blue} sets edges from Pauli states which are mapped to a single other state to the colour Red, but two-outdegree node out-edges become Green, and three-outdegree become Blue. The list is assumed repeated for higher outdegree nodes than specified.
+\[Bullet] \"EdgeDegreeStyles\" specifies a list of styles (default informed by ColorData[\"Pastel\"]) to set upon edges from nodes with increasing outdegree. For example, \"EdgeDegreeStyles\"->{Red,Green,Blue} sets edges from Pauli states which are mapped to a single other state to the colour Red, but two-outdegree node out-edges become Green, and three-outdegree become Blue. The list is assumed repeated for higher outdegree nodes than specified.
 \[Bullet] Graph[] options override these settings, so specifying EdgeStyle -> Black will set all edges to Black regardless of their node's outdegree."
     DrawPauliTransferMap::error = "`1`"
 
@@ -367,7 +367,7 @@ CalcPauliTransferEval[pauliString, circuit] evolves the Pauli string under the P
 There are two possible return formats, informed by option \"OutputForm\", which are respectively fast and slow to evaluate, and both of which can be passed to functions like DrawPauliTransferEval[].
 The \"Simple\" output is a list of sublists, each corresponding to a layer in the evaluation history (i.e. the operation of a PTMap upon the current Pauli string) including the initial Pauli string. Each item therein represents a Pauli product state and has form {prod,id,parents} where 'prod' is a Pauli basis state expressed in base-4 digits (see ?GetPauliStringReformatted), 'id' is a unique integer identifying the state, and 'parents' is a list of tuples of form {parentId, factor}. These indicate the ancestor Pauli states from which the id'd state was produced under the action of the previous PTMap, and the factor that the map multiplies upon that parent state. The basis products of the initial state have parentId=0.
 The \"Detailed\" output is an Association with the following items:
-\[Bullet] \"Ids\" is a list of integers uniquely identifying each node in the evaluation graph. Note these are not gauranteed to be contiguous due to the merging of incident Pauli states (see \"CombineStates\" below).
+\[Bullet] \"Ids\" is a list of integers uniquely identifying each node in the evaluation graph. Note these are not gauranteed to be contiguous due to the merging of incident Pauli states (see \"CombineStrings\" below).
 \[Bullet] \"Layers\" groups \"Ids\" into sublists according to their depth in the graph, i.e. which ptMap produced the node. There are Length[ptMaps]+1 layers, including the initial pauliString layer.
 \[Bullet] \"States\" is an Association of id -> pauliProduct, identifying the Pauli basis state associated with the id'd node.
 \[Bullet] \"Parents\" is an Association of id -> list of parent ids. A node's parents are the states of the previous layer who were modified by the previous layer's PTMap to the node's state.
@@ -383,7 +383,7 @@ The \"Detailed\" output is an Association with the following items:
 \[Bullet] \"NumLeaves\" is the number of nodes in the final layer, equivalent to the number of Pauli products in the output string.
 CalcPauliTransferEval accepts the below options:
 \[Bullet] \"OutputForm\" -> \"Simple\" (default) or \"Detailed\", as explained above.
-\[Bullet] \"CombineStates\" -> False which disables combining incident Pauli strings, so that the result is an acyclic tree, and each node has a single parent.
+\[Bullet] \"CombineStrings\" -> False which disables combining incident Pauli strings, so that the result is an acyclic tree, and each node has a single parent.
 \[Bullet] \"CacheMaps\" which controls the automatic caching of generated PTMaps (see ?ApplyPauliTransferMap).
 \[Bullet] AssertValidChannels -> False which disables the simplification of symbolic Pauli string coefficients (see ?AssertValidChannels)."
     CalcPauliTransferEval::error = "`1`"
@@ -5209,7 +5209,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         Options[DrawPauliTransferMap] = {
             "PauliStringForm" -> "Subscript", (* or "Index", "Kronecker", "String", "Hidden" *)
             "ShowCoefficients" -> True,
-            "NodeDegreeEdgeStyles" -> Automatic (* or a list of styles *),
+            "EdgeDegreeStyles" -> Automatic (* or a list of styles *),
             AssertValidChannels -> True
         };
 
@@ -5246,9 +5246,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
             (* accept (and pad) user override of per-degree edge colours *)
             degreeStyles = If[
-                OptionValue["NodeDegreeEdgeStyles"] === Automatic,
+                OptionValue["EdgeDegreeStyles"] === Automatic,
                 ColorData["Pastel"] /@ Range[0, 1, If[maxDegree === 1, 1, 1/(maxDegree-1)]],
-                PadRight[OptionValue["NodeDegreeEdgeStyles"], maxDegree, OptionValue["NodeDegreeEdgeStyles"]]];
+                PadRight[OptionValue["EdgeDegreeStyles"], maxDegree, OptionValue["EdgeDegreeStyles"]]];
 
             (* assign a style to each edge according to their FROM node degree *)
             edgeStyles = Table[
@@ -5293,13 +5293,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             "CacheMaps" -> "UntilCallEnd" (* or "Forever" or "Never" *)
         };
 
+        (* ApplyPauliTransferMap additionally accepts all options to CalcPauliTransferMap which is called internally *)
+        applyPTMapOptPatt = OptionsPattern @ {ApplyPauliTransferMap, CalcPauliTransferMap};
 
+        (* signature patterns *)
         ptmapPatt = Subscript[PTMap, __Integer][__Rule];
         ptmatrPatt = Subscript[PTM, __Integer][_?SquareMatrixQ];
         mixedGatesAndMapsPatt = { (_?isGateFormat | ptmatrPatt | ptmapPatt) .. };
-
-        ptmOptionFuncs = {CalcPauliTransferMap, ApplyPauliTransferMap};
-
 
         resetCachedPTMaps[] := (
 
@@ -5343,18 +5343,18 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 {item, mixed}
             ]
 
-        validatePauliTransferMapOptions[caller_Symbol, OptionsPattern@ptmOptionFuncs] := (
+        validatePauliTransferMapOptions[caller_Symbol, applyPTMapOptPatt] := (
 
             (* validate all options are recognised *)
             Check[ OptionValue@"CacheMaps", Return @ $Failed];
 
             (* validate cache setting is valid *)
             If[Not @ MemberQ[{"Forever", "UntilCallEnd", "Never"}, OptionValue@"CacheMaps"],
-                Message[caller::error, "Option \"CacheMaps\" must be one of \"Forever\", \"UntilCallEnd\" or \"Never\"."]; 
+                Message[caller::error, "Option \"CacheMaps\" must be one of \"Forever\", \"UntilCallEnd\" or \"Never\". See ?ApplyPauliTransferMap."]; 
                 Return @ $Failed];
         )
 
-        getAndValidateAllGatesAsPTMaps[mixed_List, caller_Symbol, opts:OptionsPattern@ptmOptionFuncs] :=
+        getAndValidateAllGatesAsPTMaps[mixed_List, caller_Symbol, opts:applyPTMapOptPatt] :=
             Module[{cacheOpt=Opt, maps=$Failed},
                 cacheOpt = OptionValue["CacheMaps"]; (* gauranteed not to throw; prior validated *)
 
@@ -5543,27 +5543,28 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ]
 
         Options[CalcPauliTransferEval] = {
-            "CombineStates" -> True,
+            "CombineStrings" -> True,
             "OutputForm" -> "Simple" (* or "Simple" *)
         };
 
-        calcPTEvalOptPatt = OptionsPattern @ {CalcPauliTransferEval, Sequence @@ ptmOptionFuncs};
+        (*CalcPauliTransferEval additionally accepts all options to ApplyPauliTransferMap (and its subroutines) which are internally called *)
+        calcPTEvalOptPatt = OptionsPattern @ {CalcPauliTransferEval, Sequence @@ First @ applyPTMapOptPatt};
 
-        validateCalcPauliTransferEvalOptions[opts:calcPTEvalOptPatt] := 
+        validateCalcPauliTransferEvalOptions[caller_Symbol, opts:calcPTEvalOptPatt] := 
             With[
                 {otherOpts = FilterRules[{opts}, Except @ Options @ CalcPauliTransferEval]},
 
                 (* validate the the PTMap eval options *)
-                Check[ validatePauliTransferMapOptions[CalcPauliTransferEval, Sequence @@ otherOpts], Return @ $Failed];
+                Check[ validatePauliTransferMapOptions[caller, Sequence @@ otherOpts], Return @ $Failed];
 
                 (* validate the the CalcPauliTransferEval specific options *)
-                If[ Not @ BooleanQ @ OptionValue @ "CombineStates",
-                    Message[CalcPauliTransferEval::error, "Option \"CombineStates\" must be True or False."];
+                If[ Not @ BooleanQ @ OptionValue @ "CombineStrings",
+                    Message[caller::error, "Option \"CombineStrings\" must be True or False. See ?CalcPauliTransferEval."];
                     Return @ $Failed ];
 
                 (* validate the OutputForm option *)
                 If[ Not @ MemberQ[{"Simple","Detailed"}, OptionValue @ "OutputForm"],
-                    Message[CalcPauliTransferEval::error, "Option \"OutputForm\" must be \"Detailed\" or \"Simple\"."];
+                    Message[caller::error, "Option \"OutputForm\" must be \"Detailed\" or \"Simple\". See ?CalcPauliTransferEval."];
                     Return @ $Failed ];
             ]
 
@@ -5572,11 +5573,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 {inStates, outEval},
 
                 (* validate options (including those for inner functions like CalcPauliTransferMap) *)
-                Check[validateCalcPauliTransferEvalOptions[opts], Return @ $Failed];
+                Check[validateCalcPauliTransferEvalOptions[CalcPauliTransferEval, opts], Return @ $Failed];
 
                 (* compute simple evaluation graph *)
                 inStates = getPauliStringInitStatesForPTMapSim[pauliStr, maps];
-                outEval = getSimplePTMapEvaluationGraph[inStates, maps, OptionValue @ "CombineStates"];
+                outEval = getSimplePTMapEvaluationGraph[inStates, maps, OptionValue @ "CombineStrings"];
 
                 (* optionally post-process graph *)
                 If[ OptionValue @ "OutputForm" === "Detailed",
@@ -5589,7 +5590,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Module[{maps,mapGenOpts},
 
                 (* validate CalcPauliTransferEval options, and those needed by subsequent PTMap generation *)
-                Check[validateCalcPauliTransferEvalOptions[opts], Return @ $Failed];
+                Check[validateCalcPauliTransferEvalOptions[CalcPauliTransferEval, opts], Return @ $Failed];
 
                 (* validate and pre-compute all PTMaps, managing all caching *)
                 mapGenOpts = FilterRules[{opts}, Except @ Options @ CalcPauliTransferEval];
