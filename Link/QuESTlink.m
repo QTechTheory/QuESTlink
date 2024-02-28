@@ -388,6 +388,19 @@ CalcPauliTransferEval accepts the below options:
 \[Bullet] AssertValidChannels -> False which disables the simplification of symbolic Pauli string coefficients (see ?AssertValidChannels)."
     CalcPauliTransferEval::error = "`1`"
 
+    DrawPauliTransferEval::usage = "DrawPauliTransferEval[pauliString, circuit] renders and returns a graph of the evaluation of 'circuit' when converted to a series of Pauli transfer maps, acting upon the given initial Pauli string.
+DrawPauliTransferEval[data] renders the pre-computed evaluation graph 'data' as output by CalcPauliTransferEval[].
+DrawPauliTransferEval accepts all options to Graph[], CalcPauliTransferEval[], DrawPauliTransferMap[], and some additional options, which we summarise below.
+\[Bullet] \"HighlightPathTo\" -> pauliString (or a list of Pauli strings) highlights all edges ultimately contributing to the coefficient of the specified final pauliString(s). Symbolically weighted sums of Pauli strings are also accepted, in which case all edges to all non-orthogonal Pauli strings are highlighted.
+\[Bullet] \"CombineStrings\" -> False disables combining incident Pauli strings so that the result is an (likely significantly larger) acyclic tree.
+\[Bullet] \"PauliStringForm\" sets the vertex label format to one of \"String\", \"Hidden\" (these are the defaults depending on graph size), \"Index\", \"Kronecker\", or \"Subscript\". See ?GetPauliStringReformatted.
+\[Bullet] \"ShowCoefficients\" -> True or False explicit shows or hides the PTMap coefficient associated with each edge. The default is Automatic which auto-hides edge labels if there are too many.
+\[Bullet] \"EdgeDegreeStyles\" specifies the style of edges from nodes of increasing outdegree. See ?DrawPauliTransferMap.
+\[Bullet] \"CacheMaps\" controls the automatic caching of generated PTMaps. See ?ApplyPauliTransferMap.
+\[Bullet] AssertValidChannels -> False disables the simplification of symbolic Pauli string coefficients, only noticeable when \"ShowCoefficients\"->True. See ?AssertValidChannels.
+\[Bullet] Graph[] options override these settings. For example, specifying EdgeStyle -> Black will set all edges to Black regardless of their node's outdegree."
+    DrawPauliTransferEval::error = "`1`"
+
     GetPauliString::usage = "Returns a Pauli string or a weighted sum of symbolic Pauli tensors from a variety of input formats.
 GetPauliString[matrix] returns a complex-weighted sum of Pauli tensors equivalent to the given matrix. If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components.
 GetPauliString[index] returns the basis Pauli string corresponding to the given index, where the returned Pauli operator targeting 0 is informed by the least significant bit(s) of the index. 
@@ -5490,53 +5503,73 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 layers
             ]
 
-        getDetailedPTMapEvaluationGraph[simpleGraph_] := 
+        getDetailedPTMapEvaluationGraph[simpleGraph_, include_List:Automatic] := 
             Module[
-                {data=<||>, states},
+                {data=<||>, states, isIncluded},
+
+                (* currently 'include' is only supplied by internal functions, so
+                 * we don't bother validating compatible combinations *)
+                isIncluded = Function[{key}, Or[include === Automatic, MemberQ[include, key]]];
 
                 (* states[[i]] = {paulis, id, {{ancestor id, coeff}, ...}} *)
                 states = Flatten[simpleGraph, 1];
 
                 (* {id, id, id, ...} *)
-                data["Ids"] = Flatten @ simpleGraph[[All, All, 2]];
+                If[ isIncluded @ "Ids",
+                    data["Ids"] = Flatten @ simpleGraph[[All, All, 2]] ];
                 
                 (* one sublist per layer; { {id,id}, {id,id,id}, ... } *)
-                data["Layers"] = simpleGraph[[All, All, 2]];
+                If[ isIncluded @ "Layers",
+                    data["Layers"] = simpleGraph[[All, All, 2]]];
+
+                (* scalars *)
+                If[ isIncluded @ "NumQubits",
+                    data["NumQubits"] = Length @ First @ First @ states];
+                If[ isIncluded @ "NumNodes",
+                    data["NumNodes"] = Total[Length /@ simpleGraph]];
+                If[ isIncluded @ "NumLeaves",
+                    data["NumLeaves"] = Length @ Last @ simpleGraph];
                 
                 (* <| id -> X0 Y1, ... |> *)
-                data["States"] = <|Table[ s[[2]] -> GetPauliString @ s[[1]], {s,states} ]|>;
+                If[ isIncluded @ "States",
+                    data["States"] = <|Table[ s[[2]] -> GetPauliString @ s[[1]], {s,states} ]|>];
 
                 (* <| id -> {id,id}, ... |> *)
-                data["Parents"] = <|Table[ s[[2]] -> s[[3,All,1]] /. 0->Nothing, {s,states} ]|>;
-                data["Children"] = <|Table[ s[[2]] -> Cases[states, c_?(MemberQ[#[[3,All,1]],s[[2]]]&):>c[[2]]], {s,states} ]|>;
+                If[ isIncluded @ "Parents",
+                    data["Parents"] = <|Table[ s[[2]] -> s[[3,All,1]] /. 0->Nothing, {s,states} ]|> ];
+                If[ isIncluded @ "Children",
+                    data["Children"] = <|Table[ s[[2]] -> Cases[states, c_?(MemberQ[#[[3,All,1]],s[[2]]]&):>c[[2]]], {s,states} ]|> ];
 
                 (* <| id -> <|id->(expr), id->(expr)|> ... |> *)
-                data["ParentFactors"] = <|Table[ s[[2]] -> <|Table[Rule@@p, {p,s[[3]]}]|>, {s,states}]|>;
+                If[ isIncluded @ "ParentFactors",
+                    data["ParentFactors"] = <|Table[ s[[2]] -> <|Table[Rule@@p, {p,s[[3]]}]|>, {s,states}]|>];
 
                 (* <| id -> 0, id->4, ... |> *)
-                data["Weights"] = <|Table[ s[[2]] -> Count[s[[1]], _?Positive], {s,states} ]|>;
-                data["Indegree"] = <|Table[ id -> Length @ data["Parents"] @ id, {id, data["Ids"]} ]|>;
-                data["Outdegree"] = <|Table[ id -> Length @ data["Children"] @ id, {id, data["Ids"]} ]|>;
+                If[ isIncluded  @ "Weights",
+                    data["Weights"] = <|Table[ s[[2]] -> Count[s[[1]], _?Positive], {s,states} ]|> ];
+                If[ isIncluded @ "Indegree",
+                    data["Indegree"] = <|Table[ id -> Length @ data["Parents"] @ id, {id, data["Ids"]} ]|> ];
+                If[ isIncluded @ "Outdegree",
+                    data["Outdegree"] = <|Table[ id -> Length @ data["Children"] @ id, {id, data["Ids"]} ]|> ];
                 
                 (* <| id -> (symbolic expression), ... |> *)
-                data["Coefficients"] = <|Table[ state[[2]]->state[[3,1,2]], {state, First@simpleGraph} ]|>;
-                Do[
-                    data["Coefficients"][state[[2]]] = Sum[
-                        parent[[2]] * data["Coefficients"][parent[[1]]], 
-                        {parent, state[[3]]}],
-                    {layer, Rest[simpleGraph]},
-                    {state, layer}
+                If[ isIncluded @ "Coefficients",
+                    data["Coefficients"] = <|Table[ state[[2]]->state[[3,1,2]], {state, First@simpleGraph} ]|>;
+                    Do[
+                        data["Coefficients"][state[[2]]] = Sum[
+                            parent[[2]] * data["Coefficients"][parent[[1]]], 
+                            {parent, state[[3]]}],
+                        {layer, Rest[simpleGraph]},
+                        {state, layer}
+                    ]
                 ];
                 
                 (* one symbolically weighted sum of Pauli strings per layer *)
-                data["Strings"] = Table[
-                    (data["Coefficients"]/@ids) . (data["States"]/@ids),
-                    {ids, data["Layers"]}];
-
-                (* scalars *)
-                data["NumQubits"] = Length @ First @ First @ states;
-                data["NumNodes"] = Length @ data["Ids"];
-                data["NumLeaves"] = Length @ Last @ data["Layers"];
+                If[ isIncluded @ "Strings",
+                    data["Strings"] = Table[
+                        (data["Coefficients"]/@ids) . (data["States"]/@ids),
+                        {ids, data["Layers"]}]
+                ];
                 
                 (* return *)
                 data
@@ -5604,6 +5637,172 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         CalcPauliTransferEval[___] := invalidArgError[CalcPauliTransferEval]
 
+
+
+        (* 
+         * Front-end functions for rendering
+         * a Pauli transfer evalaution tree
+         *)
+
+        Options[DrawPauliTransferEval] = {
+            "PauliStringForm" -> Automatic, (* or "Subscript", "Index", "Kronecker", "String", "Hidden" *)
+            "ShowCoefficients" -> Automatic, (* or True, False *)
+            "EdgeDegreeStyles" -> Automatic, (* or a list of styles *)
+            "HighlightPathTo" -> {} (* or a weighted sum of Pauli strings, or a list thereof *)
+        };
+
+        (* DrawPauliTransferEval additionally accepts all options to CalcPauliTransferEval and Graph *)
+        drawPTEvalOptPatt = OptionsPattern @ {DrawPauliTransferEval, Sequence @@ First @ calcPTEvalOptPatt, Graph};
+
+        drawPTMapEvaluationGraph[eLabels_, vLabels_, eStyles_, eHighlights_, opts___] := 
+            Graph[
+                eLabels,
+                opts,
+                EdgeStyle -> eStyles,
+                VertexStyle -> White,
+                VertexLabels -> vLabels,
+                GraphHighlight -> eHighlights,
+                GraphLayout -> "LayeredDigraphEmbedding"
+            ]
+
+        getVertexLabelsForPTEval[subscriptStates_, numQubits_Integer, formOpt_String] :=
+            Switch[formOpt,
+                "Hidden", {},
+                "Subscript", subscriptStates,
+                _, MapAt[GetPauliStringReformatted[#,numQubits,formOpt]&, subscriptStates, {All,2}]]
+
+        getAllAncestorEdgesOfNode[parents_Association][id_] := 
+            Flatten @ Table[
+                {parentId -> id, getAllAncestorEdgesOfNode[parents][parentId]},
+                {parentId, parents[id]}
+            ]
+
+        extractCalcPTEvalOptions[ opts___ ] :=
+            Sequence @@ FilterRules[{opts}, Options /@ First @ calcPTEvalOptPatt // Flatten]
+
+        validateDrawPauliTransferEvalOptions[ opts:drawPTEvalOptPatt ] := (
+
+            (* check all options are recognised between all functions in drawPTEvalOptPatt *)
+            Check[ OptionValue @ "PauliStringForm", Return @ $Failed ];
+
+            (* check the options passed on to CalcPauliTransfer eval have valid values *)
+            Check[
+                validateCalcPauliTransferEvalOptions[DrawPauliTransferEval, extractCalcPTEvalOptions @ opts],
+                Return @ $Failed];
+
+            (* check all the options specific to DrawPauliTransferEval are valid *)
+            If[ Not @ MemberQ[{Automatic,True,False}, OptionValue @ "ShowCoefficients"],
+                Message[DrawPauliTransferEval::error, "Option \"ShowCoefficients\" must be Automatic, True or False. See ?DrawPauliTransferEval."];
+                Return @ $Failed];
+
+            If[ Not @ MemberQ[{Automatic,"Hidden","Subscript","Index","Kronecker","String"}, OptionValue @ "PauliStringForm"],
+                Message[DrawPauliTransferEval::error, "Invalid value for option \"PauliStringForm\". See ?DrawPauliTransferEval."];
+                Return @ $Failed];
+
+            If[ Not @ MatchQ[OptionValue @ "HighlightPathTo", (_?isValidSymbolicPauliString|{___?isValidSymbolicPauliString})],
+                Message[DrawPauliTransferEval::error, "Invalid value for option \"HighlightPathTo\". See ?DrawPauliTransferEval."];
+                Return @ $Failed];
+        )
+
+        (* match only Associations with the needed keys and item structures *)
+        detailedPTMapEvalPatt = KeyValuePattern[{
+            "Children" -> Association[(_Integer -> {___Integer}) .. ],
+            "Outdegree" -> Association[(_Integer -> _Integer) .. ],
+            "NumQubits" -> _Integer
+
+            (* additional keys are needed depending on option values; for now we trust they're supplied *)
+        }];
+
+        DrawPauliTransferEval[ eval:detailedPTMapEvalPatt, opts:drawPTEvalOptPatt ] := 
+            Module[
+                {edges,edgesAndLabels, vertexLabels, maxDegree,degreeStyles,edgeStyles, showCoeffs,stateForm, hlStrs,hlLeafIds,hlEdges},
+
+                (* validate options *)
+                Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
+
+                (* { id->id ... } *)
+                edges = Thread /@ Normal @ eval["Children"] // Flatten;
+
+                (* automatically decide whether to show coefficients or state labels.
+                 * This design is flawed; the most common case (user leaves settings 
+                 * on Automatic) will still mean 'eval' contains pre-computed "States"
+                 * and "ParentFactors" even when they won't be shown due to the below
+                 * auto-disable. We should avoid the pointless pre-computation, especially
+                 * because this is likely an expensive scenario when auto-hid! *)
+                showCoeffs = OptionValue @ "ShowCoefficients";
+                stateForm  = OptionValue @ "PauliStringForm";
+                If[showCoeffs === Automatic, showCoeffs = Length[edges] < 50];
+                If[stateForm === Automatic, stateForm = If[
+                    eval["NumLeaves"] * eval["NumQubits"] < 50, "String", "Hidden"]];
+
+                (* optionally { Labeled[id->id, fac] ... } *)
+                edgesAndLabels = If[ Not @ showCoeffs, edges, Table[
+                    Labeled[r, eval["ParentFactors"][Last@r][First@r] ],
+                    {r,edges}]];
+
+                (* { id->X0Y1 or -> XYZ, or etc ... }. Note that "States" might not be present in eval; that's okay! *)
+                vertexLabels = getVertexLabelsForPTEval[Normal @ eval @ "States", eval @ "NumQubits", stateForm];
+
+                (* accept (and pad) user override of per-degree edge colours *)
+                maxDegree = Max @ Values @ eval["Outdegree"];
+                degreeStyles = If[
+                    OptionValue @ "EdgeDegreeStyles" === Automatic,
+                    ColorData["Pastel"] /@ Range[0, 1, If[maxDegree === 1, 1, 1/(maxDegree-1)]],
+                    PadRight[OptionValue @ "EdgeDegreeStyles", maxDegree, OptionValue @ "EdgeDegreeStyles"]];
+
+                (* { (id->id) -> style, ... }*)
+                edgeStyles = Table[
+                    (edge) -> degreeStyles[[ eval["Outdegree"] @ First @ edge ]],
+                    {edge, Thread /@ Normal @ eval @ "Children" // Flatten}];
+
+                (* ensure user-chosen states to highlight is a list (even of one string) *)
+                hlStrs = OptionValue @ "HighlightPathTo";
+                If[Head @ hlStrs =!= List, hlStrs = {hlStrs}];
+
+                (* collect all leaf-nodes with a non-zero overlap with the user string(s) *)
+                hlLeafIds = DeleteDuplicates @ Flatten @ Table[ 
+                    If[ Not @ PossibleZeroQ @ GetPauliStringOverlap[str, eval["States"] @ leafId],
+                        leafId, Nothing],
+                    {str, hlStrs},
+                    {leafId, Last @ eval @ "Layers"}];
+    
+                hlEdges = getAllAncestorEdgesOfNode[eval@"Parents"] /@ hlLeafIds // Flatten // DeleteDuplicates;
+                
+                drawPTMapEvaluationGraph[
+                    edgesAndLabels, vertexLabels, edgeStyles, hlEdges,
+                    Sequence @@ FilterRules[{opts}, Options[Graph]]]
+            ]
+
+        simplePTMapEvalPatt = { { { {__Integer}, _Integer, {{_Integer,_}...} } .. } .. };
+
+        DrawPauliTransferEval[ layers:simplePTMapEvalPatt, opts:drawPTEvalOptPatt ] := 
+            Module[
+                {keys, assoc},
+
+                (* validate options *)
+                Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
+
+                (* compute a simplified 'Detailed' Association containing only the necessary keys *)
+                keys = {"Ids", "NumQubits", "Children", "Outdegree"};
+
+                If[ OptionValue @ "ShowCoefficients" =!= False,
+                    keys = Join[keys, {"ParentFactors"}]];
+
+                If[ OptionValue @ "PauliStringForm" =!= "Hidden",
+                    keys = Join[keys, {"States", "NumLeaves"}]];
+
+                If[ OptionValue @ "HighlightPathTo" =!= {},
+                    keys = Join[keys, {"States", "Parents", "Layers"}]]; (* duplication of "States" is ok *)
+
+                assoc = getDetailedPTMapEvaluationGraph[layers, keys];
+                DrawPauliTransferEval[assoc, opts]
+            ]
+
+        DrawPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, circ:(mixedGatesAndMapsPatt|_?isGateFormat), opts:drawPTEvalOptPatt ] := (
+            Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
+            DrawPauliTransferEval[CalcPauliTransferEval[pauliStr, circ, extractCalcPTEvalOptions @ opts], opts])
+
+        DrawPauliTransferEval[___] := invalidArgError[DrawPauliTransferEval];
 
 
     End[ ]
