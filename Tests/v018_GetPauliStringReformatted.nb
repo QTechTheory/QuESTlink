@@ -1,0 +1,2839 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[    115798,       2831]
+NotebookOptionsPosition[    102326,       2590]
+NotebookOutlinePosition[    102775,       2608]
+CellTagsIndexPosition[    102732,       2605]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["GetPauliStringReformatted", "Title",
+ CellChangeTimes->{{3.913273690088934*^9, 3.913273712038406*^9}, {
+   3.915199103735641*^9, 3.915199106675872*^9}, {3.917086155647716*^9, 
+   3.917086158759173*^9}, {3.9171594220183487`*^9, 3.917159422219205*^9}, {
+   3.917274433487973*^9, 3.917274435404172*^9}, 3.917277665796289*^9, {
+   3.917280864184389*^9, 3.9172808649949007`*^9}, {3.9172828199639874`*^9, 
+   3.9172828467690277`*^9}},ExpressionUUID->"45516375-c635-4381-9704-\
+ada9eeed3170"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", " ", "@", " ", 
+   RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Import", "[", "\"\<../Link/QuESTlink.m\>\"", "]"}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.917262759745018*^9, 3.91726277723568*^9}, 
+   3.917269684118362*^9},
+ CellLabel->
+  "In[373]:=",ExpressionUUID->"9c42eac3-4a6c-4e5b-b714-66082296dcce"],
+
+Cell[CellGroupData[{
+
+Cell["Doc", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 
+  3.9151991786465263`*^9}},ExpressionUUID->"736309f6-a3a0-49ed-9483-\
+b91a416f920a"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "GetPauliStringReformatted"}]], "Input",
+ CellChangeTimes->{{3.917285412304253*^9, 3.9172854149230757`*^9}},
+ CellLabel->
+  "In[375]:=",ExpressionUUID->"2e01f90e-ee57-4c82-88e0-2c3cfe31fb40"],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   FrameBox[
+    DynamicModuleBox[{System`InformationDump`open$$ = False, 
+     System`InformationDump`mouseOver$$ = False}, 
+     PaneSelectorBox[{True->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False,
+             BaseStyle -> None],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"Reformats symbolic Pauli strings into a variety of \
+other formats convenient for processing.\\nGetPauliStringReformatted[product, \
+\\\"Index\\\"] returns the integer index of the given Pauli product in the \
+ordered basis of Pauli products. The zero target is treated as least \
+significant.\\nGetPauliStringReformatted[string, \\\"Index\\\"] returns a \
+list of {index, coefficient} pairs which describe all Pauli products in the \
+given string.\\nGetPauliStringReformatted[..., \\\"Digits\\\"] returns the \
+individual digits of the basis Pauli string's index (or indices), in base 4, \
+where the rightmost digit is the least significant. \
+\\nGetPauliStringReformatted[..., \\\"Kronecker\\\"] expands the Pauli string \
+into an explicit Kronecker form. The zero target in the given product \
+corresponds to the rightmost Pauli in the Kronecker form. \
+\\nGetPauliStringReformatted[..., \\\"String\\\"] returns a compact, \
+string-form of the \\\"Kronecker\\\" format.\\nGetPauliStringReformatted[..., \
+numQubits] expands the \\\"Digits\\\", \\\"Kronecker\\\" and \\\"String\\\" \
+formats to the specified number of qubits, by padding with '0' digits or 'Id' \
+operators.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          PaneBox[
+           TagBox[GridBox[{
+              {
+               StyleBox[
+                TagBox[
+                 TooltipBox[
+                  StyleBox["\<\" Definitions\"\>", "InformationRowLabel",
+                   StripOnInput->False],
+                  "\"Definitions\"",
+                  TooltipStyle->"TextStyling"],
+                 Annotation[#, "Definitions", "Tooltip"]& ], "DialogStyle",
+                StripOnInput->False]},
+              {
+               TemplateBox[{"\"\[ThinSpace]\"", 
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"GetPauliStringReformatted", "[", 
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`string_", "?", 
+                    "QuEST`Private`isValidSymbolicPauliString"}], ",", 
+                    RowBox[{"OrderlessPatternSequence", "[", 
+                    RowBox[{
+                    RowBox[{"_String", "|", 
+                    RowBox[{"PatternSequence", "[", "]"}]}], ",", 
+                    
+                    RowBox[{"QuEST`Private`numQubits_Integer", "?", 
+                    "Positive"}]}], "]"}]}], "]"}], "/;", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`getNumQubitsInPauliString", "[", 
+                    "QuEST`Private`string", "]"}], ">", 
+                    "QuEST`Private`numQubits"}]}], ":=", 
+                    RowBox[{"(", 
+                    RowBox[{
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"GetPauliStringReformatted", "::", "error"}], 
+                    "MessageName"], ",", 
+                    "\"The given Pauli string targeted a larger index qubit \
+than the number of qubits specified.\""}], "]"}], ";", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}], ")"}]}]}, {
+                   " "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliStringReformatted", "[", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`string_", "?", 
+                    "QuEST`Private`isValidSymbolicPauliString"}], ",", 
+                    RowBox[{"OrderlessPatternSequence", "[", 
+                    RowBox[{"\"Index\"", ",", 
+                    RowBox[{"QuEST`Private`nQb", ":", 
+                    RowBox[{
+                    RowBox[{"_Integer", "?", "Positive"}], "|", 
+                    RowBox[{"PatternSequence", "[", "]"}]}]}]}], "]"}]}], 
+                    "]"}], ":=", 
+                    
+                    RowBox[{
+                    "QuEST`Private`getIndexOfPauliString", "[", 
+                    "QuEST`Private`string", "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliStringReformatted", "[", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`string_", "?", 
+                    "QuEST`Private`isValidSymbolicPauliString"}], ",", 
+                    RowBox[{"OrderlessPatternSequence", "[", 
+                    RowBox[{"\"Digits\"", ",", 
+                    RowBox[{"QuEST`Private`nQb", ":", 
+                    RowBox[{
+                    RowBox[{"_Integer", "?", "Positive"}], "|", 
+                    RowBox[{"PatternSequence", "[", "]"}]}]}]}], "]"}]}], 
+                    "]"}], ":=", 
+                    RowBox[{"QuEST`Private`getDigitsOfPauliString", "[", 
+                    
+                    RowBox[{
+                    "QuEST`Private`string", ",", "QuEST`Private`nQb"}], 
+                    "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliStringReformatted", "[", 
+                    RowBox[{
+                    RowBox[{"QuEST`Private`string_", "?", 
+                    "QuEST`Private`isValidSymbolicPauliString"}], ",", 
+                    RowBox[{"OrderlessPatternSequence", "[", 
+                    RowBox[{"\"Kronecker\"", ",", 
+                    RowBox[{"QuEST`Private`nQb", ":", 
+                    RowBox[{
+                    RowBox[{"_Integer", "?", "Positive"}], "|", 
+                    RowBox[{"PatternSequence", "[", "]"}]}]}]}], "]"}]}], 
+                    "]"}], ":=", 
+                    
+                    RowBox[{
+                    "QuEST`Private`getKroneckerFormOfPauliString", "[", 
+                    
+                    RowBox[{
+                    "QuEST`Private`string", ",", "QuEST`Private`nQb"}], 
+                    "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliStringReformatted", "[", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`string_", "?", 
+                    "QuEST`Private`isValidSymbolicPauliString"}], ",", 
+                    RowBox[{"OrderlessPatternSequence", "[", 
+                    RowBox[{"\"String\"", ",", 
+                    RowBox[{"QuEST`Private`nQb", ":", 
+                    RowBox[{
+                    RowBox[{"_Integer", "?", "Positive"}], "|", 
+                    RowBox[{"PatternSequence", "[", "]"}]}]}]}], "]"}]}], 
+                    "]"}], ":=", 
+                    
+                    RowBox[{
+                    "QuEST`Private`getCompactStringFormOfPauliString", "[", 
+                    
+                    RowBox[{
+                    "QuEST`Private`string", ",", "QuEST`Private`nQb"}], 
+                    "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliStringReformatted", "[", "___", "]"}], 
+                    ":=", 
+                    
+                    RowBox[{
+                    "QuEST`Private`invalidArgError", "[", 
+                    "GetPauliStringReformatted", "]"}]}]}, {" "}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]},
+                "RowDefault"]}
+             },
+             DefaultBaseStyle->"Column",
+             GridBoxAlignment->{"Columns" -> {{Left}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+            "Column"],
+           FrameMargins->{{6, 0}, {3, 6}}], "\<\"\"\>"},
+         {
+          PaneBox[GridBox[{
+             {
+              
+              DynamicModuleBox[{System`InformationDump`open$$ = {
+               False, False, False, False, False, False}}, 
+               StyleBox[GridBox[{
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Full Name\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"FullName\"",
+                    TooltipStyle->"TextStyling"],
+                    
+                    Annotation[#, "FullName", 
+                    "Tooltip"]& ], "\<\"QuEST`GetPauliStringReformatted\"\>"}
+                 },
+                 AutoDelete->False,
+                 GridBoxAlignment->{"Columns" -> {Right, Left}},
+                 GridBoxDividers->None,
+                 GridBoxItemSize->{"Columns" -> {Automatic, Automatic}},
+                 GridBoxSpacings->{"Columns" -> {
+                    Offset[0.27999999999999997`], {
+                    Offset[0.5599999999999999]}, 
+                    Offset[0.27999999999999997`]}, "Rows" -> {
+                    Offset[0.2], {
+                    Offset[0.8]}, 
+                    Offset[0.2]}}], "DialogStyle",
+                StripOnInput->False],
+               DynamicModuleValues:>{}]}
+            },
+            DefaultBaseStyle->"Column",
+            GridBoxAlignment->{"Columns" -> {{Left}}},
+            GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings->{"Columns" -> {
+                Offset[0.27999999999999997`], {
+                 Offset[0.5599999999999999]}, 
+                Offset[0.27999999999999997`]}, "Rows" -> {
+                Offset[0.2], {
+                 Offset[3.6]}, 
+                Offset[0.2]}}],
+           FrameMargins->{{6, 6}, {6, 3}}], ""},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpener"]], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpenerHot"]]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, False],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"], False->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"Reformats symbolic Pauli strings into a variety of \
+other formats convenient for processing.\\nGetPauliStringReformatted[product, \
+\\\"Index\\\"] returns the integer index of the given Pauli product in the \
+ordered basis of Pauli products. The zero target is treated as least \
+significant.\\nGetPauliStringReformatted[string, \\\"Index\\\"] returns a \
+list of {index, coefficient} pairs which describe all Pauli products in the \
+given string.\\nGetPauliStringReformatted[..., \\\"Digits\\\"] returns the \
+individual digits of the basis Pauli string's index (or indices), in base 4, \
+where the rightmost digit is the least significant. \
+\\nGetPauliStringReformatted[..., \\\"Kronecker\\\"] expands the Pauli string \
+into an explicit Kronecker form. The zero target in the given product \
+corresponds to the rightmost Pauli in the Kronecker form. \
+\\nGetPauliStringReformatted[..., \\\"String\\\"] returns a compact, \
+string-form of the \\\"Kronecker\\\" format.\\nGetPauliStringReformatted[..., \
+numQubits] expands the \\\"Digits\\\", \\\"Kronecker\\\" and \\\"String\\\" \
+formats to the specified number of qubits, by padding with '0' digits or 'Id' \
+operators.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {2., 8.}}], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpenerHot"],
+               ImageSizeCache->{10., {2., 8.}}]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, True],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}, Dynamic[System`InformationDump`open$$],
+      BaselinePosition->Baseline,
+      FrameMargins->0,
+      ImageSize->Automatic],
+     DynamicModuleValues:>{}],
+    BaseStyle->"InformationGridFrame",
+    StripOnInput->False], "InformationGridPlain",
+   StripOnInput->False],
+  InformationData[<|
+   "ObjectType" -> "Symbol", "Usage" -> 
+    "Reformats symbolic Pauli strings into a variety of other formats \
+convenient for processing.\nGetPauliStringReformatted[product, \"Index\"] \
+returns the integer index of the given Pauli product in the ordered basis of \
+Pauli products. The zero target is treated as least significant.\n\
+GetPauliStringReformatted[string, \"Index\"] returns a list of {index, \
+coefficient} pairs which describe all Pauli products in the given string.\n\
+GetPauliStringReformatted[..., \"Digits\"] returns the individual digits of \
+the basis Pauli string's index (or indices), in base 4, where the rightmost \
+digit is the least significant. \nGetPauliStringReformatted[..., \
+\"Kronecker\"] expands the Pauli string into an explicit Kronecker form. The \
+zero target in the given product corresponds to the rightmost Pauli in the \
+Kronecker form. \nGetPauliStringReformatted[..., \"String\"] returns a \
+compact, string-form of the \"Kronecker\" format.\n\
+GetPauliStringReformatted[..., numQubits] expands the \"Digits\", \"Kronecker\
+\" and \"String\" formats to the specified number of qubits, by padding with \
+'0' digits or 'Id' operators.", "Documentation" -> None, "OwnValues" -> None, 
+    "UpValues" -> None, "DownValues" -> 
+    Information`InformationValueForm[
+     DownValues, QuEST`GetPauliStringReformatted, {Condition[
+         QuEST`GetPauliStringReformatted[
+          PatternTest[
+           Pattern[QuEST`Private`string, 
+            Blank[]], QuEST`Private`isValidSymbolicPauliString], 
+          OrderlessPatternSequence[
+           Alternatives[
+            Blank[String], 
+            PatternSequence[]], 
+           PatternTest[
+            Pattern[QuEST`Private`numQubits, 
+             Blank[Integer]], Positive]]], 
+         QuEST`Private`getNumQubitsInPauliString[QuEST`Private`string] > 
+         QuEST`Private`numQubits] :> (Message[
+          MessageName[QuEST`GetPauliStringReformatted, "error"], 
+          "The given Pauli string targeted a larger index qubit than the \
+number of qubits specified."]; Return[$Failed]), 
+       QuEST`GetPauliStringReformatted[
+         PatternTest[
+          Pattern[QuEST`Private`string, 
+           Blank[]], QuEST`Private`isValidSymbolicPauliString], 
+         OrderlessPatternSequence["Index", 
+          Pattern[QuEST`Private`nQb, 
+           Alternatives[
+            PatternTest[
+             Blank[Integer], Positive], 
+            PatternSequence[]]]]] :> 
+       QuEST`Private`getIndexOfPauliString[QuEST`Private`string], 
+       QuEST`GetPauliStringReformatted[
+         PatternTest[
+          Pattern[QuEST`Private`string, 
+           Blank[]], QuEST`Private`isValidSymbolicPauliString], 
+         OrderlessPatternSequence["Digits", 
+          Pattern[QuEST`Private`nQb, 
+           Alternatives[
+            PatternTest[
+             Blank[Integer], Positive], 
+            PatternSequence[]]]]] :> 
+       QuEST`Private`getDigitsOfPauliString[
+        QuEST`Private`string, QuEST`Private`nQb], 
+       QuEST`GetPauliStringReformatted[
+         PatternTest[
+          Pattern[QuEST`Private`string, 
+           Blank[]], QuEST`Private`isValidSymbolicPauliString], 
+         OrderlessPatternSequence["Kronecker", 
+          Pattern[QuEST`Private`nQb, 
+           Alternatives[
+            PatternTest[
+             Blank[Integer], Positive], 
+            PatternSequence[]]]]] :> 
+       QuEST`Private`getKroneckerFormOfPauliString[
+        QuEST`Private`string, QuEST`Private`nQb], 
+       QuEST`GetPauliStringReformatted[
+         PatternTest[
+          Pattern[QuEST`Private`string, 
+           Blank[]], QuEST`Private`isValidSymbolicPauliString], 
+         OrderlessPatternSequence["String", 
+          Pattern[QuEST`Private`nQb, 
+           Alternatives[
+            PatternTest[
+             Blank[Integer], Positive], 
+            PatternSequence[]]]]] :> 
+       QuEST`Private`getCompactStringFormOfPauliString[
+        QuEST`Private`string, QuEST`Private`nQb], 
+       QuEST`GetPauliStringReformatted[
+         BlankNullSequence[]] :> 
+       QuEST`Private`invalidArgError[QuEST`GetPauliStringReformatted]}], 
+    "SubValues" -> None, "DefaultValues" -> None, "NValues" -> None, 
+    "FormatValues" -> None, "Options" -> None, "Attributes" -> {}, "FullName" -> 
+    "QuEST`GetPauliStringReformatted"|>, False]]], "Output",
+ CellChangeTimes->{3.917285415179356*^9, 3.917285656023131*^9, 
+  3.917287100216002*^9, 3.917411864073241*^9, 3.917411914310759*^9, 
+  3.917428444999716*^9},
+ CellLabel->
+  "Out[375]=",ExpressionUUID->"4c87e999-ad25-4b90-9e8a-2387baad0236"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "GetPauliString"}]], "Input",
+ CellChangeTimes->{{3.917414619478066*^9, 3.9174146255759363`*^9}},
+ CellLabel->
+  "In[376]:=",ExpressionUUID->"54ebf6ef-3ac3-4dfa-b8b7-a2802d35d355"],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   FrameBox[
+    DynamicModuleBox[{System`InformationDump`open$$ = False, 
+     System`InformationDump`mouseOver$$ = False}, 
+     PaneSelectorBox[{True->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False,
+             BaseStyle -> None],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"Returns a Pauli string or a weighted sum of \
+symbolic Pauli tensors from a variety of input \
+formats.\\nGetPauliString[matrix] returns a complex-weighted sum of Pauli \
+tensors equivalent to the given matrix. If the input matrix is Hermitian, the \
+output can be passed to Chop[] in order to remove the negligible imaginary \
+components.\\nGetPauliString[index] returns the basis Pauli string \
+corresponding to the given index, where the returned Pauli operator targeting \
+0 is informed by the least significant bit(s) of the index. \
+\\nGetPauliString[digits] specifies the Pauli product via the base-4 digits \
+of its index, where the rightmost digit is the least \
+significant.\\nGetPauliString[address] opens or downloads the file at address \
+(a string, of a file location or URL), and interprets it as a list of \
+coefficients and Pauli codes. Each line of the file is assumed a separate \
+Pauli tensor with format {coeff code1 code2 ... codeN} (excluding braces) \
+where the codes are in {0,1,2,3} (indicating a I, X, Y, Z), for an N-qubit \
+Pauli string, and are given in order of increasing significance (zero qubit \
+left). Each line must have N+1 terms, which includes the initial real decimal \
+coefficient. For an example, see \\\"https://qtechtheory.org/hamil_6qbLiH.txt\
+\\\".\\nGetPauliString[..., numQubits] overrides the inferred number of \
+qubits, introducing additional Id operators upon un-targeted qubits (unless \
+explicitly removed with \\\"RemoveIds\\\"->False).\\nGetPauliString[..., \
+{targets}] specifies a list of qubits which the returned Pauli string should \
+target (in the given order), instead of the default targets {0, 1, 2, \
+...}.\\nGetPauliString accepts optional argument \\\"RemoveIds\\\" -> True or \
+False (default Automatic) which when True, retains otherwise removed Id \
+operators so that the returned string has an explicit Pauli operator acting \
+upon every qubit.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          PaneBox[
+           TagBox[GridBox[{
+              {
+               StyleBox[
+                TagBox[
+                 TooltipBox[
+                  StyleBox["\<\" Definitions\"\>", "InformationRowLabel",
+                   StripOnInput->False],
+                  "\"Definitions\"",
+                  TooltipStyle->"TextStyling"],
+                 Annotation[#, "Definitions", "Tooltip"]& ], "DialogStyle",
+                StripOnInput->False]},
+              {
+               TemplateBox[{"\"\[ThinSpace]\"", 
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"GetPauliString", "[", 
+                    RowBox[{
+                    RowBox[{"_String", "|", 
+                    RowBox[{"_", "?", "MatrixQ"}], "|", "_Integer"}], ",", 
+                    RowBox[{"OrderlessPatternSequence", "[", 
+                    RowBox[{
+                    RowBox[{"{", "}"}], ",", 
+                    RowBox[{"QuEST`Private`nQb", ":", 
+                    RowBox[{
+                    RowBox[{"_Integer", "?", "Positive"}], "|", 
+                    RowBox[{"PatternSequence", "[", "]"}]}]}]}], "]"}], ",", 
+                    "QuEST`Private`opts___"}], "]"}], ":=", 
+                    RowBox[{"(", 
+                    RowBox[{
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"GetPauliString", "::", "error"}], "MessageName"],
+                     ",", "\"Optional list of target qubits must not be \
+empty.\""}], "]"}], ";", "$Failed"}], ")"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliString", "[", 
+                    RowBox[{"QuEST`Private`address_String", ",", 
+                    RowBox[{"QuEST`Private`numPaulis", ":", 
+                    RowBox[{
+                    RowBox[{"_Integer", "?", "Positive"}], "|", 
+                    RowBox[{"PatternSequence", "[", "]"}]}]}], ",", 
+                    RowBox[{"QuEST`Private`opts", ":", 
+                    RowBox[{"OptionsPattern", "[", "]"}]}]}], "]"}], ":=", 
+                    RowBox[{"QuEST`Private`getPauliStringFromAddress", "[", 
+                    
+                    RowBox[{
+                    "QuEST`Private`address", ",", "QuEST`Private`numPaulis", 
+                    ",", 
+                    RowBox[{"QuEST`Private`shouldRemovePauliStringIds", "[", 
+                    
+                    RowBox[{"QuEST`Private`numPaulis", ",", 
+                    "QuEST`Private`opts"}], "]"}]}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliString", "[", 
+                    RowBox[{
+                    RowBox[{"QuEST`Private`matrix_", "?", "MatrixQ"}], ",", 
+                    RowBox[{"QuEST`Private`numPaulis", ":", 
+                    RowBox[{
+                    RowBox[{"_Integer", "?", "Positive"}], "|", 
+                    RowBox[{"PatternSequence", "[", "]"}]}]}], ",", 
+                    RowBox[{"QuEST`Private`opts", ":", 
+                    RowBox[{"OptionsPattern", "[", "]"}]}]}], "]"}], ":=", 
+                    RowBox[{"QuEST`Private`getPauliStringFromMatrix", "[", 
+                    
+                    RowBox[{
+                    "QuEST`Private`matrix", ",", "QuEST`Private`numPaulis", 
+                    ",", 
+                    RowBox[{"QuEST`Private`shouldRemovePauliStringIds", "[", 
+                    
+                    RowBox[{"QuEST`Private`numPaulis", ",", 
+                    "QuEST`Private`opts"}], "]"}]}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliString", "[", 
+                    RowBox[{"QuEST`Private`index_Integer", ",", 
+                    RowBox[{"QuEST`Private`numPaulis", ":", 
+                    RowBox[{
+                    RowBox[{"_Integer", "?", "Positive"}], "|", 
+                    RowBox[{"PatternSequence", "[", "]"}]}]}], ",", 
+                    RowBox[{"QuEST`Private`opts", ":", 
+                    RowBox[{"OptionsPattern", "[", "]"}]}]}], "]"}], ":=", 
+                    RowBox[{"QuEST`Private`getPauliStringFromIndex", "[", 
+                    
+                    RowBox[{
+                    "QuEST`Private`index", ",", "QuEST`Private`numPaulis", 
+                    ",", 
+                    RowBox[{"QuEST`Private`shouldRemovePauliStringIds", "[", 
+                    
+                    RowBox[{"QuEST`Private`numPaulis", ",", 
+                    "QuEST`Private`opts"}], "]"}]}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliString", "[", 
+                    RowBox[{
+                    RowBox[{"{", "QuEST`Private`digits__Integer", "}"}], ",", 
+                    
+                    RowBox[{"QuEST`Private`numPaulis", ":", 
+                    RowBox[{
+                    RowBox[{"_Integer", "?", "Positive"}], "|", 
+                    RowBox[{"PatternSequence", "[", "]"}]}]}], ",", 
+                    RowBox[{"QuEST`Private`opts", ":", 
+                    RowBox[{"OptionsPattern", "[", "]"}]}]}], "]"}], ":=", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Length", "[", 
+                    RowBox[{"{", "QuEST`Private`numPaulis", "}"}], "]"}], 
+                    "===", "1"}], "&&", 
+                    RowBox[{"QuEST`Private`numPaulis", "<", 
+                    RowBox[{"Length", "[", 
+                    RowBox[{"{", "QuEST`Private`digits", "}"}], "]"}]}]}], 
+                    ",", 
+                    RowBox[{
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"GetPauliString", "::", "error"}], "MessageName"],
+                     ",", "\"The overriden number of qubits was fewer than \
+the number of given digits.\""}], "]"}], ";", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}], ",", 
+                    RowBox[{"QuEST`Private`getPauliStringFromDigits", "[", 
+                    RowBox[{
+                    RowBox[{"{", "QuEST`Private`digits", "}"}], ",", 
+                    "QuEST`Private`numPaulis", ",", 
+                    RowBox[{"QuEST`Private`shouldRemovePauliStringIds", "[", 
+                    
+                    RowBox[{"QuEST`Private`numPaulis", ",", 
+                    "QuEST`Private`opts"}], "]"}]}], "]"}]}], "]"}]}]}, {
+                   " "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliString", "[", 
+                    RowBox[{
+                    RowBox[{"QuEST`Private`obj", ":", 
+                    RowBox[{"_String", "|", 
+                    RowBox[{"_", "?", "MatrixQ"}], "|", "_Integer", "|", 
+                    RowBox[{"{", "__Integer", "}"}]}]}], ",", 
+                    RowBox[{"OrderlessPatternSequence", "[", 
+                    RowBox[{
+                    RowBox[{"QuEST`Private`nQb", ":", 
+                    RowBox[{
+                    RowBox[{"_Integer", "?", "Positive"}], "|", 
+                    RowBox[{"PatternSequence", "[", "]"}]}]}], ",", 
+                    RowBox[{"QuEST`Private`targs", ":", 
+                    RowBox[{"{", "___Integer", "}"}]}]}], "]"}], ",", 
+                    "QuEST`Private`opts___"}], "]"}], ":=", 
+                    RowBox[{"Module", "[", 
+                    RowBox[{
+                    RowBox[{"{", 
+                    
+                    RowBox[{"QuEST`Private`pauliStr", ",", 
+                    "QuEST`Private`numQbInStr", ",", "QuEST`Private`map"}], 
+                    "}"}], ",", 
+                    RowBox[{
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"!", 
+                    RowBox[{"AllTrue", "[", 
+                    RowBox[{"QuEST`Private`targs", ",", "NonNegative"}], 
+                    "]"}]}], "||", 
+                    RowBox[{"!", 
+                    
+                    RowBox[{"DuplicateFreeQ", "[", "QuEST`Private`targs", 
+                    "]"}]}]}], ",", 
+                    RowBox[{
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"GetPauliString", "::", "error"}], "MessageName"],
+                     ",", "\"The list of target qubits must be non-negative \
+and unique.\""}], "]"}], ";", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}]}], "]"}], ";", 
+                    RowBox[{"QuEST`Private`pauliStr", "=", 
+                    RowBox[{"Check", "[", 
+                    RowBox[{
+                    RowBox[{"GetPauliString", "[", 
+                    
+                    RowBox[{"QuEST`Private`obj", ",", "QuEST`Private`nQb", 
+                    ",", "QuEST`Private`opts"}], "]"}], ",", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}], "]"}]}], ";", 
+                    RowBox[{"QuEST`Private`numQbInStr", "=", 
+                    
+                    RowBox[{"QuEST`Private`getNumQubitsInPauliString", "[", 
+                    "QuEST`Private`pauliStr", "]"}]}], ";", 
+                    RowBox[{"If", "[", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Length", "[", "QuEST`Private`targs", "]"}], 
+                    "=!=", "QuEST`Private`numQbInStr"}], ",", 
+                    RowBox[{
+                    RowBox[{"Message", "[", 
+                    RowBox[{
+                    StyleBox[
+                    RowBox[{"GetPauliString", "::", "error"}], "MessageName"],
+                     ",", 
+                    
+                    RowBox[{
+                    "\"A different number of target qubits was given (\"", 
+                    "<>", 
+                    RowBox[{"ToString", "[", 
+                    RowBox[{"Length", "[", "QuEST`Private`targs", "]"}], 
+                    "]"}], "<>", "\") than exists in the Pauli string (\"", 
+                    "<>", 
+                    
+                    RowBox[{"ToString", "[", "QuEST`Private`numQbInStr", 
+                    "]"}], "<>", "\").\""}]}], "]"}], ";", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}]}], "]"}], ";", 
+                    RowBox[{"QuEST`Private`map", "=", 
+                    RowBox[{"MapThread", "[", 
+                    RowBox[{"Rule", ",", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{
+                    RowBox[{"Range", "[", "QuEST`Private`numQbInStr", "]"}], 
+                    "-", "1"}], ",", "QuEST`Private`targs"}], "}"}]}], 
+                    "]"}]}], ";", 
+                    RowBox[{"GetPauliStringRetargeted", "[", 
+                    
+                    RowBox[{"QuEST`Private`pauliStr", ",", 
+                    "QuEST`Private`map"}], "]"}]}]}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"GetPauliString", "[", "___", "]"}], ":=", 
+                    
+                    RowBox[{
+                    "QuEST`Private`invalidArgError", "[", "GetPauliString", 
+                    "]"}]}]}, {" "}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]},
+                "RowDefault"]}
+             },
+             DefaultBaseStyle->"Column",
+             GridBoxAlignment->{"Columns" -> {{Left}}},
+             
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+            "Column"],
+           FrameMargins->{{6, 0}, {3, 6}}], "\<\"\"\>"},
+         {
+          PaneBox[GridBox[{
+             {
+              
+              DynamicModuleBox[{System`InformationDump`open$$ = {
+               False, False, False, False, False, False}}, 
+               StyleBox[GridBox[{
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Options\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"Options\"",
+                    TooltipStyle->"TextStyling"],
+                    Annotation[#, "Options", "Tooltip"]& ], 
+                   RowBox[{"\<\"RemoveIds\"\>", "\[Rule]", "Automatic"}]},
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Full Name\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"FullName\"",
+                    TooltipStyle->"TextStyling"],
+                    
+                    Annotation[#, "FullName", 
+                    "Tooltip"]& ], "\<\"QuEST`GetPauliString\"\>"}
+                 },
+                 AutoDelete->False,
+                 GridBoxAlignment->{"Columns" -> {Right, Left}},
+                 GridBoxDividers->None,
+                 GridBoxItemSize->{"Columns" -> {Automatic, Automatic}},
+                 GridBoxSpacings->{"Columns" -> {
+                    Offset[0.27999999999999997`], {
+                    Offset[0.5599999999999999]}, 
+                    Offset[0.27999999999999997`]}, "Rows" -> {
+                    Offset[0.2], {
+                    Offset[0.8]}, 
+                    Offset[0.2]}}], "DialogStyle",
+                StripOnInput->False],
+               DynamicModuleValues:>{}]}
+            },
+            DefaultBaseStyle->"Column",
+            GridBoxAlignment->{"Columns" -> {{Left}}},
+            GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings->{"Columns" -> {
+                Offset[0.27999999999999997`], {
+                 Offset[0.5599999999999999]}, 
+                Offset[0.27999999999999997`]}, "Rows" -> {
+                Offset[0.2], {
+                 Offset[3.6]}, 
+                Offset[0.2]}}],
+           FrameMargins->{{6, 6}, {6, 3}}], ""},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpener"]], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpenerHot"]]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, False],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"], False->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"Returns a Pauli string or a weighted sum of \
+symbolic Pauli tensors from a variety of input \
+formats.\\nGetPauliString[matrix] returns a complex-weighted sum of Pauli \
+tensors equivalent to the given matrix. If the input matrix is Hermitian, the \
+output can be passed to Chop[] in order to remove the negligible imaginary \
+components.\\nGetPauliString[index] returns the basis Pauli string \
+corresponding to the given index, where the returned Pauli operator targeting \
+0 is informed by the least significant bit(s) of the index. \
+\\nGetPauliString[digits] specifies the Pauli product via the base-4 digits \
+of its index, where the rightmost digit is the least \
+significant.\\nGetPauliString[address] opens or downloads the file at address \
+(a string, of a file location or URL), and interprets it as a list of \
+coefficients and Pauli codes. Each line of the file is assumed a separate \
+Pauli tensor with format {coeff code1 code2 ... codeN} (excluding braces) \
+where the codes are in {0,1,2,3} (indicating a I, X, Y, Z), for an N-qubit \
+Pauli string, and are given in order of increasing significance (zero qubit \
+left). Each line must have N+1 terms, which includes the initial real decimal \
+coefficient. For an example, see \\\"https://qtechtheory.org/hamil_6qbLiH.txt\
+\\\".\\nGetPauliString[..., numQubits] overrides the inferred number of \
+qubits, introducing additional Id operators upon un-targeted qubits (unless \
+explicitly removed with \\\"RemoveIds\\\"->False).\\nGetPauliString[..., \
+{targets}] specifies a list of qubits which the returned Pauli string should \
+target (in the given order), instead of the default targets {0, 1, 2, \
+...}.\\nGetPauliString accepts optional argument \\\"RemoveIds\\\" -> True or \
+False (default Automatic) which when True, retains otherwise removed Id \
+operators so that the returned string has an explicit Pauli operator acting \
+upon every qubit.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {2., 8.}}], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpenerHot"],
+               ImageSizeCache->{10., {2., 8.}}]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, True],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}, Dynamic[System`InformationDump`open$$],
+      BaselinePosition->Baseline,
+      FrameMargins->0,
+      ImageSize->Automatic],
+     DynamicModuleValues:>{}],
+    BaseStyle->"InformationGridFrame",
+    StripOnInput->False], "InformationGridPlain",
+   StripOnInput->False],
+  InformationData[<|
+   "ObjectType" -> "Symbol", "Usage" -> 
+    "Returns a Pauli string or a weighted sum of symbolic Pauli tensors from \
+a variety of input formats.\nGetPauliString[matrix] returns a \
+complex-weighted sum of Pauli tensors equivalent to the given matrix. If the \
+input matrix is Hermitian, the output can be passed to Chop[] in order to \
+remove the negligible imaginary components.\nGetPauliString[index] returns \
+the basis Pauli string corresponding to the given index, where the returned \
+Pauli operator targeting 0 is informed by the least significant bit(s) of the \
+index. \nGetPauliString[digits] specifies the Pauli product via the base-4 \
+digits of its index, where the rightmost digit is the least significant.\n\
+GetPauliString[address] opens or downloads the file at address (a string, of \
+a file location or URL), and interprets it as a list of coefficients and \
+Pauli codes. Each line of the file is assumed a separate Pauli tensor with \
+format {coeff code1 code2 ... codeN} (excluding braces) where the codes are \
+in {0,1,2,3} (indicating a I, X, Y, Z), for an N-qubit Pauli string, and are \
+given in order of increasing significance (zero qubit left). Each line must \
+have N+1 terms, which includes the initial real decimal coefficient. For an \
+example, see \"https://qtechtheory.org/hamil_6qbLiH.txt\".\n\
+GetPauliString[..., numQubits] overrides the inferred number of qubits, \
+introducing additional Id operators upon un-targeted qubits (unless \
+explicitly removed with \"RemoveIds\"->False).\nGetPauliString[..., \
+{targets}] specifies a list of qubits which the returned Pauli string should \
+target (in the given order), instead of the default targets {0, 1, 2, ...}.\n\
+GetPauliString accepts optional argument \"RemoveIds\" -> True or False \
+(default Automatic) which when True, retains otherwise removed Id operators \
+so that the returned string has an explicit Pauli operator acting upon every \
+qubit.", "Documentation" -> None, "OwnValues" -> None, "UpValues" -> None, 
+    "DownValues" -> 
+    Information`InformationValueForm[
+     DownValues, QuEST`GetPauliString, {QuEST`GetPauliString[
+         Alternatives[
+          Blank[String], 
+          PatternTest[
+           Blank[], MatrixQ], 
+          Blank[Integer]], 
+         OrderlessPatternSequence[{}, 
+          Pattern[QuEST`Private`nQb, 
+           Alternatives[
+            PatternTest[
+             Blank[Integer], Positive], 
+            PatternSequence[]]]], 
+         Pattern[QuEST`Private`opts, 
+          BlankNullSequence[]]] :> (Message[
+          MessageName[QuEST`GetPauliString, "error"], 
+          "Optional list of target qubits must not be empty."]; $Failed), 
+       QuEST`GetPauliString[
+         Pattern[QuEST`Private`address, 
+          Blank[String]], 
+         Pattern[QuEST`Private`numPaulis, 
+          Alternatives[
+           PatternTest[
+            Blank[Integer], Positive], 
+           PatternSequence[]]], 
+         Pattern[QuEST`Private`opts, 
+          OptionsPattern[]]] :> 
+       QuEST`Private`getPauliStringFromAddress[
+        QuEST`Private`address, QuEST`Private`numPaulis, 
+         QuEST`Private`shouldRemovePauliStringIds[
+         QuEST`Private`numPaulis, QuEST`Private`opts]], QuEST`GetPauliString[
+         PatternTest[
+          Pattern[QuEST`Private`matrix, 
+           Blank[]], MatrixQ], 
+         Pattern[QuEST`Private`numPaulis, 
+          Alternatives[
+           PatternTest[
+            Blank[Integer], Positive], 
+           PatternSequence[]]], 
+         Pattern[QuEST`Private`opts, 
+          OptionsPattern[]]] :> 
+       QuEST`Private`getPauliStringFromMatrix[
+        QuEST`Private`matrix, QuEST`Private`numPaulis, 
+         QuEST`Private`shouldRemovePauliStringIds[
+         QuEST`Private`numPaulis, QuEST`Private`opts]], QuEST`GetPauliString[
+         Pattern[QuEST`Private`index, 
+          Blank[Integer]], 
+         Pattern[QuEST`Private`numPaulis, 
+          Alternatives[
+           PatternTest[
+            Blank[Integer], Positive], 
+           PatternSequence[]]], 
+         Pattern[QuEST`Private`opts, 
+          OptionsPattern[]]] :> 
+       QuEST`Private`getPauliStringFromIndex[
+        QuEST`Private`index, QuEST`Private`numPaulis, 
+         QuEST`Private`shouldRemovePauliStringIds[
+         QuEST`Private`numPaulis, QuEST`Private`opts]], 
+       QuEST`GetPauliString[{
+          Pattern[QuEST`Private`digits, 
+           BlankSequence[Integer]]}, 
+         Pattern[QuEST`Private`numPaulis, 
+          Alternatives[
+           PatternTest[
+            Blank[Integer], Positive], 
+           PatternSequence[]]], 
+         Pattern[QuEST`Private`opts, 
+          OptionsPattern[]]] :> If[
+         And[
+         Length[{QuEST`Private`numPaulis}] === 1, QuEST`Private`numPaulis < 
+          Length[{QuEST`Private`digits}]], Message[
+           MessageName[QuEST`GetPauliString, "error"], 
+           "The overriden number of qubits was fewer than the number of given \
+digits."]; Return[$Failed], 
+         QuEST`Private`getPauliStringFromDigits[{QuEST`Private`digits}, 
+          QuEST`Private`numPaulis, 
+          QuEST`Private`shouldRemovePauliStringIds[
+          QuEST`Private`numPaulis, QuEST`Private`opts]]], QuEST`GetPauliString[
+         Pattern[QuEST`Private`obj, 
+          Alternatives[
+           Blank[String], 
+           PatternTest[
+            Blank[], MatrixQ], 
+           Blank[Integer], {
+            BlankSequence[Integer]}]], 
+         OrderlessPatternSequence[
+          Pattern[QuEST`Private`nQb, 
+           Alternatives[
+            PatternTest[
+             Blank[Integer], Positive], 
+            PatternSequence[]]], 
+          Pattern[QuEST`Private`targs, {
+            BlankNullSequence[Integer]}]], 
+         Pattern[QuEST`Private`opts, 
+          BlankNullSequence[]]] :> 
+       Module[{QuEST`Private`pauliStr, QuEST`Private`numQbInStr, 
+          QuEST`Private`map}, If[
+           Or[
+            Not[
+             AllTrue[QuEST`Private`targs, NonNegative]], 
+            Not[
+             DuplicateFreeQ[QuEST`Private`targs]]], Message[
+             MessageName[QuEST`GetPauliString, "error"], 
+             "The list of target qubits must be non-negative and unique."]; 
+           Return[$Failed]]; QuEST`Private`pauliStr = Check[
+            QuEST`GetPauliString[
+            QuEST`Private`obj, QuEST`Private`nQb, QuEST`Private`opts], 
+            Return[$Failed]]; 
+         QuEST`Private`numQbInStr = 
+          QuEST`Private`getNumQubitsInPauliString[QuEST`Private`pauliStr]; 
+         If[Length[QuEST`Private`targs] =!= QuEST`Private`numQbInStr, 
+           Message[
+             MessageName[QuEST`GetPauliString, "error"], 
+             "A different number of target qubits was given (" <> ToString[
+               Length[QuEST`Private`targs]] <> 
+             ") than exists in the Pauli string (" <> 
+             ToString[QuEST`Private`numQbInStr] <> ")."]; Return[$Failed]]; 
+         QuEST`Private`map = 
+          MapThread[
+           Rule, {Range[QuEST`Private`numQbInStr] - 1, QuEST`Private`targs}]; 
+         QuEST`GetPauliStringRetargeted[
+          QuEST`Private`pauliStr, QuEST`Private`map]], QuEST`GetPauliString[
+         BlankNullSequence[]] :> 
+       QuEST`Private`invalidArgError[QuEST`GetPauliString]}], "SubValues" -> 
+    None, "DefaultValues" -> None, "NValues" -> None, "FormatValues" -> None, 
+    "Options" -> {"RemoveIds" -> Automatic}, "Attributes" -> {}, "FullName" -> 
+    "QuEST`GetPauliString"|>, False]]], "Output",
+ CellChangeTimes->{3.917414625841146*^9, 3.917428445075756*^9},
+ CellLabel->
+  "Out[376]=",ExpressionUUID->"293cf05a-d7fa-403f-a2f0-d9bddf70cc9e"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Correctness", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.9172856929619226`*^9, 
+  3.9172856947931757`*^9}},ExpressionUUID->"9d7ac11b-429a-4259-97b8-\
+31e4e352dcc2"],
+
+Cell[CellGroupData[{
+
+Cell["Index", "Section",
+ CellChangeTimes->{{3.917285726986681*^9, 
+  3.9172857280281467`*^9}},ExpressionUUID->"3803c9d0-37ba-4c3a-95fd-\
+ad67f04cbd1a"],
+
+Cell[CellGroupData[{
+
+Cell["Product", "Subsection",
+ CellChangeTimes->{{3.91728574433256*^9, 
+  3.917285745666665*^9}},ExpressionUUID->"f6c6b33d-b1de-46dd-9da5-\
+8ddd37773abc"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["Id", "4"], ",", " ", "\"\<Index\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.91728579946838*^9, 3.917285807665057*^9}},
+ CellLabel->
+  "In[377]:=",ExpressionUUID->"027595dd-98f8-40ef-b1ba-5d9d221af8c0"],
+
+Cell[BoxData["0"], "Output",
+ CellChangeTimes->{{3.9172858033871117`*^9, 3.917285807842256*^9}, 
+   3.917287100230843*^9, 3.917411166690855*^9, 3.917428445087006*^9},
+ CellLabel->
+  "Out[377]=",ExpressionUUID->"64957be2-8b30-4aee-a048-fae1aa2f0699"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", "\"\<Index\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["Y", "0"], ",", " ", "\"\<Index\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["Z", "0"], ",", " ", "\"\<Index\>\""}], "]"}]}], "Input",
+ CellChangeTimes->{{3.917285813188902*^9, 3.917285821748193*^9}},
+ CellLabel->
+  "In[378]:=",ExpressionUUID->"1dab23be-0222-44a9-80bc-b580fc4368e4"],
+
+Cell[BoxData["1"], "Output",
+ CellChangeTimes->{3.917285822230702*^9, 3.9172871002564907`*^9, 
+  3.917411167569893*^9, 3.917428445121862*^9},
+ CellLabel->
+  "Out[378]=",ExpressionUUID->"ab42c0fc-843d-457d-8f60-acb2ead6d666"],
+
+Cell[BoxData["2"], "Output",
+ CellChangeTimes->{3.917285822230702*^9, 3.9172871002564907`*^9, 
+  3.917411167569893*^9, 3.9174284451238947`*^9},
+ CellLabel->
+  "Out[379]=",ExpressionUUID->"f1a6cf73-b1c8-4312-a989-f423b7ccd003"],
+
+Cell[BoxData["3"], "Output",
+ CellChangeTimes->{3.917285822230702*^9, 3.9172871002564907`*^9, 
+  3.917411167569893*^9, 3.917428445125849*^9},
+ CellLabel->
+  "Out[380]=",ExpressionUUID->"0bc0e773-6fb0-4724-8a83-03b672a36ccd"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["X", "1"], ",", " ", "\"\<Index\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["Id", "5"], 
+    SubscriptBox["X", "1"], 
+    SubscriptBox["Id", "0"]}], ",", " ", "\"\<Index\>\""}], "]"}]}], "Input",
+ CellChangeTimes->{{3.917166687016666*^9, 3.91716669141661*^9}, {
+  3.9172858336255083`*^9, 3.917285853857028*^9}},
+ CellLabel->
+  "In[381]:=",ExpressionUUID->"5bca3077-4771-4d86-b007-9d5082c96dab"],
+
+Cell[BoxData["4"], "Output",
+ CellChangeTimes->{{3.917166687478321*^9, 3.9171666916351633`*^9}, 
+   3.917170737090913*^9, 3.9171711414369097`*^9, 3.917172107428514*^9, 
+   3.917173183127985*^9, {3.917285848640642*^9, 3.9172858542403307`*^9}, 
+   3.917287100268745*^9, 3.917411169064183*^9, 3.9174284451351843`*^9},
+ CellLabel->
+  "Out[381]=",ExpressionUUID->"49a9bde3-1e8a-4295-95a3-961705db46d0"],
+
+Cell[BoxData["4"], "Output",
+ CellChangeTimes->{{3.917166687478321*^9, 3.9171666916351633`*^9}, 
+   3.917170737090913*^9, 3.9171711414369097`*^9, 3.917172107428514*^9, 
+   3.917173183127985*^9, {3.917285848640642*^9, 3.9172858542403307`*^9}, 
+   3.917287100268745*^9, 3.917411169064183*^9, 3.917428445137207*^9},
+ CellLabel->
+  "Out[382]=",ExpressionUUID->"fab18fd0-44e9-408d-a8c9-c05bc826c103"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"GetPauliStringReformatted", "[", 
+   RowBox[{
+    SubscriptBox["Z", "34"], ",", " ", "\"\<Index\>\""}], "]"}], " ", "===", 
+  " ", 
+  RowBox[{"3", " ", 
+   SuperscriptBox["4", "34"]}]}]], "Input",
+ CellChangeTimes->{{3.917166792884757*^9, 3.917166814554521*^9}, {
+  3.917166945873969*^9, 3.9171669514272327`*^9}, {3.917285835240716*^9, 
+  3.917285859552951*^9}},
+ CellLabel->
+  "In[383]:=",ExpressionUUID->"001e40f0-e910-4c83-a4c1-0f5b242c6b8b"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{{3.9171667955773573`*^9, 3.9171668149810457`*^9}, 
+   3.917166952016756*^9, 3.917170738177414*^9, 3.917173184502809*^9, 
+   3.917285859983561*^9, 3.917287100296337*^9, 3.917428445171772*^9},
+ CellLabel->
+  "Out[383]=",ExpressionUUID->"4cd2c2a8-0e4f-4ac4-9ebd-5f7b1a842a12"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"p", " ", "=", "  ", 
+   RowBox[{"Product", "[", 
+    RowBox[{
+     SubscriptBox["Z", "t"], ",", 
+     RowBox[{"{", 
+      RowBox[{"t", ",", "0", ",", "34"}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"GetPauliStringReformatted", "[", 
+   RowBox[{"p", ",", " ", "\"\<Index\>\""}], " ", "]"}], " ", "===", " ", 
+  RowBox[{
+   SuperscriptBox["4", 
+    RowBox[{"34", "+", "1"}]], "-", "1"}]}]}], "Input",
+ CellChangeTimes->{{3.9171669629848957`*^9, 3.917166996015401*^9}, {
+  3.917285836122222*^9, 3.9172858832019367`*^9}},
+ CellLabel->
+  "In[384]:=",ExpressionUUID->"d11a67f5-2c27-4d68-9eb3-c61a4c1f4e34"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{{3.917166984358028*^9, 3.917166996329615*^9}, 
+   3.917170740978692*^9, 3.917173186199521*^9, 3.917285883593602*^9, 
+   3.91728710030324*^9, 3.917428445179611*^9},
+ CellLabel->
+  "Out[385]=",ExpressionUUID->"a8fc93b8-5e7d-4f74-b4c2-7f9fb65156c6"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"ind", " ", "=", " ", "1245194"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"str", " ", "=", " ", 
+  RowBox[{"GetPauliString", "[", "ind", "]"}]}], "\[IndentingNewLine]", 
+ RowBox[{"ind", " ", "===", " ", 
+  RowBox[{"GetPauliStringReformatted", "[", 
+   RowBox[{"str", ",", " ", "\"\<Index\>\""}], "]"}], " "}]}], "Input",
+ CellChangeTimes->{{3.917166729844304*^9, 3.917166775135661*^9}, {
+  3.9172858964948997`*^9, 3.917285910605811*^9}},
+ CellLabel->
+  "In[386]:=",ExpressionUUID->"799b0271-409d-42fa-b2e0-bb652c8c165a"],
+
+Cell[BoxData[
+ RowBox[{
+  SubscriptBox["X", "10"], " ", 
+  SubscriptBox["Y", "0"], " ", 
+  SubscriptBox["Y", "1"], " ", 
+  SubscriptBox["Z", "8"]}]], "Output",
+ CellChangeTimes->{{3.917166738275065*^9, 3.9171667755805273`*^9}, 
+   3.917170742118505*^9, 3.9171722733577633`*^9, 3.917173187085143*^9, 
+   3.91728591097051*^9, 3.9172871003308153`*^9, 3.917428445216714*^9},
+ CellLabel->
+  "Out[387]=",ExpressionUUID->"0e8f030b-9807-400d-9f0c-50a6f3b25dfa"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{{3.917166738275065*^9, 3.9171667755805273`*^9}, 
+   3.917170742118505*^9, 3.9171722733577633`*^9, 3.917173187085143*^9, 
+   3.91728591097051*^9, 3.9172871003308153`*^9, 3.9174284452189283`*^9},
+ CellLabel->
+  "Out[388]=",ExpressionUUID->"c88508e0-9368-49f0-af97-a9af3f1b16d7"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["String", "Subsection",
+ CellChangeTimes->{{3.91728574433256*^9, 
+  3.9172857491416597`*^9}},ExpressionUUID->"0906eb5d-2e01-4126-ab8b-\
+c3f76c71b7dc"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], "+", 
+    RowBox[{"a", " ", 
+     SubscriptBox["Y", "0"]}], " ", "+", " ", 
+    RowBox[{
+     SubscriptBox["Z", "3"], 
+     SubscriptBox["X", "0"]}], " ", "+", " ", 
+    RowBox[{"a", " ", 
+     SubscriptBox["X", "0"], " ", "b", " ", 
+     SubscriptBox["Y", "2"], " ", "c", " ", 
+     SubscriptBox["Z", "4"]}]}], ",", " ", "\"\<Index\>\""}], "]"}]], "Input",\
+
+ CellChangeTimes->{{3.917285926659513*^9, 3.917285935210168*^9}},
+ CellLabel->
+  "In[389]:=",ExpressionUUID->"c6235cc4-2ee0-4b8a-b6f5-4a7e05d76be8"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"1", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"2", ",", "a"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"193", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"801", ",", 
+     RowBox[{"a", " ", "b", " ", "c"}]}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{3.917171376074939*^9, 3.917172275054886*^9, 
+  3.917172605798834*^9, 3.9171730169073267`*^9, 3.91717319127661*^9, 
+  3.917285945948378*^9, 3.917287100339851*^9, 3.917411170833242*^9, 
+  3.9174284452261543`*^9},
+ CellLabel->
+  "Out[389]=",ExpressionUUID->"a5184430-cf03-47a9-9397-eb8b4cc26451"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], "+", 
+    RowBox[{"a", " ", "z", " ", 
+     SubscriptBox["X", "0"]}]}], ",", " ", "\"\<Index\>\""}], "]"}]], "Input",\
+
+ CellChangeTimes->{{3.917171255540822*^9, 3.917171256944644*^9}, {
+  3.9171722872106867`*^9, 3.9171723015267153`*^9}, {3.917285927229025*^9, 
+  3.91728594068288*^9}},
+ CellLabel->
+  "In[390]:=",ExpressionUUID->"749edb09-5fcd-4fa9-abd6-00aea8e1999f"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"1", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"1", ",", 
+     RowBox[{"a", " ", "z"}]}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{
+  3.917171257220634*^9, 3.917171377320587*^9, 3.917171422691917*^9, {
+   3.917172276186338*^9, 3.91717230195477*^9}, 3.917172606847679*^9, 
+   3.917172792908156*^9, 3.917173016275065*^9, 3.9171731925927277`*^9, 
+   3.9172859469374866`*^9, 3.9172871003686237`*^9, 3.9174284452629957`*^9},
+ CellLabel->
+  "Out[390]=",ExpressionUUID->"eda77217-39ee-4bf3-bfce-3665e3b34ec4"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetPauliStringReformatted", "[", " ", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["Z", "3"], 
+    SubscriptBox["X", "0"]}], " ", ",", " ", "\"\<Index\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", " ", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], " ", 
+    SubscriptBox["Y", "2"], " ", 
+    SubscriptBox["Z", "4"]}], ",", " ", "\"\<Index\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], "+", 
+    RowBox[{"a", " ", 
+     SubscriptBox["Y", "0"]}], " ", "+", " ", 
+    RowBox[{
+     SubscriptBox["Z", "3"], 
+     SubscriptBox["X", "0"]}], " ", "+", " ", 
+    RowBox[{"a", " ", 
+     SubscriptBox["X", "0"], " ", "b", " ", 
+     SubscriptBox["Y", "2"], " ", "c", " ", 
+     SubscriptBox["Z", "4"]}]}], ",", " ", "\"\<Index\>\""}], "]"}]}], "Input",\
+
+ CellChangeTimes->{{3.9171707464044333`*^9, 3.917170817725259*^9}, {
+  3.917285928260044*^9, 3.917285944646171*^9}},
+ CellLabel->
+  "In[391]:=",ExpressionUUID->"a0ac15d8-2116-4789-a781-34ebf4d4cce0"],
+
+Cell[BoxData["193"], "Output",
+ CellChangeTimes->{
+  3.917170772368808*^9, 3.9171708180195*^9, {3.9171711224080153`*^9, 
+   3.917171143327684*^9}, 3.917172612531966*^9, 3.917173018056849*^9, 
+   3.917173194044848*^9, 3.917285948046323*^9, 3.917287100377523*^9, 
+   3.917428445272626*^9},
+ CellLabel->
+  "Out[391]=",ExpressionUUID->"6b453f3d-8796-4e5e-a2ba-89c243351fd4"],
+
+Cell[BoxData["801"], "Output",
+ CellChangeTimes->{
+  3.917170772368808*^9, 3.9171708180195*^9, {3.9171711224080153`*^9, 
+   3.917171143327684*^9}, 3.917172612531966*^9, 3.917173018056849*^9, 
+   3.917173194044848*^9, 3.917285948046323*^9, 3.917287100377523*^9, 
+   3.91742844527468*^9},
+ CellLabel->
+  "Out[392]=",ExpressionUUID->"f9239606-f2ea-48a3-a334-554641c36d27"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"1", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"2", ",", "a"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"193", ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"801", ",", 
+     RowBox[{"a", " ", "b", " ", "c"}]}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{
+  3.917170772368808*^9, 3.9171708180195*^9, {3.9171711224080153`*^9, 
+   3.917171143327684*^9}, 3.917172612531966*^9, 3.917173018056849*^9, 
+   3.917173194044848*^9, 3.917285948046323*^9, 3.917287100377523*^9, 
+   3.9174284452766933`*^9},
+ CellLabel->
+  "Out[393]=",ExpressionUUID->"ae95903a-31ee-4139-8248-dddaeb510816"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetPauliStringReformatted", "[", " ", 
+  RowBox[{
+   SubscriptBox["X", "0"], " ", ",", " ", "\"\<Index\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", " ", 
+  RowBox[{
+   RowBox[{"1.", " ", 
+    SubscriptBox["X", "0"]}], " ", ",", " ", "\"\<Index\>\""}], 
+  "]"}]}], "Input",
+ CellChangeTimes->{{3.91717319945553*^9, 3.917173208027807*^9}, {
+  3.9172859307655563`*^9, 3.9172859565541*^9}},
+ CellLabel->
+  "In[394]:=",ExpressionUUID->"9e574c0d-e90e-4c7d-871c-6b0eac922b50"],
+
+Cell[BoxData["1"], "Output",
+ CellChangeTimes->{{3.917173200844015*^9, 3.917173208483646*^9}, {
+   3.91728595119337*^9, 3.917285956799582*^9}, 3.9172871004095793`*^9, 
+   3.917428445311153*^9},
+ CellLabel->
+  "Out[394]=",ExpressionUUID->"ac5f970f-95fb-40c2-9f6c-856de12188e7"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"{", 
+   RowBox[{"1", ",", "1.`"}], "}"}], "}"}]], "Output",
+ CellChangeTimes->{{3.917173200844015*^9, 3.917173208483646*^9}, {
+   3.91728595119337*^9, 3.917285956799582*^9}, 3.9172871004095793`*^9, 
+   3.917428445313238*^9},
+ CellLabel->
+  "Out[395]=",ExpressionUUID->"3e114dff-658e-44ac-b805-315496fe2ce6"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Digits", "Section",
+ CellChangeTimes->{{3.917285726986681*^9, 3.9172857280281467`*^9}, {
+  3.91741192755481*^9, 
+  3.917411928156694*^9}},ExpressionUUID->"d2713896-38d1-4c78-b9e1-\
+59d7b1f21706"],
+
+Cell[CellGroupData[{
+
+Cell["Product", "Subsection",
+ CellChangeTimes->{{3.91728574433256*^9, 
+  3.917285745666665*^9}},ExpressionUUID->"ddaf3156-f260-4911-bb01-\
+5824fff47004"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", "\"\<Digits\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", "5", ",", " ", "\"\<Digits\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", "\"\<Digits\>\"", ",", " ", "10"}], 
+  "]"}]}], "Input",
+ CellChangeTimes->{{3.917411940595971*^9, 3.91741198000828*^9}},
+ CellLabel->
+  "In[396]:=",ExpressionUUID->"2bd983c1-aeb1-4845-a687-9c1cd9587806"],
+
+Cell[BoxData[
+ RowBox[{"{", "1", "}"}]], "Output",
+ CellChangeTimes->{{3.917411948174255*^9, 3.917411980267206*^9}, 
+   3.91742844532244*^9},
+ CellLabel->
+  "Out[396]=",ExpressionUUID->"8e7634eb-282c-48c5-a65d-9f60e4973459"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0", ",", "0", ",", "0", ",", "0", ",", "1"}], "}"}]], "Output",
+ CellChangeTimes->{{3.917411948174255*^9, 3.917411980267206*^9}, 
+   3.917428445324526*^9},
+ CellLabel->
+  "Out[397]=",ExpressionUUID->"3d748e03-a1e6-4fe2-b03a-1f4ac9f5054e"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+  "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0", 
+   ",", "0", ",", "1"}], "}"}]], "Output",
+ CellChangeTimes->{{3.917411948174255*^9, 3.917411980267206*^9}, 
+   3.917428445326476*^9},
+ CellLabel->
+  "Out[398]=",ExpressionUUID->"7cca13a8-8d11-4fad-aac8-7a4bf9b75931"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["Y", "4"], ",", " ", "\"\<Digits\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.9174119864189377`*^9, 3.9174119879794807`*^9}},
+ CellLabel->
+  "In[399]:=",ExpressionUUID->"e65ff402-8b61-4461-bce6-724e81ac6e9a"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"2", ",", "0", ",", "0", ",", "0", ",", "0"}], "}"}]], "Output",
+ CellChangeTimes->{3.91741198830987*^9, 3.917428445360763*^9},
+ CellLabel->
+  "Out[399]=",ExpressionUUID->"06e56e24-3cbb-4a00-9dc7-0312d2ad4b7d"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "1"], 
+    SubscriptBox["Z", "2"]}], ",", " ", "\"\<Digits\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.917411996336603*^9, 3.9174119978497753`*^9}},
+ CellLabel->
+  "In[400]:=",ExpressionUUID->"2ea652f5-6989-4111-b24e-0b1bd4d40f8c"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"3", ",", "2", ",", "1"}], "}"}]], "Output",
+ CellChangeTimes->{3.917411998162499*^9, 3.917428445370723*^9},
+ CellLabel->
+  "Out[400]=",ExpressionUUID->"fe689d2f-9240-4290-a7a4-14a41b6a3355"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["String", "Subsection",
+ CellChangeTimes->{{3.91728574433256*^9, 3.917285745666665*^9}, {
+  3.917411936832592*^9, 
+  3.917411937392317*^9}},ExpressionUUID->"2d083254-724e-4cf9-b28e-\
+7c9d80e01670"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{"a", " ", 
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "1"], 
+    SubscriptBox["Z", "2"]}], ",", " ", "\"\<Digits\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.917412014836375*^9, 3.9174120151466618`*^9}},
+ CellLabel->
+  "In[401]:=",ExpressionUUID->"4d5d557a-ff98-4982-845c-d6f8c0def5ab"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{"{", 
+     RowBox[{"3", ",", "2", ",", "1"}], "}"}], ",", "a"}], "}"}], 
+  "}"}]], "Output",
+ CellChangeTimes->{3.917412015943529*^9, 3.917428445405547*^9},
+ CellLabel->
+  "Out[401]=",ExpressionUUID->"46ced1e5-6d86-4ea5-b63e-4477df11e6a3"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"a", " ", 
+     SubscriptBox["Z", "5"]}], "+", 
+    RowBox[{"b", " ", 
+     SubscriptBox["Z", "5"]}]}], ",", " ", "\"\<Digits\>\""}], "]"}]], "Input",\
+
+ CellChangeTimes->{{3.917412021478516*^9, 3.917412035251966*^9}},
+ CellLabel->
+  "In[402]:=",ExpressionUUID->"8644b36a-7f2e-4217-86d7-a4436cfc02a7"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"3", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0"}], "}"}], 
+     ",", "a"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"3", ",", "0", ",", "0", ",", "0", ",", "0", ",", "0"}], "}"}], 
+     ",", "b"}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.917412026015922*^9, 3.917412035594699*^9}, 
+   3.917428445413294*^9},
+ CellLabel->
+  "Out[402]=",ExpressionUUID->"fcfd8672-6fc7-4fb4-ba3b-71bb527711e1"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Kronecker", "Section",
+ CellChangeTimes->{{3.917285726986681*^9, 
+  3.917285733408865*^9}},ExpressionUUID->"2f4ea8df-be04-493f-97f1-\
+547465815f59"],
+
+Cell[CellGroupData[{
+
+Cell["Product", "Subsection",
+ CellChangeTimes->{{3.91728574433256*^9, 
+  3.917285745666665*^9}},ExpressionUUID->"00b04914-405d-4fa6-ae0c-\
+ec4f4b2a14b1"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", "\"\<Kronecker\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["Z", "0"], ",", " ", "\"\<Kronecker\>\""}], "]"}]}], "Input",
+ CellChangeTimes->{{3.9171825818355017`*^9, 3.917182594778088*^9}, {
+  3.9172861773403387`*^9, 3.917286189583446*^9}},
+ CellLabel->
+  "In[403]:=",ExpressionUUID->"9659df3f-86b7-4b53-a516-08e70c521fa5"],
+
+Cell[BoxData[
+ RowBox[{"\[CircleTimes]", "X"}]], "Output",
+ CellChangeTimes->{{3.917182585692947*^9, 3.917182594948097*^9}, 
+   3.917286190082687*^9, 3.91728710042093*^9, 3.91741163197223*^9, 
+   3.917428445449275*^9},
+ CellLabel->
+  "Out[403]=",ExpressionUUID->"d0d27f4a-660f-4efe-8bf7-a0a04b02a1a9"],
+
+Cell[BoxData[
+ RowBox[{"\[CircleTimes]", "Z"}]], "Output",
+ CellChangeTimes->{{3.917182585692947*^9, 3.917182594948097*^9}, 
+   3.917286190082687*^9, 3.91728710042093*^9, 3.91741163197223*^9, 
+   3.917428445451375*^9},
+ CellLabel->
+  "Out[404]=",ExpressionUUID->"63b6cf66-61eb-4d6f-8220-3c519e7698b8"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["X", "1"], ",", " ", "\"\<Kronecker\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.917286206007259*^9, 3.917286206947687*^9}},
+ CellLabel->
+  "In[405]:=",ExpressionUUID->"12f0d618-1787-4eee-9f17-325f6d18d517"],
+
+Cell[BoxData[
+ RowBox[{"X", "\[CircleTimes]", "Id"}]], "Output",
+ CellChangeTimes->{3.917286207380149*^9, 3.9172871004479313`*^9, 
+  3.917428445458256*^9},
+ CellLabel->
+  "Out[405]=",ExpressionUUID->"8bcddfbb-aebe-40ae-9a7c-ff39c9b35513"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["X", "1"], ",", " ", "3", ",", "\"\<Kronecker\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["X", "1"], ",", " ", "\"\<Kronecker\>\"", ",", "4"}], 
+  "]"}]}], "Input",
+ CellChangeTimes->{{3.9172862112774887`*^9, 3.917286217311594*^9}},
+ CellLabel->
+  "In[406]:=",ExpressionUUID->"64ee9d53-4f6a-410f-b7c2-50de39aa9ea2"],
+
+Cell[BoxData[
+ RowBox[{"Id", "\[CircleTimes]", "X", "\[CircleTimes]", "Id"}]], "Output",
+ CellChangeTimes->{3.917411216426216*^9, 3.917411634174584*^9, 
+  3.9174284454958878`*^9},
+ CellLabel->
+  "Out[406]=",ExpressionUUID->"9094987f-7394-4bcc-9570-95bf4d1e2069"],
+
+Cell[BoxData[
+ RowBox[{"Id", "\[CircleTimes]", "Id", "\[CircleTimes]", "X", 
+  "\[CircleTimes]", "Id"}]], "Output",
+ CellChangeTimes->{3.917411216426216*^9, 3.917411634174584*^9, 
+  3.9174284454983807`*^9},
+ CellLabel->
+  "Out[407]=",ExpressionUUID->"d96f65cc-fcff-4fc0-b5d7-0834a8b8fe2b"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "1"], 
+    SubscriptBox["Z", "2"], 
+    SubscriptBox["Id", "3"]}], ",", " ", "\"\<Kronecker\>\""}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.917182599911642*^9, 3.917182603520084*^9}, {
+  3.917286224710433*^9, 3.917286228039434*^9}},
+ CellLabel->
+  "In[408]:=",ExpressionUUID->"6d907c79-5783-457e-9175-eb1d3c0d9838"],
+
+Cell[BoxData[
+ RowBox[{"Id", "\[CircleTimes]", "Z", "\[CircleTimes]", "Y", "\[CircleTimes]",
+   "X"}]], "Output",
+ CellChangeTimes->{3.9171826037978783`*^9, 3.9172862282793303`*^9, 
+  3.9172871004842567`*^9, 3.917428445507186*^9},
+ CellLabel->
+  "Out[408]=",ExpressionUUID->"f6d5d44b-d7f0-475a-8687-353fffca67c5"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["Z", "9"], ",", " ", "\"\<Kronecker\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.9171830532759247`*^9, 3.917183065152771*^9}, {
+  3.917286230487816*^9, 3.917286234312128*^9}},
+ CellLabel->
+  "In[409]:=",ExpressionUUID->"98b1319a-f37c-447b-84b1-841019aef13a"],
+
+Cell[BoxData[
+ RowBox[{"Z", "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", 
+  "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", 
+  "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", 
+  "\[CircleTimes]", "Id"}]], "Output",
+ CellChangeTimes->{{3.917183054580118*^9, 3.9171830654990273`*^9}, 
+   3.9172862346208887`*^9, 3.917287100515271*^9, 3.917428445541554*^9},
+ CellLabel->
+  "Out[409]=",ExpressionUUID->"7c4eaf53-f310-4110-84c9-a6047bfba758"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "1"], 
+    SubscriptBox["Z", "2"], 
+    SubscriptBox["Id", "3"]}], ",", " ", "10", ",", " ", 
+   "\"\<Kronecker\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.917182609347879*^9, 3.91718262955046*^9}, {
+  3.91728624496238*^9, 3.9172862592531223`*^9}},
+ CellLabel->
+  "In[410]:=",ExpressionUUID->"77cc1119-c5f1-4e18-9239-1032c37cceff"],
+
+Cell[BoxData[
+ RowBox[{"Id", "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", 
+  "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", 
+  "\[CircleTimes]", "Id", "\[CircleTimes]", "Z", "\[CircleTimes]", "Y", 
+  "\[CircleTimes]", "X"}]], "Output",
+ CellChangeTimes->{{3.917182611689713*^9, 3.917182629782316*^9}, {
+   3.917286249657943*^9, 3.917286259555168*^9}, 3.917287100545733*^9, 
+   3.917428445550527*^9},
+ CellLabel->
+  "Out[410]=",ExpressionUUID->"f66fd9cb-19aa-4b8f-b586-03b2b55dd80c"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{
+   RowBox[{"str", " ", "=", 
+    RowBox[{
+     SubscriptBox["X", "0"], 
+     SubscriptBox["Y", "1"], 
+     SubscriptBox["Z", "2"], 
+     SubscriptBox["X", "3"], 
+     SubscriptBox["Y", "4"]}]}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"matr", " ", "=", " ", 
+    RowBox[{"KroneckerProduct", " ", "@@", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"PauliMatrix", "[", 
+         RowBox[{"#", "/.", 
+          RowBox[{"{", 
+           RowBox[{
+            RowBox[{"Id", "->", "0"}], ",", 
+            RowBox[{"X", "->", "1"}], ",", 
+            RowBox[{"Y", "->", "2"}], ",", 
+            RowBox[{"Z", "->", "3"}]}], "}"}]}], "]"}], "&"}], " ", "/@", " ", 
+       RowBox[{"GetPauliStringReformatted", "[", 
+        RowBox[{"str", ",", " ", "\"\<Kronecker\>\""}], "]"}]}], ")"}]}]}], 
+   ";"}], "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{"matr", " ", "===", " ", 
+  RowBox[{"Normal", " ", "@", " ", 
+   RowBox[{"CalcPauliExpressionMatrix", "[", "str", "]"}]}]}]}], "Input",
+ CellChangeTimes->{{3.917182657693116*^9, 3.917182708974251*^9}, {
+  3.917182767251113*^9, 3.917182879049746*^9}, {3.917286263700595*^9, 
+  3.917286266072356*^9}},
+ CellLabel->
+  "In[411]:=",ExpressionUUID->"9344fb00-4f60-45e2-8538-5ffcdf0d5a58"],
+
+Cell[BoxData["True"], "Output",
+ CellChangeTimes->{{3.917182870822994*^9, 3.917182880296214*^9}, 
+   3.91728626711403*^9, 3.917287100552997*^9, 3.9174284455871887`*^9},
+ CellLabel->
+  "Out[413]=",ExpressionUUID->"9dc0c0b0-7e25-4913-8893-ef5992d86497"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["String", "Subsection",
+ CellChangeTimes->{{3.91728574433256*^9, 
+  3.9172857491416597`*^9}},ExpressionUUID->"a459a2a0-867b-4a4a-90bc-\
+78d43db4fab4"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetPauliStringReformatted", "[", "      ", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "1"], 
+    SubscriptBox["Z", "2"], 
+    SubscriptBox["Id", "3"]}], ",", " ", "\"\<Kronecker\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{"1.", " ", 
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "1"], 
+    SubscriptBox["Z", "2"], 
+    SubscriptBox["Id", "3"]}], ",", " ", "\"\<Kronecker\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{"a", "   ", 
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "1"], 
+    SubscriptBox["Z", "2"], 
+    SubscriptBox["Id", "3"]}], ",", " ", "\"\<Kronecker\>\""}], 
+  "]"}]}], "Input",
+ CellChangeTimes->{{3.917182890639606*^9, 3.917182892832116*^9}, {
+  3.917286280646188*^9, 3.917286302486967*^9}},
+ CellLabel->
+  "In[414]:=",ExpressionUUID->"a318611f-ba29-4061-b33a-c9e7f67324c0"],
+
+Cell[BoxData[
+ RowBox[{"Id", "\[CircleTimes]", "Z", "\[CircleTimes]", "Y", "\[CircleTimes]",
+   "X"}]], "Output",
+ CellChangeTimes->{
+  3.91718289324837*^9, {3.917286289560749*^9, 3.917286303288157*^9}, 
+   3.917287100586226*^9, 3.9174116273311577`*^9, 3.917428445601448*^9},
+ CellLabel->
+  "Out[414]=",ExpressionUUID->"e6bc6ccd-86b2-4921-8609-5bbb6e9b9ecc"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+    "Id", "\[CircleTimes]", "Z", "\[CircleTimes]", "Y", "\[CircleTimes]", 
+     "X"}], ",", "1.`"}], "}"}], "}"}]], "Output",
+ CellChangeTimes->{
+  3.91718289324837*^9, {3.917286289560749*^9, 3.917286303288157*^9}, 
+   3.917287100586226*^9, 3.9174116273311577`*^9, 3.917428445603709*^9},
+ CellLabel->
+  "Out[415]=",ExpressionUUID->"afba7b7d-5ecd-496b-b63e-0ce25ac913d1"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"{", 
+   RowBox[{
+    RowBox[{
+    "Id", "\[CircleTimes]", "Z", "\[CircleTimes]", "Y", "\[CircleTimes]", 
+     "X"}], ",", "a"}], "}"}], "}"}]], "Output",
+ CellChangeTimes->{
+  3.91718289324837*^9, {3.917286289560749*^9, 3.917286303288157*^9}, 
+   3.917287100586226*^9, 3.9174116273311577`*^9, 3.91742844560572*^9},
+ CellLabel->
+  "Out[416]=",ExpressionUUID->"e7bfc340-0d8d-45b3-a87a-0f15c608d506"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"str", " ", "=", " ", 
+   RowBox[{
+    RowBox[{"a", " ", 
+     SubscriptBox["X", "0"], 
+     SubscriptBox["Y", "1"], 
+     SubscriptBox["Z", "2"], 
+     SubscriptBox["Id", "3"]}], " ", "+", " ", 
+    RowBox[{"b", " ", "c", " ", 
+     SubscriptBox["X", "4"]}], " ", "+", 
+    RowBox[{"d", " ", "e", " ", "f", " ", 
+     SubscriptBox["Y", "0"]}], " ", "+", " ", 
+    SubscriptBox["Z", "0"], " ", "+", " ", 
+    RowBox[{
+     SubscriptBox["X", "1"], 
+     SubscriptBox["Z", "4"]}]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{"str", ",", " ", "\"\<Kronecker\>\""}], "]"}]}], "Input",
+ CellChangeTimes->{{3.917182901618064*^9, 3.9171829301727*^9}, {
+  3.917183022788969*^9, 3.9171830307118473`*^9}, {3.917286306935848*^9, 
+  3.917286317661228*^9}},
+ CellLabel->
+  "In[417]:=",ExpressionUUID->"dd88d5ec-64fb-4d88-9a9e-151914eed6a3"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{
+     "X", "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", "\[CircleTimes]", 
+      "Id", "\[CircleTimes]", "Id"}], ",", 
+     RowBox[{"b", " ", "c"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{
+     "Id", "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", "\[CircleTimes]", 
+      "Id", "\[CircleTimes]", "Y"}], ",", 
+     RowBox[{"d", " ", "e", " ", "f"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{
+     "Id", "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", "\[CircleTimes]", 
+      "Id", "\[CircleTimes]", "Z"}], ",", "1"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{
+     "Id", "\[CircleTimes]", "Id", "\[CircleTimes]", "Z", "\[CircleTimes]", 
+      "Y", "\[CircleTimes]", "X"}], ",", "a"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{
+     "Z", "\[CircleTimes]", "Id", "\[CircleTimes]", "Id", "\[CircleTimes]", 
+      "X", "\[CircleTimes]", "Id"}], ",", "1"}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.9171829038801003`*^9, 3.9171829304282417`*^9}, 
+   3.917183031071866*^9, {3.9172863118897448`*^9, 3.917286317955694*^9}, 
+   3.917286858592915*^9, 3.917287100625647*^9, 3.9174284456449423`*^9},
+ CellLabel->
+  "Out[418]=",ExpressionUUID->"6e7f8668-c649-4e79-a5e4-e9fbd9ce4691"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["String", "Section",
+ CellChangeTimes->{{3.917285726986681*^9, 
+  3.917285736528801*^9}},ExpressionUUID->"bd612101-da4d-498f-b20d-\
+ea3dd7581f33"],
+
+Cell[CellGroupData[{
+
+Cell["Product", "Subsection",
+ CellChangeTimes->{{3.91728574433256*^9, 
+  3.917285745666665*^9}},ExpressionUUID->"305e5718-8487-46bd-88a2-\
+c767b51abdd6"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "1"], 
+    SubscriptBox["Z", "2"]}], ",", " ", "\"\<String\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.9172863394013157`*^9, 3.917286346886756*^9}},
+ CellLabel->
+  "In[419]:=",ExpressionUUID->"9ad9d30a-1275-49ab-9949-6582f9bdc00d"],
+
+Cell[BoxData["\<\"ZYX\"\>"], "Output",
+ CellChangeTimes->{{3.917286344995261*^9, 3.917286347128229*^9}, 
+   3.9172871006515837`*^9, 3.917428445656253*^9},
+ CellLabel->
+  "Out[419]=",ExpressionUUID->"f16093f8-deb0-40c9-b4ff-d477c195b8df"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "1"], 
+    SubscriptBox["Z", "2"]}], ",", " ", "10", ",", " ", "\"\<String\>\""}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.9172863532913437`*^9, 3.917286353760336*^9}},
+ CellLabel->
+  "In[420]:=",ExpressionUUID->"46a5526e-83e8-40e1-87d8-bf3799312bad"],
+
+Cell[BoxData["\<\"IIIIIIIZYX\"\>"], "Output",
+ CellChangeTimes->{3.917286354000165*^9, 3.917287100658573*^9, 
+  3.917428445697249*^9},
+ CellLabel->
+  "Out[420]=",ExpressionUUID->"b21c2b12-f68d-47a4-b688-67b7a9178ed8"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["Z", "40"], ",", " ", "\"\<String\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.917286486608659*^9, 3.917286490208469*^9}, {
+   3.917286910156445*^9, 3.917286910793873*^9}, 3.917286996055757*^9},
+ CellLabel->
+  "In[421]:=",ExpressionUUID->"19e92202-e096-463f-8c9e-e74b8af6dcee"],
+
+Cell[BoxData["\<\"ZIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII\"\>"], "Output",
+ CellChangeTimes->{{3.917286487821322*^9, 3.917286490485108*^9}, {
+   3.917286851955608*^9, 3.9172868717474957`*^9}, 3.917286911279175*^9, {
+   3.917286951360379*^9, 3.917286954435405*^9}, {3.917286992487617*^9, 
+   3.9172869966044188`*^9}, 3.9172871006861153`*^9, 3.9174284457091084`*^9},
+ CellLabel->
+  "Out[421]=",ExpressionUUID->"495cd6a6-2c92-4fed-b755-e8ff68a94596"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["String", "Subsection",
+ CellChangeTimes->{{3.91728574433256*^9, 
+  3.9172857491416597`*^9}},ExpressionUUID->"63290a72-6f00-4eb2-8bd8-\
+4ff5bb4b19c8"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"str", " ", "=", " ", 
+  RowBox[{"GetRandomPauliString", "[", 
+   RowBox[{"4", ",", "5"}], "]"}]}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{"str", ",", " ", "\"\<String\>\""}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{"str", ",", " ", "\"\<String\>\"", ",", " ", "10"}], 
+  "]"}]}], "Input",
+ CellChangeTimes->{{3.9172865108643703`*^9, 3.917286522875703*^9}, {
+  3.91728700298006*^9, 3.917287031174728*^9}},
+ CellLabel->
+  "In[422]:=",ExpressionUUID->"5f7abd41-c82b-49ac-bb53-8636beff0468"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"-", "0.10751459000401997`"}], " ", 
+   SubscriptBox["Id", "0"]}], "-", 
+  RowBox[{"0.9687376351498092`", " ", 
+   SubscriptBox["X", "3"], " ", 
+   SubscriptBox["Y", "1"], " ", 
+   SubscriptBox["Z", "2"]}], "-", 
+  RowBox[{"0.02593874980645916`", " ", 
+   SubscriptBox["X", "0"], " ", 
+   SubscriptBox["X", "1"], " ", 
+   SubscriptBox["Z", "3"]}], "+", 
+  RowBox[{"0.26656757832304034`", " ", 
+   SubscriptBox["X", "2"], " ", 
+   SubscriptBox["Z", "0"], " ", 
+   SubscriptBox["Z", "3"]}], "-", 
+  RowBox[{"0.7900681308335753`", " ", 
+   SubscriptBox["X", "1"], " ", 
+   SubscriptBox["Y", "2"], " ", 
+   SubscriptBox["Z", "0"], " ", 
+   SubscriptBox["Z", "3"]}]}]], "Output",
+ CellChangeTimes->{{3.9172869981927357`*^9, 3.917287031449258*^9}, 
+   3.9172871006947947`*^9, 3.917411220752413*^9, 3.917428445750564*^9},
+ CellLabel->
+  "Out[422]=",ExpressionUUID->"d2c16b91-af37-44fe-be45-be4edaf7dafe"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"\<\"IIII\"\>", ",", 
+     RowBox[{"-", "0.10751459000401997`"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"XZYI\"\>", ",", 
+     RowBox[{"-", "0.9687376351498092`"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"ZIXX\"\>", ",", 
+     RowBox[{"-", "0.02593874980645916`"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"ZXIZ\"\>", ",", "0.26656757832304034`"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"ZYXZ\"\>", ",", 
+     RowBox[{"-", "0.7900681308335753`"}]}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.9172869981927357`*^9, 3.917287031449258*^9}, 
+   3.9172871006947947`*^9, 3.917411220752413*^9, 3.917428445753127*^9},
+ CellLabel->
+  "Out[423]=",ExpressionUUID->"1fa19776-5850-4335-bfb2-5ac84df12625"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"\<\"IIIIIIIIII\"\>", ",", 
+     RowBox[{"-", "0.10751459000401997`"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"IIIIIIXZYI\"\>", ",", 
+     RowBox[{"-", "0.9687376351498092`"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"IIIIIIZIXX\"\>", ",", 
+     RowBox[{"-", "0.02593874980645916`"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"IIIIIIZXIZ\"\>", ",", "0.26656757832304034`"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\<\"IIIIIIZYXZ\"\>", ",", 
+     RowBox[{"-", "0.7900681308335753`"}]}], "}"}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.9172869981927357`*^9, 3.917287031449258*^9}, 
+   3.9172871006947947`*^9, 3.917411220752413*^9, 3.917428445755559*^9},
+ CellLabel->
+  "Out[424]=",ExpressionUUID->"3295c43e-74a4-42e2-a4be-84e1829157f2"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Errors", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.917285480847865*^9, 
+  3.917285481362558*^9}},ExpressionUUID->"fe991340-a93c-47b9-85b1-\
+6d1e0f1d9a3f"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["Z", "10"], ",", " ", "10", ",", " ", "\"\<String\>\""}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.9172863634147882`*^9, 3.917286366052606*^9}, {
+  3.9172864280680523`*^9, 3.917286428834073*^9}, {3.917286477942987*^9, 
+  3.9172864785579243`*^9}, {3.917411512932534*^9, 3.917411518126637*^9}},
+ CellLabel->
+  "In[425]:=",ExpressionUUID->"5e4c0861-cbd3-4d6e-909f-db42f6e9cf2d"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringReformatted", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"The given Pauli string targeted a larger \
+index qubit than the number of qubits specified.\\\\\\\"\\\"}]\\)\"", 2, 425, 
+   51, 32437131009665430582, "Local", "QuEST`GetPauliStringReformatted"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.9174115183816357`*^9, 3.9174120462721863`*^9, 
+  3.917428445768568*^9},
+ CellLabel->
+  "During evaluation of \
+In[425]:=",ExpressionUUID->"d4ee5c31-c852-46ab-b6a1-914fa5f408d4"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917286366488906*^9, 3.9172863910770884`*^9}, {
+   3.917286429295906*^9, 3.9172864788035583`*^9}, 3.917287100740798*^9, 
+   3.917411225076351*^9, 3.91741136353439*^9, {3.917411504710898*^9, 
+   3.9174115183921003`*^9}, 3.917412046281249*^9, 3.917428445778232*^9},
+ CellLabel->
+  "Out[425]=",ExpressionUUID->"e94548ca-e74d-44b2-8ecf-9826fb438b5f"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     SubscriptBox["X", 
+      RowBox[{"-", "1"}]], 
+     SubscriptBox["Y", "0"]}], " ", "+", " ", 
+    SubscriptBox["X", "2"]}], ",", " ", "\"\<Index\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.917286100088558*^9, 3.917286102286628*^9}},
+ CellLabel->
+  "In[426]:=",ExpressionUUID->"de18d536-9b15-4311-8b69-edefb10ac9c3"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringReformatted", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringReformatted\\\\\\\"\\\"}]\\)\"", 2, 426, 52, 
+   32437131009665430582, "Local", "QuEST`GetPauliStringReformatted"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.917286102451626*^9, 3.917287100750515*^9, 
+  3.917411226540357*^9, 3.917411503065524*^9, 3.9174120475015783`*^9, 
+  3.917428445816597*^9},
+ CellLabel->
+  "During evaluation of \
+In[426]:=",ExpressionUUID->"0fb03ab9-f874-4483-baaf-1986c8e6c053"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.917286102461544*^9, 3.917287100757512*^9, 
+  3.917411226549728*^9, 3.917411503073551*^9, 3.91741204750941*^9, 
+  3.9174284458247833`*^9},
+ CellLabel->
+  "Out[426]=",ExpressionUUID->"a35199d3-bed9-4e49-b8f6-cd01e815bc76"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  SubscriptBox["X", 
+   RowBox[{"-", "1"}]], "]"}]], "Input",
+ CellChangeTimes->{{3.91728598555937*^9, 3.9172859877543783`*^9}},
+ CellLabel->
+  "In[427]:=",ExpressionUUID->"5905ce79-4ed0-4c28-b024-a83cd615e518"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringReformatted", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringReformatted\\\\\\\"\\\"}]\\)\"", 2, 427, 53, 
+   32437131009665430582, "Local", "QuEST`GetPauliStringReformatted"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.917285988272032*^9, 3.917287100799988*^9, 
+  3.9174112294571247`*^9, 3.9174120548710337`*^9, 3.917428445835651*^9},
+ CellLabel->
+  "During evaluation of \
+In[427]:=",ExpressionUUID->"bba74d27-a7ad-4bf2-a17b-ea7b3b1f1cbb"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.917285988309113*^9, 3.917287100806978*^9, 
+  3.917411229466329*^9, 3.917412054879546*^9, 3.917428445843691*^9},
+ CellLabel->
+  "Out[427]=",ExpressionUUID->"b87fa6b7-f2d4-4d14-bcc1-141d56069e4b"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["X", "2"], ",", "\"\<BadMethod\>\""}], "]"}]], "Input",
+ CellChangeTimes->{{3.917285974640758*^9, 3.917285981726706*^9}},
+ CellLabel->
+  "In[428]:=",ExpressionUUID->"bdb6344c-41d3-414c-b92f-cc4da3f1233c"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringReformatted", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringReformatted\\\\\\\"\\\"}]\\)\"", 2, 428, 54, 
+   32437131009665430582, "Local", "QuEST`GetPauliStringReformatted"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917285978243784*^9, 3.9172859820326138`*^9}, 
+   3.9172871008326797`*^9, 3.917412056100168*^9, 3.917428445881659*^9},
+ CellLabel->
+  "During evaluation of \
+In[428]:=",ExpressionUUID->"42c75aa1-206f-4675-aec3-cfdbddd84a2e"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917285978254314*^9, 3.9172859820415173`*^9}, 
+   3.917287100839941*^9, 3.917412056109017*^9, 3.917428445890922*^9},
+ CellLabel->
+  "Out[428]=",ExpressionUUID->"507e4645-e4ee-44a5-a603-e7ff4b8cce77"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   SubscriptBox["X", "2"], ",", "1", ",", " ", "\"\<Kronecker\>\""}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.917285417869413*^9, 3.917285431839114*^9}},
+ CellLabel->
+  "In[429]:=",ExpressionUUID->"fb47f702-4f49-4a90-a6e6-b6d06aacc1b7"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringReformatted", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"The given Pauli string targeted a larger \
+index qubit than the number of qubits specified.\\\\\\\"\\\"}]\\)\"", 2, 429, 
+   55, 32437131009665430582, "Local", "QuEST`GetPauliStringReformatted"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.917285432135339*^9, {3.917285471164838*^9, 3.9172854826903057`*^9}, 
+   3.917287100847558*^9, 3.917411231552072*^9, 3.917412057444902*^9, 
+   3.91742844590031*^9},
+ CellLabel->
+  "During evaluation of \
+In[429]:=",ExpressionUUID->"dd219034-42ff-4695-8758-ddfb11a49409"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917285421412589*^9, 3.9172854321450663`*^9}, {
+   3.9172854711728487`*^9, 3.917285482700213*^9}, 3.917287100855688*^9, 
+   3.917411231561605*^9, 3.917412057453085*^9, 3.9174284459089203`*^9},
+ CellLabel->
+  "Out[429]=",ExpressionUUID->"97615ed5-4290-4b7e-a0c7-bea57dde33cc"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["X", "0"]}], ",", " ", "\"\<Index\>\""}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"GetPauliStringReformatted", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "0"]}], ",", " ", "\"\<Index\>\""}], "]"}]}], "Input",
+ CellChangeTimes->{{3.917286110792171*^9, 3.917286119883741*^9}},
+ CellLabel->
+  "In[430]:=",ExpressionUUID->"db912691-0b70-4321-85e4-cbe0a903243a"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringReformatted", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringReformatted\\\\\\\"\\\"}]\\)\"", 2, 430, 56, 
+   32437131009665430582, "Local", "QuEST`GetPauliStringReformatted"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.9172861201342278`*^9, 3.9172871008824863`*^9, 
+  3.9174113687244453`*^9, 3.91741205847617*^9, 3.917428445941908*^9},
+ CellLabel->
+  "During evaluation of \
+In[430]:=",ExpressionUUID->"ca02c6f5-bcf6-447e-80ca-10bda6ca9889"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.917286120145377*^9, 3.917287100889997*^9, 
+  3.917411368733747*^9, 3.917412058483964*^9, 3.917428445952312*^9},
+ CellLabel->
+  "Out[430]=",ExpressionUUID->"9004d422-da97-467f-bb14-a1a1922ea04b"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringReformatted", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringReformatted\\\\\\\"\\\"}]\\)\"", 2, 431, 57, 
+   32437131009665430582, "Local", "QuEST`GetPauliStringReformatted"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.9172861201342278`*^9, 3.9172871008824863`*^9, 
+  3.9174113687244453`*^9, 3.91741205847617*^9, 3.917428445954213*^9},
+ CellLabel->
+  "During evaluation of \
+In[430]:=",ExpressionUUID->"69ed935f-d3a2-48e2-9655-4fce6b2cdb45"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.917286120145377*^9, 3.917287100889997*^9, 
+  3.917411368733747*^9, 3.917412058483964*^9, 3.9174284459615173`*^9},
+ CellLabel->
+  "Out[431]=",ExpressionUUID->"5ccce9c8-331c-4b17-93e1-695c8914bdf2"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", "1", "]"}]], "Input",
+ CellChangeTimes->{3.91728612537789*^9},
+ CellLabel->
+  "In[432]:=",ExpressionUUID->"928b5417-01e5-4120-aa9a-7f72a4495aa5"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringReformatted", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringReformatted\\\\\\\"\\\"}]\\)\"", 2, 432, 58, 
+   32437131009665430582, "Local", "QuEST`GetPauliStringReformatted"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.917286125689459*^9, 3.917287100906981*^9, 
+  3.9174120601335278`*^9, 3.9174284460161743`*^9},
+ CellLabel->
+  "During evaluation of \
+In[432]:=",ExpressionUUID->"b2100f95-7eee-4107-b75f-c9f69acbcc54"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.9172861257014027`*^9, 3.917287100913863*^9, 
+  3.917412060143869*^9, 3.917428446024599*^9},
+ CellLabel->
+  "Out[432]=",ExpressionUUID->"16a3b359-b7d6-4ee8-80ab-d3f89ecbd88c"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"GetPauliStringReformatted", "[", "]"}]], "Input",
+ CellChangeTimes->{{3.9172863305235443`*^9, 3.9172863305927277`*^9}},
+ CellLabel->
+  "In[433]:=",ExpressionUUID->"686f508a-1451-4037-bf77-8512593dcade"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "GetPauliStringReformatted", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?GetPauliStringReformatted\\\\\\\"\\\"}]\\)\"", 2, 433, 59, 
+   32437131009665430582, "Local", "QuEST`GetPauliStringReformatted"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{3.9172863308735313`*^9, 3.9172871009397173`*^9, 
+  3.917412061301113*^9, 3.9174284460352507`*^9},
+ CellLabel->
+  "During evaluation of \
+In[433]:=",ExpressionUUID->"de4661ac-b6ef-436a-b262-2a38e44e2c19"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{3.917286330883874*^9, 3.917287100947205*^9, 
+  3.9174120613103333`*^9, 3.9174284460431223`*^9},
+ CellLabel->
+  "Out[433]=",ExpressionUUID->"ee191167-993b-42ba-8ba8-ecee725ac687"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{720, 808},
+WindowMargins->{{Automatic, 35}, {Automatic, 0}},
+PrintingCopies->1,
+PrintingPageRange->{1, Automatic},
+FrontEndVersion->"13.0 for Mac OS X x86 (64-bit) (February 4, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"dd8701de-d984-4580-92bc-28f163a15651"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 491, 7, 98, "Title",ExpressionUUID->"45516375-c635-4381-9704-ada9eeed3170"],
+Cell[1074, 31, 411, 10, 52, "Input",ExpressionUUID->"9c42eac3-4a6c-4e5b-b714-66082296dcce"],
+Cell[CellGroupData[{
+Cell[1510, 45, 296, 5, 69, "Chapter",ExpressionUUID->"736309f6-a3a0-49ed-9483-b91a416f920a"],
+Cell[CellGroupData[{
+Cell[1831, 54, 219, 4, 30, "Input",ExpressionUUID->"2e01f90e-ee57-4c82-88e0-2c3cfe31fb40"],
+Cell[2053, 60, 21026, 468, 359, "Output",ExpressionUUID->"4c87e999-ad25-4b90-9e8a-2387baad0236"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[23116, 533, 208, 4, 30, "Input",ExpressionUUID->"54ebf6ef-3ac3-4dfa-b8b7-a2802d35d355"],
+Cell[23327, 539, 31189, 659, 574, "Output",ExpressionUUID->"293cf05a-d7fa-403f-a2f0-d9bddf70cc9e"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[54565, 1204, 357, 6, 69, "Chapter",ExpressionUUID->"9d7ac11b-429a-4259-97b8-31e4e352dcc2"],
+Cell[CellGroupData[{
+Cell[54947, 1214, 152, 3, 67, "Section",ExpressionUUID->"3803c9d0-37ba-4c3a-95fd-ad67f04cbd1a"],
+Cell[CellGroupData[{
+Cell[55124, 1221, 154, 3, 54, "Subsection",ExpressionUUID->"f6c6b33d-b1de-46dd-9da5-8ddd37773abc"],
+Cell[CellGroupData[{
+Cell[55303, 1228, 290, 6, 30, "Input",ExpressionUUID->"027595dd-98f8-40ef-b1ba-5d9d221af8c0"],
+Cell[55596, 1236, 249, 4, 34, "Output",ExpressionUUID->"64957be2-8b30-4aee-a048-fae1aa2f0699"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[55882, 1245, 582, 14, 73, "Input",ExpressionUUID->"1dab23be-0222-44a9-80bc-b580fc4368e4"],
+Cell[56467, 1261, 224, 4, 34, "Output",ExpressionUUID->"ab42c0fc-843d-457d-8f60-acb2ead6d666"],
+Cell[56694, 1267, 226, 4, 34, "Output",ExpressionUUID->"f1a6cf73-b1c8-4312-a989-f423b7ccd003"],
+Cell[56923, 1273, 224, 4, 34, "Output",ExpressionUUID->"0bc0e773-6fb0-4724-8a83-03b672a36ccd"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[57184, 1282, 562, 14, 52, "Input",ExpressionUUID->"5bca3077-4771-4d86-b007-9d5082c96dab"],
+Cell[57749, 1298, 397, 6, 34, "Output",ExpressionUUID->"49a9bde3-1e8a-4295-95a3-961705db46d0"],
+Cell[58149, 1306, 395, 6, 34, "Output",ExpressionUUID->"fab18fd0-44e9-408d-a8c9-c05bc826c103"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[58581, 1317, 480, 12, 30, "Input",ExpressionUUID->"001e40f0-e910-4c83-a4c1-0f5b242c6b8b"],
+Cell[59064, 1331, 324, 5, 34, "Output",ExpressionUUID->"4cd2c2a8-0e4f-4ac4-9ebd-5f7b1a842a12"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[59425, 1341, 668, 18, 52, "Input",ExpressionUUID->"d11a67f5-2c27-4d68-9eb3-c61a4c1f4e34"],
+Cell[60096, 1361, 297, 5, 34, "Output",ExpressionUUID->"a8fc93b8-5e7d-4f74-b4c2-7f9fb65156c6"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[60430, 1371, 556, 11, 73, "Input",ExpressionUUID->"799b0271-409d-42fa-b2e0-bb652c8c165a"],
+Cell[60989, 1384, 453, 10, 34, "Output",ExpressionUUID->"0e8f030b-9807-400d-9f0c-50a6f3b25dfa"],
+Cell[61445, 1396, 327, 5, 34, "Output",ExpressionUUID->"c88508e0-9368-49f0-af97-a9af3f1b16d7"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[61821, 1407, 155, 3, 54, "Subsection",ExpressionUUID->"0906eb5d-2e01-4126-ab8b-c3f76c71b7dc"],
+Cell[CellGroupData[{
+Cell[62001, 1414, 617, 17, 30, "Input",ExpressionUUID->"c6235cc4-2ee0-4b8a-b6f5-4a7e05d76be8"],
+Cell[62621, 1433, 642, 17, 34, "Output",ExpressionUUID->"a5184430-cf03-47a9-9397-eb8b4cc26451"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[63300, 1455, 478, 12, 30, "Input",ExpressionUUID->"749edb09-5fcd-4fa9-abd6-00aea8e1999f"],
+Cell[63781, 1469, 588, 14, 34, "Output",ExpressionUUID->"eda77217-39ee-4bf3-bfce-3665e3b34ec4"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[64406, 1488, 1102, 31, 73, "Input",ExpressionUUID->"a0ac15d8-2116-4789-a781-34ebf4d4cce0"],
+Cell[65511, 1521, 370, 7, 34, "Output",ExpressionUUID->"6b453f3d-8796-4e5e-a2ba-89c243351fd4"],
+Cell[65884, 1530, 369, 7, 34, "Output",ExpressionUUID->"f9239606-f2ea-48a3-a334-554641c36d27"],
+Cell[66256, 1539, 671, 18, 34, "Output",ExpressionUUID->"ae95903a-31ee-4139-8248-dddaeb510816"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[66964, 1562, 534, 13, 52, "Input",ExpressionUUID->"9e574c0d-e90e-4c7d-871c-6b0eac922b50"],
+Cell[67501, 1577, 276, 5, 34, "Output",ExpressionUUID->"ac5f970f-95fb-40c2-9f6c-856de12188e7"],
+Cell[67780, 1584, 347, 8, 34, "Output",ExpressionUUID->"3e114dff-658e-44ac-b805-315496fe2ce6"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[68188, 1599, 201, 4, 67, "Section",ExpressionUUID->"d2713896-38d1-4c78-b9e1-59d7b1f21706"],
+Cell[CellGroupData[{
+Cell[68414, 1607, 154, 3, 54, "Subsection",ExpressionUUID->"ddaf3156-f260-4911-bb01-5824fff47004"],
+Cell[CellGroupData[{
+Cell[68593, 1614, 618, 15, 73, "Input",ExpressionUUID->"2bd983c1-aeb1-4845-a687-9c1cd9587806"],
+Cell[69214, 1631, 224, 5, 34, "Output",ExpressionUUID->"8e7634eb-282c-48c5-a65d-9f60e4973459"],
+Cell[69441, 1638, 278, 6, 34, "Output",ExpressionUUID->"3d748e03-a1e6-4fe2-b03a-1f4ac9f5054e"],
+Cell[69722, 1646, 335, 8, 34, "Output",ExpressionUUID->"7cca13a8-8d11-4fad-aac8-7a4bf9b75931"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[70094, 1659, 295, 6, 30, "Input",ExpressionUUID->"e65ff402-8b61-4461-bce6-724e81ac6e9a"],
+Cell[70392, 1667, 249, 5, 34, "Output",ExpressionUUID->"06e56e24-3cbb-4a00-9dc7-0312d2ad4b7d"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[70678, 1677, 366, 9, 30, "Input",ExpressionUUID->"2ea652f5-6989-4111-b24e-0b1bd4d40f8c"],
+Cell[71047, 1688, 230, 5, 34, "Output",ExpressionUUID->"fe689d2f-9240-4290-a7a4-14a41b6a3355"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[71326, 1699, 202, 4, 54, "Subsection",ExpressionUUID->"2d083254-724e-4cf9-b28e-7c9d80e01670"],
+Cell[CellGroupData[{
+Cell[71553, 1707, 376, 9, 30, "Input",ExpressionUUID->"4d5d557a-ff98-4982-845c-d6f8c0def5ab"],
+Cell[71932, 1718, 308, 9, 34, "Output",ExpressionUUID->"46ced1e5-6d86-4ea5-b63e-4477df11e6a3"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[72277, 1732, 394, 11, 30, "Input",ExpressionUUID->"8644b36a-7f2e-4217-86d7-a4436cfc02a7"],
+Cell[72674, 1745, 544, 16, 34, "Output",ExpressionUUID->"fcfd8672-6fc7-4fb4-ba3b-71bb527711e1"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[73279, 1768, 154, 3, 67, "Section",ExpressionUUID->"2f4ea8df-be04-493f-97f1-547465815f59"],
+Cell[CellGroupData[{
+Cell[73458, 1775, 154, 3, 54, "Subsection",ExpressionUUID->"00b04914-405d-4fa6-ae0c-ec4f4b2a14b1"],
+Cell[CellGroupData[{
+Cell[73637, 1782, 498, 11, 52, "Input",ExpressionUUID->"9659df3f-86b7-4b53-a516-08e70c521fa5"],
+Cell[74138, 1795, 301, 6, 35, "Output",ExpressionUUID->"d0d27f4a-660f-4efe-8bf7-a0a04b02a1a9"],
+Cell[74442, 1803, 301, 6, 35, "Output",ExpressionUUID->"63b6cf66-61eb-4d6f-8220-3c519e7698b8"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[74780, 1814, 294, 6, 30, "Input",ExpressionUUID->"12f0d618-1787-4eee-9f17-325f6d18d517"],
+Cell[75077, 1822, 238, 5, 34, "Output",ExpressionUUID->"8bcddfbb-aebe-40ae-9a7c-ff39c9b35513"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[75352, 1832, 470, 11, 52, "Input",ExpressionUUID->"64ee9d53-4f6a-410f-b7c2-50de39aa9ea2"],
+Cell[75825, 1845, 262, 5, 34, "Output",ExpressionUUID->"9094987f-7394-4bcc-9570-95bf4d1e2069"],
+Cell[76090, 1852, 289, 6, 34, "Output",ExpressionUUID->"d96f65cc-fcff-4fc0-b5d7-0834a8b8fe2b"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[76416, 1863, 449, 12, 30, "Input",ExpressionUUID->"6d907c79-5783-457e-9175-eb1d3c0d9838"],
+Cell[76868, 1877, 313, 6, 34, "Output",ExpressionUUID->"f6d5d44b-d7f0-475a-8687-353fffca67c5"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[77218, 1888, 345, 7, 30, "Input",ExpressionUUID->"98b1319a-f37c-447b-84b1-841019aef13a"],
+Cell[77566, 1897, 488, 8, 34, "Output",ExpressionUUID->"7c4eaf53-f310-4110-84c9-a6047bfba758"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[78091, 1910, 466, 12, 30, "Input",ExpressionUUID->"77cc1119-c5f1-4e18-9239-1032c37cceff"],
+Cell[78560, 1924, 510, 9, 34, "Output",ExpressionUUID->"f66fd9cb-19aa-4b8f-b586-03b2b55dd80c"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[79107, 1938, 1345, 36, 157, "Input",ExpressionUUID->"9344fb00-4f60-45e2-8538-5ffcdf0d5a58"],
+Cell[80455, 1976, 251, 4, 34, "Output",ExpressionUUID->"9dc0c0b0-7e25-4913-8893-ef5992d86497"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[80755, 1986, 155, 3, 54, "Subsection",ExpressionUUID->"a459a2a0-867b-4a4a-90bc-78d43db4fab4"],
+Cell[CellGroupData[{
+Cell[80935, 1993, 988, 28, 73, "Input",ExpressionUUID->"a318611f-ba29-4061-b33a-c9e7f67324c0"],
+Cell[81926, 2023, 358, 7, 34, "Output",ExpressionUUID->"e6bc6ccd-86b2-4921-8609-5bbb6e9b9ecc"],
+Cell[82287, 2032, 440, 11, 34, "Output",ExpressionUUID->"afba7b7d-5ecd-496b-b63e-0ce25ac913d1"],
+Cell[82730, 2045, 437, 11, 34, "Output",ExpressionUUID->"e7bfc340-0d8d-45b3-a87a-0f15c608d506"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[83204, 2061, 907, 23, 52, "Input",ExpressionUUID->"dd88d5ec-64fb-4d88-9a9e-151914eed6a3"],
+Cell[84114, 2086, 1331, 34, 56, "Output",ExpressionUUID->"6e7f8668-c649-4e79-a5e4-e9fbd9ce4691"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[85506, 2127, 151, 3, 67, "Section",ExpressionUUID->"bd612101-da4d-498f-b20d-ea3dd7581f33"],
+Cell[CellGroupData[{
+Cell[85682, 2134, 154, 3, 54, "Subsection",ExpressionUUID->"305e5718-8487-46bd-88a2-c767b51abdd6"],
+Cell[CellGroupData[{
+Cell[85861, 2141, 366, 9, 30, "Input",ExpressionUUID->"9ad9d30a-1275-49ab-9949-6582f9bdc00d"],
+Cell[86230, 2152, 237, 4, 34, "Output",ExpressionUUID->"f16093f8-deb0-40c9-b4ff-d477c195b8df"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[86504, 2161, 385, 10, 30, "Input",ExpressionUUID->"46a5526e-83e8-40e1-87d8-bf3799312bad"],
+Cell[86892, 2173, 217, 4, 34, "Output",ExpressionUUID->"b21c2b12-f68d-47a4-b688-67b7a9178ed8"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[87146, 2182, 364, 7, 30, "Input",ExpressionUUID->"19e92202-e096-463f-8c9e-e74b8af6dcee"],
+Cell[87513, 2191, 449, 6, 34, "Output",ExpressionUUID->"495cd6a6-2c92-4fed-b755-e8ff68a94596"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[88011, 2203, 155, 3, 54, "Subsection",ExpressionUUID->"63290a72-6f00-4eb2-8bd8-4ff5bb4b19c8"],
+Cell[CellGroupData[{
+Cell[88191, 2210, 596, 12, 73, "Input",ExpressionUUID->"5f7abd41-c82b-49ac-bb53-8636beff0468"],
+Cell[88790, 2224, 943, 25, 56, "Output",ExpressionUUID->"d2c16b91-af37-44fe-be45-be4edaf7dafe"],
+Cell[89736, 2251, 803, 20, 56, "Output",ExpressionUUID->"1fa19776-5850-4335-bfb2-5ac84df12625"],
+Cell[90542, 2273, 833, 20, 56, "Output",ExpressionUUID->"3295c43e-74a4-42e2-a4be-84e1829157f2"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[91448, 2301, 348, 6, 69, "Chapter",ExpressionUUID->"fe991340-a93c-47b9-85b1-6d1e0f1d9a3f"],
+Cell[CellGroupData[{
+Cell[91821, 2311, 461, 9, 30, "Input",ExpressionUUID->"5e4c0861-cbd3-4d6e-909f-db42f6e9cf2d"],
+Cell[92285, 2322, 541, 11, 46, "Message",ExpressionUUID->"d4ee5c31-c852-46ab-b6a1-914fa5f408d4"],
+Cell[92829, 2335, 402, 6, 34, "Output",ExpressionUUID->"e94548ca-e74d-44b2-8ecf-9826fb438b5f"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[93268, 2346, 417, 11, 30, "Input",ExpressionUUID->"de18d536-9b15-4311-8b69-edefb10ac9c3"],
+Cell[93688, 2359, 568, 12, 28, "Message",ExpressionUUID->"0fb03ab9-f874-4483-baaf-1986c8e6c053"],
+Cell[94259, 2373, 276, 5, 34, "Output",ExpressionUUID->"a35199d3-bed9-4e49-b8f6-cd01e815bc76"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[94572, 2383, 269, 6, 30, "Input",ExpressionUUID->"5905ce79-4ed0-4c28-b024-a83cd615e518"],
+Cell[94844, 2391, 545, 11, 28, "Message",ExpressionUUID->"bba74d27-a7ad-4bf2-a17b-ea7b3b1f1cbb"],
+Cell[95392, 2404, 250, 4, 34, "Output",ExpressionUUID->"b87fa6b7-f2d4-4d14-bcc1-141d56069e4b"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[95679, 2413, 289, 6, 30, "Input",ExpressionUUID->"bdb6344c-41d3-414c-b92f-cc4da3f1233c"],
+Cell[95971, 2421, 548, 11, 28, "Message",ExpressionUUID->"42c75aa1-206f-4675-aec3-cfdbddd84a2e"],
+Cell[96522, 2434, 255, 4, 34, "Output",ExpressionUUID->"507e4645-e4ee-44a5-a603-e7ff4b8cce77"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[96814, 2443, 307, 7, 30, "Input",ExpressionUUID->"fb47f702-4f49-4a90-a6e6-b6d06aacc1b7"],
+Cell[97124, 2452, 636, 13, 46, "Message",ExpressionUUID->"dd219034-42ff-4695-8758-ddfb11a49409"],
+Cell[97763, 2467, 331, 5, 34, "Output",ExpressionUUID->"97615ed5-4290-4b7e-a0c7-bea57dde33cc"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[98131, 2477, 525, 14, 52, "Input",ExpressionUUID->"db912691-0b70-4321-85e4-cbe0a903243a"],
+Cell[98659, 2493, 546, 11, 28, "Message",ExpressionUUID->"ca02c6f5-bcf6-447e-80ca-10bda6ca9889"],
+Cell[99208, 2506, 250, 4, 34, "Output",ExpressionUUID->"9004d422-da97-467f-bb14-a1a1922ea04b"],
+Cell[99461, 2512, 546, 11, 28, "Message",ExpressionUUID->"69ed935f-d3a2-48e2-9655-4fce6b2cdb45"],
+Cell[100010, 2525, 252, 4, 34, "Output",ExpressionUUID->"5ccce9c8-331c-4b17-93e1-695c8914bdf2"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[100299, 2534, 202, 4, 30, "Input",ExpressionUUID->"928b5417-01e5-4120-aa9a-7f72a4495aa5"],
+Cell[100504, 2540, 523, 11, 28, "Message",ExpressionUUID->"b2100f95-7eee-4107-b75f-c9f69acbcc54"],
+Cell[101030, 2553, 230, 4, 34, "Output",ExpressionUUID->"16a3b359-b7d6-4ee8-80ab-d3f89ecbd88c"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[101297, 2562, 226, 4, 30, "Input",ExpressionUUID->"686f508a-1451-4037-bf77-8512593dcade"],
+Cell[101526, 2568, 525, 11, 28, "Message",ExpressionUUID->"de4661ac-b6ef-436a-b262-2a38e44e2c19"],
+Cell[102054, 2581, 232, 4, 34, "Output",ExpressionUUID->"ee191167-993b-42ba-8ba8-ecee725ac687"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+

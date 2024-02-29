@@ -1,0 +1,2420 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 13.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[    105035,       2412]
+NotebookOptionsPosition[     97221,       2278]
+NotebookOutlinePosition[     97669,       2296]
+CellTagsIndexPosition[     97626,       2293]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["ApplyPauliTransferMap", "Title",
+ CellChangeTimes->{{3.913273690088934*^9, 3.913273712038406*^9}, {
+   3.915199103735641*^9, 3.915199106675872*^9}, {3.917086155647716*^9, 
+   3.917086158759173*^9}, {3.9171594220183487`*^9, 3.917159422219205*^9}, {
+   3.917274433487973*^9, 3.917274435404172*^9}, 3.917277665796289*^9, {
+   3.917280864184389*^9, 3.9172808649949007`*^9}, {3.9172828199639874`*^9, 
+   3.9172828467690277`*^9}, {3.917341838255602*^9, 3.917341850354156*^9}, {
+   3.91745168386106*^9, 
+   3.917451684259018*^9}},ExpressionUUID->"77f009f4-2175-44a8-80e3-\
+db58a43dd7eb"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"SetDirectory", " ", "@", " ", 
+   RowBox[{"NotebookDirectory", "[", "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Import", "[", "\"\<../Link/QuESTlink.m\>\"", "]"}], 
+  ";"}]}], "Input",
+ CellChangeTimes->{{3.917451655155184*^9, 3.9174517069438953`*^9}},
+ CellLabel->"In[1]:=",ExpressionUUID->"96dc3e19-ba26-4783-b8c5-af8507883921"],
+
+Cell[CellGroupData[{
+
+Cell["Doc", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 
+  3.9151991786465263`*^9}},ExpressionUUID->"2a8ec798-ae11-4a87-9bc0-\
+81ab84d2fff7"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "ApplyPauliTransferMap"}]], "Input",
+ CellChangeTimes->{{3.9174516956311903`*^9, 3.917451699011285*^9}},
+ CellLabel->"In[3]:=",ExpressionUUID->"fba5918a-c879-4e52-a985-86426b9044bd"],
+
+Cell[BoxData[
+ InterpretationBox[
+  StyleBox[
+   FrameBox[
+    DynamicModuleBox[{System`InformationDump`open$$ = False, 
+     System`InformationDump`mouseOver$$ = False}, 
+     PaneSelectorBox[{True->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False,
+             BaseStyle -> None],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"ApplyPauliTransferMap[pauliString, ptMap] returns \
+the Pauli string produced by the given PTMap acting upon the given initial \
+Pauli string.\\nApplyPauliTransferMap[pauliString, circuit] automatically \
+transforms the given circuit (composed of gates, channels, and PTMs, possibly \
+intermixed) into PTMaps before applying them to the given Pauli \
+string.\\nThis method uses automatic caching to avoid needless re-computation \
+of an operator's PTMap, agnostic to the targeted and controlled qubits, at \
+the cost of additional memory usage. Caching behaviour can be controlled \
+using option \\\"CacheMaps\\\":\\n\[Bullet] \\\"CacheMaps\\\" -> \
+\\\"UntilCallEnd\\\" (default) caches all computed PTMaps but clears the \
+cache when ApplyPauliTransferMap[] returns.\\n\[Bullet] \\\"CacheMaps\\\" -> \
+\\\"Forever\\\" maintains the cache even between multiple calls to \
+ApplyPauliTransferMap[].\\n\[Bullet] \\\"CacheMaps\\\" -> \\\"Never\\\" \
+disables caching (and clears the existing cache before computation), \
+re-computing each operqtors' PTMap when encountered in the \
+circuit.\\nApplyPauliTransferMap also accepts all options of \
+CalcPauliTransferMap, like AssertValidChannels. See \
+?AssertValidChannels.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          PaneBox[
+           TagBox[GridBox[{
+              {
+               StyleBox[
+                TagBox[
+                 TooltipBox[
+                  StyleBox["\<\" Definitions\"\>", "InformationRowLabel",
+                   StripOnInput->False],
+                  "\"Definitions\"",
+                  TooltipStyle->"TextStyling"],
+                 Annotation[#, "Definitions", "Tooltip"]& ], "DialogStyle",
+                StripOnInput->False]},
+              {
+               TemplateBox[{"\"\[ThinSpace]\"", 
+                 GridBox[{{
+                    RowBox[{
+                    RowBox[{"ApplyPauliTransferMap", "[", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`pauliStr_", "?", 
+                    "QuEST`Private`isValidSymbolicPauliString"}], ",", 
+                    RowBox[{"QuEST`Private`map", ":", 
+                    RowBox[{
+                    SubscriptBox["PTMap", "__Integer"], "[", "__Rule", 
+                    "]"}]}], ",", 
+                    RowBox[{"QuEST`Private`opts", ":", 
+                    RowBox[{"OptionsPattern", "[", "]"}]}]}], "]"}], ":=", 
+                    RowBox[{"(", 
+                    RowBox[{
+                    RowBox[{"Check", "[", 
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`validatePauliTransferMapOptions", 
+                    "[", 
+                    
+                    RowBox[{"ApplyPauliTransferMap", ",", 
+                    "QuEST`Private`opts"}], "]"}], ",", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}], "]"}], ";", 
+                    RowBox[{"Plus", "@@", 
+                    RowBox[{"Flatten", "[", 
+                    RowBox[{
+                    RowBox[{"Table", "[", 
+                    RowBox[{
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`inState", "\[LeftDoubleBracket]", 
+                    "2", "\[RightDoubleBracket]"}], " ", 
+                    
+                    RowBox[{"QuEST`Private`outState", "\[LeftDoubleBracket]", 
+                    "2", "\[RightDoubleBracket]"}], " ", 
+                    RowBox[{"GetPauliString", "[", 
+                    
+                    RowBox[{"QuEST`Private`outState", "\[LeftDoubleBracket]", 
+                    "1", "\[RightDoubleBracket]"}], "]"}]}], ",", 
+                    RowBox[{"{", 
+                    RowBox[{"QuEST`Private`inState", ",", 
+                    
+                    RowBox[{
+                    "QuEST`Private`getPauliStringInitStatesForPTMapSim", "[", 
+                    
+                    RowBox[{"QuEST`Private`pauliStr", ",", 
+                    RowBox[{"{", "QuEST`Private`map", "}"}]}], "]"}]}], "}"}],
+                     ",", 
+                    RowBox[{"{", 
+                    RowBox[{"QuEST`Private`outState", ",", 
+                    RowBox[{"QuEST`Private`applyPTMapToPauliState", "[", 
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`inState", "\[LeftDoubleBracket]", 
+                    "1", "\[RightDoubleBracket]"}], ",", 
+                    "QuEST`Private`map"}], "]"}]}], "}"}]}], "]"}], ",", 
+                    "1"}], "]"}]}]}], ")"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"ApplyPauliTransferMap", "[", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`pauliStr_", "?", 
+                    "QuEST`Private`isValidSymbolicPauliString"}], ",", 
+                    RowBox[{"QuEST`Private`maps", ":", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{
+                    SubscriptBox["PTMap", "__Integer"], "[", "__Rule", "]"}], 
+                    ".."}], "}"}]}], ",", 
+                    RowBox[{"QuEST`Private`opts", ":", 
+                    RowBox[{"OptionsPattern", "[", "]"}]}]}], "]"}], ":=", 
+                    RowBox[{"(", 
+                    RowBox[{
+                    RowBox[{"Check", "[", 
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`validatePauliTransferMapOptions", 
+                    "[", 
+                    
+                    RowBox[{"ApplyPauliTransferMap", ",", 
+                    "QuEST`Private`opts"}], "]"}], ",", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}], "]"}], ";", 
+                    RowBox[{"SimplifyPaulis", "[", 
+                    RowBox[{"Fold", "[", 
+                    
+                    RowBox[{"ApplyPauliTransferMap", ",", 
+                    "QuEST`Private`pauliStr", ",", "QuEST`Private`maps"}], 
+                    "]"}], "]"}]}], ")"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"ApplyPauliTransferMap", "[", 
+                    RowBox[{
+                    
+                    RowBox[{
+                    "QuEST`Private`pauliStr_", "?", 
+                    "QuEST`Private`isValidSymbolicPauliString"}], ",", 
+                    RowBox[{"QuEST`Private`mixed", ":", 
+                    RowBox[{"{", 
+                    RowBox[{
+                    RowBox[{"(", 
+                    RowBox[{
+                    RowBox[{"_", "?", "QuEST`Private`isGateFormat"}], "|", 
+                    RowBox[{
+                    SubscriptBox["PTM", "__Integer"], "[", 
+                    RowBox[{"_", "?", "SquareMatrixQ"}], "]"}], "|", 
+                    RowBox[{
+                    SubscriptBox["PTMap", "__Integer"], "[", "__Rule", 
+                    "]"}]}], ")"}], ".."}], "}"}]}], ",", 
+                    RowBox[{"QuEST`Private`opts", ":", 
+                    RowBox[{"OptionsPattern", "[", "]"}]}]}], "]"}], ":=", 
+                    RowBox[{"Module", "[", 
+                    RowBox[{
+                    RowBox[{"{", "QuEST`Private`maps", "}"}], ",", 
+                    RowBox[{
+                    RowBox[{"Check", "[", 
+                    RowBox[{
+                    RowBox[{"QuEST`Private`validatePauliTransferMapOptions", 
+                    "[", 
+                    
+                    RowBox[{"ApplyPauliTransferMap", ",", 
+                    "QuEST`Private`opts"}], "]"}], ",", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}], "]"}], ";", 
+                    RowBox[{"QuEST`Private`maps", "=", 
+                    RowBox[{"Check", "[", 
+                    RowBox[{
+                    
+                    RowBox[{"QuEST`Private`getAndValidateAllGatesAsPTMaps", 
+                    "[", 
+                    
+                    RowBox[{"QuEST`Private`mixed", ",", 
+                    "ApplyPauliTransferMap", ",", "QuEST`Private`opts"}], 
+                    "]"}], ",", 
+                    RowBox[{"Return", "[", "$Failed", "]"}]}], "]"}]}], ";", 
+                    RowBox[{"ApplyPauliTransferMap", "[", 
+                    
+                    RowBox[{"QuEST`Private`pauliStr", ",", 
+                    "QuEST`Private`maps"}], "]"}]}]}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"ApplyPauliTransferMap", "[", 
+                    RowBox[{"QuEST`Private`pauliStr_", ",", 
+                    
+                    RowBox[{
+                    "QuEST`Private`gate_", "?", 
+                    "QuEST`Private`isGateFormat"}], ",", 
+                    "QuEST`Private`opts___"}], "]"}], ":=", 
+                    RowBox[{"ApplyPauliTransferMap", "[", 
+                    RowBox[{"QuEST`Private`pauliStr", ",", 
+                    RowBox[{"{", "QuEST`Private`gate", "}"}], ",", 
+                    "QuEST`Private`opts"}], "]"}]}]}, {" "}, {
+                    RowBox[{
+                    RowBox[{"ApplyPauliTransferMap", "[", "___", "]"}], ":=", 
+                    
+                    
+                    RowBox[{
+                    "QuEST`Private`invalidArgError", "[", 
+                    "ApplyPauliTransferMap", "]"}]}]}, {" "}}, 
+                  GridBoxAlignment -> {"Columns" -> {{Left}}}, 
+                  DefaultBaseStyle -> "Column", 
+                  GridBoxItemSize -> {
+                   "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}]},
+                "RowDefault"]}
+             },
+             DefaultBaseStyle->"Column",
+             GridBoxAlignment->{"Columns" -> {{Left}}},
+             GridBoxItemSize->{
+              "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+            "Column"],
+           FrameMargins->{{6, 0}, {3, 6}}], "\<\"\"\>"},
+         {
+          PaneBox[GridBox[{
+             {
+              
+              DynamicModuleBox[{System`InformationDump`open$$ = {
+               False, False, False, False, False, False}}, 
+               StyleBox[GridBox[{
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Options\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"Options\"",
+                    TooltipStyle->"TextStyling"],
+                    Annotation[#, "Options", "Tooltip"]& ], 
+                   
+                   RowBox[{"\<\"CacheMaps\"\>", 
+                    "\[Rule]", "\<\"UntilCallEnd\"\>"}]},
+                  {
+                   TagBox[
+                    TooltipBox[
+                    StyleBox["\<\" Full Name\"\>", "InformationRowLabel",
+                    StripOnInput->False],
+                    "\"FullName\"",
+                    TooltipStyle->"TextStyling"],
+                    
+                    Annotation[#, "FullName", 
+                    "Tooltip"]& ], "\<\"QuEST`ApplyPauliTransferMap\"\>"}
+                 },
+                 AutoDelete->False,
+                 GridBoxAlignment->{"Columns" -> {Right, Left}},
+                 GridBoxDividers->None,
+                 GridBoxItemSize->{"Columns" -> {Automatic, Automatic}},
+                 GridBoxSpacings->{"Columns" -> {
+                    Offset[0.27999999999999997`], {
+                    Offset[0.5599999999999999]}, 
+                    Offset[0.27999999999999997`]}, "Rows" -> {
+                    Offset[0.2], {
+                    Offset[0.8]}, 
+                    Offset[0.2]}}], "DialogStyle",
+                StripOnInput->False],
+               DynamicModuleValues:>{}]}
+            },
+            DefaultBaseStyle->"Column",
+            GridBoxAlignment->{"Columns" -> {{Left}}},
+            GridBoxDividers->{"Columns" -> {{False}}, "Rows" -> {{False}}},
+            
+            GridBoxItemSize->{
+             "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}},
+            GridBoxSpacings->{"Columns" -> {
+                Offset[0.27999999999999997`], {
+                 Offset[0.5599999999999999]}, 
+                Offset[0.27999999999999997`]}, "Rows" -> {
+                Offset[0.2], {
+                 Offset[3.6]}, 
+                Offset[0.2]}}],
+           FrameMargins->{{6, 6}, {6, 3}}], ""},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpener"]], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "UpPointerOpenerHot"]]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, False],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"], False->
+      TagBox[GridBox[{
+         {
+          ItemBox[
+           PaneBox[
+            StyleBox["\<\" Symbol\"\>", "InformationTitleText",
+             StripOnInput->False],
+            FrameMargins->{{4, 0}, {-1, 1}}],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           PaneBox[
+            
+            StyleBox["\<\"ApplyPauliTransferMap[pauliString, ptMap] returns \
+the Pauli string produced by the given PTMap acting upon the given initial \
+Pauli string.\\nApplyPauliTransferMap[pauliString, circuit] automatically \
+transforms the given circuit (composed of gates, channels, and PTMs, possibly \
+intermixed) into PTMaps before applying them to the given Pauli \
+string.\\nThis method uses automatic caching to avoid needless re-computation \
+of an operator's PTMap, agnostic to the targeted and controlled qubits, at \
+the cost of additional memory usage. Caching behaviour can be controlled \
+using option \\\"CacheMaps\\\":\\n\[Bullet] \\\"CacheMaps\\\" -> \
+\\\"UntilCallEnd\\\" (default) caches all computed PTMaps but clears the \
+cache when ApplyPauliTransferMap[] returns.\\n\[Bullet] \\\"CacheMaps\\\" -> \
+\\\"Forever\\\" maintains the cache even between multiple calls to \
+ApplyPauliTransferMap[].\\n\[Bullet] \\\"CacheMaps\\\" -> \\\"Never\\\" \
+disables caching (and clears the existing cache before computation), \
+re-computing each operqtors' PTMap when encountered in the \
+circuit.\\nApplyPauliTransferMap also accepts all options of \
+CalcPauliTransferMap, like AssertValidChannels. See \
+?AssertValidChannels.\"\>", "InformationUsageText",
+             StripOnInput->False,
+             LineSpacing->{1.5, 1.5, 3.}],
+            FrameMargins->{{10, 10}, {8, 10}}],
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False], 
+          ItemBox["\<\"\"\>",
+           BaseStyle->"InformationUsageSubtitleBackground",
+           StripOnInput->False]},
+         {
+          ItemBox[
+           TagBox[
+            ButtonBox[
+             PaneSelectorBox[{False->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpener"],
+               ImageSizeCache->{10., {2., 8.}}], True->
+              
+              DynamicBox[FEPrivate`FrontEndResource[
+               "FEBitmaps", "DownPointerOpenerHot"],
+               ImageSizeCache->{10., {2., 8.}}]}, Dynamic[
+              System`InformationDump`mouseOver$$]],
+             Alignment->Left,
+             Appearance->{"Default" -> None},
+             
+             ButtonFunction:>FEPrivate`Set[
+              System`InformationDump`open$$, True],
+             Evaluator->Automatic,
+             FrameMargins->{{9, 0}, {0, 0}},
+             ImageMargins->0,
+             ImageSize->Full,
+             Method->"Preemptive"],
+            
+            EventHandlerTag[{
+             "MouseEntered" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, True], 
+              "MouseExited" :> 
+              FEPrivate`Set[System`InformationDump`mouseOver$$, False], 
+              Method -> "Preemptive", PassEventsDown -> Automatic, 
+              PassEventsUp -> True}]],
+           BaseStyle->"InformationTitleBackground",
+           StripOnInput->False], "\[SpanFromLeft]"}
+        },
+        AutoDelete->False,
+        FrameStyle->Directive[
+          GrayLevel[0.8], 
+          Thickness[Tiny]],
+        GridBoxAlignment->{"Columns" -> {Left, Right}, "Rows" -> {{Center}}},
+        GridBoxDividers->{
+         "Columns" -> {{None}}, "Rows" -> {False, {True}, False}},
+        GridBoxItemSize->{
+         "Columns" -> {{Automatic}}, "Rows" -> {{Automatic}}}],
+       "Grid"]}, Dynamic[System`InformationDump`open$$],
+      BaselinePosition->Baseline,
+      FrameMargins->0,
+      ImageSize->Automatic],
+     DynamicModuleValues:>{}],
+    BaseStyle->"InformationGridFrame",
+    StripOnInput->False], "InformationGridPlain",
+   StripOnInput->False],
+  InformationData[<|
+   "ObjectType" -> "Symbol", "Usage" -> 
+    "ApplyPauliTransferMap[pauliString, ptMap] returns the Pauli string \
+produced by the given PTMap acting upon the given initial Pauli string.\n\
+ApplyPauliTransferMap[pauliString, circuit] automatically transforms the \
+given circuit (composed of gates, channels, and PTMs, possibly intermixed) \
+into PTMaps before applying them to the given Pauli string.\nThis method uses \
+automatic caching to avoid needless re-computation of an operator's PTMap, \
+agnostic to the targeted and controlled qubits, at the cost of additional \
+memory usage. Caching behaviour can be controlled using option \"CacheMaps\":\
+\n\[Bullet] \"CacheMaps\" -> \"UntilCallEnd\" (default) caches all computed \
+PTMaps but clears the cache when ApplyPauliTransferMap[] returns.\n\[Bullet] \
+\"CacheMaps\" -> \"Forever\" maintains the cache even between multiple calls \
+to ApplyPauliTransferMap[].\n\[Bullet] \"CacheMaps\" -> \"Never\" disables \
+caching (and clears the existing cache before computation), re-computing each \
+operqtors' PTMap when encountered in the circuit.\nApplyPauliTransferMap also \
+accepts all options of CalcPauliTransferMap, like AssertValidChannels. See \
+?AssertValidChannels.", "Documentation" -> None, "OwnValues" -> None, 
+    "UpValues" -> None, "DownValues" -> 
+    Information`InformationValueForm[
+     DownValues, QuEST`ApplyPauliTransferMap, {QuEST`ApplyPauliTransferMap[
+         PatternTest[
+          Pattern[QuEST`Private`pauliStr, 
+           Blank[]], QuEST`Private`isValidSymbolicPauliString], 
+         Pattern[QuEST`Private`map, 
+          Subscript[QuEST`Gate`PTMap, 
+           BlankSequence[Integer]][
+           BlankSequence[Rule]]], 
+         Pattern[QuEST`Private`opts, 
+          OptionsPattern[]]] :> (Check[
+          QuEST`Private`validatePauliTransferMapOptions[
+          QuEST`ApplyPauliTransferMap, QuEST`Private`opts], 
+          Return[$Failed]]; Apply[Plus, 
+          Flatten[
+           Table[
+           Part[QuEST`Private`inState, 2] Part[QuEST`Private`outState, 2] 
+            QuEST`GetPauliString[
+              Part[QuEST`Private`outState, 1]], {QuEST`Private`inState, 
+             QuEST`Private`getPauliStringInitStatesForPTMapSim[
+             QuEST`Private`pauliStr, {QuEST`Private`map}]}, {
+            QuEST`Private`outState, 
+             QuEST`Private`applyPTMapToPauliState[
+              Part[QuEST`Private`inState, 1], QuEST`Private`map]}], 1]]), 
+       QuEST`ApplyPauliTransferMap[
+         PatternTest[
+          Pattern[QuEST`Private`pauliStr, 
+           Blank[]], QuEST`Private`isValidSymbolicPauliString], 
+         Pattern[QuEST`Private`maps, {
+           Repeated[
+            Subscript[QuEST`Gate`PTMap, 
+             BlankSequence[Integer]][
+             BlankSequence[Rule]]]}], 
+         Pattern[QuEST`Private`opts, 
+          OptionsPattern[]]] :> (Check[
+          QuEST`Private`validatePauliTransferMapOptions[
+          QuEST`ApplyPauliTransferMap, QuEST`Private`opts], 
+          Return[$Failed]]; QuEST`SimplifyPaulis[
+          Fold[
+          QuEST`ApplyPauliTransferMap, QuEST`Private`pauliStr, 
+           QuEST`Private`maps]]), QuEST`ApplyPauliTransferMap[
+         PatternTest[
+          Pattern[QuEST`Private`pauliStr, 
+           Blank[]], QuEST`Private`isValidSymbolicPauliString], 
+         Pattern[QuEST`Private`mixed, {
+           Repeated[
+            Alternatives[
+             PatternTest[
+              Blank[], QuEST`Private`isGateFormat], 
+             Subscript[QuEST`Gate`PTM, 
+              BlankSequence[Integer]][
+              PatternTest[
+               Blank[], SquareMatrixQ]], 
+             Subscript[QuEST`Gate`PTMap, 
+              BlankSequence[Integer]][
+              BlankSequence[Rule]]]]}], 
+         Pattern[QuEST`Private`opts, 
+          OptionsPattern[]]] :> Module[{QuEST`Private`maps}, Check[
+           QuEST`Private`validatePauliTransferMapOptions[
+           QuEST`ApplyPauliTransferMap, QuEST`Private`opts], 
+           Return[$Failed]]; QuEST`Private`maps = Check[
+            QuEST`Private`getAndValidateAllGatesAsPTMaps[
+            QuEST`Private`mixed, QuEST`ApplyPauliTransferMap, 
+             QuEST`Private`opts], 
+            Return[$Failed]]; 
+         QuEST`ApplyPauliTransferMap[
+          QuEST`Private`pauliStr, QuEST`Private`maps]], 
+       QuEST`ApplyPauliTransferMap[
+         Pattern[QuEST`Private`pauliStr, 
+          Blank[]], 
+         PatternTest[
+          Pattern[QuEST`Private`gate, 
+           Blank[]], QuEST`Private`isGateFormat], 
+         Pattern[QuEST`Private`opts, 
+          BlankNullSequence[]]] :> 
+       QuEST`ApplyPauliTransferMap[
+        QuEST`Private`pauliStr, {QuEST`Private`gate}, QuEST`Private`opts], 
+       QuEST`ApplyPauliTransferMap[
+         BlankNullSequence[]] :> 
+       QuEST`Private`invalidArgError[QuEST`ApplyPauliTransferMap]}], 
+    "SubValues" -> None, "DefaultValues" -> None, "NValues" -> None, 
+    "FormatValues" -> None, "Options" -> {"CacheMaps" -> "UntilCallEnd"}, 
+    "Attributes" -> {}, "FullName" -> "QuEST`ApplyPauliTransferMap"|>, 
+   False]]], "Output",
+ CellChangeTimes->{3.917451701158464*^9, 3.917454532568006*^9, 
+  3.917454562618086*^9, 3.917507010817315*^9, 3.9175152289542427`*^9, 
+  3.917516864749501*^9, 3.9175170679452877`*^9, 3.917517875270945*^9, 
+  3.918112302188231*^9},
+ CellLabel->"Out[3]=",ExpressionUUID->"399b2ee3-4dfa-4c94-8383-550ddd5da6b0"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Correctness", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.9173418805860863`*^9, 3.917341881626457*^9}, {3.917451715663147*^9, 
+  3.917451718096586*^9}, {3.917459998504846*^9, 
+  3.9174600016077023`*^9}},ExpressionUUID->"02bdf378-83ae-4892-994c-\
+456dd1665801"],
+
+Cell[CellGroupData[{
+
+Cell["Maps", "Section",
+ CellChangeTimes->{{3.91746001775187*^9, 
+  3.91746001813144*^9}},ExpressionUUID->"3046ef3e-0cb3-4f31-95ea-\
+17cc025e6c77"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"map", " ", "=", " ", 
+   RowBox[{"CalcPauliTransferMap", " ", "@", " ", 
+    RowBox[{"Circuit", "[", 
+     RowBox[{
+      SubscriptBox["H", "0"], 
+      RowBox[{
+       SubscriptBox["Rx", "0"], "[", "x", "]"}], 
+      RowBox[{
+       SubscriptBox["C", "0"], "[", 
+       SubscriptBox["X", "1"], "]"}]}], "]"}]}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"DrawPauliTransferMap", "[", "map", "]"}]}], "Input",
+ CellChangeTimes->{{3.917451729108605*^9, 3.917451750355792*^9}, {
+   3.917451903687724*^9, 3.917451980751376*^9}, {3.917452196456861*^9, 
+   3.917452196639022*^9}, {3.917452448788712*^9, 3.9174524997417727`*^9}, 
+   3.917460005483941*^9},
+ CellLabel->"In[4]:=",ExpressionUUID->"45ff0713-8931-405a-ae53-38ff226ea5a8"],
+
+Cell[BoxData[
+ GraphicsBox[
+  NamespaceBox["NetworkGraphics",
+   DynamicModuleBox[{Typeset`graph = HoldComplete[
+     Graph[{0, 1, 3, 6, 2, 5, 4, 7, 8, 11, 9, 13, 10, 14, 12, 
+      15}, {{{1, 1}, {2, 3}, {2, 4}, {5, 3}, {5, 4}, {3, 6}, {7, 7}, {6, 5}, {
+       6, 8}, {4, 5}, {4, 8}, {8, 2}, {9, 10}, {11, 9}, {11, 12}, {13, 9}, {
+       13, 12}, {10, 14}, {15, 16}, {12, 11}, {12, 15}, {14, 11}, {14, 15}, {
+       16, 13}}, Null}, {
+      EdgeLabels -> {
+        DirectedEdge[14, 9] -> -Cos[$CellContext`x], DirectedEdge[1, 3] -> 
+         Cos[$CellContext`x], DirectedEdge[5, 7] -> Cos[$CellContext`x], 
+         DirectedEdge[4, 4] -> 1, DirectedEdge[3, 5] -> 1, 
+         DirectedEdge[2, 6] -> -Cos[$CellContext`x], 
+         DirectedEdge[1, 6] -> -Sin[$CellContext`x], DirectedEdge[12, 15] -> 
+         1, DirectedEdge[6, 2] -> -Cos[$CellContext`x], 
+         DirectedEdge[5, 2] -> -Sin[$CellContext`x], 
+         DirectedEdge[2, 3] -> -Sin[$CellContext`x], 
+         DirectedEdge[6, 7] -> -Sin[$CellContext`x], DirectedEdge[0, 0] -> 1, 
+         DirectedEdge[8, 11] -> 1, 
+         DirectedEdge[14, 12] -> -Sin[$CellContext`x], DirectedEdge[11, 14] -> 
+         1, DirectedEdge[10, 13] -> Cos[$CellContext`x], DirectedEdge[9, 8] -> 
+         Cos[$CellContext`x], DirectedEdge[13, 12] -> Cos[$CellContext`x], 
+         DirectedEdge[7, 1] -> 1, DirectedEdge[9, 13] -> Sin[$CellContext`x], 
+         DirectedEdge[10, 8] -> -Sin[$CellContext`x], 
+         DirectedEdge[13, 9] -> -Sin[$CellContext`x], 
+         DirectedEdge[15, 10] -> -1}, 
+       EdgeStyle -> {
+        DirectedEdge[6, 7] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[2, 3] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[10, 8] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[2, 6] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[15, 10] -> RGBColor[0.761959, 0.470832, 0.940597], 
+         DirectedEdge[13, 9] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[8, 11] -> RGBColor[0.761959, 0.470832, 0.940597], 
+         DirectedEdge[5, 2] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[13, 12] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[10, 13] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[7, 1] -> RGBColor[0.761959, 0.470832, 0.940597], 
+         DirectedEdge[0, 0] -> RGBColor[0.761959, 0.470832, 0.940597], 
+         DirectedEdge[1, 6] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[11, 14] -> RGBColor[0.761959, 0.470832, 0.940597], 
+         DirectedEdge[9, 8] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[9, 13] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[12, 15] -> RGBColor[0.761959, 0.470832, 0.940597], 
+         DirectedEdge[5, 7] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[14, 12] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[1, 3] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[3, 5] -> RGBColor[0.761959, 0.470832, 0.940597], 
+         DirectedEdge[14, 9] -> RGBColor[0.431296, 0.709773, 0.927077], 
+         DirectedEdge[4, 4] -> RGBColor[0.761959, 0.470832, 0.940597], 
+         DirectedEdge[6, 2] -> RGBColor[0.431296, 0.709773, 0.927077]}, 
+       VertexLabels -> {
+        0 -> Subscript[QuEST`Gate`Id, 0] Subscript[QuEST`Gate`Id, 1], 9 -> 
+         Subscript[QuEST`Gate`X, 0] Subscript[QuEST`Gate`Y, 1], 14 -> 
+         Subscript[QuEST`Gate`Y, 0] Subscript[QuEST`Gate`Z, 1], 5 -> 
+         Subscript[QuEST`Gate`X, 0] Subscript[QuEST`Gate`X, 1], 6 -> 
+         Subscript[QuEST`Gate`X, 1] Subscript[QuEST`Gate`Y, 0], 13 -> 
+         Subscript[QuEST`Gate`X, 0] Subscript[QuEST`Gate`Z, 1], 4 -> 
+         Subscript[QuEST`Gate`Id, 0] Subscript[QuEST`Gate`X, 1], 15 -> 
+         Subscript[QuEST`Gate`Z, 0] Subscript[QuEST`Gate`Z, 1], 12 -> 
+         Subscript[QuEST`Gate`Id, 0] Subscript[QuEST`Gate`Z, 1], 8 -> 
+         Subscript[QuEST`Gate`Id, 0] Subscript[QuEST`Gate`Y, 1], 7 -> 
+         Subscript[QuEST`Gate`X, 1] Subscript[QuEST`Gate`Z, 0], 1 -> 
+         Subscript[QuEST`Gate`Id, 1] Subscript[QuEST`Gate`X, 0], 10 -> 
+         Subscript[QuEST`Gate`Y, 0] Subscript[QuEST`Gate`Y, 1], 2 -> 
+         Subscript[QuEST`Gate`Id, 1] Subscript[QuEST`Gate`Y, 0], 3 -> 
+         Subscript[QuEST`Gate`Id, 1] Subscript[QuEST`Gate`Z, 0], 11 -> 
+         Subscript[QuEST`Gate`Y, 1] Subscript[QuEST`Gate`Z, 0]}, VertexStyle -> {
+         GrayLevel[1]}}]]}, 
+    TagBox[GraphicsGroupBox[{
+       {Hue[0.6, 0.7, 0.5], Opacity[0.7], Arrowheads[Medium], {
+         {RGBColor[0.761959, 0.470832, 0.940597], 
+          ArrowBox[BezierCurveBox[{{4.332543236723847, -0.8497226396476774}, {
+           4.244063981256087, -1.0405061720329796`}, {
+           4.045185503718495, -1.0969024144935737`}, {
+           3.9180148792440384`, -1.0379453357187005`}, {
+           3.9180148792440384`, -0.6614999435766542}, {
+           4.045185503718495, -0.602542864801781}, {
+           4.244063981256087, -0.658939107262375}, {
+           4.332543236723847, -0.8497226396476774}},
+           SplineDegree->7], 0.036895872238239105`]}, 
+         InsetBox["1", {3.832543236723847, -0.8497226396476772}, ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{2.042935216448903, -2.662190241220531}, {
+           0.9198434548795635, -2.6088164362690476`}}, 
+           0.036895872238239105`]}, InsetBox[
+          RowBox[{"cos", "(", "x", ")"}], {1.4813893356642334, -2.6355033387447895},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{2.042935216448903, -2.662190241220531}, {
+           2.042077166307198, -3.7102177124841713`}}, 0.036895872238239105`]},
+          InsetBox[
+          RowBox[{"-", 
+           RowBox[{"sin", "(", "x", ")"}]}], {2.0425061913780507, -3.186203976852351},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.761959, 0.470832, 0.940597], 
+          ArrowBox[{{0.9198434548795635, -2.6088164362690476`}, {
+           0.34972263964767736`, -3.185091380394349}}, 
+           0.036895872238239105`]}, 
+         InsetBox["1", {0.6347830472636204, -2.896953908331698}, ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[BezierCurveBox[{{
+           2.042077166307198, -3.7102177124841713`}, {
+           1.4891357634311524`, -3.9215286378979415`}, {
+           0.9187087902998579, -3.7633844930866704`}}], 
+           0.036895872238239105`]}, InsetBox[
+          RowBox[{"-", 
+           RowBox[{"cos", "(", "x", ")"}]}], {1.4841146529457032, -3.8154368891059356},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{2.042077166307198, -3.7102177124841713`}, {
+           1.4815965000637132`, -3.1860901957166594`}}, 
+           0.036895872238239105`]}, InsetBox[
+          RowBox[{"-", 
+           RowBox[{"sin", "(", "x", ")"}]}], {1.7618368331854557, -3.448153954100415},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{0.9187087902998579, -3.7633844930866704`}, {
+           0.9198434548795635, -2.6088164362690476`}}, 
+           0.036895872238239105`]}, InsetBox[
+          RowBox[{"-", 
+           RowBox[{"sin", "(", "x", ")"}]}], {0.9192761225897107, -3.186100464677859},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[BezierCurveBox[{{
+           0.9187087902998579, -3.7633844930866704`}, {
+           1.471650193175917, -3.5520735676728816`}, {
+           2.042077166307198, -3.7102177124841713`}}], 
+           0.036895872238239105`]}, InsetBox[
+          RowBox[{"-", 
+           RowBox[{"cos", "(", "x", ")"}]}], {1.476671303661353, -3.6581653164649075},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{0.34972263964767736`, -3.185091380394349}, {
+           0.9187087902998579, -3.7633844930866704`}}, 
+           0.036895872238239105`]}, InsetBox[
+          RowBox[{"-", 
+           RowBox[{"sin", "(", "x", ")"}]}], {0.6342157149737676, -3.4742379367405096},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{0.34972263964767736`, -3.185091380394349}, {
+           1.4815965000637132`, -3.1860901957166594`}}, 
+           0.036895872238239105`]}, InsetBox[
+          RowBox[{"cos", "(", "x", ")"}], {0.9156595698556953, -3.185590788055504},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.761959, 0.470832, 0.940597], 
+          ArrowBox[BezierCurveBox[{{4.332543236723847, -2.906276206014851}, {
+           4.244063981256087, -3.0970597384001533`}, {
+           4.045185503718495, -3.1534559808607474`}, {
+           3.9180148792440384`, -3.094498902085874}, {
+           3.9180148792440384`, -2.718053509943828}, {
+           4.045185503718495, -2.6590964311689547`}, {
+           4.244063981256087, -2.715492673629549}, {
+           4.332543236723847, -2.906276206014851}},
+           SplineDegree->7], 0.036895872238239105`]}, 
+         InsetBox["1", {3.832543236723847, -2.906276206014851}, ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.761959, 0.470832, 0.940597], 
+          ArrowBox[{{1.4815965000637132`, -3.1860901957166594`}, {
+           2.042935216448903, -2.662190241220531}}, 0.036895872238239105`]}, 
+         InsetBox["1", {1.7622658582563082, -2.924140218468595}, ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.761959, 0.470832, 0.940597], 
+          ArrowBox[{{1.1308587938522643`, -0.3500196004075349}, {
+           0.34972263964767736`, -1.1306058238963357`}}, 
+           0.036895872238239105`]}, 
+         InsetBox["1", {0.7402907167499708, -0.7403127121519353}, 
+          ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.761959, 0.470832, 0.940597], 
+          ArrowBox[{{0.34972263964767736`, -1.1306058238963357`}, {
+           1.1324441770459008`, -1.9091800083603345`}}, 
+           0.036895872238239105`]}, 
+         InsetBox["1", {0.7410834083467891, -1.519892916128335}, ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{1.29241463509122, -1.1299428776037768`}, {
+           1.1308587938522643`, -0.3500196004075349}}, 
+           0.036895872238239105`]}, InsetBox[
+          RowBox[{"cos", "(", "x", ")"}], {1.2116367144717421, -0.7399812390056558},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[BezierCurveBox[{{1.29241463509122, -1.1299428776037768`}, {
+           1.7415521904393236`, -0.9821866157613682}, {
+           2.190715406322687, -1.1298648539518923`}}], 
+           0.036895872238239105`]}, InsetBox[
+          RowBox[{"sin", "(", "x", ")"}], {1.7415595590513215, -1.0670228117916318},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[BezierCurveBox[{{
+           2.190715406322687, -1.1298648539518923`}, {
+           1.7415778509745754`, -1.2776211157943056`}, {
+           1.29241463509122, -1.1299428776037768`}}], 0.036895872238239105`]},
+          InsetBox[
+          RowBox[{"-", 
+           RowBox[{"sin", "(", "x", ")"}]}], {1.7415704823625853, -1.1927849197640374},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{2.190715406322687, -1.1298648539518923`}, {
+           2.352110094838154, -1.9093711569736929`}}, 0.036895872238239105`]},
+          InsetBox[
+          RowBox[{"cos", "(", "x", ")"}], {2.2714127505804207, -1.5196180054627926},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{2.349671844773058, -0.34972263964767736`}, {
+           1.1308587938522643`, -0.3500196004075349}}, 
+           0.036895872238239105`]}, InsetBox[
+          RowBox[{"-", 
+           RowBox[{"sin", "(", "x", ")"}]}], {1.7402653193126612, -0.3498711200276061},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{2.349671844773058, -0.34972263964767736`}, {
+           2.190715406322687, -1.1298648539518923`}}, 0.036895872238239105`]},
+          InsetBox[
+          RowBox[{"cos", "(", "x", ")"}], {2.2701936255478725, -0.7397937467997848},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{1.1324441770459008`, -1.9091800083603345`}, {
+           1.29241463509122, -1.1299428776037768`}}, 0.036895872238239105`]}, 
+         InsetBox[
+          RowBox[{"-", 
+           RowBox[{"cos", "(", "x", ")"}]}], {1.2124294060685603, -1.5195614429820556},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.431296, 0.709773, 0.927077], 
+          ArrowBox[{{1.1324441770459008`, -1.9091800083603345`}, {
+           2.352110094838154, -1.9093711569736929`}}, 0.036895872238239105`]},
+          InsetBox[
+          RowBox[{"-", 
+           RowBox[{"sin", "(", "x", ")"}]}], {1.7422771359420275, -1.9092755826670138},
+           ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.761959, 0.470832, 0.940597], 
+          ArrowBox[{{2.352110094838154, -1.9093711569736929`}, {
+           3.133097957428492, -1.1284229279073104`}}, 0.036895872238239105`]},
+          InsetBox["1", {2.742604026133323, -1.5188970424405017}, 
+          ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}, {
+         {RGBColor[0.761959, 0.470832, 0.940597], 
+          ArrowBox[{{3.133097957428492, -1.1284229279073104`}, {
+           2.349671844773058, -0.34972263964767736`}}, 
+           0.036895872238239105`]}, InsetBox[
+          RowBox[{"-", "1"}], {2.741384901100775, -0.7390727837774939}, 
+          ImageScaled[{0.5, 0.5}],
+          BaseStyle->"Graphics"]}}, 
+       {GrayLevel[1], EdgeForm[{GrayLevel[0], Opacity[
+        0.7]}], {
+         DiskBox[{4.332543236723847, -0.8497226396476774}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["Id", "0"], " ", 
+           SubscriptBox["Id", "1"]}], 
+          Offset[{2, 2}, {4.369439108962086, -0.8128267674094383}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{2.042935216448903, -2.662190241220531}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["Id", "1"], " ", 
+           SubscriptBox["X", "0"]}], 
+          Offset[{2, 2}, {2.0798310886871425, -2.6252943689822916}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0.9198434548795635, -2.6088164362690476}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["Id", "1"], " ", 
+           SubscriptBox["Z", "0"]}], 
+          Offset[{2, 2}, {0.9567393271178026, -2.5719205640308083}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{2.042077166307198, -3.7102177124841713}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["X", "1"], " ", 
+           SubscriptBox["Y", "0"]}], 
+          Offset[{2, 2}, {2.0789730385454375, -3.673321840245932}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0.9187087902998579, -3.7633844930866704}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["Id", "1"], " ", 
+           SubscriptBox["Y", "0"]}], 
+          Offset[{2, 2}, {0.955604662538097, -3.726488620848431}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0.34972263964767736, -3.185091380394349}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["X", "0"], " ", 
+           SubscriptBox["X", "1"]}], 
+          Offset[{2, 2}, {0.38661851188591645, -3.1481955081561095}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{4.332543236723847, -2.906276206014851}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["Id", "0"], " ", 
+           SubscriptBox["X", "1"]}], 
+          Offset[{2, 2}, {4.369439108962086, -2.8693803337766117}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{1.4815965000637132, -3.1860901957166594}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["X", "1"], " ", 
+           SubscriptBox["Z", "0"]}], 
+          Offset[{2, 2}, {1.5184923723019523, -3.14919432347842}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{1.1308587938522643, -0.3500196004075349}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["Id", "0"], " ", 
+           SubscriptBox["Y", "1"]}], 
+          Offset[{2, 2}, {1.1677546660905034, -0.3131237281692958}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{0.34972263964767736, -1.1306058238963357}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["Y", "1"], " ", 
+           SubscriptBox["Z", "0"]}], 
+          Offset[{2, 2}, {0.38661851188591645, -1.0937099516580966}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{1.29241463509122, -1.1299428776037768}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["X", "0"], " ", 
+           SubscriptBox["Y", "1"]}], 
+          Offset[{2, 2}, {1.329310507329459, -1.0930470053655377}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{2.190715406322687, -1.1298648539518923}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["X", "0"], " ", 
+           SubscriptBox["Z", "1"]}], 
+          Offset[{2, 2}, {2.2276112785609263, -1.0929689817136532}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{2.349671844773058, -0.34972263964767736}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["Y", "0"], " ", 
+           SubscriptBox["Y", "1"]}], 
+          Offset[{2, 2}, {2.3865677170112973, -0.31282676740943827}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{1.1324441770459008, -1.9091800083603345}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["Y", "0"], " ", 
+           SubscriptBox["Z", "1"]}], 
+          Offset[{2, 2}, {1.16934004928414, -1.8722841361220954}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{2.352110094838154, -1.9093711569736929}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["Id", "0"], " ", 
+           SubscriptBox["Z", "1"]}], 
+          Offset[{2, 2}, {2.3890059670763932, -1.8724752847354538}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}, {
+         DiskBox[{3.133097957428492, -1.1284229279073104}, 
+          0.036895872238239105], InsetBox[
+          RowBox[{
+           SubscriptBox["Z", "0"], " ", 
+           SubscriptBox["Z", "1"]}], 
+          Offset[{2, 2}, {3.169993829666731, -1.0915270556690713}], 
+          ImageScaled[{0, 0}],
+          BaseStyle->"Graphics"]}}}],
+     MouseAppearanceTag["NetworkGraphics"]],
+    AllowKernelInitialization->False]],
+  DefaultBaseStyle->{
+   "NetworkGraphics", FrontEnd`GraphicsHighlightColor -> Hue[0.8, 1., 0.6]},
+  FormatType->TraditionalForm,
+  FrameTicks->None]], "Output",
+ CellChangeTimes->{{3.9174519152028522`*^9, 3.917451995198167*^9}, 
+   3.917452034586043*^9, {3.917452078586602*^9, 3.9174520868446217`*^9}, {
+   3.917452124887361*^9, 3.917452154230504*^9}, 3.917452197089319*^9, {
+   3.917452240357188*^9, 3.9174522654106894`*^9}, {3.917452409410787*^9, 
+   3.9174525001885977`*^9}, {3.917453049516478*^9, 3.9174530526159573`*^9}, {
+   3.917453174699645*^9, 3.917453232438211*^9}, {3.917453342864962*^9, 
+   3.9174534258228083`*^9}, 3.917454225310288*^9, 3.9174542952236567`*^9, {
+   3.91745453423775*^9, 3.917454563284504*^9}, 3.917456631254158*^9, 
+   3.917457413396549*^9, 3.917457985095026*^9, 3.9174585929197283`*^9, {
+   3.917458646597783*^9, 3.9174586963072853`*^9}, 3.917460005821741*^9, 
+   3.917461144209161*^9, 3.917507028938574*^9, 3.917515231523415*^9, 
+   3.9175163034895697`*^9, 3.9175166629961147`*^9, 3.917516864884962*^9, 
+   3.917517876768662*^9, 3.9175184082695827`*^9, 3.9181123050441437`*^9},
+ CellLabel->"Out[5]=",ExpressionUUID->"30a98b80-be68-4c3a-b7c7-7678393dfdc8"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "1"], 
+    SubscriptBox["Z", "0"]}], ",", " ", "map"}], "]"}]], "Input",
+ CellChangeTimes->{3.9174531187136*^9},
+ CellLabel->"In[6]:=",ExpressionUUID->"b0f0c915-3d90-428b-9c6e-5d706e32165a"],
+
+Cell[BoxData[
+ SubscriptBox["X", "0"]], "Output",
+ CellChangeTimes->{
+  3.9174531190544367`*^9, {3.917453189775435*^9, 3.917453206089733*^9}, 
+   3.917453238836151*^9, {3.91745334517416*^9, 3.917453441687667*^9}, {
+   3.9174535219233017`*^9, 3.9174535300928497`*^9}, 3.917454227153264*^9, {
+   3.917454534476717*^9, 3.91745456331047*^9}, 3.917456633479869*^9, 
+   3.9174600080463343`*^9, 3.917507030469411*^9, 3.917515232293313*^9, 
+   3.917516304012504*^9, 3.917516664197063*^9, 3.9175168649089403`*^9, 
+   3.9175178774895067`*^9, 3.917518408982277*^9, 3.917518447452375*^9, {
+   3.917518487939612*^9, 3.9175184968071833`*^9}, 3.918112306524921*^9},
+ CellLabel->"Out[6]=",ExpressionUUID->"ddd85d89-dba9-4b76-b056-69ec336006dd"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"a", " ", 
+     SubscriptBox["X", "0"], 
+     SubscriptBox["Z", "1"]}], " ", "+", " ", 
+    RowBox[{"b", " ", 
+     SubscriptBox["X", "1"]}], " ", "+", " ", 
+    RowBox[{"c", " ", 
+     SubscriptBox["X", "1"], 
+     SubscriptBox["Z", "0"]}]}], ",", " ", "map"}], "]"}]], "Input",
+ CellLabel->"In[7]:=",ExpressionUUID->"f9352ffb-345e-452e-921e-fcc508f30748"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"c", " ", 
+   SubscriptBox["X", "0"]}], "+", 
+  RowBox[{"b", " ", 
+   SubscriptBox["X", "1"]}], "-", 
+  RowBox[{"a", " ", 
+   RowBox[{"Sin", "[", "x", "]"}], " ", 
+   SubscriptBox["X", "0"], " ", 
+   SubscriptBox["Y", "1"]}], "+", 
+  RowBox[{"a", " ", 
+   RowBox[{"Cos", "[", "x", "]"}], " ", 
+   SubscriptBox["Z", "1"]}]}]], "Output",
+ CellChangeTimes->{
+  3.917452501728819*^9, {3.9174530508456717`*^9, 3.917453053992408*^9}, {
+   3.9174531885321712`*^9, 3.917453233712591*^9}, {3.917453347027017*^9, 
+   3.9174534404219837`*^9}, 3.917453520697776*^9, 3.917453942914403*^9, {
+   3.9174542003496*^9, 3.917454228255208*^9}, {3.917454534519415*^9, 
+   3.9174545633595257`*^9}, 3.917456634896838*^9, 3.917457986033613*^9, 
+   3.917458156853607*^9, 3.917460009319839*^9, 3.917507031681406*^9, 
+   3.91751523333121*^9, 3.917516304159246*^9, 3.917516665623067*^9, 
+   3.917516864940338*^9, 3.91751787849496*^9, 3.9175184981954536`*^9, 
+   3.918112308169059*^9},
+ CellLabel->"Out[7]=",ExpressionUUID->"62e438b4-27e1-4e26-9935-476dc436c2ed"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"a", " ", 
+     SubscriptBox["X", "0"], 
+     SubscriptBox["Z", "1"]}], " ", "+", " ", 
+    RowBox[{"b", " ", 
+     SubscriptBox["X", "1"]}], " ", "+", " ", 
+    RowBox[{"c", " ", 
+     SubscriptBox["X", "1"], 
+     SubscriptBox["Z", "0"]}]}], ",", " ", 
+   RowBox[{"{", 
+    RowBox[{
+    "map", ",", "map", ",", "map", ",", "map", ",", "map", ",", "map", ",", 
+     " ", "map"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9174539356498213`*^9, 3.9174539907407017`*^9}, {
+  3.917459353951787*^9, 3.9174593548380117`*^9}, {3.9174600558205442`*^9, 
+  3.917460059668232*^9}},
+ CellLabel->"In[8]:=",ExpressionUUID->"b9b6b16b-a31e-4949-bc33-edc7a5f79b1f"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"-", 
+    FractionBox["1", "2"]}], " ", "c", " ", 
+   RowBox[{"(", 
+    RowBox[{"1", "+", 
+     RowBox[{"3", " ", 
+      RowBox[{"Cos", "[", 
+       RowBox[{"2", " ", "x"}], "]"}]}]}], ")"}], " ", 
+   SuperscriptBox[
+    RowBox[{"Sin", "[", "x", "]"}], "2"], " ", 
+   SubscriptBox["X", "0"]}], "+", 
+  RowBox[{"b", " ", 
+   SubscriptBox["X", "1"]}], "+", 
+  RowBox[{"c", " ", 
+   SuperscriptBox[
+    RowBox[{"Cos", "[", "x", "]"}], "5"], " ", 
+   SubscriptBox["X", "0"], " ", 
+   SubscriptBox["X", "1"]}], "+", 
+  RowBox[{"c", " ", 
+   RowBox[{"Cos", "[", "x", "]"}], " ", 
+   RowBox[{"Sin", "[", "x", "]"}], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     SuperscriptBox[
+      RowBox[{"Cos", "[", "x", "]"}], "2"], "+", 
+     SuperscriptBox[
+      RowBox[{"Cos", "[", "x", "]"}], "4"], "-", 
+     RowBox[{"2", " ", 
+      SuperscriptBox[
+       RowBox[{"Sin", "[", "x", "]"}], "2"]}]}], ")"}], " ", 
+   SubscriptBox["Y", "0"]}], "+", 
+  RowBox[{"c", " ", 
+   SuperscriptBox[
+    RowBox[{"Cos", "[", "x", "]"}], "2"], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"-", "1"}], "+", 
+     RowBox[{"2", " ", 
+      RowBox[{"Cos", "[", 
+       RowBox[{"2", " ", "x"}], "]"}]}]}], ")"}], " ", 
+   RowBox[{"Sin", "[", "x", "]"}], " ", 
+   SubscriptBox["X", "1"], " ", 
+   SubscriptBox["Y", "0"]}], "+", 
+  RowBox[{"a", " ", 
+   RowBox[{"Sin", "[", "x", "]"}], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"-", 
+      SuperscriptBox[
+       RowBox[{"Cos", "[", "x", "]"}], "2"]}], "+", 
+     SuperscriptBox[
+      RowBox[{"Sin", "[", "x", "]"}], "6"], "-", 
+     SuperscriptBox[
+      RowBox[{"Sin", "[", 
+       RowBox[{"2", " ", "x"}], "]"}], "2"]}], ")"}], " ", 
+   SubscriptBox["X", "0"], " ", 
+   SubscriptBox["Y", "1"]}], "-", 
+  RowBox[{
+   FractionBox["1", "8"], " ", "a", " ", 
+   RowBox[{"Cos", "[", "x", "]"}], " ", 
+   RowBox[{"(", 
+    RowBox[{"3", "-", 
+     RowBox[{"12", " ", 
+      RowBox[{"Cos", "[", 
+       RowBox[{"2", " ", "x"}], "]"}]}], "+", 
+     RowBox[{"Cos", "[", 
+      RowBox[{"4", " ", "x"}], "]"}]}], ")"}], " ", 
+   SubscriptBox["Y", "0"], " ", 
+   SubscriptBox["Y", "1"]}], "+", 
+  RowBox[{
+   FractionBox["1", "2"], " ", "c", " ", 
+   RowBox[{"Sin", "[", "x", "]"}], " ", 
+   RowBox[{"Sin", "[", 
+    RowBox[{"4", " ", "x"}], "]"}], " ", 
+   SubscriptBox["Z", "0"]}], "+", 
+  RowBox[{"c", " ", 
+   SuperscriptBox[
+    RowBox[{"Cos", "[", "x", "]"}], "2"], " ", 
+   RowBox[{"(", 
+    RowBox[{"3", "+", 
+     SuperscriptBox[
+      RowBox[{"Cos", "[", "x", "]"}], "2"]}], ")"}], " ", 
+   SuperscriptBox[
+    RowBox[{"Sin", "[", "x", "]"}], "2"], " ", 
+   SubscriptBox["X", "1"], " ", 
+   SubscriptBox["Z", "0"]}], "-", 
+  RowBox[{
+   FractionBox["1", "16"], " ", "a", " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"-", "1"}], "-", 
+     RowBox[{"16", " ", 
+      RowBox[{"Cos", "[", 
+       RowBox[{"2", " ", "x"}], "]"}]}], "+", 
+     RowBox[{"Cos", "[", 
+      RowBox[{"4", " ", "x"}], "]"}]}], ")"}], " ", 
+   RowBox[{"Sin", "[", 
+    RowBox[{"2", " ", "x"}], "]"}], " ", 
+   SubscriptBox["Y", "1"], " ", 
+   SubscriptBox["Z", "0"]}], "-", 
+  RowBox[{
+   FractionBox["1", "8"], " ", "a", " ", 
+   RowBox[{"Cos", "[", "x", "]"}], " ", 
+   RowBox[{"(", 
+    RowBox[{"3", "-", 
+     RowBox[{"20", " ", 
+      RowBox[{"Cos", "[", 
+       RowBox[{"2", " ", "x"}], "]"}]}], "+", 
+     RowBox[{"Cos", "[", 
+      RowBox[{"4", " ", "x"}], "]"}]}], ")"}], " ", 
+   SuperscriptBox[
+    RowBox[{"Sin", "[", "x", "]"}], "2"], " ", 
+   SubscriptBox["Z", "1"]}]}]], "Output",
+ CellChangeTimes->{{3.917453937920855*^9, 3.9174539911353617`*^9}, 
+   3.917454198933056*^9, 3.917454229556137*^9, {3.917454534566804*^9, 
+   3.917454563393841*^9}, 3.917456636397143*^9, 3.917457414240629*^9, {
+   3.9174579872025127`*^9, 3.917458015913816*^9}, 3.91745815864894*^9, 
+   3.917458700921907*^9, {3.917459349729644*^9, 3.917459355071506*^9}, 
+   3.917459975306988*^9, {3.917460057221919*^9, 3.917460059913226*^9}, {
+   3.9174605038398237`*^9, 3.917460506569315*^9}, 3.917507032835535*^9, 
+   3.917515234560711*^9, 3.9175163052254457`*^9, 3.917516667292967*^9, 
+   3.917516864991753*^9, 3.9175178797686977`*^9, 3.9175184993496103`*^9, 
+   3.91811231011373*^9},
+ CellLabel->"Out[8]=",ExpressionUUID->"7d226093-0791-4b16-aa76-b221b7781283"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"4", " ", "^", " ", "2"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"str", " ", "=", " ", 
+   RowBox[{
+    SubscriptBox["Z", "0"], "+", 
+    SubscriptBox["Y", "1"]}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Table", "[", "\[IndentingNewLine]", "\t", 
+  RowBox[{
+   RowBox[{"Length", " ", "@", " ", 
+    RowBox[{"ApplyPauliTransferMap", "[", 
+     RowBox[{"str", ",", 
+      RowBox[{"ConstantArray", "[", 
+       RowBox[{"map", ",", "reps"}], "]"}]}], "]"}]}], ",", 
+   "\[IndentingNewLine]", "\t", 
+   RowBox[{"{", 
+    RowBox[{"reps", ",", "1", ",", "10"}], "}"}]}], "]"}]}], "Input",
+ CellChangeTimes->{{3.9174600436176033`*^9, 3.917460098755002*^9}, {
+  3.917460179069696*^9, 3.917460276621868*^9}, {3.917460346607806*^9, 
+  3.917460390532221*^9}, {3.917460420846076*^9, 3.9174604746370487`*^9}},
+ CellLabel->"In[9]:=",ExpressionUUID->"cc66c4e6-f6e0-43ac-949d-f5632a4f07ab"],
+
+Cell[BoxData["16"], "Output",
+ CellChangeTimes->{{3.9174600944523563`*^9, 3.917460119252994*^9}, {
+   3.91746017767889*^9, 3.9174602103333406`*^9}, {3.9174602683231916`*^9, 
+   3.917460276872353*^9}, {3.9174603480588083`*^9, 3.917460373576211*^9}, {
+   3.917460414217537*^9, 3.917460487360366*^9}, 3.917507035502042*^9, 
+   3.917515236205113*^9, 3.917516306760253*^9, 3.91751666918964*^9, 
+   3.917516865004713*^9, 3.917517881087676*^9, 3.9175185007736187`*^9, 
+   3.918112311700078*^9},
+ CellLabel->"Out[9]=",ExpressionUUID->"8485995e-0373-47e9-b305-744a1836d0b6"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+  "2", ",", "3", ",", "5", ",", "8", ",", "10", ",", "10", ",", "10", ",", 
+   "10", ",", "10", ",", "10"}], "}"}]], "Output",
+ CellChangeTimes->{{3.9174600944523563`*^9, 3.917460119252994*^9}, {
+   3.91746017767889*^9, 3.9174602103333406`*^9}, {3.9174602683231916`*^9, 
+   3.917460276872353*^9}, {3.9174603480588083`*^9, 3.917460373576211*^9}, {
+   3.917460414217537*^9, 3.917460487360366*^9}, 3.917507035502042*^9, 
+   3.917515236205113*^9, 3.917516306760253*^9, 3.91751666918964*^9, 
+   3.917516865004713*^9, 3.917517881087676*^9, 3.9175185007736187`*^9, 
+   3.918112312224256*^9},
+ CellLabel->"Out[11]=",ExpressionUUID->"13ef1043-a89d-46e2-abef-66a3ade0bc41"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Circuits", "Section",
+ CellChangeTimes->{{3.91746001775187*^9, 
+  3.917460026325035*^9}},ExpressionUUID->"be433be5-a593-4f0e-94b5-\
+06232378443c"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"a", " ", 
+     SubscriptBox["X", "0"], 
+     SubscriptBox["Z", "1"]}], " ", "+", " ", 
+    RowBox[{"b", " ", 
+     SubscriptBox["X", "1"]}], " ", "+", " ", 
+    RowBox[{"c", " ", 
+     SubscriptBox["X", "1"], 
+     SubscriptBox["Z", "0"]}]}], ",", " ", 
+   RowBox[{"{", 
+    RowBox[{"map", ",", 
+     RowBox[{
+      SubscriptBox["C", "0"], "[", 
+      SubscriptBox["X", "1"], "]"}], ",", " ", 
+     RowBox[{
+      SubscriptBox["PTM", "0"], "@", 
+      RowBox[{"DiagonalMatrix", "@", 
+       RowBox[{"{", 
+        RowBox[{"a", ",", "b", ",", "c", ",", "d"}], "}"}]}]}]}], "}"}]}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.917459655857753*^9, 3.917459675512998*^9}, {
+   3.917515279873742*^9, 3.9175152802673407`*^9}, 3.9175153229305267`*^9},
+ CellLabel->"In[12]:=",ExpressionUUID->"206050ce-a38f-4434-aa5b-1095c656662c"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"a", " ", "b", " ", 
+   SubscriptBox["X", "1"]}], "+", 
+  RowBox[{"b", " ", "c", " ", 
+   SubscriptBox["X", "0"], " ", 
+   SubscriptBox["X", "1"]}], "-", 
+  RowBox[{"a", " ", "c", " ", 
+   RowBox[{"Sin", "[", "x", "]"}], " ", 
+   SubscriptBox["Y", "0"], " ", 
+   SubscriptBox["Z", "1"]}], "+", 
+  RowBox[{"a", " ", "d", " ", 
+   RowBox[{"Cos", "[", "x", "]"}], " ", 
+   SubscriptBox["Z", "0"], " ", 
+   SubscriptBox["Z", "1"]}]}]], "Output",
+ CellChangeTimes->{
+  3.917459675911574*^9, 3.917459989239286*^9, 3.917460030473641*^9, 
+   3.917460527854394*^9, 3.917507039951338*^9, {3.917515240430358*^9, 
+   3.917515245533806*^9}, 3.9175152806032248`*^9, {3.917515316445847*^9, 
+   3.917515323201984*^9}, {3.9175163086784277`*^9, 3.917516313489792*^9}, 
+   3.917516384645462*^9, 3.9175164230251503`*^9, {3.91751665134566*^9, 
+   3.917516696379381*^9}, 3.9175168652133713`*^9, 3.9175178834773483`*^9, 
+   3.917518502008109*^9, 3.918112314233473*^9},
+ CellLabel->"Out[12]=",ExpressionUUID->"2cdb69c2-8dfd-4f8d-9b68-4afe4d8e1bc2"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"n", " ", "=", " ", "4"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"u", " ", "=", " ", 
+   RowBox[{"GetKnownCircuit", "[", 
+    RowBox[{"\"\<QFT\>\"", ",", " ", "n"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"m", " ", "=", " ", 
+    RowBox[{"CalcCircuitMatrix", "[", "u", "]"}]}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"\[Rho]in", " ", "=", " ", 
+   RowBox[{"RandomComplex", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"-", "1"}], "-", "\[ImaginaryI]"}], ",", 
+       RowBox[{"1", "+", "\[ImaginaryI]"}]}], "}"}], ",", " ", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"2", "^", "n"}], ",", " ", 
+       RowBox[{"2", "^", "n"}]}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"\[Rho]out", " ", "=", " ", 
+    RowBox[{"m", " ", ".", " ", "\[Rho]in", " ", ".", " ", 
+     RowBox[{"ConjugateTranspose", "[", "m", "]"}]}]}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"\[Sigma]in", " ", "=", " ", 
+   RowBox[{"GetPauliString", "[", "\[Rho]in", "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"\[Sigma]out", " ", "=", " ", 
+    RowBox[{"ApplyPauliTransferMap", "[", 
+     RowBox[{"\[Sigma]in", ",", " ", "u"}], "]"}]}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{
+    RowBox[{"CalcPauliExpressionMatrix", "[", "\[Sigma]out", "]"}], " ", "-", 
+    " ", "\[Rho]out"}], " ", "//", " ", "Abs"}], " ", "//", " ", 
+  "Max"}]}], "Input",
+ CellChangeTimes->{{3.917459740096459*^9, 3.917459817886847*^9}, {
+  3.917459923533111*^9, 3.917459953681367*^9}, {3.917460560583748*^9, 
+  3.9174607418227882`*^9}, {3.917460786430973*^9, 3.917460842807624*^9}, {
+  3.917507061273583*^9, 3.9175070930871553`*^9}},
+ CellLabel->"In[13]:=",ExpressionUUID->"9b5a2ad9-abfb-455a-8b91-beb517e651e9"],
+
+Cell[BoxData["6.938893903907228`*^-16"], "Output",
+ CellChangeTimes->{{3.917460716773138*^9, 3.9174607421906767`*^9}, {
+   3.917460791336006*^9, 3.917460846512599*^9}, 3.917507043008361*^9, 
+   3.917507094741065*^9, 3.9175153263323593`*^9, 3.917516700004157*^9, 
+   3.917516866608144*^9, 3.917517886780745*^9, 3.917518504638226*^9, 
+   3.918112316833701*^9},
+ CellLabel->"Out[20]=",ExpressionUUID->"7e7a9e23-1858-470e-9698-5cfb43cfc024"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Options", "Section",
+ CellChangeTimes->{{3.91746001775187*^9, 3.917460026325035*^9}, {
+  3.9175167761365967`*^9, 
+  3.9175167767463913`*^9}},ExpressionUUID->"97df6472-d787-4f5a-8287-\
+e61d2d52d187"],
+
+Cell[CellGroupData[{
+
+Cell["Caching", "Subsection",
+ CellChangeTimes->{{3.917459393716526*^9, 
+  3.9174593942976837`*^9}},ExpressionUUID->"4cf09147-19b7-4bc9-98fb-\
+a74a6426f3a2"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"circ", " ", "=", " ", 
+   RowBox[{"Table", "[", 
+    RowBox[{
+     RowBox[{
+      SubscriptBox["C", "0"], "[", 
+      SubscriptBox["X", "1"], "]"}], ",", " ", "500"}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Timing", " ", "@", " ", 
+  RowBox[{"ApplyPauliTransferMap", "[", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"a", " ", 
+      SubscriptBox["X", "0"], 
+      SubscriptBox["Z", "1"]}], " ", "+", " ", 
+     RowBox[{"b", " ", 
+      SubscriptBox["X", "1"]}], " ", "+", " ", 
+     RowBox[{"c", " ", 
+      SubscriptBox["X", "1"], 
+      SubscriptBox["Z", "0"]}], " ", "+", " ", 
+     SubscriptBox["Y", "2"]}], ",", " ", "circ", ",", " ", 
+    RowBox[{"\"\<CacheMaps\>\"", "->", "\"\<Never\>\""}]}], 
+   "]"}]}], "\[IndentingNewLine]", 
+ RowBox[{"Timing", " ", "@", " ", 
+  RowBox[{"ApplyPauliTransferMap", "[", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"a", " ", 
+      SubscriptBox["X", "0"], 
+      SubscriptBox["Z", "1"]}], " ", "+", " ", 
+     RowBox[{"b", " ", 
+      SubscriptBox["X", "1"]}], " ", "+", " ", 
+     RowBox[{"c", " ", 
+      SubscriptBox["X", "1"], 
+      SubscriptBox["Z", "0"]}], " ", "+", " ", 
+     SubscriptBox["Y", "2"]}], ",", " ", "circ", ",", " ", 
+    RowBox[{"\"\<CacheMaps\>\"", "->", "\"\<Forever\>\""}]}], 
+   "]"}]}]}], "Input",
+ CellChangeTimes->{
+  3.917459413590646*^9, {3.917459458831615*^9, 3.917459461318143*^9}, {
+   3.917459529606936*^9, 3.917459532454756*^9}},
+ CellLabel->"In[29]:=",ExpressionUUID->"65f79189-1c3f-4635-80d7-8bc7ade43f68"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"3.382058`", ",", 
+   RowBox[{
+    RowBox[{"b", " ", 
+     SubscriptBox["X", "1"]}], "+", 
+    SubscriptBox["Y", "2"], "+", 
+    RowBox[{"c", " ", 
+     SubscriptBox["X", "1"], " ", 
+     SubscriptBox["Z", "0"]}], "+", 
+    RowBox[{"a", " ", 
+     SubscriptBox["X", "0"], " ", 
+     SubscriptBox["Z", "1"]}]}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.917459407043494*^9, 3.917459417134858*^9}, 
+   3.917459464964261*^9, 3.917459536053679*^9, 3.9175071013538017`*^9, 
+   3.917515331124797*^9, 3.9175167048775806`*^9, 3.917516870907642*^9, 
+   3.917517891188076*^9, 3.91751850822902*^9},
+ CellLabel->"Out[30]=",ExpressionUUID->"0e6f3b4d-ae3f-4602-844a-f5b9c7cd9592"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"0.535208`", ",", 
+   RowBox[{
+    RowBox[{"b", " ", 
+     SubscriptBox["X", "1"]}], "+", 
+    SubscriptBox["Y", "2"], "+", 
+    RowBox[{"c", " ", 
+     SubscriptBox["X", "1"], " ", 
+     SubscriptBox["Z", "0"]}], "+", 
+    RowBox[{"a", " ", 
+     SubscriptBox["X", "0"], " ", 
+     SubscriptBox["Z", "1"]}]}]}], "}"}]], "Output",
+ CellChangeTimes->{{3.917459407043494*^9, 3.917459417134858*^9}, 
+   3.917459464964261*^9, 3.917459536053679*^9, 3.9175071013538017`*^9, 
+   3.917515331124797*^9, 3.9175167048775806`*^9, 3.917516870907642*^9, 
+   3.917517891188076*^9, 3.917518508771514*^9},
+ CellLabel->"Out[31]=",ExpressionUUID->"1e0ba68f-ecc2-4ec9-9d7c-21922d2a7abc"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"ApplyPauliTransferMap", "[", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"a", " ", 
+      SubscriptBox["X", "0"], 
+      SubscriptBox["Z", "1"]}], " ", "+", " ", 
+     RowBox[{"b", " ", 
+      SubscriptBox["X", "1"]}], " ", "+", " ", 
+     RowBox[{"c", " ", 
+      SubscriptBox["X", "1"], 
+      SubscriptBox["Z", "0"]}], " ", "+", " ", 
+     SubscriptBox["Y", "2"]}], ",", " ", "circ", ",", " ", 
+    RowBox[{"\"\<CacheMaps\>\"", "->", "\"\<Forever\>\""}]}], "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"DownValues", "[", "QuEST`Private`obtainCachedPTMap", "]"}], " ", "//",
+    " ", "First"}], "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ApplyPauliTransferMap", "[", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"a", " ", 
+      SubscriptBox["X", "0"], 
+      SubscriptBox["Z", "1"]}], " ", "+", " ", 
+     RowBox[{"b", " ", 
+      SubscriptBox["X", "1"]}], " ", "+", " ", 
+     RowBox[{"c", " ", 
+      SubscriptBox["X", "1"], 
+      SubscriptBox["Z", "0"]}], " ", "+", " ", 
+     SubscriptBox["Y", "2"]}], ",", " ", "circ", ",", " ", 
+    RowBox[{"\"\<CacheMaps\>\"", "->", "\"\<Never\>\""}]}], "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"DownValues", "[", "QuEST`Private`obtainCachedPTMap", "]"}], " ", "//",
+    " ", "First"}], "\[IndentingNewLine]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"ApplyPauliTransferMap", "[", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"a", " ", 
+      SubscriptBox["X", "0"], 
+      SubscriptBox["Z", "1"]}], " ", "+", " ", 
+     RowBox[{"b", " ", 
+      SubscriptBox["X", "1"]}], " ", "+", " ", 
+     RowBox[{"c", " ", 
+      SubscriptBox["X", "1"], 
+      SubscriptBox["Z", "0"]}], " ", "+", " ", 
+     SubscriptBox["Y", "2"]}], ",", " ", "circ", ",", " ", 
+    RowBox[{"\"\<CacheMaps\>\"", "->", "\"\<UntilCallEnd\>\""}]}], "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"DownValues", "[", "QuEST`Private`obtainCachedPTMap", "]"}], " ", "//",
+   " ", "First"}]}], "Input",
+ CellChangeTimes->{{3.917459545717206*^9, 3.917459608152986*^9}},
+ CellLabel->"In[32]:=",ExpressionUUID->"bb5acbce-ae6f-4fda-9515-d95f2367d25e"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"HoldPattern", "[", 
+   RowBox[{"QuEST`Private`obtainCachedPTMap", "[", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{
+       SubscriptBox["C", "1"], "[", 
+       SubscriptBox["X", "0"], "]"}], "}"}], ",", 
+     RowBox[{"\<\"CacheMaps\"\>", "\[Rule]", "\<\"Forever\"\>"}]}], "]"}], 
+   "]"}], "\[RuleDelayed]", 
+  RowBox[{
+   SubscriptBox["PTMap", 
+    RowBox[{"0", ",", "1"}]], "[", 
+   RowBox[{
+    RowBox[{"0", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"0", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"1", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"1", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"2", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"14", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"3", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"15", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"4", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"5", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"5", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"4", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"6", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"11", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"7", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"10", ",", 
+        RowBox[{"-", "1"}]}], "}"}], "}"}]}], ",", 
+    RowBox[{"8", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"9", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"9", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"8", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"10", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"7", ",", 
+        RowBox[{"-", "1"}]}], "}"}], "}"}]}], ",", 
+    RowBox[{"11", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"6", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"12", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"12", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"13", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"13", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"14", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"2", ",", "1"}], "}"}], "}"}]}], ",", 
+    RowBox[{"15", "\[Rule]", 
+     RowBox[{"{", 
+      RowBox[{"{", 
+       RowBox[{"3", ",", "1"}], "}"}], "}"}]}]}], "]"}]}]], "Output",
+ CellChangeTimes->{{3.917459547832879*^9, 3.917459608774901*^9}, 
+   3.917507102216659*^9, 3.917515332017851*^9, 3.917516705814657*^9, 
+   3.917516872122065*^9, 3.917517892589231*^9, 3.9175185092574863`*^9},
+ CellLabel->"Out[33]=",ExpressionUUID->"1277bc86-865f-46ad-a766-39a400e70d94"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"HoldPattern", "[", 
+   RowBox[{"QuEST`Private`obtainCachedPTMap", "[", 
+    RowBox[{"QuEST`Private`compGate_", ",", "QuEST`Private`opts___"}], "]"}], 
+   "]"}], "\[RuleDelayed]", 
+  RowBox[{"(", 
+   RowBox[{
+    RowBox[{"QuEST`Private`obtainCachedPTMap", "[", 
+     RowBox[{"QuEST`Private`compGate", ",", "QuEST`Private`opts"}], "]"}], 
+    "=", 
+    RowBox[{"CalcPauliTransferMap", "[", 
+     RowBox[{"QuEST`Private`compGate", ",", 
+      RowBox[{"Sequence", "@@", 
+       RowBox[{"FilterRules", "[", 
+        RowBox[{
+         RowBox[{"{", "QuEST`Private`opts", "}"}], ",", 
+         RowBox[{"Options", "[", "CalcPauliTransferMap", "]"}]}], "]"}]}]}], 
+     "]"}]}], ")"}]}]], "Output",
+ CellChangeTimes->{{3.917459547832879*^9, 3.917459608774901*^9}, 
+   3.917507102216659*^9, 3.917515332017851*^9, 3.917516705814657*^9, 
+   3.917516872122065*^9, 3.917517892589231*^9, 3.917518512644055*^9},
+ CellLabel->"Out[35]=",ExpressionUUID->"c236319b-ccf9-4872-871d-450367fddbda"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"HoldPattern", "[", 
+   RowBox[{"QuEST`Private`obtainCachedPTMap", "[", 
+    RowBox[{"QuEST`Private`compGate_", ",", "QuEST`Private`opts___"}], "]"}], 
+   "]"}], "\[RuleDelayed]", 
+  RowBox[{"(", 
+   RowBox[{
+    RowBox[{"QuEST`Private`obtainCachedPTMap", "[", 
+     RowBox[{"QuEST`Private`compGate", ",", "QuEST`Private`opts"}], "]"}], 
+    "=", 
+    RowBox[{"CalcPauliTransferMap", "[", 
+     RowBox[{"QuEST`Private`compGate", ",", 
+      RowBox[{"Sequence", "@@", 
+       RowBox[{"FilterRules", "[", 
+        RowBox[{
+         RowBox[{"{", "QuEST`Private`opts", "}"}], ",", 
+         RowBox[{"Options", "[", "CalcPauliTransferMap", "]"}]}], "]"}]}]}], 
+     "]"}]}], ")"}]}]], "Output",
+ CellChangeTimes->{{3.917459547832879*^9, 3.917459608774901*^9}, 
+   3.917507102216659*^9, 3.917515332017851*^9, 3.917516705814657*^9, 
+   3.917516872122065*^9, 3.917517892589231*^9, 3.917518513079851*^9},
+ CellLabel->"Out[37]=",ExpressionUUID->"0b87edec-18b5-4847-ae6c-03c4a2ab6733"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["AssertValidChannels", "Subsection",
+ CellChangeTimes->{{3.917459393716526*^9, 3.9174593942976837`*^9}, {
+  3.917516788627759*^9, 
+  3.917516790712275*^9}},ExpressionUUID->"4bbd4d88-d588-49ff-9cc7-\
+972de201b1c6"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "1"]}], ",", " ", 
+   RowBox[{
+    SubscriptBox["Depol", 
+     RowBox[{"0", ",", "1"}]], "[", "x", "]"}]}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "1"]}], ",", " ", 
+   RowBox[{
+    SubscriptBox["Depol", 
+     RowBox[{"0", ",", "1"}]], "[", "x", "]"}], ",", " ", 
+   RowBox[{"AssertValidChannels", "->", "False"}]}], "]"}]}], "Input",
+ CellChangeTimes->{{3.917516964124177*^9, 3.917516989115457*^9}},
+ CellLabel->"In[38]:=",ExpressionUUID->"a2fb38da-aa8a-47b2-bbe4-58e580d9a788"],
+
+Cell[BoxData[
+ RowBox[{
+  FractionBox["1", "15"], " ", 
+  RowBox[{"(", 
+   RowBox[{"15", "-", 
+    RowBox[{"16", " ", "x"}]}], ")"}], " ", 
+  SubscriptBox["X", "0"], " ", 
+  SubscriptBox["Y", "1"]}]], "Output",
+ CellChangeTimes->{{3.917516976646902*^9, 3.917516989381826*^9}, 
+   3.91751789663098*^9, 3.917518513274592*^9},
+ CellLabel->"Out[38]=",ExpressionUUID->"5e4fa912-2ee1-4188-a36b-4564665451d3"],
+
+Cell[BoxData[
+ RowBox[{
+  FractionBox["1", "15"], " ", 
+  RowBox[{"(", 
+   RowBox[{
+    RowBox[{"15", " ", 
+     SqrtBox[
+      RowBox[{"1", "-", "x"}]], " ", 
+     RowBox[{"Conjugate", "[", 
+      SqrtBox[
+       RowBox[{"1", "-", "x"}]], "]"}]}], "-", 
+    RowBox[{
+     SqrtBox["x"], " ", 
+     RowBox[{"Conjugate", "[", 
+      SqrtBox["x"], "]"}]}]}], ")"}], " ", 
+  SubscriptBox["X", "0"], " ", 
+  SubscriptBox["Y", "1"]}]], "Output",
+ CellChangeTimes->{{3.917516976646902*^9, 3.917516989381826*^9}, 
+   3.91751789663098*^9, 3.9175185133062563`*^9},
+ CellLabel->"Out[39]=",ExpressionUUID->"709c23fb-291b-4ea1-83bc-9fee84b3b5c6"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Errors", "Chapter",
+ CellChangeTimes->{{3.912849421029387*^9, 3.912849426146103*^9}, {
+  3.912849785066738*^9, 3.912849790979604*^9}, {3.912878442788628*^9, 
+  3.912878443004286*^9}, {3.9151991784358664`*^9, 3.9151991786465263`*^9}, {
+  3.9173418805860863`*^9, 3.917341881626457*^9}, {3.917451715663147*^9, 
+  3.9174517252876453`*^9}},ExpressionUUID->"5524d7f6-8b97-42e4-861f-\
+3caad3568fb8"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   RowBox[{"{", 
+    SubscriptBox["blob", "0"], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.917460876952343*^9, 3.917460880917201*^9}, {
+  3.917461150937204*^9, 3.917461187659659*^9}, {3.917461261034843*^9, 
+  3.917461281555908*^9}, {3.918112324508513*^9, 3.918112325187296*^9}},
+ CellLabel->"In[21]:=",ExpressionUUID->"ad62fa39-7002-46c3-8a53-8db709830815"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ApplyPauliTransferMap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Could not pre-compute the Pauli transfer \
+maps due to the below error:\\\\\\\"\\\"}]\\)\"", 2, 21, 1, 
+   32441636034044239954, "Local", "QuEST`ApplyPauliTransferMap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.917461188073743*^9, {3.9174612631969624`*^9, 3.917461282087612*^9}, 
+   3.917461339124713*^9, 3.917507108844516*^9, 3.917515339925696*^9, 
+   3.917515772183557*^9, 3.9175158086916447`*^9, 3.917516721710568*^9, 
+   3.917516876611145*^9, 3.91751789700596*^9, 3.917518516168346*^9, 
+   3.918112326234578*^9},
+ CellLabel->
+  "During evaluation of \
+In[21]:=",ExpressionUUID->"48b693d6-7bec-4c58-bd58-2a72cd7370d8"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "CalcPauliTransferMatrix", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Circuit contained an unrecognised or \
+unsupported gate: \
+\\\\\\\\!\\\\\\\\(\\\\\\\\*SubscriptBox[\\\\\\\\\\\\\\\"blob\\\\\\\\\\\\\\\", \
+\\\\\\\\\\\\\\\"0\\\\\\\\\\\\\\\"]\\\\\\\\)\\\\\\\"\\\"}]\\)\"", 2, 21, 2, 
+   32441636034044239954, "Local", "QuEST`CalcPauliTransferMatrix"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.917461188073743*^9, {3.9174612631969624`*^9, 3.917461282087612*^9}, 
+   3.917461339124713*^9, 3.917507108844516*^9, 3.917515339925696*^9, 
+   3.917515772183557*^9, 3.9175158086916447`*^9, 3.917516721710568*^9, 
+   3.917516876611145*^9, 3.91751789700596*^9, 3.917518516168346*^9, 
+   3.918112326247189*^9},
+ CellLabel->
+  "During evaluation of \
+In[21]:=",ExpressionUUID->"e3670511-77b3-4bef-8f4c-843aebec8d1e"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.9174608779756927`*^9, 3.917460881147822*^9}, 
+   3.917461108522272*^9, {3.917461147699191*^9, 3.91746118832498*^9}, {
+   3.917461263220297*^9, 3.9174612821067257`*^9}, 3.9174613391446733`*^9, 
+   3.9175071088661346`*^9, 3.917515339942129*^9, 3.91751577223343*^9, 
+   3.917515808734118*^9, 3.917516721728702*^9, 3.9175168766292343`*^9, 
+   3.917517897023177*^9, 3.91751851618517*^9, 3.918112326260564*^9},
+ CellLabel->"Out[21]=",ExpressionUUID->"a36fc3df-6225-4cd3-9388-3d41fe167735"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   SubscriptBox["X", "0"], ",", " ", 
+   RowBox[{"\"\<CacheMaps\>\"", "->", "\"\<Spaghetti\>\""}]}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   RowBox[{"{", 
+    SubscriptBox["X", "0"], "}"}], ",", " ", 
+   RowBox[{"\"\<CacheMaps\>\"", "->", "\"\<Spaghetti\>\""}]}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   RowBox[{
+    SubscriptBox["PTM", "0"], "[", "x", "]"}], ",", " ", 
+   RowBox[{"\"\<CacheMaps\>\"", "->", "\"\<Spaghetti\>\""}]}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   RowBox[{"{", 
+    RowBox[{
+     SubscriptBox["PTM", "0"], "[", "x", "]"}], "}"}], ",", " ", 
+   RowBox[{"\"\<CacheMaps\>\"", "->", "\"\<Spaghetti\>\""}]}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   RowBox[{
+    SubscriptBox["PTMap", "0"], "[", "x", "]"}], ",", " ", 
+   RowBox[{"\"\<CacheMaps\>\"", "->", "\"\<Spaghetti\>\""}]}], 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   RowBox[{"{", 
+    RowBox[{
+     SubscriptBox["PTMap", "0"], "[", "x", "]"}], "}"}], ",", " ", 
+   RowBox[{"\"\<CacheMaps\>\"", "->", "\"\<Spaghetti\>\""}]}], 
+  "]"}]}], "Input",
+ CellChangeTimes->{{3.9174587485848503`*^9, 3.917458758040655*^9}, {
+  3.917516908522738*^9, 3.917516942514306*^9}},
+ CellLabel->"In[22]:=",ExpressionUUID->"830f3f61-dea7-4f53-9f6b-d7ac57b1de9f"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ApplyPauliTransferMap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Option \\\\\\\\\\\\\\\"CacheMaps\\\\\\\\\\\
+\\\\\" must be one of \\\\\\\\\\\\\\\"Forever\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\
+\"UntilCallEnd\\\\\\\\\\\\\\\" or \\\\\\\\\\\\\\\"Never\\\\\\\\\\\\\\\". See \
+?ApplyPauliTransferMap.\\\\\\\"\\\"}]\\)\"", 2, 22, 3, 32441636034044239954, 
+   "Local", "QuEST`ApplyPauliTransferMap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917458751257202*^9, 3.917458758224103*^9}, 
+   3.9174608690750732`*^9, 3.917461181608604*^9, 3.9175071102211723`*^9, 
+   3.917515344659976*^9, 3.917515810993991*^9, 3.917516728154141*^9, 
+   3.917516876659955*^9, {3.917516913515593*^9, 3.917516942751635*^9}, 
+   3.917517897170616*^9, 3.917518517252955*^9, 3.918112328879951*^9},
+ CellLabel->
+  "During evaluation of \
+In[22]:=",ExpressionUUID->"9390b734-3989-4848-962a-19b140ae4e37"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917458751269355*^9, 3.917458758234292*^9}, 
+   3.9174608690881968`*^9, 3.917461181635681*^9, 3.917507110236259*^9, 
+   3.917515344669443*^9, 3.917515811003214*^9, 3.91751672816315*^9, 
+   3.917516876670767*^9, {3.917516913526849*^9, 3.917516942764234*^9}, 
+   3.9175178971820087`*^9, 3.9175185172615213`*^9, 3.9181123289280767`*^9},
+ CellLabel->"Out[22]=",ExpressionUUID->"ab5897bb-1738-48c7-9daa-224f1c1bfb3c"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ApplyPauliTransferMap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Option \\\\\\\\\\\\\\\"CacheMaps\\\\\\\\\\\
+\\\\\" must be one of \\\\\\\\\\\\\\\"Forever\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\
+\"UntilCallEnd\\\\\\\\\\\\\\\" or \\\\\\\\\\\\\\\"Never\\\\\\\\\\\\\\\". See \
+?ApplyPauliTransferMap.\\\\\\\"\\\"}]\\)\"", 2, 23, 4, 32441636034044239954, 
+   "Local", "QuEST`ApplyPauliTransferMap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917458751257202*^9, 3.917458758224103*^9}, 
+   3.9174608690750732`*^9, 3.917461181608604*^9, 3.9175071102211723`*^9, 
+   3.917515344659976*^9, 3.917515810993991*^9, 3.917516728154141*^9, 
+   3.917516876659955*^9, {3.917516913515593*^9, 3.917516942751635*^9}, 
+   3.917517897170616*^9, 3.917518517252955*^9, 3.9181123289342737`*^9},
+ CellLabel->
+  "During evaluation of \
+In[22]:=",ExpressionUUID->"4b6e20f3-206d-49fe-b031-1cabc679cab2"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917458751269355*^9, 3.917458758234292*^9}, 
+   3.9174608690881968`*^9, 3.917461181635681*^9, 3.917507110236259*^9, 
+   3.917515344669443*^9, 3.917515811003214*^9, 3.91751672816315*^9, 
+   3.917516876670767*^9, {3.917516913526849*^9, 3.917516942764234*^9}, 
+   3.9175178971820087`*^9, 3.9175185172615213`*^9, 3.918112328948328*^9},
+ CellLabel->"Out[23]=",ExpressionUUID->"e85e7961-4642-4c1e-badc-97789bf76fd7"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ApplyPauliTransferMap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Option \\\\\\\\\\\\\\\"CacheMaps\\\\\\\\\\\
+\\\\\" must be one of \\\\\\\\\\\\\\\"Forever\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\
+\"UntilCallEnd\\\\\\\\\\\\\\\" or \\\\\\\\\\\\\\\"Never\\\\\\\\\\\\\\\". See \
+?ApplyPauliTransferMap.\\\\\\\"\\\"}]\\)\"", 2, 24, 5, 32441636034044239954, 
+   "Local", "QuEST`ApplyPauliTransferMap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917458751257202*^9, 3.917458758224103*^9}, 
+   3.9174608690750732`*^9, 3.917461181608604*^9, 3.9175071102211723`*^9, 
+   3.917515344659976*^9, 3.917515810993991*^9, 3.917516728154141*^9, 
+   3.917516876659955*^9, {3.917516913515593*^9, 3.917516942751635*^9}, 
+   3.917517897170616*^9, 3.917518517252955*^9, 3.918112328955715*^9},
+ CellLabel->
+  "During evaluation of \
+In[22]:=",ExpressionUUID->"3ea92920-6c14-4a2e-a03c-d82fc33b3a90"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917458751269355*^9, 3.917458758234292*^9}, 
+   3.9174608690881968`*^9, 3.917461181635681*^9, 3.917507110236259*^9, 
+   3.917515344669443*^9, 3.917515811003214*^9, 3.91751672816315*^9, 
+   3.917516876670767*^9, {3.917516913526849*^9, 3.917516942764234*^9}, 
+   3.9175178971820087`*^9, 3.9175185172615213`*^9, 3.918112328970058*^9},
+ CellLabel->"Out[24]=",ExpressionUUID->"f0760ce4-ea68-4ebc-ac08-d9cbd84c8c02"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ApplyPauliTransferMap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Option \\\\\\\\\\\\\\\"CacheMaps\\\\\\\\\\\
+\\\\\" must be one of \\\\\\\\\\\\\\\"Forever\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\
+\"UntilCallEnd\\\\\\\\\\\\\\\" or \\\\\\\\\\\\\\\"Never\\\\\\\\\\\\\\\". See \
+?ApplyPauliTransferMap.\\\\\\\"\\\"}]\\)\"", 2, 25, 6, 32441636034044239954, 
+   "Local", "QuEST`ApplyPauliTransferMap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917458751257202*^9, 3.917458758224103*^9}, 
+   3.9174608690750732`*^9, 3.917461181608604*^9, 3.9175071102211723`*^9, 
+   3.917515344659976*^9, 3.917515810993991*^9, 3.917516728154141*^9, 
+   3.917516876659955*^9, {3.917516913515593*^9, 3.917516942751635*^9}, 
+   3.917517897170616*^9, 3.917518517252955*^9, 3.918112328977696*^9},
+ CellLabel->
+  "During evaluation of \
+In[22]:=",ExpressionUUID->"9733a960-010f-4aa5-a429-4795fc7c6cca"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917458751269355*^9, 3.917458758234292*^9}, 
+   3.9174608690881968`*^9, 3.917461181635681*^9, 3.917507110236259*^9, 
+   3.917515344669443*^9, 3.917515811003214*^9, 3.91751672816315*^9, 
+   3.917516876670767*^9, {3.917516913526849*^9, 3.917516942764234*^9}, 
+   3.9175178971820087`*^9, 3.9175185172615213`*^9, 3.9181123289925117`*^9},
+ CellLabel->"Out[25]=",ExpressionUUID->"0ca7af6f-b4e6-4689-a92a-b54787e06042"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ApplyPauliTransferMap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Option \\\\\\\\\\\\\\\"CacheMaps\\\\\\\\\\\
+\\\\\" must be one of \\\\\\\\\\\\\\\"Forever\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\
+\"UntilCallEnd\\\\\\\\\\\\\\\" or \\\\\\\\\\\\\\\"Never\\\\\\\\\\\\\\\". See \
+?ApplyPauliTransferMap.\\\\\\\"\\\"}]\\)\"", 2, 26, 7, 32441636034044239954, 
+   "Local", "QuEST`ApplyPauliTransferMap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917458751257202*^9, 3.917458758224103*^9}, 
+   3.9174608690750732`*^9, 3.917461181608604*^9, 3.9175071102211723`*^9, 
+   3.917515344659976*^9, 3.917515810993991*^9, 3.917516728154141*^9, 
+   3.917516876659955*^9, {3.917516913515593*^9, 3.917516942751635*^9}, 
+   3.917517897170616*^9, 3.917518517252955*^9, 3.918112328999815*^9},
+ CellLabel->
+  "During evaluation of \
+In[22]:=",ExpressionUUID->"44a29fb3-a87f-415e-a27c-619ebb7ee8b9"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917458751269355*^9, 3.917458758234292*^9}, 
+   3.9174608690881968`*^9, 3.917461181635681*^9, 3.917507110236259*^9, 
+   3.917515344669443*^9, 3.917515811003214*^9, 3.91751672816315*^9, 
+   3.917516876670767*^9, {3.917516913526849*^9, 3.917516942764234*^9}, 
+   3.9175178971820087`*^9, 3.9175185172615213`*^9, 3.9181123290134974`*^9},
+ CellLabel->"Out[26]=",ExpressionUUID->"9b1dc470-812d-4dd9-abd0-2ded50835667"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ApplyPauliTransferMap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Option \\\\\\\\\\\\\\\"CacheMaps\\\\\\\\\\\
+\\\\\" must be one of \\\\\\\\\\\\\\\"Forever\\\\\\\\\\\\\\\", \\\\\\\\\\\\\\\
+\"UntilCallEnd\\\\\\\\\\\\\\\" or \\\\\\\\\\\\\\\"Never\\\\\\\\\\\\\\\". See \
+?ApplyPauliTransferMap.\\\\\\\"\\\"}]\\)\"", 2, 27, 8, 32441636034044239954, 
+   "Local", "QuEST`ApplyPauliTransferMap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917458751257202*^9, 3.917458758224103*^9}, 
+   3.9174608690750732`*^9, 3.917461181608604*^9, 3.9175071102211723`*^9, 
+   3.917515344659976*^9, 3.917515810993991*^9, 3.917516728154141*^9, 
+   3.917516876659955*^9, {3.917516913515593*^9, 3.917516942751635*^9}, 
+   3.917517897170616*^9, 3.917518517252955*^9, 3.918112329021906*^9},
+ CellLabel->
+  "During evaluation of \
+In[22]:=",ExpressionUUID->"206bbf09-c51e-481e-8f59-d24171419040"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917458751269355*^9, 3.917458758234292*^9}, 
+   3.9174608690881968`*^9, 3.917461181635681*^9, 3.917507110236259*^9, 
+   3.917515344669443*^9, 3.917515811003214*^9, 3.91751672816315*^9, 
+   3.917516876670767*^9, {3.917516913526849*^9, 3.917516942764234*^9}, 
+   3.9175178971820087`*^9, 3.9175185172615213`*^9, 3.91811232903677*^9},
+ CellLabel->"Out[27]=",ExpressionUUID->"e770407a-2675-4590-8e20-bfbb2d3b10f4"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   RowBox[{"{", 
+    SubscriptBox["X", "0"], "}"}], ",", " ", 
+   RowBox[{"\"\<BadOption\>\"", "->", "True"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9174587276636*^9, 3.9174587442874928`*^9}},
+ CellLabel->"In[28]:=",ExpressionUUID->"98351ce0-c14b-47d6-bcd0-e5f17d70449a"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "OptionValue", "nodef", 
+   "\"Unknown option \\!\\(\\*RowBox[{\\\"\\\\\\\"BadOption\\\\\\\"\\\"}]\\) \
+for \\!\\(\\*RowBox[{\\\"{\\\", RowBox[{\\\"ApplyPauliTransferMap\\\", \
+\\\",\\\", \\\"CalcPauliTransferMap\\\"}], \\\"}\\\"}]\\).\"", 2, 28, 9, 
+   32441636034044239954, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{
+  3.917458744573969*^9, 3.917460871183836*^9, 3.917507112551908*^9, 
+   3.917515346366869*^9, 3.917516729742825*^9, 3.917516876679636*^9, {
+   3.917517897326586*^9, 3.91751789967703*^9}, 3.917518520113069*^9, 
+   3.9181123344352303`*^9},
+ CellLabel->
+  "During evaluation of \
+In[28]:=",ExpressionUUID->"1f5ba2f0-fe4d-4cf4-a58f-27fe024ddb71"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{
+  3.917458744613175*^9, 3.9174608711931543`*^9, 3.917507112562175*^9, 
+   3.917515346375291*^9, 3.917516729750976*^9, 3.9175168766889353`*^9, {
+   3.917517897334971*^9, 3.917517899688282*^9}, 3.9175185201216173`*^9, 
+   3.918112334465147*^9},
+ CellLabel->"Out[28]=",ExpressionUUID->"4953323b-b8aa-474a-88d9-4b1d4278a05f"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   SubscriptBox["X", "0"], ",", " ", 
+   RowBox[{"{", 
+    SubscriptBox["X", "0"], "}"}], ",", " ", 
+   RowBox[{
+   "\"\<CombineStates\>\"", "->", 
+    "\"\<Only valid for CalcPauliTransferEval\>\""}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.9175203372984467`*^9, 3.9175203599730663`*^9}},
+ CellLabel->"In[29]:=",ExpressionUUID->"9e783753-2034-4818-b52f-4a9c51940ab6"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "OptionValue", "nodef", 
+   "\"Unknown option \\!\\(\\*RowBox[{\\\"\\\\\\\"CombineStates\\\\\\\"\\\"}]\
+\\) for \\!\\(\\*RowBox[{\\\"{\\\", RowBox[{\\\"ApplyPauliTransferMap\\\", \\\
+\",\\\", \\\"CalcPauliTransferMap\\\"}], \\\"}\\\"}]\\).\"", 2, 29, 10, 
+   32441636034044239954, "Local"},
+  "MessageTemplate"]], "Message", "MSG",
+ CellChangeTimes->{{3.9175203404723053`*^9, 3.917520360238091*^9}, 
+   3.918112345298471*^9},
+ CellLabel->
+  "During evaluation of \
+In[29]:=",ExpressionUUID->"7744e167-b12d-4a17-b732-3ab25942210c"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917520340494502*^9, 3.917520360247919*^9}, 
+   3.9181123453117113`*^9},
+ CellLabel->"Out[29]=",ExpressionUUID->"15d2733a-f581-4817-9e13-0e280a9e1df7"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{"a", ",", " ", 
+   RowBox[{"{", 
+    SubscriptBox["H", "0"], "}"}]}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   SubscriptBox["X", 
+    RowBox[{"-", "1"}]], ",", " ", 
+   RowBox[{"{", 
+    SubscriptBox["H", "0"], "}"}]}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["X", "0"]}], ",", " ", 
+   RowBox[{"{", 
+    SubscriptBox["H", "0"], "}"}]}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{"ApplyPauliTransferMap", "[", 
+  RowBox[{
+   RowBox[{
+    SubscriptBox["X", "0"], 
+    SubscriptBox["Y", "0"]}], ",", " ", 
+   RowBox[{"{", 
+    SubscriptBox["H", "0"], "}"}]}], "]"}]}], "Input",
+ CellChangeTimes->{{3.917461300142507*^9, 3.917461328364315*^9}},
+ CellLabel->"In[30]:=",ExpressionUUID->"b5411d17-cd2d-4905-a25a-34172b1fa82f"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ApplyPauliTransferMap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?ApplyPauliTransferMap\\\\\\\"\\\"}]\\)\"", 2, 30, 11, 32441636034044239954, 
+   "Local", "QuEST`ApplyPauliTransferMap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917461302727322*^9, 3.9174613287248507`*^9}, 
+   3.917507113612214*^9, 3.917515349014565*^9, 3.91751687672211*^9, 
+   3.9175179011267557`*^9, 3.917518518790124*^9, 3.9181123472919083`*^9},
+ CellLabel->
+  "During evaluation of \
+In[30]:=",ExpressionUUID->"c91ce0c9-85f6-418b-a1b0-44de87b28552"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917461302740288*^9, 3.91746132873555*^9}, 
+   3.91750711362396*^9, 3.917515349025381*^9, 3.917516876733272*^9, 
+   3.9175179011363373`*^9, 3.9175185187982883`*^9, 3.918112347306365*^9},
+ CellLabel->"Out[30]=",ExpressionUUID->"497153c4-7e42-4a5f-815b-85059ed2a400"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ApplyPauliTransferMap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?ApplyPauliTransferMap\\\\\\\"\\\"}]\\)\"", 2, 31, 12, 32441636034044239954, 
+   "Local", "QuEST`ApplyPauliTransferMap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917461302727322*^9, 3.9174613287248507`*^9}, 
+   3.917507113612214*^9, 3.917515349014565*^9, 3.91751687672211*^9, 
+   3.9175179011267557`*^9, 3.917518518790124*^9, 3.9181123473125973`*^9},
+ CellLabel->
+  "During evaluation of \
+In[30]:=",ExpressionUUID->"7ffe4496-963a-4a02-b513-4a6dc2233d1e"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917461302740288*^9, 3.91746132873555*^9}, 
+   3.91750711362396*^9, 3.917515349025381*^9, 3.917516876733272*^9, 
+   3.9175179011363373`*^9, 3.9175185187982883`*^9, 3.918112347328536*^9},
+ CellLabel->"Out[31]=",ExpressionUUID->"8c274eb1-a716-4359-b76d-a2240f1bbdc2"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ApplyPauliTransferMap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?ApplyPauliTransferMap\\\\\\\"\\\"}]\\)\"", 2, 32, 13, 32441636034044239954, 
+   "Local", "QuEST`ApplyPauliTransferMap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917461302727322*^9, 3.9174613287248507`*^9}, 
+   3.917507113612214*^9, 3.917515349014565*^9, 3.91751687672211*^9, 
+   3.9175179011267557`*^9, 3.917518518790124*^9, 3.918112347334733*^9},
+ CellLabel->
+  "During evaluation of \
+In[30]:=",ExpressionUUID->"eac4b543-fb53-4f6c-8ea1-416759948cc5"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917461302740288*^9, 3.91746132873555*^9}, 
+   3.91750711362396*^9, 3.917515349025381*^9, 3.917516876733272*^9, 
+   3.9175179011363373`*^9, 3.9175185187982883`*^9, 3.91811234734829*^9},
+ CellLabel->"Out[32]=",ExpressionUUID->"a9446d8e-47bf-42cd-b302-6aa1e14e0c11"],
+
+Cell[BoxData[
+ TemplateBox[{
+  "ApplyPauliTransferMap", "error", 
+   "\"\\!\\(\\*RowBox[{\\\"\\\\\\\"Invalid arguments. See \
+?ApplyPauliTransferMap\\\\\\\"\\\"}]\\)\"", 2, 33, 14, 32441636034044239954, 
+   "Local", "QuEST`ApplyPauliTransferMap"},
+  "MessageTemplate2"]], "Message", "MSG",
+ CellChangeTimes->{{3.917461302727322*^9, 3.9174613287248507`*^9}, 
+   3.917507113612214*^9, 3.917515349014565*^9, 3.91751687672211*^9, 
+   3.9175179011267557`*^9, 3.917518518790124*^9, 3.918112347354516*^9},
+ CellLabel->
+  "During evaluation of \
+In[30]:=",ExpressionUUID->"e0415018-3b66-4cd5-b15b-9d5c3a38406c"],
+
+Cell[BoxData["$Failed"], "Output",
+ CellChangeTimes->{{3.917461302740288*^9, 3.91746132873555*^9}, 
+   3.91750711362396*^9, 3.917515349025381*^9, 3.917516876733272*^9, 
+   3.9175179011363373`*^9, 3.9175185187982883`*^9, 3.9181123473678503`*^9},
+ CellLabel->"Out[33]=",ExpressionUUID->"2bb33fa1-ed91-4f9c-b86a-ecc86c097b4a"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{720, 811},
+WindowMargins->{{Automatic, 0}, {Automatic, 0}},
+PrintingCopies->1,
+PrintingPageRange->{1, Automatic},
+FrontEndVersion->"13.0 for Mac OS X x86 (64-bit) (February 4, 2022)",
+StyleDefinitions->"Default.nb",
+ExpressionUUID->"efaffe79-647a-4f23-a4d0-ca12a3fc3daf"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 586, 9, 98, "Title",ExpressionUUID->"77f009f4-2175-44a8-80e3-db58a43dd7eb"],
+Cell[1169, 33, 383, 8, 52, "Input",ExpressionUUID->"96dc3e19-ba26-4783-b8c5-af8507883921"],
+Cell[CellGroupData[{
+Cell[1577, 45, 296, 5, 69, "Chapter",ExpressionUUID->"2a8ec798-ae11-4a87-9bc0-81ab84d2fff7"],
+Cell[CellGroupData[{
+Cell[1898, 54, 210, 3, 30, "Input",ExpressionUUID->"fba5918a-c879-4e52-a985-86426b9044bd"],
+Cell[2111, 59, 24459, 536, 453, "Output",ExpressionUUID->"399b2ee3-4dfa-4c94-8383-550ddd5da6b0"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[26619, 601, 452, 7, 69, "Chapter",ExpressionUUID->"02bdf378-83ae-4892-994c-456dd1665801"],
+Cell[CellGroupData[{
+Cell[27096, 612, 147, 3, 67, "Section",ExpressionUUID->"3046ef3e-0cb3-4f31-95ea-17cc025e6c77"],
+Cell[CellGroupData[{
+Cell[27268, 619, 765, 18, 52, "Input",ExpressionUUID->"45ff0713-8931-405a-ae53-38ff226ea5a8"],
+Cell[28036, 639, 21408, 411, 325, "Output",ExpressionUUID->"30a98b80-be68-4c3a-b7c7-7678393dfdc8"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[49481, 1055, 289, 7, 30, "Input",ExpressionUUID->"b0f0c915-3d90-428b-9c6e-5d706e32165a"],
+Cell[49773, 1064, 728, 11, 34, "Output",ExpressionUUID->"ddd85d89-dba9-4b76-b056-69ec336006dd"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[50538, 1080, 446, 12, 30, "Input",ExpressionUUID->"f9352ffb-345e-452e-921e-fcc508f30748"],
+Cell[50987, 1094, 1068, 23, 34, "Output",ExpressionUUID->"62e438b4-27e1-4e26-9935-476dc436c2ed"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[52092, 1122, 745, 19, 52, "Input",ExpressionUUID->"b9b6b16b-a31e-4949-bc33-edc7a5f79b1f"],
+Cell[52840, 1143, 4289, 125, 271, "Output",ExpressionUUID->"7d226093-0791-4b16-aa76-b221b7781283"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[57166, 1273, 906, 20, 115, "Input",ExpressionUUID->"cc66c4e6-f6e0-43ac-949d-f5632a4f07ab"],
+Cell[58075, 1295, 565, 8, 34, "Output",ExpressionUUID->"8485995e-0373-47e9-b305-744a1836d0b6"],
+Cell[58643, 1305, 703, 12, 34, "Output",ExpressionUUID->"13ef1043-a89d-46e2-abef-66a3ade0bc41"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[59395, 1323, 152, 3, 67, "Section",ExpressionUUID->"be433be5-a593-4f0e-94b5-06232378443c"],
+Cell[CellGroupData[{
+Cell[59572, 1330, 910, 25, 52, "Input",ExpressionUUID->"206050ce-a38f-4434-aa5b-1095c656662c"],
+Cell[60485, 1357, 1058, 23, 34, "Output",ExpressionUUID->"2cdb69c2-8dfd-4f8d-9b68-4afe4d8e1bc2"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[61580, 1385, 1985, 53, 241, "Input",ExpressionUUID->"9b5a2ad9-abfb-455a-8b91-beb517e651e9"],
+Cell[63568, 1440, 437, 6, 34, "Output",ExpressionUUID->"7e7a9e23-1858-470e-9698-5cfb43cfc024"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[64054, 1452, 204, 4, 67, "Section",ExpressionUUID->"97df6472-d787-4f5a-8287-e61d2d52d187"],
+Cell[CellGroupData[{
+Cell[64283, 1460, 157, 3, 54, "Subsection",ExpressionUUID->"4cf09147-19b7-4bc9-98fb-a74a6426f3a2"],
+Cell[CellGroupData[{
+Cell[64465, 1467, 1527, 42, 115, "Input",ExpressionUUID->"65f79189-1c3f-4635-80d7-8bc7ade43f68"],
+Cell[65995, 1511, 705, 17, 34, "Output",ExpressionUUID->"0e6f3b4d-ae3f-4602-844a-f5b9c7cd9592"],
+Cell[66703, 1530, 706, 17, 34, "Output",ExpressionUUID->"1e0ba68f-ecc2-4ec9-9d7c-21922d2a7abc"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[67446, 1552, 2181, 58, 241, "Input",ExpressionUUID->"bb5acbce-ae6f-4fda-9515-d95f2367d25e"],
+Cell[69630, 1612, 2746, 84, 143, "Output",ExpressionUUID->"1277bc86-865f-46ad-a766-39a400e70d94"],
+Cell[72379, 1698, 1008, 22, 140, "Output",ExpressionUUID->"c236319b-ccf9-4872-871d-450367fddbda"],
+Cell[73390, 1722, 1008, 22, 140, "Output",ExpressionUUID->"0b87edec-18b5-4847-ae6c-03c4a2ab6733"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[74447, 1750, 218, 4, 54, "Subsection",ExpressionUUID->"4bbd4d88-d588-49ff-9cc7-972de201b1c6"],
+Cell[CellGroupData[{
+Cell[74690, 1758, 717, 20, 58, "Input",ExpressionUUID->"a2fb38da-aa8a-47b2-bbe4-58e580d9a788"],
+Cell[75410, 1780, 402, 10, 50, "Output",ExpressionUUID->"5e4fa912-2ee1-4188-a36b-4564665451d3"],
+Cell[75815, 1792, 633, 19, 50, "Output",ExpressionUUID->"709c23fb-291b-4ea1-83bc-9fee84b3b5c6"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[76521, 1819, 398, 6, 69, "Chapter",ExpressionUUID->"5524d7f6-8b97-42e4-861f-3caad3568fb8"],
+Cell[CellGroupData[{
+Cell[76944, 1829, 465, 9, 30, "Input",ExpressionUUID->"ad62fa39-7002-46c3-8a53-8db709830815"],
+Cell[77412, 1840, 747, 15, 28, "Message",ExpressionUUID->"48b693d6-7bec-4c58-bd58-2a72cd7370d8"],
+Cell[78162, 1857, 862, 17, 28, "Message",ExpressionUUID->"e3670511-77b3-4bef-8f4c-843aebec8d1e"],
+Cell[79027, 1876, 540, 7, 34, "Output",ExpressionUUID->"a36fc3df-6225-4cd3-9388-3d41fe167735"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[79604, 1888, 1750, 46, 137, "Input",ExpressionUUID->"830f3f61-dea7-4f53-9f6b-d7ac57b1de9f"],
+Cell[81357, 1936, 923, 16, 46, "Message",ExpressionUUID->"9390b734-3989-4848-962a-19b140ae4e37"],
+Cell[82283, 1954, 468, 6, 34, "Output",ExpressionUUID->"ab5897bb-1738-48c7-9daa-224f1c1bfb3c"],
+Cell[82754, 1962, 925, 16, 46, "Message",ExpressionUUID->"4b6e20f3-206d-49fe-b031-1cabc679cab2"],
+Cell[83682, 1980, 466, 6, 34, "Output",ExpressionUUID->"e85e7961-4642-4c1e-badc-97789bf76fd7"],
+Cell[84151, 1988, 923, 16, 46, "Message",ExpressionUUID->"3ea92920-6c14-4a2e-a03c-d82fc33b3a90"],
+Cell[85077, 2006, 466, 6, 34, "Output",ExpressionUUID->"f0760ce4-ea68-4ebc-ac08-d9cbd84c8c02"],
+Cell[85546, 2014, 923, 16, 46, "Message",ExpressionUUID->"9733a960-010f-4aa5-a429-4795fc7c6cca"],
+Cell[86472, 2032, 468, 6, 34, "Output",ExpressionUUID->"0ca7af6f-b4e6-4689-a92a-b54787e06042"],
+Cell[86943, 2040, 923, 16, 46, "Message",ExpressionUUID->"44a29fb3-a87f-415e-a27c-619ebb7ee8b9"],
+Cell[87869, 2058, 468, 6, 34, "Output",ExpressionUUID->"9b1dc470-812d-4dd9-abd0-2ded50835667"],
+Cell[88340, 2066, 923, 16, 46, "Message",ExpressionUUID->"206bbf09-c51e-481e-8f59-d24171419040"],
+Cell[89266, 2084, 465, 6, 34, "Output",ExpressionUUID->"e770407a-2675-4590-8e20-bfbb2d3b10f4"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[89768, 2095, 377, 8, 30, "Input",ExpressionUUID->"98351ce0-c14b-47d6-bcd0-e5f17d70449a"],
+Cell[90148, 2105, 720, 15, 28, "Message",ExpressionUUID->"1f5ba2f0-fe4d-4cf4-a58f-27fe024ddb71"],
+Cell[90871, 2122, 376, 6, 34, "Output",ExpressionUUID->"4953323b-b8aa-474a-88d9-4b1d4278a05f"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[91284, 2133, 434, 10, 52, "Input",ExpressionUUID->"9e783753-2034-4818-b52f-4a9c51940ab6"],
+Cell[91721, 2145, 561, 12, 28, "Message",ExpressionUUID->"7744e167-b12d-4a17-b732-3ab25942210c"],
+Cell[92285, 2159, 207, 3, 34, "Output",ExpressionUUID->"15d2733a-f581-4817-9e13-0e280a9e1df7"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[92529, 2167, 927, 26, 94, "Input",ExpressionUUID->"b5411d17-cd2d-4905-a25a-34172b1fa82f"],
+Cell[93459, 2195, 605, 12, 28, "Message",ExpressionUUID->"c91ce0c9-85f6-418b-a1b0-44de87b28552"],
+Cell[94067, 2209, 321, 4, 34, "Output",ExpressionUUID->"497153c4-7e42-4a5f-815b-85059ed2a400"],
+Cell[94391, 2215, 605, 12, 28, "Message",ExpressionUUID->"7ffe4496-963a-4a02-b513-4a6dc2233d1e"],
+Cell[94999, 2229, 321, 4, 34, "Output",ExpressionUUID->"8c274eb1-a716-4359-b76d-a2240f1bbdc2"],
+Cell[95323, 2235, 603, 12, 28, "Message",ExpressionUUID->"eac4b543-fb53-4f6c-8ea1-416759948cc5"],
+Cell[95929, 2249, 320, 4, 34, "Output",ExpressionUUID->"a9446d8e-47bf-42cd-b302-6aa1e14e0c11"],
+Cell[96252, 2255, 603, 12, 28, "Message",ExpressionUUID->"e0415018-3b66-4cd5-b15b-9d5c3a38406c"],
+Cell[96858, 2269, 323, 4, 34, "Output",ExpressionUUID->"2bb33fa1-ed91-4f9c-b86a-ecc86c097b4a"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+

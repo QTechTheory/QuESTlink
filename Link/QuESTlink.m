@@ -142,9 +142,6 @@ It is often convenient to pass the returned structure to Chop[] in order to remo
 The state is likely no longer a valid density matrix but is useful as a persistent Z-basis representation of the pauli string, to be used in functions like CalcDensityInnerProduct[] and CalcExpecPauliStringDerivs[]."
     SetQuregToPauliString::error = "`1`"
     
-    GetPauliStringFromCoeffs::usage = "GetPauliStringFromCoeffs[addr] opens or downloads the file at addr (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes, converting this to a symbolic weighted sum of Pauli tensors. Each line of the file is a separate term (a Pauli product), with format {coeff code1 code2 ... codeN} (exclude braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z term in the product respectively), for an N-qubit operator. Each line must have N+1 terms (including the real decimal coefficient at the beginning)."
-    GetPauliStringFromCoeffs::error = "`1`"
-    
     GetRandomPauliString::usage = "GetRandomPauliString[numQubits, numTerms, {minCoeff, maxCoeff}] generates a random Pauli string with unique Pauli tensors.
 GetRandomPauliString[numQubits, All, {minCoeff, maxCoeff}] will generate all 4^numQubits unique Pauli tensors.
 GetRandomPauliString[numQubits, {minCoeff, maxCoeff}] will generate 4 numQubits^4 unique terms / Pauli tensors, unless this exceeds the maximum of 4^numQubits.
@@ -299,10 +296,6 @@ CalcExpecPauliProdsFromClassicalShadow[shadow, prods, numBatches] divides the sh
 This is the procedure outlined in Nat. Phys. 16, 1050–1057 (2020)."
     CalcExpecPauliProdsFromClassicalShadow::error = "`1`"
 
-    GetPauliStringFromMatrix::usage = "GetPauliStringFromMatrix[m] returns a complex-weighted sum of Pauli tensors equivalent to the given square, power-of-2 length matrix m.
-If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components."
-    GetPauliStringFromMatrix::error = "`1`"
-
     CalcCircuitGenerator::usage = "CalcCircuitGenerator[circuit] computes the Pauli string generator G of the given circuit, whereby circuit = Exp[i G]. 
 \[Bullet] If circuit contains decoherence operators, the generator of the circuit's superoperator is returned. See ?GetCircuitSuperoperator.
 \[Bullet] If circuit is unitary, the resulting coefficients may have non-zero imaginary components due to numerical error; these can be removed with Chop[].
@@ -310,26 +303,131 @@ If the input matrix is Hermitian, the output can be passed to Chop[] in order to
 \[Bullet] Accepts option TransformationFunction -> f, where function f will be applied to the generator's Z-basis matrix before projection into the Pauli basis. This overrides the automatic simplification."
     CalcCircuitGenerator::error = "`1`"
 
-    RetargetCircuit::usage = "RetargetCircuit[circuit, rules] returns the given circuit but with its target and control qubits modified as per the given rules. The rules can be anything accepted by ReplaceAll.
-For instance RetargetCircuit[..., {0->1, 1->0}] swaps the first and second qubits, and RetargetCircuit[..., q_ -> q + 10] shifts every qubit up by 10.
+    GetCircuitRetargeted::usage = "GetCircuitRetargeted[circuit, rules] returns the given circuit but with its target and control qubits modified as per the given rules. The rules can be anything accepted by ReplaceAll.
+For instance GetCircuitRetargeted[..., {0->1, 1->0}] swaps the first and second qubits, and GetCircuitRetargeted[..., q_ -> q + 10] shifts every qubit up by 10.
 This function modifies only the qubits in the circuit, carefully avoiding modifying gate arguments and other data, so it is a safe alternative to simply evaluating (circuit /. rules).
 Custom user gates are supported provided they adhere to the standard QuESTlink subscript format."
-    RetargetCircuit::error = "`1`"
+    GetCircuitRetargeted::error = "`1`"
 
-    GetCircuitQubits::usage = "GetCircuitQubits[circuit] returns a sorted list of all qubit indices featured (i.e. controlled upon, or targeted by gates) in the given circuit."
+    GetCircuitQubits::usage = "GetCircuitQubits[circuit] returns a list of all qubit indices featured (i.e. controlled upon or targeted by gates) in the given circuit. The order of the returned qubits matches the order they first appear in the circuit, and within a gate, by the target then control qubits in the user-given order (with duplicates deleted)."
     GetCircuitQubits::error = "`1`"
 
     GetCircuitCompacted::usage = "GetCircuitCompacted[circuit] returns {out, map} where out is an equivalent circuit but which targets only the lowest possible qubits, and map is a list of rules to restore the original qubits.
 This is useful for computing the smallest-form matrix of gates which otherwise target large-index qubits, via CalcCircuitMatrix @ First @ GetCircuitCompacted @ gate.
-The original circuit is restored by RetargetCircuit[out, map]."
+The order of the target and control qubits in the first returned gate are strictly increasing, so GetCircuitCompacted[gate] is also useful for mapping gates to a unique form irrespective of their qubits.
+The original circuit is restored by GetCircuitRetargeted[out, map]."
     GetCircuitCompacted::error = "`1`"
+
+    GetCircuitParameterised::usage = "GetCircuitParameterised[circuit, paramSymbol] returns {out, paramValues} where out is an equivalent circuit whereby each scalar gate parameter (like those to Rx, R, G, etc) has been substituted with paramSymbol[i]. The returned paramValues is a list of symbol substitutions, so that the original circuit is obtained with out /. paramValues.
+This function is useful for tasks like obtaining gate strengths, finding repeated parameters, or transforming circuits into variational ansatze. Note that custom gates in the QuESTlink format are permitted, but will not be considered for parameterisation.
+GetCircuitParameterised accepts the below options.
+\[Bullet] \"UniqueParameters\" -> True will force every substituted gate to receive a unique symbol (i.e. paramSymbol[i] for unique i), even if multiple gates have the same scalar parameter. Otherwise, gates with the same scalar parameter will automatically use the same repeated symbol, shrinking the length of paramValues.
+\[Bullet] \"ExcludeChannels\" -> False will permit scalar-parameterised decoherence channels (like Damp, Depol, etc) to be parameterised in the output.
+\[Bullet] \"ExcludeGates\" -> gatePattern(s) will prevent gates matching the given pattern (or list of patterns) from being parameterised. Note that gates and their controlled variants are treated separately.
+\[Bullet] \"ExcludeParameters\" -> paramPattern(s) will prevent any gate parameter matching the given pattern (or list of patterns) from being substituted."
+    GetCircuitParameterised::error = "`1`"
 
     RecompileCircuit::usage = "RecompileCircuit[circuit, method] returns an equivalent circuit, transpiled to a differnet gate set. The input circuit can contain any unitary gate, with any number of control qubits. Supported methods include:
 \[Bullet] \"SingleQubitAndCNOT\" decompiles the circuit into canonical single-qubit gates (H, Ph, T, S, X, Y, Z, Rx, Ry, Rz), a global phase G, and two-qubit C[X] gates. This method uses a combination of 23 analytic and numerical decompositions.
 \[Bullet] \"CliffordAndRz\" decompiles the circuit into Clifford gates (H, S, X, Y, Z, CX, CY, CZ, SWAP), a global phase G, and non-Clifford Rz.
 Note that the returned circuits are not necessarily optimal/minimal, and may benefit from a subsequent call to SimplifyCircuit[]. "
     RecompileCircuit::error = "`1`"
-    
+
+    CalcPauliTransferMatrix::usage = "CalcPauliTransferMatrix[circuit] returns a single PTM operator equivalent to the given circuit.
+CalcPauliTranferMatrix /@ circuit returns an equivalent sequence of individual (and likely smaller) PTM operators.
+CalcPauliTransferMatrix accepts optional argument AssertValidChannels."
+    CalcPauliTransferMatrix::error = "`1`"
+
+    CalcPauliTransferMap::usage = "CalcPauliTransferMap[ptm] produces a PTMap equivalent to the given PTM operator. See ?PTM.
+CalcPauliTransferMap[circuit] produces a PTMap from the given gate or circuit, by merely first invoking CalcPauliTransferMatrix[].
+The returned map encodes how each basis Pauli-string (encoded by its integer index) is mapped to a weighted sum of other strings (encoded as {index, coefficient} pairs) by the PTM. The indexing convention is the same as used by GetPauliString[] where the subscripted qubits of the PTM are treated as though given in order of increasing significance.
+CalcPauliTransferMap also accepts option AssertValidChannels->False to disable the automatic simplification of the map's coefficients through the assertion of valid channel parameters. See ?AssertValidChannels."
+    CalcPauliTransferMap::error = "`1`"
+
+    DrawPauliTransferMap::usage = "DrawPauliTransferMap[map] visualises the given PTMap as a graph where nodes are basis Pauli strings, and edges indicate the transformative action of the map.
+DrawPauliTransferMap also accepts PTM, circuit and gate instances, for which the corresponding PTMap is automatically calculated.
+DrawPauliTransferMap accepts options \"PauliStringForm\", \"ShowCoefficients\" and \"EdgeDegreeStyles\", in addition to all options accepted by Graph[].
+\[Bullet] \"ShowCoefficients\" -> False hides the map's Pauli string coefficients which are otherwise shown as edge labels.
+\[Bullet] \"PauliStringForm\" sets the vertex label format to one of \"Subscript\" (default), \"Index\", \"Kronecker\", \"String\" or \"Hidden\". These (except the latter) are the formats are supported by GetPauliStringReformatted[].
+\[Bullet] \"EdgeDegreeStyles\" specifies a list of styles (default informed by ColorData[\"Pastel\"]) to set upon edges from nodes with increasing outdegree. For example, \"EdgeDegreeStyles\"->{Red,Green,Blue} sets edges from Pauli states which are mapped to a single other state to the colour Red, but two-outdegree node out-edges become Green, and three-outdegree become Blue. The list is assumed repeated for higher outdegree nodes than specified.
+\[Bullet] Graph[] options override these settings, so specifying EdgeStyle -> Black will set all edges to Black regardless of their node's outdegree."
+    DrawPauliTransferMap::error = "`1`"
+
+    ApplyPauliTransferMap::usage = "ApplyPauliTransferMap[pauliString, ptMap] returns the Pauli string produced by the given PTMap acting upon the given initial Pauli string.
+ApplyPauliTransferMap[pauliString, circuit] automatically transforms the given circuit (composed of gates, channels, and PTMs, possibly intermixed) into PTMaps before applying them to the given Pauli string.
+This method uses automatic caching to avoid needless re-computation of an operator's PTMap, agnostic to the targeted and controlled qubits, at the cost of additional memory usage. Caching behaviour can be controlled using option \"CacheMaps\":
+\[Bullet] \"CacheMaps\" -> \"UntilCallEnd\" (default) caches all computed PTMaps but clears the cache when ApplyPauliTransferMap[] returns.
+\[Bullet] \"CacheMaps\" -> \"Forever\" maintains the cache even between multiple calls to ApplyPauliTransferMap[].
+\[Bullet] \"CacheMaps\" -> \"Never\" disables caching (and clears the existing cache before computation), re-computing each operqtors' PTMap when encountered in the circuit.
+ApplyPauliTransferMap also accepts all options of CalcPauliTransferMap, like AssertValidChannels. See ?AssertValidChannels."
+    ApplyPauliTransferMap::error = "`1`"
+
+    CalcPauliTransferEval::usage = "CalcPauliTransferEval[pauliString, ptMaps] returns the full evolution history of the given Pauli string under the given list of PTMap operators. This is often unnecessary to call directly - most users can call ApplyPauliTransferMap[] or DrawPauliTransferEval[] instead - unless you wish to store or process the evaluation history.
+CalcPauliTransferEval[pauliString, circuit] evolves the Pauli string under the PTMaps automatically calculated from the given circuit. 
+There are two possible return formats, informed by option \"OutputForm\", which are respectively fast and slow to evaluate, and both of which can be passed to functions like DrawPauliTransferEval[].
+The \"Simple\" output is a list of sublists, each corresponding to a layer in the evaluation history (i.e. the operation of a PTMap upon the current Pauli string) including the initial Pauli string. Each item therein represents a Pauli product state and has form {prod,id,parents} where 'prod' is a Pauli basis state expressed in base-4 digits (see ?GetPauliStringReformatted), 'id' is a unique integer identifying the state, and 'parents' is a list of tuples of form {parentId, factor}. These indicate the ancestor Pauli states from which the id'd state was produced under the action of the previous PTMap, and the factor that the map multiplies upon that parent state. The basis products of the initial state have parentId=0.
+The \"Detailed\" output is an Association with the following items:
+\[Bullet] \"Ids\" is a list of integers uniquely identifying each node in the evaluation graph. Note these are not gauranteed to be contiguous due to the merging of incident Pauli states (see \"CombineStrings\" below).
+\[Bullet] \"Layers\" groups \"Ids\" into sublists according to their depth in the graph, i.e. which ptMap produced the node. There are Length[ptMaps]+1 layers, including the initial pauliString layer.
+\[Bullet] \"States\" is an Association of id -> pauliProduct, identifying the Pauli basis state associated with the id'd node.
+\[Bullet] \"Parents\" is an Association of id -> list of parent ids. A node's parents are the states of the previous layer who were modified by the previous layer's PTMap to the node's state.
+\[Bullet] \"Children\" is an Association of id -> list of child ids. A node's children are the states the node is transformed to when modified by the next layer's PTMap.
+\[Bullet] \"ParentFactors\" is an Association of id -> Association, where the inner Association is of parentId -> coefficient. The inner Association records the factors multiplied upon the parents when the PTMap produced the node's state.
+\[Bullet] \"Weights\" is an Association of id -> weight, where weight is the number of non-identity Paulis in the id'd nodes state.
+\[Bullet] \"Indegree\" is an Association of id -> degree, indicating the number of parents. 
+\[Bullet] \"Outdegree\" is an Association of id -> degree, indicating the number of children.
+\[Bullet] \"Coefficients\" is an Association of id -> coeff, where coeff is the coefficient of the id'd node's Pauli basis state at the node's layer of evaluation.
+\[Bullet] \"Strings\" is a list of sums of weighted Pauli strings; one for each layer of evaluation. The resulting Pauli string of the full circuit upon the initial Pauli string is the Last item of this list. The strings are not automatically simplified, so each might be worth passing to SimplifyPaulis[].
+\[Bullet] \"NumQubits\" is the number of qubits assumed during the evaluation, informed by the initial Pauli string and PTMaps.
+\[Bullet] \"NumNodes\" is the total number of nodes (or basis Pauli states) processed during evaluation. This is merely the length of \"Ids\".
+\[Bullet] \"NumLeaves\" is the number of nodes in the final layer, equivalent to the number of Pauli products in the output string.
+CalcPauliTransferEval accepts the below options:
+\[Bullet] \"OutputForm\" -> \"Simple\" (default) or \"Detailed\", as explained above.
+\[Bullet] \"CombineStrings\" -> False which disables combining incident Pauli strings, so that the result is an acyclic tree, and each node has a single parent.
+\[Bullet] \"CacheMaps\" which controls the automatic caching of generated PTMaps (see ?ApplyPauliTransferMap).
+\[Bullet] AssertValidChannels -> False which disables the simplification of symbolic Pauli string coefficients (see ?AssertValidChannels)."
+    CalcPauliTransferEval::error = "`1`"
+
+    DrawPauliTransferEval::usage = "DrawPauliTransferEval[pauliString, circuit] renders and returns a graph of the evaluation of 'circuit' when converted to a series of Pauli transfer maps, acting upon the given initial Pauli string.
+DrawPauliTransferEval[data] renders the pre-computed evaluation graph 'data' as output by CalcPauliTransferEval[].
+DrawPauliTransferEval accepts all options to Graph[], CalcPauliTransferEval[], DrawPauliTransferMap[], and some additional options, which we summarise below.
+\[Bullet] \"HighlightPathTo\" -> pauliString (or a list of Pauli strings) highlights all edges ultimately contributing to the coefficient of the specified final pauliString(s). Symbolically weighted sums of Pauli strings are also accepted, in which case all edges to all non-orthogonal Pauli strings are highlighted.
+\[Bullet] \"CombineStrings\" -> False disables combining incident Pauli strings so that the result is an (likely significantly larger) acyclic tree.
+\[Bullet] \"PauliStringForm\" sets the vertex label format to one of \"String\", \"Hidden\" (these are the defaults depending on graph size), \"Index\", \"Kronecker\", or \"Subscript\". See ?GetPauliStringReformatted.
+\[Bullet] \"ShowCoefficients\" -> True or False explicit shows or hides the PTMap coefficient associated with each edge. The default is Automatic which auto-hides edge labels if there are too many.
+\[Bullet] \"EdgeDegreeStyles\" specifies the style of edges from nodes of increasing outdegree. See ?DrawPauliTransferMap.
+\[Bullet] \"CacheMaps\" controls the automatic caching of generated PTMaps. See ?ApplyPauliTransferMap.
+\[Bullet] AssertValidChannels -> False disables the simplification of symbolic Pauli string coefficients, only noticeable when \"ShowCoefficients\"->True. See ?AssertValidChannels.
+\[Bullet] Graph[] options override these settings. For example, specifying EdgeStyle -> Black will set all edges to Black regardless of their node's outdegree."
+    DrawPauliTransferEval::error = "`1`"
+
+    GetPauliString::usage = "Returns a Pauli string or a weighted sum of symbolic Pauli tensors from a variety of input formats.
+GetPauliString[matrix] returns a complex-weighted sum of Pauli tensors equivalent to the given matrix. If the input matrix is Hermitian, the output can be passed to Chop[] in order to remove the negligible imaginary components.
+GetPauliString[index] returns the basis Pauli string corresponding to the given index, where the returned Pauli operator targeting 0 is informed by the least significant bit(s) of the index. 
+GetPauliString[digits] specifies the Pauli product via the base-4 digits of its index, where the rightmost digit is the least significant.
+GetPauliString[address] opens or downloads the file at address (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes. Each line of the file is assumed a separate Pauli tensor with format {coeff code1 code2 ... codeN} (excluding braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z), for an N-qubit Pauli string, and are given in order of increasing significance (zero qubit left). Each line must have N+1 terms, which includes the initial real decimal coefficient. For an example, see \"https://qtechtheory.org/hamil_6qbLiH.txt\".
+GetPauliString[..., numQubits] overrides the inferred number of qubits, introducing additional Id operators upon un-targeted qubits (unless explicitly removed with \"RemoveIds\"->False).
+GetPauliString[..., {targets}] specifies a list of qubits which the returned Pauli string should target (in the given order), instead of the default targets {0, 1, 2, ...}.
+GetPauliString accepts optional argument \"RemoveIds\" -> True or False (default Automatic) which when True, retains otherwise removed Id operators so that the returned string has an explicit Pauli operator acting upon every qubit."
+    GetPauliString::error = "`1`"
+
+    GetPauliStringRetargeted::usage = "GetPauliStringRetargeted[string, rules] returns the given Pauli string but with its target qubits modified as per the given rules. The rules can be anything accepted by ReplaceAll.
+For instance GetPauliStringRetargeted[..., {0->1, 1->0}] swaps the first and second qubits, and GetPauliStringRetargeted[..., q_ -> q + 10] shifts every qubit up by 10.
+This function modifies only the qubits in the Pauli string and avoids modifying coefficients, so it is a safe alternative to simply evaluating (string /. rules)."
+    GetPauliStringRetargeted::error = "`1`"
+
+    GetPauliStringReformatted::usage = "Reformats symbolic Pauli strings into a variety of other formats convenient for processing.
+GetPauliStringReformatted[product, \"Index\"] returns the integer index of the given Pauli product in the ordered basis of Pauli products. The zero target is treated as least significant.
+GetPauliStringReformatted[string, \"Index\"] returns a list of {index, coefficient} pairs which describe all Pauli products in the given string.
+GetPauliStringReformatted[..., \"Digits\"] returns the individual digits of the basis Pauli string's index (or indices), in base 4, where the rightmost digit is the least significant. 
+GetPauliStringReformatted[..., \"Kronecker\"] expands the Pauli string into an explicit Kronecker form. The zero target in the given product corresponds to the rightmost Pauli in the Kronecker form. 
+GetPauliStringReformatted[..., \"String\"] returns a compact, string-form of the \"Kronecker\" format.
+GetPauliStringReformatted[..., numQubits] expands the \"Digits\", \"Kronecker\" and \"String\" formats to the specified number of qubits, by padding with '0' digits or 'Id' operators."
+    GetPauliStringReformatted::error = "`1`"
+
+    GetPauliStringOverlap::usage = "GetPauliStringOverlap[a, b] returns the Pauli products common to both given weighted sums of Pauli strings, with coefficients equal to the conjugate of the 'a' coefficients multiplied by those of 'b'."
+    GetPauliStringOverlap::error = "`1`"
+
     
     (*
      * optional arguments to public functions
@@ -384,7 +482,7 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
 
     AsSuperoperator::usage = "Optional argument to CalcCircuitMatrix (default Automatic), specifying whether the output should be a 2^N by 2^N unitary matrix (False), or a 2^2N by 2^2N superoperator matrix (True). The latter can capture decoherence, and be multiplied upon column-flattened 2^2N vectors."
     
-    AssertValidChannels::usage = "Optional argument to CalcCircuitMatrix and GetCircuitSuperoperator (default True), specifying whether to simplify their outputs by asserting that all channels therein are completely-positive and trace-preserving. For example, this asserts that the argument to a damping channel lies between 0 and 1."
+    AssertValidChannels::usage = "Optional argument to CalcCircuitMatrix, GetCircuitSuperoperator, CalcPauliTransferMatrix and CalcPauliTransferMap (default True), specifying whether to simplify their outputs by asserting that all channels therein are completely-positive and trace-preserving. For example, this asserts that the symbolic argument to a damping channel is constrained between 0 and 1 (inclusive)."
     
     EndPackage[]
     
@@ -481,7 +579,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
     Protect[Matr]
     
     Fac::usage = "Fac[scalar] is a non-physical operator which multiplies the given complex scalar onto every amplitude of the quantum state. This is directly multiplied onto state-vectors and density-matrices, and may break state normalisation."
-    
+    Protect[Fac]
+
+    PTM::usage = "PTM[matrix] is a Pauli-transfer matrix representation of an operator or channel. The subscript indices specify which Paulis of a Pauli string are operated upon. Such objects are produced by functions like CalcPauliTransferMatrix[]."
+    Protect[PTM]
+
+    PTMap::usage = "PTMap[map] is a representation of a Pauli transfer matrix as a map between Pauli tensors, specified either as basis-state indices or in a Kronecker form. See ?CalcPauliTransferMap."
+    Protect[PTMap]
+
     (* overriding Mathematica's doc for C[i] as i-th default constant *)
     C::usage = "C is a declaration of control qubits (subscript), which can wrap other gates to conditionally/controlled apply them."
     Protect[C]
@@ -536,7 +641,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
     CalcExpecPauliSum::usage = "This function is deprecated. Please instead use CalcExpecPauliString."
     ApplyPauliSum::usage = "This function is deprecated. Please instead use ApplyPauliString."
     CalcPauliSumMatrix::usage = "This function is deprecated. Please instead use CalcPauliStringMatrix."
-    GetPauliSumFromCoeffs::usage = "This function is deprecated. Please instead use GetPauliStringFromCoeffs."
+    GetPauliSumFromCoeffs::usage = "This function is deprecated. Please instead use GetPauliString."
+    GetPauliStringFromMatrix::usage = "This function is deprecated. Please instead use GetPauliString."
     MixDamping::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Damp."
     MixDephasing::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Deph."
     MixDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
@@ -544,6 +650,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
     MixTwoQubitDepolarising::usage = "This function is deprecated. Please instead use ApplyCircuit with gate Depol."
     CalcQuregDerivs::usage = "This function is deprecated. Please instead use ApplyCircuitDerivs."
     GetQuregMatrix::usage = "This function is deprecated. Please instead use GetQuregState."
+    RetargetCircuit::usage = "This function is deprecated. Please instead use GetCircuitRetargeted."
     
     EndPackage[]
  
@@ -574,9 +681,16 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Message[CalcPauliStringMatrix::error, "The function CalcPauliSumMatrix[] is deprecated. Use CalcPauliStringMatrix[] or temporarily hide this message using Quiet[]."]; 
             CalcPauliStringMatrix[args])
         GetPauliSumFromCoeffs[args___] := (
-            Message[GetPauliStringFromCoeffs::error, "The function GetPauliSumFromCoeffs[] is deprecated. Use GetPauliStringFromCoeffs[] or temporarily hide this message using Quiet[]."]; 
-            GetPauliStringFromCoeffs[args])
-            
+            Message[GetPauliString::error, "The function GetPauliSumFromCoeffs[] is deprecated. Use GetPauliString[] or temporarily hide this message using Quiet[]."]; 
+            GetPauliString[args])
+
+        GetPauliStringFromCoeffs[args___] := (
+            Message[GetPauliString::error, "The function GetPauliStringFromCoeffs[] is deprecated. Use GetPauliString[] or temporarily hide this message using Quiet[]."]; 
+            GetPauliString[args])
+        GetPauliStringFromMatrix[args___] := (
+            Message[GetPauliString::error, "The function GetPauliStringFromMatrix[] is deprecated. Use GetPauliString[] or temporarily hide this message using Quiet[]."]; 
+            GetPauliString[args])
+
         MixDamping[qureg_Integer, qb_Integer, prob_Real] := (
             Message[ApplyCircuit::error, "The function MixDamping[] is deprecated, though has still been performed. In future, please use ApplyCircuit[] with the Damp[] gate instead, or temporarily hide this message using Quiet[]."];
             ApplyCircuit[qureg, Subscript[Damp,qb][prob]];
@@ -602,7 +716,10 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Message[ApplyCircuitDerivs::error, "The function CalcQuregDerivs[] is deprecated, though has still been attemptedly performed. In future, please use ApplyCircuitDerivs[], or temporarily hide this message using Quiet[]."];
             ApplyCircuitDerivs[initQureg, circuit, varVals, derivQuregs, workQuregs])
             
-            
+        RetargetCircuit[args___] := (
+            Message[GetCircuitRetargeted::error, "The function RetargetCircuit[] is deprecated, though has still been attemptedly performed. In future, please use GetCircuitRetargeted[], or temporarily hide this message using Quiet[]."];
+            GetCircuitRetargeted[args])
+
 
         GetQuregMatrix[args___] := (
             (* temporarily hide the deprecation notice, so existing code doesn't yet need to be updated *)
@@ -629,42 +746,81 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         
         
         (*
-         * encoding Pauli strings
+         * encoding numerical Pauli strings
          *)
          
-        pauliCodePatt = X|Y|Z|Id;
+        pauliCodePatt = Id|X|Y|Z;
         pauliOpPatt = Subscript[pauliCodePatt, _Integer];
-        pauliTensorPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?Internal`RealValuedNumericQ,{0,1}], pauliOpPatt.. ];
-        
-        areUniqueQubits[qubits_List] :=
-            CountDistinct[qubits] === Length[qubits]
-        
-        isValidPauliString[expr_] := Switch[expr,
-            pauliOpPatt, 
-                True,
-            pauliTensorPatt,
-                areUniqueQubits[Cases[expr, Subscript[_,q_Integer]:>q]],
-            _Plus,
-                AllTrue[expr, (MatchQ[#, pauliTensorPatt]&) ]]
+        pauliProdPatt = Verbatim[Times][pauliOpPatt..];
+        numericCoeffPauliProdPatt = pauliOpPatt | Verbatim[Times][ Repeated[_?Internal`RealValuedNumericQ,{0,1}], pauliOpPatt.. ];
+
+        getNumQubitsInPauliString[expr_] :=
+            1 + Max @ Cases[expr, Subscript[pauliCodePatt, q_Integer] :> q, {0,Infinity}]
+
+        isValidNumericPauliString[expr_] := 
+            Switch[expr,
+                pauliOpPatt, 
+                    Last[expr] >= 0,
+                numericCoeffPauliProdPatt,
+                    With[
+                        {qubits = Cases[expr, Subscript[pauliCodePatt, q_Integer] :> q]},
+                        And[
+                            And @@ (IntegerQ /@ qubits),
+                            And @@ NonNegative[qubits],
+                            DuplicateFreeQ[qubits]
+                        ]
+                    ],
+                _Plus,
+                    AllTrue[expr, isValidNumericPauliString],
+                _,
+                    False
+            ]
 
         (* X1 *)
-        getEncodedPauliString[ Subscript[op:pauliCodePatt, q_Integer] ] := 
+        getEncodedNumericPauliString[ Subscript[op:pauliCodePatt, q_Integer] ] := 
             {{1}, {getOpCode@op}, {q}, {1}}
         (* .1 X1 *)
-        getEncodedPauliString[ Verbatim[Times][c:_?NumericQ, p:pauliOpPatt.. ] ] := 
+        getEncodedNumericPauliString[ Verbatim[Times][c:_?NumericQ, p:pauliOpPatt.. ] ] := 
             {{c}, getOpCode /@ {p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
         (* X1 X2 *)
-        getEncodedPauliString[ Verbatim[Times][p:pauliOpPatt.. ] ] :=
+        getEncodedNumericPauliString[ Verbatim[Times][p:pauliOpPatt.. ] ] :=
             {{1}, getOpCode /@ {p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
         (* .1 X1 X2 *)
-        getEncodedPauliString[ p:pauliTensorPatt ] :=
+        getEncodedNumericPauliString[ p:numericCoeffPauliProdPatt ] :=
             {p[[1]], getOpCode /@ Rest[List@@p][[All,1]], Rest[List@@p][[All,2]], Length[p]-1}
         (* .5 X1 X2 + X1 X2 + X1 + .5 X1 *)
-        getEncodedPauliString[ s_Plus ] /; AllTrue[List@@s, MatchQ[pauliTensorPatt]] :=
-            Join @@@ Transpose[getEncodedPauliString /@ (List @@ s)]
+        getEncodedNumericPauliString[ s_Plus ] /; AllTrue[List@@s, MatchQ[numericCoeffPauliProdPatt]] :=
+            Join @@@ Transpose[getEncodedNumericPauliString /@ (List @@ s)]
         (* 0.` X1 ... *)
-        getEncodedPauliString[ s:Verbatim[Plus][ 0.`, pauliTensorPatt..] ] :=
-            getEncodedPauliString @ s[[2;;]]
+        getEncodedNumericPauliString[ s:Verbatim[Plus][ 0.`, numericCoeffPauliProdPatt..] ] :=
+            getEncodedNumericPauliString @ s[[2;;]]
+
+
+
+        (*
+         * recognising symbolic Pauli strings
+         *)
+         
+        symbolicCoeffPauliProdPatt = pauliOpPatt | Verbatim[Times][___, pauliOpPatt, ___];
+
+        isValidSymbolicPauliString[expr_] := 
+            Switch[expr,
+                pauliOpPatt, 
+                    Last[expr] >= 0,
+                symbolicCoeffPauliProdPatt,
+                    With[
+                        {qubits = Cases[expr, Subscript[pauliCodePatt, q_Integer] :> q]},
+                        And[
+                            And @@ (IntegerQ /@ qubits),
+                            And @@ NonNegative[qubits],
+                            DuplicateFreeQ[qubits]
+                        ]
+                    ],
+                _Plus,
+                    AllTrue[expr, isValidSymbolicPauliString],
+                _,
+                    False
+            ]
         
         
         
@@ -914,7 +1070,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     
         ApplyCircuitDerivs[___] := invalidArgError[ApplyCircuitDerivs]  
         
-        CalcExpecPauliStringDerivs[initQureg_Integer, circuit_?isCircuitFormat, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, paulis_?isValidPauliString, workQuregs:{___Integer}:{}] :=
+        CalcExpecPauliStringDerivs[initQureg_Integer, circuit_?isCircuitFormat, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, paulis_?isValidNumericPauliString, workQuregs:{___Integer}:{}] :=
             Module[
                 {ret, encodedCirc, encodedDerivTerms},
                 (* encode deriv circuit for backend, throwing any parsing errors *)
@@ -927,7 +1083,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     initQureg, workQuregs,
                     unpackEncodedCircuit @ encodedCirc, 
                     unpackEncodedDerivCircTerms @ encodedDerivTerms,
-                    Sequence @@ getEncodedPauliString[paulis]]]
+                    Sequence @@ getEncodedNumericPauliString[paulis]]]
 
         CalcExpecPauliStringDerivs[initQureg_Integer, circuit_?isCircuitFormat, varVals:{(_ -> _?Internal`RealValuedNumericQ) ..}, hamilQureg_Integer, workQuregs:{___Integer}:{}] :=
             Module[
@@ -1090,31 +1246,59 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         	]
         SetQuregMatrix[___] := invalidArgError[SetQuregMatrix]
         
-        SetQuregToPauliString[qureg_Integer, hamil_?isValidPauliString] :=
-            SetQuregToPauliStringInternal[qureg, Sequence @@ getEncodedPauliString[hamil]]
+        SetQuregToPauliString[qureg_Integer, hamil_?isValidNumericPauliString] :=
+            SetQuregToPauliStringInternal[qureg, Sequence @@ getEncodedNumericPauliString[hamil]]
         SetQuregToPauliString[___] := invalidArgError[SetQuregToPauliString]
         
+
         
         (*
-         * Pauli strings
+         * Numeric Pauli strings
          *)
 
         invalidPauliScalarError[caller_] := (
             Message[caller::error, "The Pauli string contains a scalar. Perhaps you meant to multiply it onto an identity (Id) operator."]; 
             $Failed)
             
-        CalcExpecPauliString[qureg_Integer, paulis_?isValidPauliString, workspace_Integer] :=
-            CalcExpecPauliStringInternal[qureg, workspace, Sequence @@ getEncodedPauliString[paulis]]
+
+        CalcExpecPauliString[qureg_Integer, paulis_?isValidNumericPauliString, workspace_Integer] :=
+            CalcExpecPauliStringInternal[qureg, workspace, Sequence @@ getEncodedNumericPauliString[paulis]]
         CalcExpecPauliString[_Integer, Verbatim[Plus][_?NumericQ, ___], _Integer] := 
             invalidPauliScalarError[CalcExpecPauliString]
         CalcExpecPauliString[___] := invalidArgError[CalcExpecPauliString]
 
-        ApplyPauliString[inQureg_Integer, paulis_?isValidPauliString, outQureg_Integer] :=
-            ApplyPauliStringInternal[inQureg, outQureg, Sequence @@ getEncodedPauliString[paulis]]
+
+        ApplyPauliString[inQureg_Integer, paulis_?isValidNumericPauliString, outQureg_Integer] :=
+            ApplyPauliStringInternal[inQureg, outQureg, Sequence @@ getEncodedNumericPauliString[paulis]]
         ApplyPauliString[_Integer, Verbatim[Plus][_?NumericQ, ___], _Integer] := 
             invalidPauliScalarError[ApplyPauliString]
         ApplyPauliString[___] := invalidArgError[ApplyPauliString]
+
+
+        CalcPauliStringMinEigVal[paulis_?isValidNumericPauliString, MaxIterations -> its_Integer] := With[
+            {matr = CalcPauliExpressionMatrix[paulis]},
+            - First @ Eigenvalues[- matr, 1, Method -> {"Arnoldi", MaxIterations -> its, "Criteria" -> "RealPart"}]]
+        CalcPauliStringMinEigVal[paulis_?isValidNumericPauliString] :=
+            CalcPauliStringMinEigVal[paulis, MaxIterations -> 10^5]
+        CalcPauliStringMinEigVal[___] := invalidArgError[CalcPauliStringMinEigVal]
         
+
+        CalcPauliStringMatrix[paulis_?isValidNumericPauliString] := With[
+            {pauliCodes = getEncodedNumericPauliString[paulis]},
+            {elems = CalcPauliStringMatrixInternal[1+Max@pauliCodes[[3]], Sequence @@ pauliCodes]},
+            If[elems === $Failed, elems, 
+                (#[[1]] + I #[[2]])& /@ Partition[elems,2] // Transpose]]
+        CalcPauliStringMatrix[Verbatim[Plus][_?NumericQ, ___]] :=
+            invalidPauliScalarError[CalcPauliStringMatrix]
+        CalcPauliStringMatrix[___] := invalidArgError[CalcPauliStringMatrix]
+        
+
+
+        (*
+         * Symbolic Pauli strings
+         *)
+
+
         getFullHilbertPauliMatrix[numQ_][Subscript[s_,q_]] := Module[
         	{m=ConstantArray[SparseArray @ IdentityMatrix[2], numQ]},
         	m[[q+1]] = SparseArray @ PauliMatrix[s /. {Id->0, X->1,Y->2,Z->3}];
@@ -1134,35 +1318,30 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             {nQb = Max[1 + Cases[{hFlat}, Subscript[(Id|X|Y|Z), q_]:>q, Infinity]]},
             CalcPauliExpressionMatrix[hFlat, nQb]]
         CalcPauliExpressionMatrix[___] := invalidArgError[CalcPauliExpressionMatrix]
-        
-        CalcPauliStringMinEigVal[paulis_?isValidPauliString, MaxIterations -> its_Integer] := With[
-            {matr = CalcPauliExpressionMatrix[paulis]},
-            - First @ Eigenvalues[- matr, 1, Method -> {"Arnoldi", MaxIterations -> its, "Criteria" -> "RealPart"}]]
-        CalcPauliStringMinEigVal[paulis_?isValidPauliString] :=
-            CalcPauliStringMinEigVal[paulis, MaxIterations -> 10^5]
-        CalcPauliStringMinEigVal[___] := invalidArgError[CalcPauliStringMinEigVal]
-        
-        CalcPauliStringMatrix[paulis_?isValidPauliString] := With[
-            {pauliCodes = getEncodedPauliString[paulis]},
-            {elems = CalcPauliStringMatrixInternal[1+Max@pauliCodes[[3]], Sequence @@ pauliCodes]},
-            If[elems === $Failed, elems, 
-                (#[[1]] + I #[[2]])& /@ Partition[elems,2] // Transpose]]
-        CalcPauliStringMatrix[Verbatim[Plus][_?NumericQ, ___]] :=
-            invalidPauliScalarError[CalcPauliStringMatrix]
-        CalcPauliStringMatrix[___] := invalidArgError[CalcPauliStringMatrix]
-        
-        GetPauliStringFromCoeffs[addr_String] :=
-            Plus @@ (#[[1]] If[ 
-                    AllTrue[ #[[2;;]], PossibleZeroQ ],
-                    Subscript[Id, 0],
-                    Times @@ MapThread[
-                    (   Subscript[Switch[#2, 0, Id, 1, X, 2, Y, 3, Z], #1 - 1] /. 
-                        Subscript[Id, _] ->  Sequence[] & ), 
-                        {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
-                    ]
-                ] &) /@ ReadList[addr, Number, RecordLists -> True];
-        GetPauliStringFromCoeffs[___] := invalidArgError[GetPauliStringFromCoeffs]
-        
+
+
+        GetPauliStringOverlap[a_?isValidSymbolicPauliString, b_?isValidSymbolicPauliString] :=
+            Module[
+                {aInds,bInds, aAssoc,bAssoc, overlap},
+                {aInds, bInds} = GetPauliStringReformatted[#, "Index"]& /@ {a,b};
+
+                (* handle when a (or b) was a single unweighted product *)
+                If[Head[aInds] === Integer, aInds = {{aInds,1}}];
+                If[Head[bInds] === Integer, bInds = {{bInds,1}}];
+
+                (* pre-sum duplicated terms in each string *)
+                aAssoc = Merge[Rule @@@ aInds, Total];
+                bAssoc = Merge[Rule @@@ bInds, Total];
+
+                (* conj-multiply common strings between each list *)
+                overlap = Merge[KeyIntersection @ {aAssoc, bAssoc}, #[[2]] Conjugate @ #[[1]] &];
+
+                (* and return the result as a Pauli string *)
+                Total @ KeyValueMap[#2 GetPauliString @ #1 &, overlap]
+            ]
+        GetPauliStringOverlap[___] := invalidArgError[GetPauliStringOverlap]
+
+
         GetRandomPauliString[
             numQubits_Integer?Positive, numTerms:(_Integer?Positive|Automatic|All):Automatic, 
             {minCoeff_?Internal`RealValuedNumericQ, maxCoeff_?Internal`RealValuedNumericQ}
@@ -1192,8 +1371,286 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetRandomPauliString[numQubits_Integer?Positive, numTerms:(_Integer?Positive|Automatic|All):Automatic] :=
             GetRandomPauliString[numQubits, numTerms, {-1,1}]
         GetRandomPauliString[___] := invalidArgError[GetRandomPauliString]
+
+
+
+        (*
+         * Augmenting Pauli strings
+         *)
+
+        GetPauliStringRetargeted[str_?isValidSymbolicPauliString, map_] := 
+            Enclose[
+                ReplaceAll[str, Subscript[p:pauliCodePatt, q_] :> Subscript[p, q /. map]] // ConfirmQuiet,
+                Function[{failObj},
+                    Message[GetPauliStringRetargeted::error, "Invalid rules caused the below ReplaceAll error:"]; 
+                    ReleaseHold @ failObj @ "HeldMessageCall";
+                    $Failed]]
+
+        GetPauliStringRetargeted[___] := invalidArgError[GetPauliStringRetargeted]
+
+
+
+        (*
+         * Creating Pauli strings from other structures
+         *)
+
+
+        optionalNumQbPatt = _Integer?Positive|PatternSequence[];
+
+        getPauliStringFromAddress[addr_String, removeIds_:True] :=
+            Enclose[
+                ConfirmQuiet[
+                    Plus @@ (#[[1]] If[ 
+                            AllTrue[ #[[2;;]], PossibleZeroQ ],
+                            If[removeIds,
+                                Subscript[Id, 0],
+                                Product[Subscript[Id,q], {q,0,Length@#-2}]
+                            ],
+                            Times @@ MapThread[
+                            (   Subscript[Switch[#2, 0, Id, 1, X, 2, Y, 3, Z], #1 - 1] /. 
+                                If[removeIds, Subscript[Id, _] ->  Sequence[], {}] & ), 
+                                {Range @ Length @ #[[2 ;;]], #[[2 ;;]]}
+                            ]
+                        ] &) /@ ReadList[addr, Number, RecordLists -> True]],
+                Function[{failObj},
+                    Message[GetPauliString::error, "Parsing the file failed due to the below error:"];
+                    ReleaseHold @ failObj @ "HeldMessageCall";
+                    $Failed]]
+
+        getPauliStringFromAddress[addr_String, numQb_Integer, removeIds:True] :=
+            getPauliStringFromAddress[addr, removeIds]
+
+        getPauliStringFromAddress[addr_String, numQbOut_Integer, removeIds:False] := With[
+            {pauliStr = Check[getPauliStringFromAddress[addr, removeIds], Return @ $Failed]},
+            {strNumQb = getNumQubitsInPauliString[pauliStr]},
+            If[ numQbOut < strNumQb,
+                Message[GetPauliString::error, 
+                    "The specified number of qubits (" <> ToString[numQbOut] <> ") was fewer than that " <>
+                    "encoded in the file (" <> ToString[strNumQb] <> ")."];
+                Return @ $Failed];
+            If[numQbOut === strNumQb,
+                Return @ pauliStr];
+            Expand[ Product[Subscript[Id,q], {q,strNumQb,numQbOut-1}] * pauliStr ]
+        ]
+
+
+        getNthPauliTensor[n_, numQubits_] :=
+            PadLeft[IntegerDigits[n,4], numQubits, 0]
+            
+        getNthPauliTensorMatrix[n_, 1] /; n < 4 :=
+            PauliMatrix[n]
+        getNthPauliTensorMatrix[n_, numQubits_] /; n < 4^numQubits :=
+            KroneckerProduct @@ PauliMatrix /@ getNthPauliTensor[n, numQubits]
+            
+        getNthPauliTensorSymbols[0, numQubits_, removeIds_:True] :=
+            If[removeIds,
+                Subscript[Id, numQubits-1],
+                Times @@ (Subscript[Id, #]& /@ Range[0,numQubits-1])
+            ]
+        getNthPauliTensorSymbols[n_, numQubits_, removeIds_:True] :=
+            Times @@ (MapThread[Subscript, {
+                getNthPauliTensor[n, numQubits] /. {0->Id,1->X,2->Y,3->Z}, 
+                Reverse @ Range[numQubits] - 1}] /. If[removeIds, Subscript[Id, _] -> Nothing, {}])
+
+        isPowerOfTwoSquareMatrix[m_] := 
+            And[SquareMatrixQ @ m, BitAnd[Length@m, Length@m - 1] === 0]
+
+        getPauliStringFromMatrix[m_?isPowerOfTwoSquareMatrix, removeIds_:True] := 
+            getPauliStringFromMatrix[m, Log2 @ Length @ m, removeIds]
+
+        getPauliStringFromMatrix[m_?isPowerOfTwoSquareMatrix, nQbOut_Integer, removeIds_:True] := Module[
+            {nQbMatr, coeffs},
+            nQbMatr = Log2 @ Length @ m;
+            If[nQbOut < nQbMatr,
+                Message[GetPauliString::error, 
+                    "The specified number of qubits (" <> ToString[nQbOut] <> ") was fewer than that " <>
+                    "suggested (" <> ToString[nQbMatr] <> ") by the matrix's dimension."];
+                Return @ $Failed];
+            coeffs =  1/2^nQbMatr Table[
+                Tr[getNthPauliTensorMatrix[i,nQbMatr] . m],  
+                {i, 0, 4^nQbMatr - 1}];
+            coeffs . Table[getNthPauliTensorSymbols[n,nQbOut,removeIds], {n, 0, 4^nQbMatr-1}]]
+
+        getPauliStringFromMatrix[___] := (
+            Message[GetPauliString::error, "Matrix must be square with a power-of-2 number of rows and columns."];
+            $Failed)
         
+
+        getPauliStringFromIndex[ind_Integer, removeIds_:True] :=
+            getPauliStringFromIndex[ind, If[ind <= 0, 1, 1 + Floor[Log[4, ind]]], removeIds]
+
+        getPauliStringFromIndex[ind_Integer, numPaulis_Integer, removeIds_:True] := With[
+            {maxInd = 4^numPaulis - 1},
+
+            If[ind < 0,
+                Message[GetPauliString::error, "Index must be positive or zero."];
+                Return @ $Failed];
+
+            If[ind > maxInd, 
+                Message[GetPauliString::error, 
+                    "The given index (" <> ToString[ind] <> ") exceeds the maximum possible (" <> 
+                    ToString[maxInd] <> " = 4^" <> ToString[numPaulis] <> "-1) for the given " <>
+                    "number of Pauli operators (" <> ToString[numPaulis] <> ")."]; 
+                Return @ $Failed];
+
+            getNthPauliTensorSymbols[ind, numPaulis, removeIds]
+        ]
+
+
+        getPauliStringFromDigits[digits_List, nQb:optionalNumQbPatt, removeIds_:True] :=
+            If[
+                And[ And @@ GreaterEqualThan[0] /@ digits, And @@ LessThan[4] /@ digits ],
+                getPauliStringFromIndex[FromDigits[digits, 4], nQb, removeIds],
+                Message[GetPauliString::error, "Each individual digit must be one of 0 (denoting Id), 1 (X), 2 (Y) or 3 (Z)."];
+                $Failed
+            ]
+
+
+        Options[GetPauliString] = {
+            "RemoveIds" -> Automatic
+        }
+
+        (* decide whether to automatically remove Ids from returned product (i.e. whether numPaulis was specified) *)
+        shouldRemovePauliStringIds[opts:OptionsPattern[GetPauliString]] :=
+            OptionValue["RemoveIds"] /. Automatic->True
+        shouldRemovePauliStringIds[numPaulis_Integer, opts:OptionsPattern[GetPauliString]] :=
+            OptionValue["RemoveIds"] /. Automatic->False
+
+        (* catching a specific invalid empty-target list case, which Mathematica otherwise accepts as a valid option list *)
+        GetPauliString[_String|_?MatrixQ|_Integer, OrderlessPatternSequence[{}, nQb:optionalNumQbPatt], opts___] := (
+            Message[GetPauliString::error, "Optional list of target qubits must not be empty."];
+            $Failed)
+
+        (* accept files, matrices or basis indices, and an optional numPaulis specifier *)
+        GetPauliString[address_String, numPaulis:optionalNumQbPatt, opts:OptionsPattern[]] :=
+            getPauliStringFromAddress[address, numPaulis, shouldRemovePauliStringIds[numPaulis, opts]]
+
+        GetPauliString[matrix_?MatrixQ, numPaulis:optionalNumQbPatt, opts:OptionsPattern[]] :=
+            getPauliStringFromMatrix[matrix, numPaulis, shouldRemovePauliStringIds[numPaulis, opts]]
+
+        GetPauliString[index_Integer, numPaulis:optionalNumQbPatt, opts:OptionsPattern[]] :=
+            getPauliStringFromIndex[index, numPaulis, shouldRemovePauliStringIds[numPaulis, opts]]
+
+        GetPauliString[{digits__Integer}, numPaulis:optionalNumQbPatt, opts:OptionsPattern[]] :=
+            If[ Length@{numPaulis}===1 && numPaulis<Length@{digits},
+                Message[GetPauliString::error, "The overriden number of qubits was fewer than the number of given digits."];
+                    Return @ $Failed,
+                getPauliStringFromDigits[{digits}, numPaulis, shouldRemovePauliStringIds[numPaulis, opts]]]
+
+        (* optionally remap the returned Pauli string to a custom set of targets *)
+        GetPauliString[obj:(_String|_?MatrixQ|_Integer|{__Integer}), OrderlessPatternSequence[targs:{___Integer}, nQb:optionalNumQbPatt], opts___] :=
+            Module[
+                {pauliStr, numQbInStr, map},
+
+                (* partially validate targs *)
+                If[ Not @ AllTrue[targs, NonNegative] || Not @ DuplicateFreeQ[targs],
+                    Message[GetPauliString::error, "The list of target qubits must be non-negative and unique."];
+                    Return @ $Failed
+                ];
+
+                (* produce Pauli string with indices from 0, possibly enlarged by nQb *)
+                pauliStr = Check[GetPauliString[obj, nQb, opts], Return @ $Failed];
+                numQbInStr = getNumQubitsInPauliString[pauliStr];
+
+                (* require user gave precisely the right number of targets *)
+                If[ Length[targs] =!= numQbInStr,
+                    Message[GetPauliString::error, 
+                        "A different number of target qubits was given (" <> ToString@Length@targs <> 
+                        ") than exists in the Pauli string (" <> ToString@numQbInStr <> ")."];
+                    Return @ $Failed];
+
+                (* modify the Pauli string to the users target qubits *)
+                map = MapThread[Rule, {Range[numQbInStr]-1, targs}];
+                GetPauliStringRetargeted[pauliStr, map]
+            ]
+
+        GetPauliString[___] := invalidArgError[GetPauliString]
+
+
+
+        (*
+         * Converting Pauli strings between formats
+         *)
         
+        separatePauliStringIntoProdsAndCoeffs[pauli:pauliOpPatt] :=
+            {{pauli, 1}}
+
+        separatePauliStringIntoProdsAndCoeffs[prod:Verbatim[Times][___, pauliOpPatt, ___]] :=
+            {{
+                Times @@ Cases[prod, pauliOpPatt],
+                Times @@ Cases[prod, Except @ pauliOpPatt]
+            }}
+
+        separatePauliStringIntoProdsAndCoeffs[sum_Plus] :=
+            Join @@ (separatePauliStringIntoProdsAndCoeffs /@ List @@ sum)
+
+
+        getIndexOfPauliString[ Subscript[s:pauliCodePatt, q_Integer?NonNegative] ] :=
+            (s /. {Id->0,X->1,Y->2,Z->3}) * 4^q
+
+        getIndexOfPauliString[ prod:pauliProdPatt?isValidSymbolicPauliString ] :=
+            Total[getIndexOfPauliString /@ List @@ prod]
+
+        getIndexOfPauliString[ string_?isValidSymbolicPauliString ] := 
+            MapAt[getIndexOfPauliString, separatePauliStringIntoProdsAndCoeffs[string], {All, 1}]
+
+
+        getDigitsOfPauliString[ prod:(pauliOpPatt|pauliProdPatt)?isValidSymbolicPauliString, numQubits_  ] :=
+            getNthPauliTensor[getIndexOfPauliString @ prod, numQubits];
+
+        getDigitsOfPauliString[ string_?isValidSymbolicPauliString, numQubits_  ] := 
+            MapAt[getDigitsOfPauliString[#,numQubits]&, separatePauliStringIntoProdsAndCoeffs[string], {All, 1}]
+
+        getDigitsOfPauliString[ string_?isValidSymbolicPauliString ] :=
+            getDigitsOfPauliString[string, getNumQubitsInPauliString @ string]
+
+
+        getKroneckerFormOfPauliString[ prod:(pauliOpPatt|pauliProdPatt)?isValidSymbolicPauliString, numQubits_ ] :=
+            CircleTimes @@ {Id,X,Y,Z}[[ getDigitsOfPauliString[prod,numQubits] + 1 ]]
+
+        getKroneckerFormOfPauliString[ string_?isValidSymbolicPauliString, numQubits_ ] := 
+            With[
+                {prods = separatePauliStringIntoProdsAndCoeffs[string]},
+                MapAt[(getKroneckerFormOfPauliString[#,numQubits]&), prods, {All, 1}]]
+
+        getKroneckerFormOfPauliString[ string_?isValidSymbolicPauliString ] :=
+            getKroneckerFormOfPauliString[string, getNumQubitsInPauliString @ string]
+
+
+        getCompactStringFormOfPauliString[ prod:(pauliOpPatt|pauliProdPatt)?isValidSymbolicPauliString, numQubits_ ] :=
+            With[
+                {kron = Check[getKroneckerFormOfPauliString[prod, numQubits], Return[$Failed,With]]},
+                StringReplace[StringJoin @@ ToString /@ kron, "Id" -> "I"]]
+
+        getCompactStringFormOfPauliString[ string_?isValidSymbolicPauliString, numQubits_ ] :=
+            With[
+                {prods = separatePauliStringIntoProdsAndCoeffs[string]},
+                MapAt[(getCompactStringFormOfPauliString[#,numQubits]&), prods, {All, 1}]]
+        
+        getCompactStringFormOfPauliString[ string_?isValidSymbolicPauliString ] :=
+            getCompactStringFormOfPauliString[string, getNumQubitsInPauliString @ string]
+
+
+        GetPauliStringReformatted[ string_?isValidSymbolicPauliString, OrderlessPatternSequence[numQubits_Integer?Positive, _String|PatternSequence[]] ] /; 
+            (getNumQubitsInPauliString[string] > numQubits) := (
+                Message[GetPauliStringReformatted::error, "The given Pauli string targeted a larger index qubit than the number of qubits specified."]; 
+                Return @ $Failed)
+
+        GetPauliStringReformatted[ string_?isValidSymbolicPauliString, OrderlessPatternSequence[nQb:optionalNumQbPatt, "Index"] ] :=
+            getIndexOfPauliString[string]  (* nQb isn't used but it's still passable for user convenience *)
+
+        GetPauliStringReformatted[ string_?isValidSymbolicPauliString, OrderlessPatternSequence[nQb:optionalNumQbPatt, "Digits"] ] :=
+            getDigitsOfPauliString[string, nQb]
+
+        GetPauliStringReformatted[ string_?isValidSymbolicPauliString, OrderlessPatternSequence[nQb:optionalNumQbPatt, "Kronecker"] ] :=
+            getKroneckerFormOfPauliString[string, nQb]
+
+        GetPauliStringReformatted[ string_?isValidSymbolicPauliString, OrderlessPatternSequence[nQb:optionalNumQbPatt, "String"] ] :=
+            getCompactStringFormOfPauliString[string, nQb]
+        
+        GetPauliStringReformatted[___] := invalidArgError[GetPauliStringReformatted]
+            
+
         
         (*
          * Analytic and numerical channel decompositions for statevector simulation
@@ -1278,7 +1735,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         sampleExpecPauliStringInner[False, args__] :=
             SampleExpecPauliStringInternal[0, args]
          
-        SampleExpecPauliString[qureg_Integer, channel_?isCircuitFormat, paulis_?isValidPauliString, numSamples:(_Integer|All), {work1_Integer, work2_Integer}, OptionsPattern[]] /; (work1 === work2 === -1 || And[work1 =!= -1, work2 =!= -1]) :=
+        SampleExpecPauliString[qureg_Integer, channel_?isCircuitFormat, paulis_?isValidNumericPauliString, numSamples:(_Integer|All), {work1_Integer, work2_Integer}, OptionsPattern[]] /; (work1 === work2 === -1 || And[work1 =!= -1, work2 =!= -1]) :=
             If[numSamples =!= All && numSamples >= 2^63, 
                 Message[SampleExpecPauliString::error, "The requested number of samples is too large, and exceeds the maximum C long integer (2^63)."]; $Failed,
                 With[{codes = codifyCircuit[channel]},
@@ -1289,8 +1746,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                             OptionValue[ShowProgress],
                             qureg, work1, work2, numSamples /. (All -> -1),
                             unpackEncodedCircuit[codes],
-                            Sequence @@ getEncodedPauliString[paulis]]]]]
-        SampleExpecPauliString[qureg_Integer, channel_?isCircuitFormat, paulis_?isValidPauliString, numSamples:(_Integer|All), opts:OptionsPattern[]] :=
+                            Sequence @@ getEncodedNumericPauliString[paulis]]]]]
+        SampleExpecPauliString[qureg_Integer, channel_?isCircuitFormat, paulis_?isValidNumericPauliString, numSamples:(_Integer|All), opts:OptionsPattern[]] :=
             SampleExpecPauliString[qureg, channel, paulis, numSamples, {-1, -1}, opts]
         SampleExpecPauliString[___] := invalidArgError[SampleExpecPauliString]
         
@@ -1306,7 +1763,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                         Partition[ data[[3]], data[[1]]]}]]]
         SampleClassicalShadow[___] := invalidArgError[SampleClassicalShadow]
     
-        CalcExpecPauliProdsFromClassicalShadow[shadow_List, prods:{__:pauliTensorPatt}, numBatches_Integer:10] := 
+        CalcExpecPauliProdsFromClassicalShadow[shadow_List, prods:{__:numericCoeffPauliProdPatt}, numBatches_Integer:10] := 
             If[
                 Not @ MatchQ[Dimensions[shadow], {nSamps_, 2, nQb_}],
                 (Message[CalcExpecPauliProdsFromClassicalShadow::error, "The classical shadow input must be a list " <>
@@ -1610,8 +2067,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
          
          (* post-processing step to combine Pauli products that have identical symbols and indices... *)
-        getPauliSig[ a: Subscript[(X|Y|Z|Id), _Integer] ] := {a}
-        getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, Subscript[(X|Y|Z|Id), _]]
+        getPauliSig[ a: pauliOpPatt ] := {a}
+        getPauliSig[ Verbatim[Times][t__] ] := Cases[{t}, pauliOpPatt]
         getPauliSig[ _ ] := {}
         (* which works by splitting a sum into groups containing the same Pauli tensor, and simplifying each *)
         factorPaulis[s_Plus] := Total[Simplify /@ Plus @@@ GatherBy[List @@ s, getPauliSig]] /. Complex[0.`, 0.`] -> 0
@@ -1624,7 +2081,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
         SetAttributes[SimplifyPaulis, HoldAll]
         
-        SimplifyPaulis[ a:Subscript[(X|Y|Z|Id), _] ] := 
+        (* below, we deliberately do not constrain indices to be _Integer (ergo avoid pauliOpPatt), to permit symbols *)
+
+        SimplifyPaulis[ a:Subscript[pauliCodePatt, _] ] :=  
             a
 
         SimplifyPaulis[ (a:Subscript[(X|Y|Z), q_])^n_Integer ] /; (n >= 0) :=
@@ -1639,7 +2098,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         	(* pass product (which now contains no powers of pauli expressions) to simplify *)
         	SimplifyPaulis[nc]]
 
-        SimplifyPaulis[ Power[b_, n_Integer] ] /; (Not[FreeQ[b,Subscript[(X|Y|Z|Id), _]]] && n >= 0) :=
+        SimplifyPaulis[ Power[b_, n_Integer] ] /; (Not[FreeQ[b,Subscript[pauliCodePatt, _]]] && n >= 0) :=
         	(* simplify the base, then pass a (non-expanded) product to simplify (to trigger above def) *)
         	With[{s=ConstantArray[SimplifyPaulis[b], n]}, 
         		SimplifyPaulis @@ (Times @@@ Hold[s])]
@@ -1657,7 +2116,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         	(* expand all multiplication into non-commuting; this means ex can be a sum now *)
         	{ex = Distribute[s /. Times -> NonCommutativeMultiply]},
         	(* notation shortcuts *)
-        	{xyz = X|Y|Z, xyzi = X|Y|Z|Id, ncm = NonCommutativeMultiply}, 
+        	{xyz = X|Y|Z, xyzi = pauliCodePatt, ncm = NonCommutativeMultiply}, 
         	(* since ex can now be a sum, after below transformation, factorise *)
         	factorPaulis[
         		ex //. {
@@ -1821,13 +2280,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
          
         (* convert symbolic gate form to {symbol, ctrls, targets} *)
-        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Verbatim[Times][paulis:Subscript[pauliCodePatt, _Integer]..]] ]] := {Join[{R}, {paulis}[[All,1]]], {ctrls}, {paulis}[[All,2]]}
+        getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Verbatim[Times][paulis:pauliOpPatt..]] ]] := {Join[{R}, {paulis}[[All,1]]], {ctrls}, {paulis}[[All,2]]}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][ R[arg_, Subscript[pauli:pauliCodePatt, targ_Integer]] ]] := {{R,pauli}, {ctrls}, {targ}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]]] := {gate, {ctrls}, {targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] := {gate, {},{targs}}
         getSymbCtrlsTargs[Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] := {gate, {}, {targs}}
-        getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:Subscript[pauliCodePatt, _Integer]..]]] := {Join[{R}, {paulis}[[All,1]]], {}, {paulis}[[All,2]]}
+        getSymbCtrlsTargs[R[arg_, Verbatim[Times][paulis:pauliOpPatt..]]] := {Join[{R}, {paulis}[[All,1]]], {}, {paulis}[[All,2]]}
         getSymbCtrlsTargs[R[arg_, Subscript[pauli:(X|Y|Z), targ_Integer]]] := {{R,pauli}, {}, {targ}}
             (* little hack to enable G[x] and Fac[y] in GetCircuitColumns *)
             getSymbCtrlsTargs[G[x_]] := {G, {}, {}}
@@ -2296,7 +2755,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 {legLabels = DeleteDuplicates @ Flatten @ Values @ edgeLabels},
                 {legStyles = If[
                         OptionValue[DistinguishedStyles] === Automatic,
-                        ColorData["Rainbow"] /@ Range[0,1,1/(Length[legLabels]-1)],
+                        ColorData["Rainbow"] /@ Range[0,1,If[Length[legLabels] === 1, 2 (* force single Range *), 1/(Length[legLabels]-1)]],
                         PadRight[OptionValue[DistinguishedStyles], Length[legLabels], OptionValue[DistinguishedStyles]]
                 ]},
                 {edgeStyles = Rule @@@ Transpose[{legLabels, legStyles}]},
@@ -2452,7 +2911,12 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     getAnalGateControls@#, getAnalGateTargets@#, getAnalGateMatrix@#, numQb
                     ]& /@ gates},
                     If[FreeQ[matrices, getAnalGateMatrix],
-                        Dot @@ Reverse @ matrices,
+                        (* handle when matrices is empty list (sometimes GetCircuitSuperoperator returns nothing, like when given only G )*)
+                        If[
+                            Length[matrices] === 0,
+                            matrices,
+                            Dot @@ Reverse @ matrices
+                        ],
                         (Message[CalcCircuitMatrix::error, "Circuit contained an unrecognised or unsupported gate: " <> 
                             ToString @ StandardForm @ First @ Cases[matrices, getAnalGateMatrix[g_] :> g, Infinity]];
                         $Failed)]]]
@@ -2532,10 +2996,10 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             {superops = Flatten @ Replace[circ, {
             (* qubit-agnostic gates *)
                 G[x_] :> Nothing,
-                Fac[x_] :> {Fac[x]},
+                Fac[x_] :> {Fac[x]}, (* this is _not_ Fac[Abs[x^2]] because Fac is not simply x * Id; it only ever left-multiplies *)
             (* unitaries *)
             	(* real gates (self conjugate) *)
-            	Subscript[(g:H|X|Z), q__Integer|{q__Integer}] :> {Subscript[g, q], Subscript[g, shiftInds[q,numQb]]},
+            	Subscript[(g:H|X|Z|Id), q__Integer|{q__Integer}] :> {Subscript[g, q], Subscript[g, shiftInds[q,numQb]]},
             	g:Subscript[P, q__Integer|{q__Integer}][v_] :> {g, Subscript[P, shiftInds[q,numQb]][v]},
             	g:Subscript[SWAP, q1_,q2_] :> {g, Subscript[SWAP, q1+numQb,q2+numQb]},
                 g:Subscript[Ry, q_Integer][x_] :> {g, Subscript[Ry, q+numQb][x]},
@@ -3544,8 +4008,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             
         separateCoeffAndPauliTensor[pauli_Subscript] := {1, pauli}
         separateCoeffAndPauliTensor[prod_Times] := {
-        	Times@@Cases[prod, c:Except[Subscript[(X|Y|Z|Id), _Integer]]:>c],
-        	Times@@Cases[prod, p:Subscript[(X|Y|Z|Id), _Integer]:>p] }
+        	Times@@Cases[prod, c:Except[pauliOpPatt]:>c],
+        	Times@@Cases[prod, p:pauliOpPatt:>p] }
         separateTermsOfPauliHamil[hamil_Plus] := 
         	separateCoeffAndPauliTensor /@ (List @@ hamil)
         separateTermsOfPauliHamil[term_] := 
@@ -3609,41 +4073,10 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
 
         (* 
-         * Front-end functions for converting
-         * gates and matrices into Pauli strings
+         * Front-end functions for getting
+         * generators of operators, in the
+         * Pauli string basis
          *)
-
-        getNthPauliTensor[n_, numQubits_] :=
-            PadLeft[IntegerDigits[n,4], numQubits, 0]
-            
-        getNthPauliTensorMatrix[n_, 1] /; n < 4 :=
-            PauliMatrix[n]
-        getNthPauliTensorMatrix[n_, numQubits_] /; n < 4^numQubits :=
-            KroneckerProduct @@ PauliMatrix /@ getNthPauliTensor[n, numQubits]
-            
-        getNthPauliTensorSymbols[0, numQubits_] :=
-            Subscript[Id, numQubits-1]
-        getNthPauliTensorSymbols[n_, numQubits_] :=
-            Times @@ (MapThread[Subscript, {
-                getNthPauliTensor[n, numQubits] /. {0->Id,1->X,2->Y,3->Z}, 
-                Reverse @ Range[numQubits] - 1}] /. Subscript[Id, _] -> Nothing)
-
-        isPowerOfTwoSquareMatrix[m_] := 
-            And[SquareMatrixQ @ m, BitAnd[Length@m, Length@m - 1] === 0]
-
-        GetPauliStringFromMatrix[m_?isPowerOfTwoSquareMatrix] := With[
-            {nQb = Log2 @ Length @ m},
-            {coeffs =  1/2^nQb Table[
-                Tr[getNthPauliTensorMatrix[i,nQb] . m],  
-                {i, 0, 4^nQb - 1}]},
-            coeffs . Table[getNthPauliTensorSymbols[n,nQb], {n, 0, 4^nQb-1}]]
-
-        GetPauliStringFromMatrix[_] := (
-            Message[GetPauliStringFromMatrix::error, "The input must be a square matrix with power-of-2 dimensions."];
-            $Failed)
-        GetPauliStringFromMatrix[___] := invalidArgError[GetPauliStringFromMatrix]
-
-
 
         (* functions for forceful simplification of a finite set of expressions produced within the below generators *)
         simplifyLogsInGenerator[expr_] := expr /. {
@@ -3712,7 +4145,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 Return @ $Failed];
 
             (* project generator matrix into Pauli strings on smallest qubits *)
-            str = GetPauliStringFromMatrix[matr];
+            str = getPauliStringFromMatrix[matr];
 
             (* remap Pauli string qubits back to original circuit qubits*)
             str /. Subscript[(s:(X|Y|Z)), t__] :> Subscript[s, t /. map]
@@ -3771,28 +4204,28 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Throw["Could not identify qubits in unrecognised gate: " <> ToString @ StandardForm @ g]
 
         (* catch invalid maps with trigger ReplaceAll errors*)
-        RetargetCircuit[_, map_] /; (Head[0 /. map] === ReplaceAll) := 
-            $Failed
+        GetCircuitRetargeted[_, map_] /; (Head[0 /. map] === ReplaceAll) := 
+            Message[GetCircuitRetargeted::error, "Failed to re-target the circuit due to the above ReplaceAll error"];
             
-        RetargetCircuit[circ_List, map_] := With[
+        GetCircuitRetargeted[circ_List, map_] := With[
             {newCirc = Catch[retargetGate[map] /@ circ]},
             If[ Not @ StringQ @ newCirc,
                 newCirc,
-                Message[RetargetCircuit::error, newCirc];
+                Message[GetCircuitRetargeted::error, newCirc];
                 $Failed]]
 
         (* overload to accept single gate; note this restricts to integer qubit formats*)
-        RetargetCircuit[gate_?isGateFormat, map_] :=
-            RetargetCircuit[{gate}, map]
+        GetCircuitRetargeted[gate_?isGateFormat, map_] :=
+            GetCircuitRetargeted[{gate}, map]
 
-        RetargetCircuit[___] := invalidArgError[RetargetCircuit]
+        GetCircuitRetargeted[___] := invalidArgError[GetCircuitRetargeted]
     
 
 
         GetCircuitQubits[gate_?isGateFormat] :=
             GetCircuitQubits @ {gate}
         GetCircuitQubits[circ_?isCircuitFormat] /; Head[circ] === List :=
-            Rest /@ getSymbCtrlsTargs /@ circ // Flatten // DeleteDuplicates // Sort
+            Reverse /@ Rest /@ getSymbCtrlsTargs /@ circ // Flatten // DeleteDuplicates
         GetCircuitQubits[___] := invalidArgError[GetCircuitQubits]
 
 
@@ -3802,9 +4235,124 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             qubits = GetCircuitQubits[circuit];
             If[qubits === $Failed, Return @ $Failed];
             map = MapThread[Rule, {qubits, Range @ Length @ qubits - 1}];
-            {RetargetCircuit[circuit, map], Reverse /@ map}
+            {GetCircuitRetargeted[circuit, map], Reverse /@ map}
         ]
         GetCircuitCompacted[___] := invalidArgError[GetCircuitCompacted]
+
+
+
+        (*
+         * front-end functions for mapping explicit
+         * parameter circuits to symbolic parameterised ones
+        *)
+
+        Options[GetCircuitParameterised] = {
+            "UniqueParameters" -> False,
+            "ExcludeChannels" -> True,
+            "ExcludeGates" -> {}, (* list of patterns *)
+            "ExcludeParameters" -> {} (* list of patterns *)
+        };
+
+        (* don't change excluded gate patterns *)
+        getGateParameterised[_, exclGatesPatt_, _, g_] /; MatchQ[g, exclGatesPatt] :=
+            {g, None}
+
+        isParamInExcludeList[exclParamsPatt_, Subcript[C,__][g_]] :=
+            isParamInExcludeList[exclParamsPatt, g]
+        
+        isParamInExcludeList[exclParamsPatt_, _[x_, ___]] :=
+            MatchQ[x, exclParamsPatt]
+
+        (* don't change excluded arg patterns *)
+        getGateParameterised[r_, _, exclParamsPatt_, g_ ] /; isParamInExcludeList[exclParamsPatt, g] :=
+            {g, None}
+
+        (* re-paramaterise non-controlled gates *)
+        getGateParameterised[r_, _,_, (g:Subscript[Damp|Deph|Depol|Ph|Rx|Ry|Rz, __])[x_]] := 
+            {g[r], x}
+        getGateParameterised[r_, _,_, (g:Fac|G)[x_]] := 
+            {g[r], x}
+        getGateParameterised[r_, _,_, R[x_, p_]] := 
+            {R[r,p], x}
+
+        (* re-param control gates, removing excludes *)
+        getGateParameterised[r_, _, exclParamsPatt_, (c:Subscript[C,__])[g_] ] /; Not @ isParamInExcludeList[exclParamsPatt, g] := 
+            With[
+                {gx = getGateParameterised[r, None,None, g]},
+                {c @ First @ gx, Last @ gx}]
+
+        (* non-param gates are unmodified *)
+        getGateParameterised[r_, _,_, g_] :=
+            {g, None}
+
+        GetCircuitParameterised[gate_?isGateFormat, s_Symbol, opts:OptionsPattern[]] :=
+            GetCircuitParameterised[{gate}, s, opts]
+
+        GetCircuitParameterised[circuit_?isCircuitFormat, s_Symbol, OptionsPattern[]] := Module[
+            {exclGatesPatt,exclParamsPatt, paramInd,outGate,paramVal, outCircuit,outParams, newSymb,newParams,symbSubs},
+
+            (* validate all options are recognised *)
+            Check[ OptionValue @ "ExcludeChannels", Return @ $Failed];
+            If[ Not @ BooleanQ @ OptionValue @ "ExcludeChannels", 
+                Message[GetCircuitParameterised::error, "Option \"ExcludeChannels\" must be True or False"];
+                Return @ $Failed];
+            If[ Not @ BooleanQ @ OptionValue @ "UniqueParameters", 
+                Message[GetCircuitParameterised::error, "Option \"UniqueParameters\" must be True or False"];
+                Return @ $Failed];
+
+            (* build patterns of excluded gates and params *)
+            exclGatesPatt = OptionValue @ "ExcludeGates";
+            exclParamsPatt = OptionValue @ "ExcludeParameters";
+            If[ Head @ exclGatesPatt === List, 
+                exclGatesPatt = Alternatives @@ exclGatesPatt];
+            If[ Head @ exclParamsPatt === List, 
+                exclParamsPatt = Alternatives @@ exclParamsPatt];
+            If[ OptionValue @ "ExcludeChannels", 
+                exclGatesPatt = exclGatesPatt | Subscript[Damp|Deph|Depol,__][_]];
+
+            paramInd = 1;
+            outCircuit = {};
+            outParams = {};
+            Do[
+                (* conditionally insert symbolic param from each gate... *)
+                {outGate, paramVal} = getGateParameterised[
+                    s[paramInd], exclGatesPatt, exclParamsPatt, inGate];
+                AppendTo[outCircuit, outGate];
+
+                (* and if performed, increment the symbolic param counter *)
+                If[paramVal =!= None, AppendTo[outParams, s[paramInd++] -> paramVal]],
+                {inGate, circuit}];
+
+            paramInd = 1;
+            newParams = {};
+            symbSubs = {};
+
+            (* optionally merge duplicate parameter values *)
+            If[ Not @ OptionValue @ "UniqueParameters",
+                Do[
+                    (* by creating a new temp param replacing all duplicates *)
+                    newSymb = TEMPSYMBOL[paramInd++];
+                    AppendTo[newParams, newSymb -> Last @ First @ group];
+
+                    (* and recording how to substitute out the old params *)
+                    AppendTo[symbSubs, Table[oldSymb -> newSymb, {oldSymb, First /@ group}]],
+
+                    (* (enumerate rules with same value substitution) *)
+                    {group, GatherBy[outParams, Last]}
+                ];
+
+                (* re-param circuit to TEMPSYMBOL *)
+                outCircuit = outCircuit /. Flatten @ symbSubs;
+
+                (* re-param circuit and subs back to user symbol*)
+                outCircuit = outCircuit /. TEMPSYMBOL[i_] :> s[i];
+                outParams = newParams /. TEMPSYMBOL[i_] :> s[i];
+            ];
+
+            {outCircuit, outParams}
+        ]
+
+        GetCircuitParameterised[___] := invalidArgError[GetCircuitParameterised]
 
 
 
@@ -4520,6 +5068,742 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ]
 
         RecompileCircuit[___] := invalidArgError[RecompileCircuit]
+
+
+
+        (* 
+         * Front-end functions for converting
+         * gates and circuits between the Z-basis
+         * and Pauli-basis.
+         *)
+
+        getChoiVecFromMatrix[m_] := 
+            Transpose @ {Flatten @ Transpose @ m}
+            
+        getSuperOpInnerProd[bra_, op_, ket_] := 
+            Part[ConjugateTranspose[bra] . op . ket, 1,1]
+
+        getSuperOpPTM[super_?MatrixQ, simpFunc_] := 
+            Module[{d,p},
+                d = Sqrt @ Length @ super;
+                (* todo: can significantly speed this up using sparsity, Hadamard-walsh transform, etc *)
+                p = Table[SparseArray @ getChoiVecFromMatrix @ getNthPauliTensorMatrix[i-1, Log2@d],{i,d^2}];
+                SparseArray @ Table[
+                    (1/d) getSuperOpInnerProd[p[[i]], super, p[[j]]] // simpFunc,
+                    {i,d^2}, {j,d^2}
+                ]
+            ]
+            
+
+        Options[CalcPauliTransferMatrix] = {
+            AssertValidChannels -> True
+        };
+    
+        CalcPauliTransferMatrix[circ_?isCircuitFormat, opts:OptionsPattern[]] :=
+            Enclose[
+                Module[
+                    {simpFlag, qubits, targCirc, compCirc, superMatr, ptMatr},
+
+                     (* trigger option validation (and show error message immediately )*)
+                    simpFlag = OptionValue[AssertValidChannels];
+
+                    (* replace global phase gates with equivalent unitary on arbitrary qubit *)
+                    qubits = GetCircuitQubits[circ] // ConfirmQuiet;
+                    targCirc = circ /. g:G[_] :> Subscript[U, If[qubits==={},0,Min@qubits]] @ CalcCircuitMatrix @ g;
+
+                    (* thereafter ensure circ isn't all non-targeted Fac[] (and similar) gates *)
+                    qubits = GetCircuitQubits[targCirc] // ConfirmQuiet;
+                    If[qubits === {}, Message[CalcPauliTransferMatrix::error, "Circuit must explicitly target at least one qubit."]] // ConfirmQuiet;
+
+                    (* get equivalent circuit acting upon lowest order qubits *)
+                    compCirc = First @ GetCircuitCompacted[targCirc] // ConfirmQuiet;
+
+                    (* compute superator of entire circuit *)
+                    superMatr = SparseArray @ CalcCircuitMatrix[compCirc, AsSuperoperator -> True, opts] // ConfirmQuiet;
+                    If[superMatr === {}, Message[CalcPauliTransferMatrix::error, "Could not compute circuit superoperator."]] // ConfirmQuiet;
+
+                    (* compute PTM from superoperator (and optionally simplify it) **)
+                    ptMatr = getSuperOpPTM[superMatr, If[simpFlag, FullSimplify, Identity]];
+
+                    (* return PTM[] symbol *)
+                    Subscript[PTM, Sequence @@ qubits] @ ptMatr
+                ],
+                (* if any function call above failed... *)
+                Function[{failObj},
+
+                    (* hijack its error messages (note; invalid option error already shown *)
+                    If[
+                        failObj["HeldMessageName"] =!= Hold[OptionValue::nodef],
+                        Message[CalcPauliTransferMatrix::error, failObj["HeldMessageCall"][[1,2]]]
+                    ];
+                    $Failed
+                ]
+            ]
+
+        CalcPauliTransferMatrix[___] := invalidArgError[CalcPauliTransferMatrix]
+
+
+
+        getMapOfPauliIndicesFromPTM[matr_?MatrixQ] :=
+            Table[
+                (i-1) ->
+                With[
+                    {col = matr . SparseArray @ UnitVector[Length[matr], i]},
+                    {inds = Flatten @ SparseArray[col]["NonzeroPositions"]},
+                    Transpose @ {inds - 1, col[[inds]]}],
+                {i, Length[matr]}]
+
+
+        Options[CalcPauliTransferMap] = {
+            AssertValidChannels -> True
+        };
+
+        CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] := (
+            Check[ OptionValue[AssertValidChannels], Return @ $Failed];
+            Subscript[PTMap, q] @@ getMapOfPauliIndicesFromPTM[m] )
+
+        CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] /; 
+            Not[ And@@(NonNegative/@{q}) ] || Not @ DuplicateFreeQ[{q}] := (
+                Message[CalcPauliTransferMap::error, "The PTM target indices were not unique non-negative integers."];
+                $Failed)
+
+        CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] /; 
+            Not @ SquareMatrixQ[m] || Length[m] =!= 4^Length@{q} := (
+                Message[CalcPauliTransferMap::error, "The PTM matrix was not a compatibly-sized square matrix."];
+                $Failed)
+
+        CalcPauliTransferMap[circ_?isCircuitFormat, opts:OptionsPattern[]] := Module[
+            {ptm},
+            Check[ OptionValue[AssertValidChannels], Return @ $Failed];
+
+            ptm = Check[
+                CalcPauliTransferMatrix[circ, FilterRules[{opts}, Options @ CalcPauliTransferMatrix]], 
+                Message[CalcPauliTransferMap::error, "Unable to determine PTM as per the above error."];
+                Return @ $Failed];
+            
+            CalcPauliTransferMap[ptm, FilterRules[{opts}, Options @ CalcPauliTransferMap]]
+        ]
+
+
+
+        (* 
+         * Front-end functions for visualising
+         * Pauli transfer maps
+         *)
+
+        getPTMapGraph[edges_, edgeLabels_, edgeStyles_, vertLabels_,  opts___] :=
+            Graph[
+                edges,
+                opts,
+                EdgeLabels -> edgeLabels,
+                EdgeStyle -> edgeStyles,
+                VertexLabels -> vertLabels,
+                VertexStyle -> White
+            ]
+        
+        getIndexToPauliStrFormFunc[form_, targs_, caller_Symbol] := 
+            Switch[form,
+                "Subscript",
+                    GetPauliStringRetargeted[
+                        GetPauliString[#, Length[targs]],
+                        MapThread[Rule, {Range @ Length @ targs - 1, targs}]] &,
+                "Index",
+                    Identity,
+                "Kronecker",
+                    GetPauliStringReformatted[GetPauliString[#], Length[targs], "Kronecker"] &,
+                "String",
+                    GetPauliStringReformatted[GetPauliString[#], Length[targs], "String"] &,
+                "Hidden",
+                    ("" &),
+                _,
+                    Message[caller::error, "Unrecognised value for option \"PauliStringForm\". See ?" <> ToString@caller]
+            ]
+
+        Options[DrawPauliTransferMap] = {
+            "PauliStringForm" -> "Subscript", (* or "Index", "Kronecker", "String", "Hidden" *)
+            "ShowCoefficients" -> True,
+            "EdgeDegreeStyles" -> Automatic (* or a list of styles *),
+            AssertValidChannels -> True
+        };
+
+        DrawPauliTransferMap[ Subscript[PTMap, q__Integer?NonNegative][rules__], opts:OptionsPattern[{DrawPauliTransferMap,Graph}] ] := Module[
+            {edges, edgeLabels, vertInds, vertFormFunc, vertLabels, vertDegrees, maxDegree, degreeStyles, edgeStyles},
+
+            (* fail immediately if given unrecognised option *)
+            Check[OptionValue["PauliStringForm"], Return @ $Failed];
+
+            (* get {pauliInd -> pauliInd, ...} **)
+            edges = Flatten @ Table[ rule[[1]]->rhs[[1]] , {rule,{rules}}, {rhs,rule[[2]]}];
+            
+            (* get { (pauliInd -> pauliInd) -> coeff, ...} *)
+            edgeLabels = If[
+                OptionValue["ShowCoefficients"],
+                Flatten @ Table[( rule[[1]]->rhs[[1]] ) -> rhs[[2]] , {rule,{rules}}, {rhs,rule[[2]]}],
+                {}];
+            
+            (* get {pauliInd -> vertFormFunc[pauliInd], ... } *)
+            vertInds = DeleteDuplicates @ edges[[All,1]];
+            vertFormFunc = Check[
+                getIndexToPauliStrFormFunc[OptionValue["PauliStringForm"], {q}, DrawPauliTransferMap], 
+                Return @ $Failed];
+            vertLabels = Table[ 
+                With[{label = vertFormFunc@v},
+                    If[label === "", Nothing, v->label]],
+                {v, vertInds}];
+            
+            (* count degree of each edge's FROM node *)
+            vertDegrees = Table[
+                vert -> Count[edges, vert->_],
+                {vert, vertInds}];
+            maxDegree = Max @ vertDegrees[[All, 2]];
+
+            (* accept (and pad) user override of per-degree edge colours *)
+            degreeStyles = If[
+                OptionValue["EdgeDegreeStyles"] === Automatic,
+                ColorData["Pastel"] /@ Range[0, 1, If[maxDegree === 1, 1, 1/(maxDegree-1)]],
+                PadRight[OptionValue["EdgeDegreeStyles"], maxDegree, OptionValue["EdgeDegreeStyles"]]];
+
+            (* assign a style to each edge according to their FROM node degree *)
+            edgeStyles = Table[
+                edge -> degreeStyles[[ First[edge] /. vertDegrees ]],
+                {edge, edges}];
+            
+            (* obtain and return the Graph (is rendered immediately) *)
+            getPTMapGraph[edges, edgeLabels, edgeStyles, vertLabels, Sequence @@ FilterRules[{opts}, Options[Graph]] ]
+        ]
+
+        DrawPauliTransferMap[ ptmOrCirc:(Subscript[PTM,_][_] | _?isCircuitFormat), opts:OptionsPattern[{CalcPauliTransferMap,DrawPauliTransferMap,Graph}] ] :=
+            Module[
+                {map, calcOpts, drawOpts, errFlag=False},
+
+                (* attempt to auto-generate PTM of circuit, passing along CalcPauliTransferMap[] options *)
+                calcOpts = FilterRules[{opts}, Options[CalcPauliTransferMap]];
+                map = Enclose[ 
+                    ConfirmQuiet @ CalcPauliTransferMap[ptmOrCirc, Sequence @@ calcOpts],
+                    ( Message[DrawPauliTransferMap::error, "Failed to automatically obtain the PTMap due to the below error:"]; 
+                      ReleaseHold @ # @ "HeldMessageCall";
+                      errFlag = True; ) & ];
+
+                (* return immediately if PTM generation failed *)
+                If[errFlag, Return @ $Failed];
+
+                (* otherwise recurse, passing along Graph styling options *)
+                drawOpts = FilterRules[{opts}, Options[DrawPauliTransferMap] ~Join~ Options[Graph]];
+                DrawPauliTransferMap[map, Sequence @@ drawOpts]
+            ]
+
+        DrawPauliTransferMap[___] := invalidArgError[DrawPauliTransferMap]
+
+
+
+        (* 
+         * Front-end functions for effecting
+         * Pauli transfer maps upon Pauli strings
+         *)
+
+
+        Options[ApplyPauliTransferMap] = {
+            "CacheMaps" -> "UntilCallEnd" (* or "Forever" or "Never" *)
+        };
+
+        (* ApplyPauliTransferMap additionally accepts all options to CalcPauliTransferMap which is called internally *)
+        applyPTMapOptPatt = OptionsPattern @ {ApplyPauliTransferMap, CalcPauliTransferMap};
+
+        (* signature patterns *)
+        ptmapPatt = Subscript[PTMap, __Integer][__Rule];
+        ptmatrPatt = Subscript[PTM, __Integer][_?SquareMatrixQ];
+        mixedGatesAndMapsPatt = { (_?isGateFormat | ptmatrPatt | ptmapPatt) .. };
+
+        resetCachedPTMaps[] := (
+
+            (* clear all overloads, including the base definition *)
+            Clear[obtainCachedPTMap];
+
+            (* restore the base definition, which ... *)
+            obtainCachedPTMap[compGate_, opts___] := 
+
+                (* computes maps, and saves them as an overload, specific to the options *)
+                obtainCachedPTMap[compGate, opts] =
+                     CalcPauliTransferMap[compGate, Sequence @@ FilterRules[{opts},Options@CalcPauliTransferMap] ]
+        )
+
+        (* immediately call clear to create initial definition *)
+        resetCachedPTMaps[];
+
+        calcAndCachePTMaps[mixed_List, cacheOpt_String, opts___ ] :=
+            Table[
+                Switch[item,
+
+                    (* keep PTMaps, and convert all PTMs to PTMaps*)
+                    ptmapPatt, item,
+                    ptmatrPatt, CalcPauliTransferMap[item],
+
+                    (* but for gates and sub-circuits... *)
+                    _, If[
+                        (* if user requests caching ... *)
+                        MatchQ[cacheOpt, "Forever"|"UntilCallEnd"],
+
+                        (* then cache the compacted parameterised gate's PTMap *)
+                        Module[{comp,rules, paramed,subs, ptmap},
+                            {comp, rules} = GetCircuitCompacted[item]; (* may throw error *)
+                            {paramed, subs} = GetCircuitParameterised[comp, TEMPINTERNALPARAM];
+                            ptmap = obtainCachedPTMap[paramed, opts] /. subs;
+                            First @ GetCircuitRetargeted[ptmap, rules]
+                        ],
+                        (* else compute the map afresh *)
+                        CalcPauliTransferMap[item]]
+                ],
+                {item, mixed}
+            ]
+
+        validatePauliTransferMapOptions[caller_Symbol, applyPTMapOptPatt] := (
+
+            (* validate all options are recognised *)
+            Check[ OptionValue@"CacheMaps", Return @ $Failed];
+
+            (* validate cache setting is valid *)
+            If[Not @ MemberQ[{"Forever", "UntilCallEnd", "Never"}, OptionValue@"CacheMaps"],
+                Message[caller::error, "Option \"CacheMaps\" must be one of \"Forever\", \"UntilCallEnd\" or \"Never\". See ?ApplyPauliTransferMap."]; 
+                Return @ $Failed];
+        )
+
+        getAndValidateAllGatesAsPTMaps[mixed_List, caller_Symbol, opts:applyPTMapOptPatt] :=
+            Module[{cacheOpt=Opt, maps=$Failed},
+                cacheOpt = OptionValue["CacheMaps"]; (* gauranteed not to throw; prior validated *)
+
+                (* optionally pre-clear cache *)
+                If[ cacheOpt === "Never", resetCachedPTMaps[] ];
+                
+                (* attempt to precompute all maps ... *)
+                Enclose[
+                    maps = calcAndCachePTMaps[mixed, cacheOpt, opts] // ConfirmQuiet,
+
+                    (* and abort immediately if any fail, to avoid caching errors *)
+                    ( Message[caller::error, "Could not pre-compute the Pauli transfer maps due to the below error:"]; 
+                      ReleaseHold @ # @ "HeldMessageCall" ) & ];
+
+                (* optionally clear cache (even if failed), then return maps (which might be $Failed) *)
+                If[ cacheOpt === "UntilCallEnd", resetCachedPTMaps[] ];
+                maps
+            ]
+
+
+        applyPTMapToPauliState[inDigits:{__Integer}, Subscript[PTMap, q__][rules__]] := 
+            Module[{numQb,inInd},
+
+                (* extract base-4 index of targeted inDigits *)
+                numQb = Length @ {q};
+                inInd = FromDigits[Reverse @ inDigits[[-{q}-1]], 4];	
+                
+                MapAt[
+                    (* which maps to a list of outInds. For each... *)
+                    Function[{outInd},
+                    
+                        (* replace the targeted inDigits with their mapped values *)
+                        ReplacePart[inDigits,
+                            MapThread[Rule, {Reverse[-{q}-1], IntegerDigits[outInd,4,numQb]}]]],
+                
+                    inInd /. {rules}, {All,1}]
+            ]
+
+        getPauliStringInitStatesForPTMapSim[pauliStr_, maps_List] := 
+            With[
+                (* ensure we use sufficiently many digits to represent the initial pauli products *)
+                {numQb = Max[ getNumQubitsInPauliString @ pauliStr, 1 + (List @@@ maps[[All, 0]])[[All, 2 ;;]] ]},
+                {states = GetPauliStringReformatted[pauliStr, numQb, "Digits"]},
+
+                (* ensure return format is {{pauli, coeff}, ...} even for a single product*)
+                If[ MatchQ[pauliStr, pauliOpPatt|pauliProdPatt], {{states,1}}, states]
+            ]
+
+        ApplyPauliTransferMap[ pauliStr_?isValidSymbolicPauliString, map:ptmapPatt, opts:OptionsPattern[] ] :=
+            (
+                (* we don't actually use the options (they inform PTMap gen), but we still validate them *)
+                Check[ validatePauliTransferMapOptions[ApplyPauliTransferMap, opts], Return @ $Failed];
+
+                (* apply the PTM to each input pauli product ... *)
+                Plus @@ Flatten[ Table[
+
+                    (* multiplying the input and output coefficients *)
+                    inState[[2]] * outState[[2]] * GetPauliString @ outState[[1]], 
+
+                    (* (iterate each input product) *)
+                    {inState, getPauliStringInitStatesForPTMapSim[pauliStr, {map}]},
+
+                    (* (iterate each resulting output product) **)
+                    {outState, applyPTMapToPauliState[inState[[1]], map]}], 1]
+            )
+
+        ApplyPauliTransferMap[ pauliStr_?isValidSymbolicPauliString, maps:{ptmapPatt..}, opts:OptionsPattern[] ] :=
+            (
+                (* we don't use nor pass on the options (they inform PTMap gen), but we still validate them  *)
+                Check[ validatePauliTransferMapOptions[ApplyPauliTransferMap, opts], Return @ $Failed];
+
+                (* apply each map in turn to the growing pauli string, and simplify the end result *)
+                SimplifyPaulis @ Fold[ApplyPauliTransferMap, pauliStr, maps]
+            )
+
+        ApplyPauliTransferMap[ pauliStr_?isValidSymbolicPauliString, mixed:mixedGatesAndMapsPatt, opts:OptionsPattern[] ] := 
+            Module[{maps},
+                (* validate the options *)
+                Check[ validatePauliTransferMapOptions[ApplyPauliTransferMap, opts], Return @ $Failed];
+
+                (* validate and pre-compute all PTMaps, managing all caching *)
+                maps = Check[ getAndValidateAllGatesAsPTMaps[mixed, ApplyPauliTransferMap, opts], Return @ $Failed ];
+
+                (* obtain output pauli string; no options need to be propogated *)
+                ApplyPauliTransferMap[pauliStr, maps]]
+
+        ApplyPauliTransferMap[ pauliStr_, gate_?isGateFormat, opts___ ] :=
+            (* permit passing single gate for user convenience *)
+            ApplyPauliTransferMap[ pauliStr, {gate}, opts ]
+
+        ApplyPauliTransferMap[___] := invalidArgError[ApplyPauliTransferMap]
+
+
+
+        (* 
+         * Front-end functions for obtaining
+         * the full tree evluation of PTMaps
+         * operating upon a Pauli string.
+         *)
+                
+        getSimplePTMapEvaluationGraph[inStates:{ {{__Integer}, _} ..}, maps_List, mergeStates_:True] := 
+            Module[
+                {layers={}, currLayer, newLayer, id=1},
+
+                (* add initial states where non-existent ancestor has id 0 *)
+                AppendTo[layers, Table[{First@s, id++, {{0,Last@s}}}, {s,inStates}]];
+                
+                (* apply each map in-turn to the last layer *)
+                Do[
+                    currLayer = Last @ layers;
+                    
+                    (* label each returned state by the input state which created it *)
+                    newLayer = Table[
+                        {state[[1]], id++, {{currLayer[[i,2]], state[[2]]}}},
+                        {i, Length @ currLayer},
+                        {state, applyPTMapToPauliState[currLayer[[i,1]], map]}
+                    ];
+                    newLayer = Flatten[newLayer, 1];
+                    
+                    (* merge colliding Pauli states, arbitrarily picking one id of each group *)
+                    If[mergeStates,
+                        newLayer = Table[
+                            {group[[1,1]], group[[1,2]], Join @@ group[[All,3]]},
+                            {group, GatherBy[newLayer, First]}]];
+                    
+                    (* record the new layer *)
+                    AppendTo[layers, newLayer],
+                    {map, maps}
+                ];
+                
+                (* return all layers, where layer[[i]] = { 
+                * {paulis, id, {{ancestor,coeff}, {ancestor,coeff},...}, ...  } *)
+                layers
+            ]
+
+        getDetailedPTMapEvaluationGraph[simpleGraph_, include_List:Automatic] := 
+            Module[
+                {data=<||>, states, isIncluded},
+
+                (* currently 'include' is only supplied by internal functions, so
+                 * we don't bother validating compatible combinations *)
+                isIncluded = Function[{key}, Or[include === Automatic, MemberQ[include, key]]];
+
+                (* states[[i]] = {paulis, id, {{ancestor id, coeff}, ...}} *)
+                states = Flatten[simpleGraph, 1];
+
+                (* {id, id, id, ...} *)
+                If[ isIncluded @ "Ids",
+                    data["Ids"] = Flatten @ simpleGraph[[All, All, 2]] ];
+                
+                (* one sublist per layer; { {id,id}, {id,id,id}, ... } *)
+                If[ isIncluded @ "Layers",
+                    data["Layers"] = simpleGraph[[All, All, 2]]];
+
+                (* scalars *)
+                If[ isIncluded @ "NumQubits",
+                    data["NumQubits"] = Length @ First @ First @ states];
+                If[ isIncluded @ "NumNodes",
+                    data["NumNodes"] = Total[Length /@ simpleGraph]];
+                If[ isIncluded @ "NumLeaves",
+                    data["NumLeaves"] = Length @ Last @ simpleGraph];
+                
+                (* <| id -> X0 Y1, ... |> *)
+                If[ isIncluded @ "States",
+                    data["States"] = <|Table[ s[[2]] -> GetPauliString @ s[[1]], {s,states} ]|>];
+
+                (* <| id -> {id,id}, ... |> *)
+                If[ isIncluded @ "Parents",
+                    data["Parents"] = <|Table[ s[[2]] -> s[[3,All,1]] /. 0->Nothing, {s,states} ]|> ];
+                If[ isIncluded @ "Children",
+                    data["Children"] = <|Table[ s[[2]] -> Cases[states, c_?(MemberQ[#[[3,All,1]],s[[2]]]&):>c[[2]]], {s,states} ]|> ];
+
+                (* <| id -> <|id->(expr), id->(expr)|> ... |> *)
+                If[ isIncluded @ "ParentFactors",
+                    data["ParentFactors"] = <|Table[ s[[2]] -> <|Table[Rule@@p, {p,s[[3]]}]|>, {s,states}]|>];
+
+                (* <| id -> 0, id->4, ... |> *)
+                If[ isIncluded  @ "Weights",
+                    data["Weights"] = <|Table[ s[[2]] -> Count[s[[1]], _?Positive], {s,states} ]|> ];
+                If[ isIncluded @ "Indegree",
+                    data["Indegree"] = <|Table[ id -> Length @ data["Parents"] @ id, {id, data["Ids"]} ]|> ];
+                If[ isIncluded @ "Outdegree",
+                    data["Outdegree"] = <|Table[ id -> Length @ data["Children"] @ id, {id, data["Ids"]} ]|> ];
+                
+                (* <| id -> (symbolic expression), ... |> *)
+                If[ isIncluded @ "Coefficients",
+                    data["Coefficients"] = <|Table[ state[[2]]->state[[3,1,2]], {state, First@simpleGraph} ]|>;
+                    Do[
+                        data["Coefficients"][state[[2]]] = Sum[
+                            parent[[2]] * data["Coefficients"][parent[[1]]], 
+                            {parent, state[[3]]}],
+                        {layer, Rest[simpleGraph]},
+                        {state, layer}
+                    ]
+                ];
+                
+                (* one symbolically weighted sum of Pauli strings per layer *)
+                If[ isIncluded @ "Strings",
+                    data["Strings"] = Table[
+                        (data["Coefficients"]/@ids) . (data["States"]/@ids),
+                        {ids, data["Layers"]}]
+                ];
+                
+                (* return *)
+                data
+            ]
+
+        Options[CalcPauliTransferEval] = {
+            "CombineStrings" -> True,
+            "OutputForm" -> "Simple" (* or "Simple" *)
+        };
+
+        (*CalcPauliTransferEval additionally accepts all options to ApplyPauliTransferMap (and its subroutines) which are internally called *)
+        calcPTEvalOptPatt = OptionsPattern @ {CalcPauliTransferEval, Sequence @@ First @ applyPTMapOptPatt};
+
+        validateCalcPauliTransferEvalOptions[caller_Symbol, opts:calcPTEvalOptPatt] := 
+            With[
+                {otherOpts = FilterRules[{opts}, Except @ Options @ CalcPauliTransferEval]},
+
+                (* validate the the PTMap eval options *)
+                Check[ validatePauliTransferMapOptions[caller, Sequence @@ otherOpts], Return @ $Failed];
+
+                (* validate the the CalcPauliTransferEval specific options *)
+                If[ Not @ BooleanQ @ OptionValue @ "CombineStrings",
+                    Message[caller::error, "Option \"CombineStrings\" must be True or False. See ?CalcPauliTransferEval."];
+                    Return @ $Failed ];
+
+                (* validate the OutputForm option *)
+                If[ Not @ MemberQ[{"Simple","Detailed"}, OptionValue @ "OutputForm"],
+                    Message[caller::error, "Option \"OutputForm\" must be \"Detailed\" or \"Simple\". See ?CalcPauliTransferEval."];
+                    Return @ $Failed ];
+            ]
+
+        CalcPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, maps:{ptmapPatt..}, opts:calcPTEvalOptPatt ] := 
+            Module[
+                {inStates, outEval},
+
+                (* validate options (including those for inner functions like CalcPauliTransferMap) *)
+                Check[validateCalcPauliTransferEvalOptions[CalcPauliTransferEval, opts], Return @ $Failed];
+
+                (* compute simple evaluation graph *)
+                inStates = getPauliStringInitStatesForPTMapSim[pauliStr, maps];
+                outEval = getSimplePTMapEvaluationGraph[inStates, maps, OptionValue @ "CombineStrings"];
+
+                (* optionally post-process graph *)
+                If[ OptionValue @ "OutputForm" === "Detailed",
+                    outEval = getDetailedPTMapEvaluationGraph[outEval]];
+
+                outEval
+            ]
+
+        CalcPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, mixed:mixedGatesAndMapsPatt, opts:calcPTEvalOptPatt ] := 
+            Module[{maps,mapGenOpts},
+
+                (* validate CalcPauliTransferEval options, and those needed by subsequent PTMap generation *)
+                Check[validateCalcPauliTransferEvalOptions[CalcPauliTransferEval, opts], Return @ $Failed];
+
+                (* validate and pre-compute all PTMaps, managing all caching *)
+                mapGenOpts = FilterRules[{opts}, Except @ Options @ CalcPauliTransferEval];
+                maps = Check[ getAndValidateAllGatesAsPTMaps[mixed, CalcPauliTransferEval, mapGenOpts], Return @ $Failed ];
+
+                CalcPauliTransferEval[pauliStr, maps, opts]
+            ]
+
+        CalcPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, gate_?isGateFormat, opts:calcPTEvalOptPatt ] :=
+            CalcPauliTransferEval[pauliStr, {gate}, opts]
+
+        CalcPauliTransferEval[___] := invalidArgError[CalcPauliTransferEval]
+
+
+
+        (* 
+         * Front-end functions for rendering
+         * a Pauli transfer evalaution tree
+         *)
+
+        Options[DrawPauliTransferEval] = {
+            "PauliStringForm" -> Automatic, (* or "Subscript", "Index", "Kronecker", "String", "Hidden" *)
+            "ShowCoefficients" -> Automatic, (* or True, False *)
+            "EdgeDegreeStyles" -> Automatic, (* or a list of styles *)
+            "HighlightPathTo" -> {} (* or a weighted sum of Pauli strings, or a list thereof *)
+        };
+
+        (* DrawPauliTransferEval additionally accepts all options to CalcPauliTransferEval and Graph *)
+        drawPTEvalOptPatt = OptionsPattern @ {DrawPauliTransferEval, Sequence @@ First @ calcPTEvalOptPatt, Graph};
+
+        drawPTMapEvaluationGraph[eLabels_, vLabels_, eStyles_, eHighlights_, opts___] := 
+            Graph[
+                eLabels,
+                opts,
+                EdgeStyle -> eStyles,
+                VertexStyle -> White,
+                VertexLabels -> vLabels,
+                GraphHighlight -> eHighlights,
+                GraphLayout -> "LayeredDigraphEmbedding"
+            ]
+
+        getVertexLabelsForPTEval[subscriptStates_, numQubits_Integer, formOpt_String] :=
+            Switch[formOpt,
+                "Hidden", {},
+                "Subscript", subscriptStates,
+                _, MapAt[GetPauliStringReformatted[#,numQubits,formOpt]&, subscriptStates, {All,2}]]
+
+        getAllAncestorEdgesOfNode[parents_Association][id_] := 
+            Flatten @ Table[
+                {parentId -> id, getAllAncestorEdgesOfNode[parents][parentId]},
+                {parentId, parents[id]}
+            ]
+
+        extractCalcPTEvalOptions[ opts___ ] :=
+            Sequence @@ FilterRules[{opts}, Options /@ First @ calcPTEvalOptPatt // Flatten]
+
+        validateDrawPauliTransferEvalOptions[ opts:drawPTEvalOptPatt ] := (
+
+            (* check all options are recognised between all functions in drawPTEvalOptPatt *)
+            Check[ OptionValue @ "PauliStringForm", Return @ $Failed ];
+
+            (* check the options passed on to CalcPauliTransfer eval have valid values *)
+            Check[
+                validateCalcPauliTransferEvalOptions[DrawPauliTransferEval, extractCalcPTEvalOptions @ opts],
+                Return @ $Failed];
+
+            (* check all the options specific to DrawPauliTransferEval are valid *)
+            If[ Not @ MemberQ[{Automatic,True,False}, OptionValue @ "ShowCoefficients"],
+                Message[DrawPauliTransferEval::error, "Option \"ShowCoefficients\" must be Automatic, True or False. See ?DrawPauliTransferEval."];
+                Return @ $Failed];
+
+            If[ Not @ MemberQ[{Automatic,"Hidden","Subscript","Index","Kronecker","String"}, OptionValue @ "PauliStringForm"],
+                Message[DrawPauliTransferEval::error, "Invalid value for option \"PauliStringForm\". See ?DrawPauliTransferEval."];
+                Return @ $Failed];
+
+            If[ Not @ MatchQ[OptionValue @ "HighlightPathTo", (_?isValidSymbolicPauliString|{___?isValidSymbolicPauliString})],
+                Message[DrawPauliTransferEval::error, "Invalid value for option \"HighlightPathTo\". See ?DrawPauliTransferEval."];
+                Return @ $Failed];
+        )
+
+        (* match only Associations with the needed keys and item structures *)
+        detailedPTMapEvalPatt = KeyValuePattern[{
+            "Children" -> Association[(_Integer -> {___Integer}) .. ],
+            "Outdegree" -> Association[(_Integer -> _Integer) .. ],
+            "NumQubits" -> _Integer
+
+            (* additional keys are needed depending on option values; for now we trust they're supplied *)
+        }];
+
+        DrawPauliTransferEval[ eval:detailedPTMapEvalPatt, opts:drawPTEvalOptPatt ] := 
+            Module[
+                {edges,edgesAndLabels, vertexLabels, maxDegree,degreeStyles,edgeStyles, showCoeffs,stateForm, hlStrs,hlLeafIds,hlEdges},
+
+                (* validate options *)
+                Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
+
+                (* { id->id ... } *)
+                edges = Thread /@ Normal @ eval["Children"] // Flatten;
+
+                (* automatically decide whether to show coefficients or state labels.
+                 * This design is flawed; the most common case (user leaves settings 
+                 * on Automatic) will still mean 'eval' contains pre-computed "States"
+                 * and "ParentFactors" even when they won't be shown due to the below
+                 * auto-disable. We should avoid the pointless pre-computation, especially
+                 * because this is likely an expensive scenario when auto-hid! *)
+                showCoeffs = OptionValue @ "ShowCoefficients";
+                stateForm  = OptionValue @ "PauliStringForm";
+                If[showCoeffs === Automatic, showCoeffs = Length[edges] < 50];
+                If[stateForm === Automatic, stateForm = If[
+                    eval["NumLeaves"] * eval["NumQubits"] < 50, "String", "Hidden"]];
+
+                (* optionally { Labeled[id->id, fac] ... } *)
+                edgesAndLabels = If[ Not @ showCoeffs, edges, Table[
+                    Labeled[r, eval["ParentFactors"][Last@r][First@r] ],
+                    {r,edges}]];
+
+                (* { id->X0Y1 or -> XYZ, or etc ... }. Note that "States" might not be present in eval; that's okay! *)
+                vertexLabels = getVertexLabelsForPTEval[Normal @ eval @ "States", eval @ "NumQubits", stateForm];
+
+                (* accept (and pad) user override of per-degree edge colours *)
+                maxDegree = Max @ Values @ eval["Outdegree"];
+                degreeStyles = If[
+                    OptionValue @ "EdgeDegreeStyles" === Automatic,
+                    ColorData["Pastel"] /@ Range[0, 1, If[maxDegree === 1, 1, 1/(maxDegree-1)]],
+                    PadRight[OptionValue @ "EdgeDegreeStyles", maxDegree, OptionValue @ "EdgeDegreeStyles"]];
+
+                (* { (id->id) -> style, ... }*)
+                edgeStyles = Table[
+                    (edge) -> degreeStyles[[ eval["Outdegree"] @ First @ edge ]],
+                    {edge, Thread /@ Normal @ eval @ "Children" // Flatten}];
+
+                (* ensure user-chosen states to highlight is a list (even of one string) *)
+                hlStrs = OptionValue @ "HighlightPathTo";
+                If[Head @ hlStrs =!= List, hlStrs = {hlStrs}];
+
+                (* collect all leaf-nodes with a non-zero overlap with the user string(s) *)
+                hlLeafIds = DeleteDuplicates @ Flatten @ Table[ 
+                    If[ Not @ PossibleZeroQ @ GetPauliStringOverlap[str, eval["States"] @ leafId],
+                        leafId, Nothing],
+                    {str, hlStrs},
+                    {leafId, Last @ eval @ "Layers"}];
+    
+                hlEdges = getAllAncestorEdgesOfNode[eval@"Parents"] /@ hlLeafIds // Flatten // DeleteDuplicates;
+                
+                drawPTMapEvaluationGraph[
+                    edgesAndLabels, vertexLabels, edgeStyles, hlEdges,
+                    Sequence @@ FilterRules[{opts}, Options[Graph]]]
+            ]
+
+        simplePTMapEvalPatt = { { { {__Integer}, _Integer, {{_Integer,_}...} } .. } .. };
+
+        DrawPauliTransferEval[ layers:simplePTMapEvalPatt, opts:drawPTEvalOptPatt ] := 
+            Module[
+                {keys, assoc},
+
+                (* validate options *)
+                Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
+
+                (* compute a simplified 'Detailed' Association containing only the necessary keys *)
+                keys = {"Ids", "NumQubits", "Children", "Outdegree"};
+
+                If[ OptionValue @ "ShowCoefficients" =!= False,
+                    keys = Join[keys, {"ParentFactors"}]];
+
+                If[ OptionValue @ "PauliStringForm" =!= "Hidden",
+                    keys = Join[keys, {"States", "NumLeaves"}]];
+
+                If[ OptionValue @ "HighlightPathTo" =!= {},
+                    keys = Join[keys, {"States", "Parents", "Layers"}]]; (* duplication of "States" is ok *)
+
+                assoc = getDetailedPTMapEvaluationGraph[layers, keys];
+                DrawPauliTransferEval[assoc, opts]
+            ]
+
+        DrawPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, circ:(mixedGatesAndMapsPatt|_?isGateFormat), opts:drawPTEvalOptPatt ] := (
+            Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
+            DrawPauliTransferEval[CalcPauliTransferEval[pauliStr, circ, extractCalcPTEvalOptions @ opts], opts])
+
+        DrawPauliTransferEval[___] := invalidArgError[DrawPauliTransferEval];
+
 
     End[ ]
                                        
