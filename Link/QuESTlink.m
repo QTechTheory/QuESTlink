@@ -781,13 +781,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             {{1}, {getOpCode@op}, {q}, {1}}
         (* .1 X1 *)
         getEncodedNumericPauliString[ Verbatim[Times][c:_?NumericQ, p:pauliOpPatt.. ] ] := 
-            {{c}, getOpCode /@ {p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
+            {{N@c}, getOpCode /@ {p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
         (* X1 X2 *)
         getEncodedNumericPauliString[ Verbatim[Times][p:pauliOpPatt.. ] ] :=
             {{1}, getOpCode /@ {p}[[All,1]], {p}[[All,2]], {Length@{p}[[All,2]]}}
         (* .1 X1 X2 *)
         getEncodedNumericPauliString[ p:numericCoeffPauliProdPatt ] :=
-            {p[[1]], getOpCode /@ Rest[List@@p][[All,1]], Rest[List@@p][[All,2]], Length[p]-1}
+            {N@p[[1]], getOpCode /@ Rest[List@@p][[All,1]], Rest[List@@p][[All,2]], Length[p]-1}
         (* .5 X1 X2 + X1 X2 + X1 + .5 X1 *)
         getEncodedNumericPauliString[ s_Plus ] /; AllTrue[List@@s, MatchQ[numericCoeffPauliProdPatt]] :=
             Join @@@ Transpose[getEncodedNumericPauliString /@ (List @@ s)]
