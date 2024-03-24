@@ -394,7 +394,7 @@ DrawPauliTransferEval accepts all options to Graph[], CalcPauliTransferEval[], D
 \[Bullet] \"HighlightPathTo\" -> pauliString (or a list of Pauli strings) highlights all edges ultimately contributing to the coefficient of the specified final pauliString(s). Symbolically weighted sums of Pauli strings are also accepted, in which case all edges to all non-orthogonal Pauli strings are highlighted.
 \[Bullet] \"CombineStrings\" -> False disables combining incident Pauli strings so that the result is an (likely significantly larger) acyclic tree.
 \[Bullet] \"PauliStringForm\" sets the vertex label format to one of \"String\", \"Hidden\" (these are the defaults depending on graph size), \"Index\", \"Kronecker\", or \"Subscript\". See ?GetPauliStringReformatted.
-\[Bullet] \"ShowCoefficients\" -> True or False explicit shows or hides the PTMap coefficient associated with each edge. The default is Automatic which auto-hides edge labels if there are too many.
+\[Bullet] \"ShowCoefficients\" -> True or False explicitly shows or hides the PTMap coefficient associated with each edge. The default is Automatic which auto-hides edge labels if there are too many.
 \[Bullet] \"EdgeDegreeStyles\" specifies the style of edges from nodes of increasing outdegree. See ?DrawPauliTransferMap.
 \[Bullet] \"CacheMaps\" controls the automatic caching of generated PTMaps. See ?ApplyPauliTransferMap.
 \[Bullet] AssertValidChannels -> False disables the simplification of symbolic Pauli string coefficients, only noticeable when \"ShowCoefficients\"->True. See ?AssertValidChannels.
@@ -2126,9 +2126,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         		(* move scalars to their own element (to clean pauli pattern) *)
         		ncm[r1___, (f:Except[Subscript[xyzi, _]]) (a:Subscript[xyzi, _]) , r2___] :> ncm[f,r1,a,r2],
         		(* map same-qubit adjacent (closest) pauli matrices to their product *)
-        		ncm[r1___, Subscript[(a:xyz), q_],r2:Shortest[___],Subscript[(b:xyz), q_], r3___] :>
-        			If[a === b, ncm[r1,r2,r3,Subscript[Id,q]], With[{c = First @ Complement[List@@xyz, {a,b}]},
-        				ncm[r1, I If[Sort[{a,b}]==={a,b},1,-1] Subscript[c, q], r2, r3]]],
+        		ncm[r1___, Subscript[(a:xyz), q_], r2:Shortest[___],Subscript[(b:xyz), q_], r3___] :>
+        			If[a === b, 
+                        (* XX = YY = ZZ = Id *)
+                        ncm[r1,r2,r3,Subscript[Id,q]],
+                        (* AB = (+-) i C *)
+                        With[{c = First @ Complement[List@@xyz, {a,b}]},
+        				    ncm[r1, I Signature@{a,b,c} Subscript[c, q], r2, r3]]],
                 (* remove superfluous Id's when multiplying onto other paulis on any qubits *)
                 ncm[r1___, Subscript[Id, _], r2___, b:Subscript[xyzi, _], r3___] :>
                     ncm[r1, r2, b, r3],
