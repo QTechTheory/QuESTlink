@@ -195,8 +195,7 @@ SetWeightedQureg[fac1, q1, qOut] modifies qureg qOut to be fac1 * q1. qOut can b
 SetWeightedQureg[fac, qOut] modifies qureg qOut to be fac qOut; that is, qOut is scaled by factor fac."
     SetWeightedQureg::error = "`1`"
     
-    SimplifyPaulis::usage = "SimplifyPaulis[expr] freezes commutation and analytically simplifies the given expression of Pauli operators, and expands it in the Pauli basis. The input expression can include sums, products, powers and non-commuting products of (subscripted) Id, X, Y and Z operators and other Mathematica symbols (including variables defined as Pauli expressions). 
-For example, try SimplifyPaulis[ Subscript[Y,0] (a Subscript[X,0] + b Subscript[Z,0] Subscript[X,1])^3 ].
+    SimplifyPaulis::usage = "SimplifyPaulis[expr] freezes commutation and analytically simplifies the given expression of Pauli operators, and expands it in the Pauli basis. The input expression can include sums, products, non-commuting products, and powers (with nonzero integer exponents) of (subscripted) Id, X, Y and Z operators and other Mathematica symbols (including variables defined as Pauli expressions, and functions thereof). 
 Be careful of performing algebra with Pauli operators outside of SimplifyPaulis[], since Mathematica may erroneously automatically commute them."
     SimplifyPaulis::error = "`1`"
 
@@ -2106,39 +2105,37 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * and the structures of remaining patterns/symbols/expressions can be anything at all.
          *)
         SetAttributes[SimplifyPaulis, HoldAll]
+        SetAttributes[innerSimplifyPaulis, HoldAll]
         
         (* below, we deliberately do not constrain indices to be _Integer (ergo avoid pauliOpPatt), to permit symbols *)
 
-        SimplifyPaulis[ a:Subscript[pauliCodePatt, _] ] :=  
+        innerSimplifyPaulis[ a:Subscript[pauliCodePatt, _] ] :=  
             a
 
-        SimplifyPaulis[ (a:Subscript[(X|Y|Z), q_])^n_Integer ] /; (n >= 0) :=
+        innerSimplifyPaulis[ (a:Subscript[pauliCodePatt, q_])^n_Integer?NonNegative ] :=
         	If[EvenQ[n], Subscript[Id,q], a]
             
-        SimplifyPaulis[ (a:Subscript[Id, q_])^n_Integer ] /; (n >= 0) :=
-            a
-        
-        SimplifyPaulis[ Verbatim[Times][t__] ] := With[
+        innerSimplifyPaulis[ Verbatim[Times][t__] ] := With[
         	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
-        	{nc = SimplifyPaulis /@ (NonCommutativeMultiply @@ (SimplifyPaulis /@ Hold[t]))},
+        	{nc = innerSimplifyPaulis /@ (NonCommutativeMultiply @@ (innerSimplifyPaulis /@ Hold[t]))},
         	(* pass product (which now contains no powers of pauli expressions) to simplify *)
-        	SimplifyPaulis[nc]]
+        	innerSimplifyPaulis[nc]]
 
-        SimplifyPaulis[ Power[b_, n_Integer] ] /; (Not[FreeQ[b,Subscript[pauliCodePatt, _]]] && n >= 0) :=
+        innerSimplifyPaulis[ Power[b_, n_Integer?NonNegative] ] /; Not @ FreeQ[b,Subscript[pauliCodePatt, _]] :=
         	(* simplify the base, then pass a (non-expanded) product to simplify (to trigger above def) *)
-        	With[{s=ConstantArray[SimplifyPaulis[b], n]}, 
-        		SimplifyPaulis @@ (Times @@@ Hold[s])]
+        	With[{s=ConstantArray[innerSimplifyPaulis[b], n]}, 
+        		innerSimplifyPaulis @@ (Times @@@ Hold[s])]
         		
-        SimplifyPaulis[ Plus[t__] ] := With[
+        innerSimplifyPaulis[ Plus[t__] ] := With[
         	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
-        	{s = Plus @@ (SimplifyPaulis /@ (List @@ (SimplifyPaulis /@ Hold[t])))},
+        	{s = Plus @@ (innerSimplifyPaulis /@ (List @@ (innerSimplifyPaulis /@ Hold[t])))},
         	(* combine identical Pauli tensors in the resulting sum *)
         	factorPaulis[s]
         ]
 
-        SimplifyPaulis[ NonCommutativeMultiply[t__] ] := With[
+        innerSimplifyPaulis[ NonCommutativeMultiply[t__] ] := With[
         	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
-        	{s = SimplifyPaulis /@ (NonCommutativeMultiply @@ (SimplifyPaulis /@ Hold[t]))},
+        	{s = innerSimplifyPaulis /@ (NonCommutativeMultiply @@ (innerSimplifyPaulis /@ Hold[t]))},
         	(* expand all multiplication into non-commuting; this means ex can be a sum now *)
         	{ex = Distribute[s /. Times -> NonCommutativeMultiply]},
         	(* notation shortcuts *)
@@ -2167,12 +2164,33 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         	(* finally, restore products (overwriting user non-comms) and simplify scalars *)
         	} /. NonCommutativeMultiply -> Times]]
         	
-        SimplifyPaulis[uneval_] := With[
+        innerSimplifyPaulis[uneval_] := With[
             (* let everything else evaluate (to admit scalars, or let variables be substituted *)
             {eval=uneval},
-            (* and if changed by its evaluation, attempt to simplify the new form *)
-            If[Unevaluated[uneval] === eval, eval, SimplifyPaulis[eval]]]
-            (* your eyes don't deceive you; === is smart enough to check inside Unevaluated! Nice one Stephen! *)
+            Which[
+                (* if evaluation changed expression, attempt to simplify the new form *)
+                Unevaluated[uneval] =!= eval,  (* =!= is smart enough to ignore Unevaluated[], wow! *)
+                    innerSimplifyPaulis[eval],
+                (* if expression is unchanged and contains no paulis, leave it as is *)
+                FreeQ[uneval, Subscript[pauliCodePatt, _]],
+                    uneval,
+                (* if expression is a single (and ergo unchanging) Pauli, permit it *)
+                MatchQ[uneval, Subscript[pauliCodePatt, _]],
+                    uneval,
+                (* otherwise this is an unrecognised Pauli sub-expression *)
+                True,
+                    Message[SimplifyPaulis::error, 
+                        "Input contained the following sub-expression of Pauli operators which could not be simplified: " <> 
+                        ToString @ StandardForm @ uneval];
+                    $Failed]]
+
+        SimplifyPaulis[expr_] :=
+            Enclose[
+                (* immediately abort upon unrecognised sub-expression *)
+                ConfirmQuiet @ innerSimplifyPaulis @ expr,
+                ReleaseHold @ # @ "HeldMessageCall" & ]
+
+        SimplifyPaulis[__] := invalidArgError[SimplifyPaulis]
         
         
         
