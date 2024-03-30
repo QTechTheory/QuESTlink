@@ -305,6 +305,7 @@ See SampleExpecPauliString[] to sample such circuits in order to efficiently app
     SampleExpecPauliString::usage = "SampleExpecPauliString[initQureg, channel, pauliString, numSamples] estimates the expected value of pauliString under the given channel (a circuit including decoherence) upon the state-vector initQureg, through Monte Carlo sampling. This avoids the quadratically greater memory costs of density-matrix simulation, but may need many samples to be accurate.
 SampleExpecPauliString[initQureg, channel, pauliString, All] deterministically samples each channel decomposition once.
 SampleExpecPauliString[initQureg, channel, pauliString, numSamples, {workQureg1, workQureg2}] uses the given persistent working registers to avoid their internal creation and destruction.
+To get a sense of the circuits being sampled, see GetCircuitsFromChannel[]. 
 Use option ShowProgress to monitor the progress of sampling."
     SampleExpecPauliString::error = "`1`"
     
@@ -1785,10 +1786,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                             qureg, work1, work2, numSamples /. (All -> -1),
                             unpackEncodedCircuit[codes],
                             Sequence @@ getEncodedNumericPauliString[paulis]]]]]
+        
         SampleExpecPauliString[qureg_Integer, channel_?isCircuitFormat, paulis_?isValidNumericPauliString, numSamples:(_Integer|All), opts:OptionsPattern[]] :=
             SampleExpecPauliString[qureg, channel, paulis, numSamples, {-1, -1}, opts]
-        SampleExpecPauliString[___] := invalidArgError[SampleExpecPauliString]
         
+        SampleExpecPauliString[___] := invalidArgError[SampleExpecPauliString]
+
+
         SampleClassicalShadow[qureg_Integer, numSamples_Integer] /; (numSamples >= 2^63) := (
             Message[SampleClassicalShadow::error, "The requested number of samples is too large, and exceeds the maximum C long integer (2^63)."];
             $Failed)
@@ -1800,7 +1804,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                         Partition[ data[[2]], data[[1]]],
                         Partition[ data[[3]], data[[1]]]}]]]
         SampleClassicalShadow[___] := invalidArgError[SampleClassicalShadow]
-    
+
+
         CalcExpecPauliProdsFromClassicalShadow[shadow_List, prods:{__:numericCoeffPauliProdPatt}, numBatches_Integer:10] := 
             If[
                 Not @ MatchQ[Dimensions[shadow], {nSamps_, 2, nQb_}],
