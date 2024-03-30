@@ -292,9 +292,8 @@ GetKnownCircuit[\"LowDepthAnsatz\", reps, paramSymbol, qubits]
     (https://arxiv.org/pdf/1801.01053.pdf)"
     GetKnownCircuit::error = "`1`"
     
-    (* BELOW ARE TEMPORARILY MADE PRIVATE DUE TO INSUFFICIENT TESTING BEFORE v012 RELEASE *)
-    (*
-    GetCircuitsFromChannel::usage = "GetCircuitsFromChannel[channel] returns a list of all pure, analytic circuits which are admitted as possible errors of the input channel (a circuit including decoherence). Coherent noise channels become unitaries weighted by a non-unitary Fac[] operator, while incoherent noise channels become non-trace-preserving Matr[] operators. The sum of the expected values of the (potentially unnormalised) state-vectors output by the returned circuits is equivalent to the expected value of the input channel.
+    GetCircuitsFromChannel::usage = "GetCircuitsFromChannel[channel] returns a list of all pure, analytic circuits which are admitted as possible errors of the input channel (a circuit including decoherence). Channels which are mixtures of unitaries (like Depol, Deph) become unitaries and a non-unitary Fac[] operator, while other channels (Damp, Kraus) become non-trace-preserving Matr[] operators.
+The sum of the expected values of the (potentially unnormalised) state-vectors output by the returned circuits is equivalent to the expected value of the input channel. However, if numerical expectation values are ultimately sought (via Monte Carlo estimation with statevectors), you should instead use SampleExpecPauliString[].
 See GetRandomCircuitFromChannel[] to randomly select one of these circuits, weighted by its probability.
 See SampleExpecPauliString[] to sample such circuits in order to efficiently approximate the effect of decoherence on an expectation value."
     GetCircuitsFromChannel::error = "`1`"
@@ -308,7 +307,6 @@ SampleExpecPauliString[initQureg, channel, pauliString, All] deterministically s
 SampleExpecPauliString[initQureg, channel, pauliString, numSamples, {workQureg1, workQureg2}] uses the given persistent working registers to avoid their internal creation and destruction.
 Use option ShowProgress to monitor the progress of sampling."
     SampleExpecPauliString::error = "`1`"
-    *)
     
     SampleClassicalShadow::usage = "SampleClassicalShadow[qureg, numSamples] returns a sequence of pseudorandom measurement bases (X, Y and Z) and their outcomes (as bits) when performed on all qubits of the given input state.
 \[Bullet] The output has structure { {bases, outcomes}, ...} where bases is a list of Pauli bases (encoded as 1=X, 2=Y, 3=Z) specified per-qubit, and outcomes are the corresponding classical qubit outcomes (0 or 1).
