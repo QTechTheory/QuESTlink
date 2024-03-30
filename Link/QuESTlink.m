@@ -298,7 +298,7 @@ See GetRandomCircuitFromChannel[] to randomly select one of these circuits, weig
 See SampleExpecPauliString[] to sample such circuits in order to efficiently approximate the effect of decoherence on an expectation value."
     GetCircuitsFromChannel::error = "`1`"
     
-    GetRandomCircuitFromChannel::usage = "GetCircuitsFromChannel[channel] returns a pure, random circuit from the coherent decomposition of the input channel (a circuit including decoherence), weighted by its probability. The average of the expected values of the circuits returned by this function approaches the expected value of the noise channel.
+    GetRandomCircuitFromChannel::usage = "GetRandomCircuitFromChannel[channel] returns a pure, random circuit from the coherent decomposition of the input channel (a circuit including decoherence), weighted by its probability. The average of the expected values of the circuits returned by this function approaches the expected value of the noise channel.
     See SampleExpecPauliString[] to sample such circuits in order to efficiently approximate the effect of decoherence on an expectation value."
     GetRandomCircuitFromChannel::error = "`1`"
     
@@ -1712,16 +1712,28 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             GetCircuitsFromChannel @ {gate}
         GetCircuitsFromChannel[___] := invalidArgError[GetCircuitsFromChannel]
         
-        GetRandomCircuitFromChannel[ channel_List /; isCircuitFormat[channel] ] := With[
 
-        	(* get circuit decompositions of each  operator *)
-        	{circs = convertOpToPureCircs /@ channel},
+        GetRandomCircuitFromChannel[ channel_List /; isCircuitFormat[channel] ] := Module[
+            {circs, probs},
+
+            (* validate mixed-channel probabilities are valid (so max-prob is maximally mixed) *)
+            If[MemberQ[channel, 
+                Subscript[Damp, _][x_ /; x < 0 || x > 1] |
+                Subscript[Deph, _][x_ /; x < 0 || x > 1/2] |
+                Subscript[Deph, _, _][x_ /; x < 0 || x > 3/4] |
+                Subscript[Depol, _][x_ /; x < 0 || x > 3/4] |
+                Subscript[Depol, _, _][x_ /; x < 0 || x > 15/16]],
+                Message[GetRandomCircuitFromChannel::error, "A unitary-mixture channel had an invalid probability which was negative or exceeded that causing maximal mixing."];
+        		Return[$Failed]];
+
+        	(* get circuit decompositions of each operator *)
+        	circs = convertOpToPureCircs /@ channel;
         	
-        	(* infer the probabilities from Fac[] in coherent noise, and assert uniform incoherent noise *)
-        	{probs = Table[
+        	(* infer the probabilities from Fac[] in mixed-unitary noise, and assert other noise decompositions are uniform *)
+        	probs = Table[
         		Times @@ (Cases[choice, Fac[x_]:>Abs[x]^2] /. {}->{1/N@Length@choices}), 
-        		{choices, circs}, {choice, choices}]},
-        	
+        		{choices, circs}, {choice, choices}];
+            
         	(* validate probabilities *)
         	If[ Not[And @@ Table[
         		VectorQ[probset, Internal`RealValuedNumericQ] &&
@@ -1741,10 +1753,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         				choice /. Fac[_]->Nothing]] &,
         		{probs, circs}]
         ]
+
         GetRandomCircuitFromChannel[operator_?isCircuitFormat] :=
             GetRandomCircuitFromChannel @ {operator}
+
         GetRandomCircuitFromChannel[___] := invalidArgError[GetRandomCircuitFromChannel]
         
+
         Options[SampleExpecPauliString] = {
             ShowProgress -> False
         };
