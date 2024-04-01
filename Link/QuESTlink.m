@@ -5298,8 +5298,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             (* fail immediately if given unrecognised option *)
             Check[OptionValue["PauliStringForm"], Return @ $Failed];
 
+            (* warn about not plotting null entries *)
+            If[ MemberQ[{rules}, _->{}], Message[DrawPauliTransferMap::error, 
+                "Warning: The Pauli transfer map produces no Pauli string from some initial strings. " <>
+                "These edges (and null strings) are not being plotted. Hide this warning with Quiet[]."]];
+
             (* get {pauliInd -> pauliInd, ...} **)
-            edges = Flatten @ Table[ rule[[1]]->rhs[[1]] , {rule,{rules}}, {rhs,rule[[2]]}];
+            edges = Flatten @ Table[ rule[[1]]->rhs[[1]], {rule,{rules}}, {rhs,rule[[2]]}];
             
             (* get { (pauliInd -> pauliInd) -> coeff, ...} *)
             edgeLabels = If[
@@ -5646,7 +5651,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         Options[CalcPauliTransferEval] = {
             "CombineStrings" -> True,
-            "OutputForm" -> "Simple" (* or "Simple" *)
+            "OutputForm" -> "Simple" (* or "Detailed" *)
         };
 
         (*CalcPauliTransferEval additionally accepts all options to ApplyPauliTransferMap (and its subroutines) which are internally called *)
@@ -5789,6 +5794,18 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 (* validate options *)
                 Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
 
+                (* warn if eval history contains null states (e.g. by fully-mixing channels) *)
+                If[
+                    (* which is detectable by non-leaf nodes having no children *)
+                    AnyTrue[
+                        Keys @ Select[eval @ "Outdegree", PossibleZeroQ],
+                        (Not @ MemberQ[Last @ eval @ "Layers", #]&)
+                    ],
+                    Message[DrawPauliTransferEval::error,
+                    "Warning: the evaluation includes Pauli strings being mapped to null strings, " <>
+                    "as can occur from fully-mixing channels. The null strings and edges to them are " <>
+                    "not being rendered. Suppress this warning using Quiet[]."]];
+
                 (* { id->id ... } *)
                 edges = Thread /@ Normal @ eval["Children"] // Flatten;
 
@@ -5842,7 +5859,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     Sequence @@ FilterRules[{opts}, Options[Graph]]]
             ]
 
-        simplePTMapEvalPatt = { { { {__Integer}, _Integer, {{_Integer,_}...} } .. } .. };
+        simplePTMapEvalPatt = { { { {__Integer}, _Integer, {{_Integer,_}...} } ... } .. };
 
         DrawPauliTransferEval[ layers:simplePTMapEvalPatt, opts:drawPTEvalOptPatt ] := 
             Module[
@@ -5853,6 +5870,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
                 (* compute a simplified 'Detailed' Association containing only the necessary keys *)
                 keys = {"Ids", "NumQubits", "Children", "Outdegree"};
+
+                (* needed to discover null Pauli strings to issue warning *)
+                AppendTo[keys, "Layers"]; 
 
                 If[ OptionValue @ "ShowCoefficients" =!= False,
                     keys = Join[keys, {"ParentFactors"}]];
@@ -5869,7 +5889,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         DrawPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, circ:(mixedGatesAndMapsPatt|_?isGateFormat), opts:drawPTEvalOptPatt ] := (
             Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
-            DrawPauliTransferEval[CalcPauliTransferEval[pauliStr, circ, extractCalcPTEvalOptions @ opts], opts])
+            DrawPauliTransferEval[CalcPauliTransferEval[pauliStr, circ, extractCalcPTEvalOptions @ opts], opts] )
 
         DrawPauliTransferEval[___] := invalidArgError[DrawPauliTransferEval];
 
