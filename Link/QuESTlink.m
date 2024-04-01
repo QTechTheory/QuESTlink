@@ -430,9 +430,10 @@ GetPauliString[matrix] returns a complex-weighted sum of Pauli tensors equivalen
 GetPauliString[index] returns the basis Pauli string corresponding to the given index, where the returned Pauli operator targeting 0 is informed by the least significant bit(s) of the index. 
 GetPauliString[digits] specifies the Pauli product via the base-4 digits of its index, where the rightmost digit is the least significant.
 GetPauliString[address] opens or downloads the file at address (a string, of a file location or URL), and interprets it as a list of coefficients and Pauli codes. Each line of the file is assumed a separate Pauli tensor with format {coeff code1 code2 ... codeN} (excluding braces) where the codes are in {0,1,2,3} (indicating a I, X, Y, Z), for an N-qubit Pauli string, and are given in order of increasing significance (zero qubit left). Each line must have N+1 terms, which includes the initial real decimal coefficient. For an example, see \"https://qtechtheory.org/hamil_6qbLiH.txt\".
-GetPauliString[..., numQubits] overrides the inferred number of qubits, introducing additional Id operators upon un-targeted qubits (unless explicitly removed with \"RemoveIds\"->False).
-GetPauliString[..., {targets}] specifies a list of qubits which the returned Pauli string should target (in the given order), instead of the default targets {0, 1, 2, ...}.
-GetPauliString accepts optional argument \"RemoveIds\" -> True or False (default Automatic) which when True, retains otherwise removed Id operators so that the returned string has an explicit Pauli operator acting upon every qubit."
+GetPauliString[..., numPaulis] forces the output to contain the given number of Pauli operators, introducing additional Id operators upon un-targeted qubits (unless explicitly removed with \"RemoveIds\"->True).
+GetPauliString[..., {targets}] specifies a list of qubits which the returned Pauli string should target (in the given order), instead of the default targets {0, 1, 2, ...}. Targeted Ids are retained.
+GetPauliString[..., {targets}, numPaulis] (in either order) specifies the targets, and thereafter pads the output with Ids to achieve the specified number of Pauli operators.
+GetPauliString accepts optional argument \"RemoveIds\" -> True or False (default Automatic) which when True, retains otherwise removed Id operators."
     GetPauliString::error = "`1`"
 
     GetPauliStringRetargeted::usage = "GetPauliStringRetargeted[string, rules] returns the given Pauli string but with its target qubits modified as per the given rules. The rules can be anything accepted by ReplaceAll.
@@ -1562,30 +1563,45 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 getPauliStringFromDigits[{digits}, numPaulis, shouldRemovePauliStringIds[numPaulis, opts]]]
 
         (* optionally remap the returned Pauli string to a custom set of targets *)
-        GetPauliString[obj:(_String|_?MatrixQ|_Integer|{__Integer}), OrderlessPatternSequence[targs:{___Integer}, nQb:optionalNumQbPatt], opts___] :=
+        GetPauliString[obj:(_String|_?MatrixQ|_Integer|{__Integer}), OrderlessPatternSequence[targs:{___Integer}, numPaulis:optionalNumQbPatt], opts:OptionsPattern[]] :=
             Module[
-                {pauliStr, numQbInStr, map},
+                {pauliStr, map, retargStr, numQbInStr, remIds, untargs, padIds},
+
+                (* validate options, and choose whether to remove Ids *)
+                remIds = Check[OptionValue @ "RemoveIds", Return @ $Failed] /. Automatic -> False;
 
                 (* partially validate targs *)
                 If[ Not @ AllTrue[targs, NonNegative] || Not @ DuplicateFreeQ[targs],
-                    Message[GetPauliString::error, "The list of target qubits must be non-negative and unique."];
-                    Return @ $Failed
-                ];
-
-                (* produce Pauli string with indices from 0, possibly enlarged by nQb *)
-                pauliStr = Check[GetPauliString[obj, nQb, opts], Return @ $Failed];
-                numQbInStr = getNumQubitsInPauliString[pauliStr];
-
-                (* require user gave precisely the right number of targets *)
-                If[ Length[targs] =!= numQbInStr,
-                    Message[GetPauliString::error, 
-                        "A different number of target qubits was given (" <> ToString@Length@targs <> 
-                        ") than exists in the Pauli string (" <> ToString@numQbInStr <> ")."];
+                    Message[GetPauliString::error, "Target qubits must be list of unique, non-negative and integers."];
                     Return @ $Failed];
 
-                (* modify the Pauli string to the users target qubits *)
-                map = MapThread[Rule, {Range[numQbInStr]-1, targs}];
-                GetPauliStringRetargeted[pauliStr, map]
+                (* produce Pauli string with indices from 0, every term is Length[targs]-operators. *)
+                pauliStr = Check[GetPauliString[obj, Length[targs], "RemoveIds"->False], Return @ $Failed];
+
+                (* modify the Pauli string to the users target qubits; may contain Ids, but is NOT necessarily full-length. E.g. X7 Id5 Z3 *)
+                map = MapThread[Rule, {Range @ Length @ targs -1, targs}];
+                retargStr = GetPauliStringRetargeted[pauliStr, map];
+
+                (* validate optional forced numPaulis equals or exceeds num in retargStr *)
+                numQbInStr = 1 + Max[targs];
+                If[Length@{numPaulis}>0 && numPaulis < numQbInStr,
+                    Message[GetPauliString::error, 
+                        "The requested number of Pauli operators (" <> ToString[numPaulis] <> ") cannot be fewer than " <>
+                        "the number in the targeted Pauli string (" <> ToString[numQbInStr] <> ")."];
+                    Return @ $Failed];
+
+                (* if numPaulis specified, add additional Ids at all untargeted *)
+                If[Length@{numPaulis}>0 && (numPaulis>Length[targs]) && Not[remIds],
+                    untargs = Complement[Range@numPaulis-1, targs];
+                    padIds = Product[Subscript[Id,t], {t,untargs}];
+                    retargStr = Expand[padIds * retargStr, pauliOpPatt]];
+
+                (* optionally remove Ids, but keep standalone Id terms  *)
+                If[remIds, retargStr = retargStr //.
+                    Verbatim[Times][OrderlessPatternSequence[c___, p:pauliOpPatt, Subscript[Id,_]]] :> c p];
+
+                (* return *)
+                retargStr
             ]
 
         GetPauliString[___] := invalidArgError[GetPauliString]
