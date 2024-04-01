@@ -3045,11 +3045,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetCircuitGeneralised[op_] := GetCircuitGeneralised[{op}]
         GetCircuitGeneralised[___] := invalidArgError[GetCircuitGeneralised]
         
-        getChannelAssumps[Subscript[Damp, _][x_]] := (0 <= x < 1)
-        getChannelAssumps[Subscript[Deph, _][x_]] := (0 <= x < 1/2)
-        getChannelAssumps[Subscript[Deph, _,_][x_]] := (0 <= x < 3/4)
-        getChannelAssumps[Subscript[Depol, _][x_]] := (0 <= x < 3/4)
-        getChannelAssumps[Subscript[Depol, _,_][x_]] := (0 <= x < 15/16)
+        getChannelAssumps[Subscript[Damp, _][x_]] := (0 <= x <= 1)
+        getChannelAssumps[Subscript[Deph, _][x_]] := (0 <= x <= 1/2)
+        getChannelAssumps[Subscript[Deph, _,_][x_]] := (0 <= x <= 3/4)
+        getChannelAssumps[Subscript[Depol, _][x_]] := (0 <= x <= 3/4)
+        getChannelAssumps[Subscript[Depol, _,_][x_]] := (0 <= x <= 15/16)
         getChannelAssumps[_] := Nothing
         
         shiftInds[q__Integer|{q__Integer}, numQb_] := Sequence @@ (List[q]+numQb)
@@ -5459,8 +5459,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
                 (* extract base-4 index of targeted inDigits *)
                 numQb = Length @ {q};
-                inInd = FromDigits[Reverse @ inDigits[[-{q}-1]], 4];	
-                
+                inInd = FromDigits[Reverse @ inDigits[[-{q}-1]], 4];
+
+                (* short-circuit if map produces null state (as do fully-mixing channels) *)
+                If[(inInd /. {rules}) === {}, Return @ {}];
+
                 MapAt[
                     (* which maps to a list of outInds. For each... *)
                     Function[{outInd},
