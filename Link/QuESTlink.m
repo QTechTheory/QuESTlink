@@ -2213,16 +2213,16 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     uneval,
                 (* otherwise this is an unrecognised Pauli sub-expression *)
                 True,
+                    (* raise Message (without $Failed because Message causes immediate abort) *)
                     Message[SimplifyPaulis::error, 
                         "Input contained the following sub-expression of Pauli operators which could not be simplified: " <> 
-                        ToString @ StandardForm @ uneval];
-                    $Failed]]
+                        ToString @ StandardForm @ uneval]]]
 
         SimplifyPaulis[expr_] :=
             Enclose[
                 (* immediately abort upon unrecognised sub-expression *)
                 ConfirmQuiet @ innerSimplifyPaulis @ expr,
-                ReleaseHold @ # @ "HeldMessageCall" & ]
+                (ReleaseHold @ # @ "HeldMessageCall"; $Failed) & ]
 
         SimplifyPaulis[__] := invalidArgError[SimplifyPaulis]
         
