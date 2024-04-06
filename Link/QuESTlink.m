@@ -227,7 +227,7 @@ See ?AssertValidChannels."
     GetCircuitConjugated::error = "`1`"
     
     GetCircuitSuperoperator::usage = "GetCircuitSuperoperator[circuit] returns the corresponding superoperator circuit upon doubly-many qubits as per the Choi–Jamiolkowski isomorphism. Decoherence channels become Matr[] superoperators.
-GetCircuitSuperoperator[circuit, numQubits] forces the circuit to be assumed size numQubits, so that the output superoperator circuit is of size 2*numQubits.
+GetCircuitSuperoperator[circuit, numQubits] forces the circuit to be assumed size numQubits, so that the output superoperator acts upon 2*numQubits.
 GetCircuitSuperoperator accepts optional argument AssertValidChannels."
     GetCircuitSuperoperator::error = "`1`"
     
@@ -3150,69 +3150,62 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetCircuitConjugated[___] := invalidArgError[GetCircuitConjugated]
 
 
+        (* rules to simplify operators when AssertValidChannels -> True *)
+        (* note we do not simplify/assert real-parameterised gates like rotations, out of laziness *)
+        assertReal[x_] := Element[x, Reals]
+        getValidChannelAssumps @ Subscript[Damp, _][x_]    := assertReal[x] && (0 <= x <= 1)
+        getValidChannelAssumps @ Subscript[Deph, _][x_]    := assertReal[x] && (0 <= x <= 1/2)
+        getValidChannelAssumps @ Subscript[Deph, _,_][x_]  := assertReal[x] && (0 <= x <= 3/4)
+        getValidChannelAssumps @ Subscript[Depol, _][x_]   := assertReal[x] && (0 <= x <= 3/4)
+        getValidChannelAssumps @ Subscript[Depol, _,_][x_] := assertReal[x] && (0 <= x <= 15/16)
         
-        shiftInds[q__Integer|{q__Integer}, numQb_] := Sequence @@ (List[q]+numQb)
+        (* un-targeted operators merge with their conjugate *)
+        getSuperOpCirc[numQb_,valid_] @ G[x_] :=
+            {If[valid, Nothing, G[2 I Im[x]]]}
+        getSuperOpCirc[numQb_,valid_] @ Fac[x_] :=
+            {Fac[x]} (* NOT Fac[Abs[x^2]] because Fac is NOT simply x * Id; it only ever left-multiplies onto states *)
         
+        (* Kraus matrices become a single superop Matr *)
+        getSuperOpCirc[numQb_,valid_] @ Subscript[Kraus|KrausNonTP, q__Integer|{q__Integer}] @ matrs_List := With[
+            {supermatr = Total[(KroneckerProduct[Conjugate[#], #]&) /@ matrs]},
+            {Subscript[Matr, q, Sequence @@ ({q} + numQb)] @ supermatr}]
+
+        (* Damp, Depol, Deph must first be generalised to Kraus, then recursed upon... *)
+        getSuperOpCirc[numQb_,valid_] @ g:Subscript[Damp|Deph|Depol, q__][x_] := With[
+            {supers = getSuperOpCirc[numQb, valid] /@ GetCircuitGeneralised @ g},
+            {assumps = getValidChannelAssumps @ g},
+            (* and the result is optionally simplified, if CPTP condition is possible (else caller Aborts) *)
+            If[valid && assumps === False, Message[GetCircuitSuperoperator::error, 
+                "One or more channels could not be asserted as completely positive and trace-preserving (CPTP) and ergo could not be simplified. " <>
+                "Prevent this error with AssertValidChannels -> False."]];
+            If[valid, Simplify[supers, assumps], supers]]
+
+        (* Matr are unchanged *)
+        getSuperOpCirc[numQb_,valid_] @ g:Subscript[Matr, __][_] :=
+            g
+
+        (* all other gates are concatenated with their conjugated and shifted selves *)
+        getSuperOpCirc[numQb_,valid_] @ g_ :=
+            {g, retargetGate[q_ :> q+numQb] @ getGateConj[valid] @ g}
+
         Options[GetCircuitSuperoperator] = {
             AssertValidChannels -> True
         };
-    
-        GetCircuitSuperoperator[circ_List, numQb_Integer, OptionsPattern[]] := With[
-            {superops = Flatten @ Replace[circ, {
-            (* qubit-agnostic gates *)
-                G[x_] :> Nothing,
-                Fac[x_] :> {Fac[x]}, (* this is _not_ Fac[Abs[x^2]] because Fac is not simply x * Id; it only ever left-multiplies *)
-            (* unitaries *)
-            	(* real gates (self conjugate) *)
-            	Subscript[(g:H|X|Z|Id), q__Integer|{q__Integer}] :> {Subscript[g, q], Subscript[g, shiftInds[q,numQb]]},
-            	g:Subscript[P, q__Integer|{q__Integer}][v_] :> {g, Subscript[P, shiftInds[q,numQb]][v]},
-            	g:Subscript[SWAP, q1_,q2_] :> {g, Subscript[SWAP, q1+numQb,q2+numQb]},
-                g:Subscript[Ry, q_Integer][x_] :> {g, Subscript[Ry, q+numQb][x]},
-            	(* reverse phase *)
-            	Subscript[T, q_Integer] :> {Subscript[T, q], Subscript[Ph, q+numQb][-Pi/4]},
-            	Subscript[S, q_Integer] :> {Subscript[S, q], Subscript[Ph, q+numQb][-Pi/2]},
-            	(* reverse parameter gates (beware the mischievous Pauli Y)*)
-            	Subscript[(g:Rx|Rz|Ph), q__Integer|{q__Integer}][x_] :> {Subscript[g, q][x], Subscript[g, shiftInds[q,numQb]][-x]},
-                R[x_, Subscript[Y, q_Integer]] :> {R[x,Subscript[Y, q]], R[x,Subscript[Y, q+numQb]]},
-            	R[x_, Subscript[p:(X|Z), q_Integer]] :> {R[x,Subscript[p, q]], R[-x,Subscript[p, q+numQb]]},
-            	R[x_, Verbatim[Times][p:Subscript[_Symbol, _Integer] ..]] :> With[
-                    {s = - (-1)^Count[{p}, Subscript[Y,_]]}, 
-                    {R[x, Times @ p],
-            		 R[s*x, Times @@ MapThread[Subscript, {{p}[[All,1]], {p}[[All,2]] + numQb}]]}],
-            	(* gates with no inbuilt conjugates *)
-            	Subscript[Y, q_Integer] :> {Subscript[Y, q], Subscript[U, q+numQb][Conjugate@PauliMatrix@2]},
-            	Subscript[(g:U|UNonNorm), q__Integer|{q__Integer}][matrOrVec_] :> {Subscript[g, q][matrOrVec], Subscript[g, shiftInds[q,numQb]][Conjugate@matrOrVec]},
-                Subscript[Matr, q__Integer|{q__Integer}][matrOrVec_] :> {Subscript[Matr, q][matrOrVec]},
-            	(* controlled gates must recurse: assume inner gate resolves to two ops *)
-            	Subscript[C, c__Integer|{c__Integer}][g_] :> {Subscript[C, c][g], 
-            		Subscript[C, shiftInds[c,numQb]][Last @ GetCircuitSuperoperator[{g},numQb]]},
-            (* channels *)
-            	(* Kraus channels are turned into superoperators *)
-            	Subscript[(Kraus|KrausNonTP), q__Integer|{q__Integer}][matrs_List] :> Subscript[Matr, Sequence @@ Join[{q},{shiftInds[q,numQb]}]][
-            		Total[(KroneckerProduct[Conjugate[#], #]&) /@ matrs]],
-            	(* other channels are first converted to Kraus, before recursing... *)
-            	g:Subscript[(Damp|Depol|Deph), q__Integer|{q__Integer}][x_] :> 
-            		With[{op = GetCircuitSuperoperator[GetCircuitGeneralised[g], numQb]},
-                        (* and are then simplified by asserting trace-preservation *)
-                        If[ OptionValue[AssertValidChannels], 
-                            With[{assumps = Quiet @ Check[getChannelAssumps[g], False]},
-                                (* although if CPTP is impossible, default to unsimplified, with warning *)
-                                If[ assumps =!= False, 
-                                    Simplify[op, assumps],
-                                    Message[GetCircuitSuperoperator::error, "The channels could not be asserted as completely positive trace-preserving maps and hence were not simplified. Hide this warning with AssertValidChannels -> False, or use Quiet[]."];
-                                    op]], 
-                            op]],
-            (* wrap unrecognised gates in dummy Head *)
-            	g_ :> unrecognisedGateInSuperopCirc[g]
-            (* replace at top level *)
-            }, 1]},
-            If[ FreeQ[superops, unrecognisedGateInSuperopCirc],
-                superops,
-                (Message[GetCircuitSuperoperator::error, "Circuit contained an unrecognised or unsupported gate: " <> 
-                    ToString @ StandardForm @ First @ Cases[superops, unrecognisedGateInSuperopCirc[g_] :> g, Infinity]];
-                    $Failed)]]
-        GetCircuitSuperoperator[circ_List, opts:OptionsPattern[]] := 
+
+        GetCircuitSuperoperator[circ_List?isCircuitFormat, numQb_Integer, OptionsPattern[]] :=
+            Enclose[
+                (* map each gate to a superoperator(s) *)
+                getSuperOpCirc[numQb, OptionValue @ AssertValidChannels] /@ circ // Flatten // ConfirmQuiet,
+
+                (* and abort immediately if any call fails, and hijack the error message *)
+                (Message[GetCircuitSuperoperator::error, #["HeldMessageCall"][[1,2]]]; $Failed) &]
+
+        GetCircuitSuperoperator[circ_List?isCircuitFormat, opts:OptionsPattern[]] := 
             GetCircuitSuperoperator[circ, getNumQubitsInCircuit[circ], opts]
+
+        GetCircuitSuperoperator[gate_?isCircuitFormat, args___] :=
+            GetCircuitSuperoperator[{gate}, args]
+
         GetCircuitSuperoperator[___] := invalidArgError[GetCircuitSuperoperator]
         
         
