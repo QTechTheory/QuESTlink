@@ -220,6 +220,11 @@ CalcCircuitMatrix accepts optional argument AsSuperoperator and AssertValidChann
     
     GetCircuitGeneralised::usage = "GetCircuitGeneralised[circuit] returns an equivalent circuit composed only of general unitaries (and Matr operators) and Kraus operators of analytic matrices."
     GetCircuitGeneralised::error = "`1`"
+
+    GetCircuitConjugated::usage = "GetCircuitConjugated[circuit] returns a circuit describing the complex conjugate operation of the given circuit. This is not the conjugate-transpose; instead, each operator is replaced with one or more operators described by Z-basis matrices equal to the complex conjugate of the original operator's matrix.
+Accepts optional argument AssertValidChannels->False which relaxes the assumption that the circuit's operators are completely-positive and trace-preserving (CPTP). This permits canonical operator parameters (such as rotation strengths and channel probabilities) to be arbitrary complex values.
+See ?AssertValidChannels."
+    GetCircuitConjugated::error = "`1`"
     
     GetCircuitSuperoperator::usage = "GetCircuitSuperoperator[circuit] returns the corresponding superoperator circuit upon doubly-many qubits as per the Choi–Jamiolkowski isomorphism. Decoherence channels become Matr[] superoperators.
 GetCircuitSuperoperator[circuit, numQubits] forces the circuit to be assumed size numQubits, so that the output superoperator circuit is of size 2*numQubits.
@@ -3013,6 +3018,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             CalcCircuitMatrix[{gate}, opts]
         CalcCircuitMatrix[___] := invalidArgError[CalcCircuitMatrix]
         
+
         GetCircuitGeneralised[gates_List] := With[
             {generalGates = Replace[gates, {
             	(* known channels are converted to Kraus maps *)
@@ -3065,13 +3071,85 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     ]]
         GetCircuitGeneralised[op_] := GetCircuitGeneralised[{op}]
         GetCircuitGeneralised[___] := invalidArgError[GetCircuitGeneralised]
+
+
+        (* untargeted gates *)
+        getGateConj[valid_] @ G[x_] :=
+            If[valid, G[-x], G[-Conjugate@x]]
+        getGateConj[valid_] @ Fac[x_] :=
+            Fac @ Conjugate[x]
+
+        (* real, unparameterised gates (self conjugate) *)
+        getGateConj[valid_] @ g:Subscript[H|X|Z|Id|SWAP, __] :=
+            g
+        getGateConj[valid_] @ g:Subscript[P, __] @ x_ :=
+            g
+
+        (* Rx, Rz and Ph merely negate phase *)
+        getGateConj[valid_] @ (g:Subscript[Rx|Rz|Ph, __]) @ x_ :=
+            If[valid, g[-x], g[-Conjugate[x]]]
+
+        (* conj(Y) = - Y = {G[Pi],Y}, but we choose to keep it single U gate *)
+        getGateConj[valid_] @ g:Subscript[Y, q_] :=
+            Subscript[U, q] @ Conjugate @ PauliMatrix @ 2
+
+        (* conj(Ry) is target-number-parity dependent *)
+        getGateConj[valid_] @ (g:Subscript[Ry, q__Integer|{q__Integer}]) @ x_ := With[
+            {s = If[OddQ @ Length @ {q}, 1, -1]},
+            If[valid, g[s x], g[s Conjugate[x]]]]
+
+        (* Pauli gadget negation determined by Y parity *)
+        getGateConj[valid_] @ R[x_, p:Subscript[X|Z|Id, _]] := 
+            If[valid, R[-x,p], R[-Conjugate[x],p]]
+        getGateConj[valid_] @ R[x_, p:Subscript[Y, _]] :=
+            If[valid, R[x,p], R[Conjugate[x],p]]
+        getGateConj[valid_] @ R[x_, p:Verbatim[Times][pauliOpPatt..]] := With[
+            {s = If[OddQ @ Count[p, Subscript[Y,_]], 1, -1]},
+            {r = If[valid, s x, s Conjugate[x]]},
+            R[r, p]]
+
+        (* S and T gates become reverse-phased Ph *)
+        getGateConj[valid_] @ Subscript[T, q_] := 
+            Subscript[Ph, q][-Pi/4]
+        getGateConj[valid_] @ Subscript[S, q_] := 
+            Subscript[Ph, q][-Pi/2]
+
+        (* matrix operators have every element conjugated *)
+        getGateConj[valid_] @ (g:Subscript[U|UNonNorm|Matr, __])[vecOrMatr_] :=
+            g @ Conjugate @ vecOrMatr
+        getGateConj[valid_] @ (g:Subscript[Kraus|KrausNonTP, __])[matrices_] :=
+            g[Conjugate /@ matrices]
+
+        (* controls merely wrap conjugated base gate *)
+        getGateConj[valid_] @ (c:Subscript[C,__]) @ g_ := 
+            c @ getGateConj[valid] @ g
         
-        getChannelAssumps[Subscript[Damp, _][x_]] := (0 <= x <= 1)
-        getChannelAssumps[Subscript[Deph, _][x_]] := (0 <= x <= 1/2)
-        getChannelAssumps[Subscript[Deph, _,_][x_]] := (0 <= x <= 3/4)
-        getChannelAssumps[Subscript[Depol, _][x_]] := (0 <= x <= 3/4)
-        getChannelAssumps[Subscript[Depol, _,_][x_]] := (0 <= x <= 15/16)
-        getChannelAssumps[_] := Nothing
+        (* Damp, Deph are entirely real (when valid), else we assume principal Sqrts,
+         * and although Depol contains Y, its superoperator/application cancels conj(Y)=-Y *)
+        getGateConj[valid_] @ (g:Subscript[Damp|Deph|Depol, __]) @ x_ :=
+            If[valid, g[x], g @ Conjugate @ x]
+
+        (* unmatched operators *)
+        getGateConj[valid_][g_] := Message[GetCircuitConjugated::error,
+            "Cannot obtain conjugate of unrecognised or unsupported operator: " <>
+            ToString @ StandardForm @ g]
+
+        Options[GetCircuitConjugated] = {
+            AssertValidChannels -> True
+        };
+
+        (* circuit conjugate = conjugate of each gate, aborting if any unrecognised *)
+        GetCircuitConjugated[circ_List?isCircuitFormat, OptionsPattern[]] :=
+            Enclose[
+                getGateConj[OptionValue @ AssertValidChannels] /@ circ // Flatten // ConfirmQuiet,
+                (ReleaseHold @ # @ "HeldMessageCall"; $Failed) &]
+
+        GetCircuitConjugated[gate_?isCircuitFormat, opts___] :=
+            GetCircuitConjugated[{gate}, opts]
+
+        GetCircuitConjugated[___] := invalidArgError[GetCircuitConjugated]
+
+
         
         shiftInds[q__Integer|{q__Integer}, numQb_] := Sequence @@ (List[q]+numQb)
         
