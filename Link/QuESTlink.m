@@ -507,7 +507,9 @@ BitEncoding -> \"TwosComplement\" interprets basis states as two's complement si
 
     AsSuperoperator::usage = "Optional argument to CalcCircuitMatrix (default Automatic), specifying whether the output should be a 2^N by 2^N unitary matrix (False), or a 2^2N by 2^2N superoperator matrix (True). The latter can capture decoherence, and be multiplied upon column-flattened 2^2N vectors."
     
-    AssertValidChannels::usage = "Optional argument to CalcCircuitMatrix, GetCircuitSuperoperator, CalcPauliTransferMatrix and CalcPauliTransferMap (default True), specifying whether to simplify their outputs by asserting that all channels therein are completely-positive and trace-preserving. For example, this asserts that the symbolic argument to a damping channel is constrained between 0 and 1 (inclusive)."
+    AssertValidChannels::usage = "Optional argument to functions like CalcCircuitMatrix, CalcPauliTransferMatrix, GetCircuitConjugated, etc, specifying whether to simplify their outputs by asserting that all channels therein are completely-positive and trace-preserving (default True).
+For example, this asserts that the symbolic argument to a damping channel is constrained between 0 and 1 (inclusive), and that the parameters of canonical parameterised gates (like Rx) are strictly real.
+Specifying AssertValidChannels->False will not change the dimension of the outputs (i.e. the returned objects would be applied upon states in the same fashion), but will disable symbolic simplifications therein, and is necessary to obtain correct expressions when all symbolic parameters are permitted to be complex."
     
     EndPackage[]
     
@@ -2944,16 +2946,19 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         getAnalGateMatrix[Subscript[Ph, t__][a_]] = DiagonalMatrix[ Append[ConstantArray[1, 2^Length[{t}] - 1], Exp[I a]] ];
         getAnalGateMatrix[G[a_]] := Exp[I a] {{1,0},{0,1}};
         getAnalGateMatrix[Fac[a_]] := a {{1,0},{0,1}}; (* will not be conjugated for density matrices *)
+        (* definition immediately evaluated (via =), avoiding Mathematica's unpredictable treatment of 'a' as real (see below) *)
         getAnalGateMatrix[Subscript[Rx, _][a_]] = MatrixExp[-I a/2 PauliMatrix[1]]; (* KroneckerProduct doesn't have a one-arg identity overload?? Bah *)
         getAnalGateMatrix[Subscript[Ry, _][a_]] = MatrixExp[-I a/2 PauliMatrix[2]];
         getAnalGateMatrix[Subscript[Rz, _][a_]] = MatrixExp[-I a/2 PauliMatrix[3]];
-        getAnalGateMatrix[Subscript[Rx, t__][a_]] := MatrixExp[-I a/2 KroneckerProduct @@ ConstantArray[PauliMatrix[1],Length[{t}]]];
-        getAnalGateMatrix[Subscript[Ry, t__][a_]] := MatrixExp[-I a/2 KroneckerProduct @@ ConstantArray[PauliMatrix[2],Length[{t}]]];
-        getAnalGateMatrix[Subscript[Rz, t__][a_]] := MatrixExp[-I a/2 KroneckerProduct @@ ConstantArray[PauliMatrix[3],Length[{t}]]];
-        getAnalGateMatrix[R[a_, pauli_]] := MatrixExp[-I a/2 getAnalGateMatrix @ pauli];
-        getAnalGateMatrix[R[a_, paulis_Times]] := MatrixExp[-I a/2 * KroneckerProduct @@ (getAnalGateMatrix /@ List @@ paulis)]
-        getAnalGateMatrix[Subscript[C, __][g_]] := getAnalGateMatrix[g]
-        getAnalGateMatrix[Subscript[Id, t__]] = IdentityMatrix[2^Length[{t}]]
+        (* delayed assignment necessitates forced posteriori substitution of a, to avoid this:
+         * https://mathematica.stackexchange.com/questions/301473/matrixexp-sometimes-erroneously-assumes-variables-are-real *)
+        getAnalGateMatrix[Subscript[Rx, t__][a_]] := MatrixExp[-I DUMMY/2 KroneckerProduct @@ ConstantArray[PauliMatrix[1],Length[{t}]]] /. DUMMY -> a;
+        getAnalGateMatrix[Subscript[Ry, t__][a_]] := MatrixExp[-I DUMMY/2 KroneckerProduct @@ ConstantArray[PauliMatrix[2],Length[{t}]]] /. DUMMY -> a;
+        getAnalGateMatrix[Subscript[Rz, t__][a_]] := MatrixExp[-I DUMMY/2 KroneckerProduct @@ ConstantArray[PauliMatrix[3],Length[{t}]]] /. DUMMY -> a;
+        getAnalGateMatrix[R[a_, pauli_]] := MatrixExp[-I DUMMY/2 getAnalGateMatrix @ pauli] /. DUMMY -> a;
+        getAnalGateMatrix[R[a_, paulis_Times]] := MatrixExp[-I DUMMY/2 * KroneckerProduct @@ (getAnalGateMatrix /@ List @@ paulis)] /. DUMMY -> a;
+        getAnalGateMatrix[Subscript[C, __][g_]] := getAnalGateMatrix[g];
+        getAnalGateMatrix[Subscript[Id, t__]] = IdentityMatrix[2^Length[{t}]];
         
         (* extract ctrls from gate symbols *)
         getAnalGateControls[Subscript[C, c_List][___]] := c
