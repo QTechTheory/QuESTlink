@@ -773,7 +773,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                
         (* opcodes which correlate with the global IDs in circuits.hpp *)
         getOpCode[gate_] :=
-	        gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,Matr->22,UNonNorm->23,Fac->24,_->-1}
+            gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,Matr->22,UNonNorm->23,Fac->24,_->-1}
         
         
         
@@ -893,15 +893,15 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         gatePatterns = {
             Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[g:U|Matr|UNonNorm,  (targs:__Integer)|{targs:__Integer}][obj:_List]] :> 
                 {getOpCode[g], {ctrls}, {targs}, codifyMatrixOrVectorWithDim[obj]},
-        	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] :> 
+            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {args}},
-        	Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] :> 
+            Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}]] :> 
                 {getOpCode[gate], {ctrls}, {targs}, {}},
             Subscript[C, (ctrls:__Integer)|{ctrls:__Integer}][R[param_, ({paulis:pauliOpPatt..}|Verbatim[Times][paulis:pauliOpPatt..]|paulis:pauliOpPatt__)]] :>
                 {getOpCode[R], {ctrls}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
             R[param_, ({paulis:pauliOpPatt..}|Verbatim[Times][paulis:pauliOpPatt..]|paulis:pauliOpPatt__)] :>
                 {getOpCode[R], {}, {paulis}[[All,2]], Join[{param}, getOpCode /@ {paulis}[[All,1]]]},
-        	Subscript[g:U|Matr|UNonNorm, (targs:__Integer)|{targs:__Integer}][obj_List] :> 
+            Subscript[g:U|Matr|UNonNorm, (targs:__Integer)|{targs:__Integer}][obj_List] :> 
                 {getOpCode[g], {}, {targs}, codifyMatrixOrVectorWithDim[obj]},
             Subscript[Kraus, (targs:__Integer)|{targs:__Integer}][matrs_List] :>
                 {getOpCode[Kraus], {}, {targs}, codifyMatrices[matrs]},
@@ -911,7 +911,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 {getOpCode[P], {}, {targs}, outcomes},
             Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}][args__] :> 
                 {getOpCode[gate], {}, {targs}, {args}},
-        	Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}] :> 
+            Subscript[gate_Symbol, (targs:__Integer)|{targs:__Integer}] :> 
                 {getOpCode[gate], {}, {targs}, {}},
             G[arg_] :> 
                 {getOpCode[G], {}, {}, {arg}},
@@ -921,7 +921,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         (* converting gate sequence to code lists: {opcodes, ctrls, targs, params} *)
         codifyCircuit[circuit_List] :=
-        	circuit /. gatePatterns // Transpose
+            circuit /. gatePatterns // Transpose
         codifyCircuit[circuit_] :=
             codifyCircuit @ {circuit}
             
@@ -968,33 +968,33 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         ApplyCircuit[qureg_Integer, {}, OptionsPattern[ApplyCircuit]] :=
             {}
         ApplyCircuit[qureg_Integer, circuit_?isCircuitFormat, OptionsPattern[ApplyCircuit]] :=
-        	With[
-        		{codes = codifyCircuit[circuit]},
-        		Which[
+            With[
+                {codes = codifyCircuit[circuit]},
+                Which[
                     MemberQ[codes[[1]], -1],
                     Message[ApplyCircuit::error, "Circuit contained an unrecognised gate: " <> ToString@StandardForm@
                         circuit[[ Position[codes[[1]], -1][[1,1]] ]]]; $Failed,
-        			Not @ AllTrue[codes[[4]], Internal`RealValuedNumericQ, 2],
+                    Not @ AllTrue[codes[[4]], Internal`RealValuedNumericQ, 2],
                     Message[ApplyCircuit::error, "Circuit contains non-numerical or non-real parameters!"]; $Failed,
                     Not @ Or[OptionValue[WithBackup] === True, OptionValue[WithBackup] === False],
                     Message[ApplyCircuit::error, "Option WithBackup must be True or False."]; $Failed,
                     Not @ Or[OptionValue[ShowProgress] === True, OptionValue[ShowProgress] === False],
                     Message[ApplyCircuit::error, "Option ShowProgress must be True or False."]; $Failed,
                     True,
-        			applyCircuitInner[
+                    applyCircuitInner[
                         qureg, 
                         If[OptionValue[WithBackup]===True,1,0], 
                         If[OptionValue[ShowProgress]===True,1,0],
                         unpackEncodedCircuit[codes]
                     ]
-        		]
-        	]
+                ]
+            ]
         (* apply a circuit to get an output state without changing input state. CloneQureg provided by WSTP *)
         ApplyCircuit[inQureg_Integer, circuit_?isCircuitFormat, outQureg_Integer, opts:OptionsPattern[ApplyCircuit]] :=
-        	Block[{},
-        		QuEST`CloneQureg[outQureg, inQureg];
-        		ApplyCircuit[outQureg, circuit, opts]
-        	]
+            Block[{},
+                QuEST`CloneQureg[outQureg, inQureg];
+                ApplyCircuit[outQureg, circuit, opts]
+            ]
         ApplyCircuit[inQureg_Integer, {}, outQureg_Integer, opts:OptionsPattern[ApplyCircuit]] := (
             CloneQureg[outQureg, inQureg];
             {}
@@ -1203,30 +1203,30 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         (* destroying a qureg, and clearing the local symbol if recognised *)
         SetAttributes[DestroyQureg, HoldAll];
         DestroyQureg[qureg_Integer] :=
-        	DestroyQuregInternal[qureg]
+            DestroyQuregInternal[qureg]
         DestroyQureg[qureg_Symbol] :=
-        	Block[{}, DestroyQuregInternal[ReleaseHold@qureg]; Clear[qureg]]
+            Block[{}, DestroyQuregInternal[ReleaseHold@qureg]; Clear[qureg]]
         DestroyQureg[qureg_] :=
             DestroyQuregInternal @ ReleaseHold @ qureg
         DestroyQureg[___] := invalidArgError[DestroyQureg]
 
         (* get a local matrix representation of the qureg. GetQuregMatrixInternal provided by WSTP *)
         GetQuregState[qureg_Integer, "ZBasisMatrix"] :=
-        	With[{data = GetQuregMatrixInternal[qureg]},
-        		Which[
+            With[{data = GetQuregMatrixInternal[qureg]},
+                Which[
                     (* if failed, return failure type *)
-        			Or[data === $Failed, data === $Aborted],
-        			    data,
+                    Or[data === $Failed, data === $Aborted],
+                        data,
                     (* if state-vector, stitch the real and imag components into a complex array *)
-        			data[[2]] === 0,
-        			    MapThread[#1 + I #2 &, {data[[3]], data[[4]]}],
+                    data[[2]] === 0,
+                        MapThread[#1 + I #2 &, {data[[3]], data[[4]]}],
                     (* if density-matrix, stitch the real and imag components into a complex matrix *)
-        			data[[2]] === 1,
-        			    Transpose @ ArrayReshape[
-        				    MapThread[#1 + I #2 &, {data[[3]], data[[4]]}], 
-        				    {2^data[[1]],2^data[[1]]}]
-        		]
-        	]
+                    data[[2]] === 1,
+                        Transpose @ ArrayReshape[
+                            MapThread[#1 + I #2 &, {data[[3]], data[[4]]}], 
+                            {2^data[[1]],2^data[[1]]}]
+                ]
+            ]
 
         GetQuregState[qureg_Integer, "ZBasisKets"] := 
             With[
@@ -1261,21 +1261,21 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         (* overwrite the state of a qureg. InitStateFromAmps provided by WSTP *)
         SetQuregMatrix[qureg_Integer, elems_List] :=
-        	With[{flatelems = N @ 
-        		Which[
-        			(* vectors in various forms *)
-        			Length @ Dimensions @ elems === 1,
-        				elems,
-        			First @ Dimensions @ elems === 1,
-        				First @ elems,
-        			(Dimensions @ elems)[[2]] === 1,
-        				First @ Transpose @ elems,
-        			(* density matrices *)
-        			SquareMatrixQ @ elems,
-        				Flatten @ Transpose @ elems
-        		]},
-        		QuEST`InitStateFromAmps[qureg, Re[flatelems], Im[flatelems]]
-        	]
+            With[{flatelems = N @ 
+                Which[
+                    (* vectors in various forms *)
+                    Length @ Dimensions @ elems === 1,
+                        elems,
+                    First @ Dimensions @ elems === 1,
+                        First @ elems,
+                    (Dimensions @ elems)[[2]] === 1,
+                        First @ Transpose @ elems,
+                    (* density matrices *)
+                    SquareMatrixQ @ elems,
+                        Flatten @ Transpose @ elems
+                ]},
+                QuEST`InitStateFromAmps[qureg, Re[flatelems], Im[flatelems]]
+            ]
         SetQuregMatrix[___] := invalidArgError[SetQuregMatrix]
         
         SetQuregToPauliString[qureg_Integer, hamil_?isValidNumericPauliString] :=
@@ -1332,19 +1332,19 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
 
         getFullHilbertPauliMatrix[numQ_][Subscript[s_,q_]] := Module[
-        	{m=ConstantArray[SparseArray @ IdentityMatrix[2], numQ]},
-        	m[[q+1]] = SparseArray @ PauliMatrix[s /. {Id->0, X->1,Y->2,Z->3}];
-        	If[Length[m]>1, KroneckerProduct @@ (Reverse @ m), First @ m]]
+            {m=ConstantArray[SparseArray @ IdentityMatrix[2], numQ]},
+            m[[q+1]] = SparseArray @ PauliMatrix[s /. {Id->0, X->1,Y->2,Z->3}];
+            If[Length[m]>1, KroneckerProduct @@ (Reverse @ m), First @ m]]
             
         SetAttributes[CalcPauliExpressionMatrix, HoldAll]
         CalcPauliExpressionMatrix[h_, nQb_] := With[
-        	{hFlat = SimplifyPaulis[h]},
-        	ReleaseHold[
-        		HoldForm[hFlat] /. Verbatim[Times][a___, b:pauliOpPatt, c___] :>
-        			RuleCondition @ Times[
-        				Sequence @@ Cases[{a,b,c}, Except[pauliOpPatt]],
-        				Dot @@ getFullHilbertPauliMatrix[nQb] /@ Cases[{a,b,c}, pauliOpPatt]
-        			] /. p:pauliOpPatt :> RuleCondition @ getFullHilbertPauliMatrix[nQb][p]]]
+            {hFlat = SimplifyPaulis[h]},
+            ReleaseHold[
+                HoldForm[hFlat] /. Verbatim[Times][a___, b:pauliOpPatt, c___] :>
+                    RuleCondition @ Times[
+                        Sequence @@ Cases[{a,b,c}, Except[pauliOpPatt]],
+                        Dot @@ getFullHilbertPauliMatrix[nQb] /@ Cases[{a,b,c}, pauliOpPatt]
+                    ] /. p:pauliOpPatt :> RuleCondition @ getFullHilbertPauliMatrix[nQb][p]]]
         CalcPauliExpressionMatrix[h_] := With[
             {hFlat = SimplifyPaulis[h]},
             {nQb = Max[1 + Cases[{hFlat}, Subscript[(Id|X|Y|Z), q_]:>q, Infinity]]},
@@ -1704,34 +1704,34 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
          
         convertOpToPureCircs[Subscript[(Kraus|KrausNonTP), q__][matrs:{ __?MatrixQ }]] := 
-        	Circuit /@ Subscript[Matr, q] /@ matrs
+            Circuit /@ Subscript[Matr, q] /@ matrs
         convertOpToPureCircs[Subscript[Deph, q_][x_]] := {
-        	Circuit[ Fac@Sqrt[1-x] ],
-        	Circuit[ Fac@Sqrt[x] Subscript[Z, q] ] }
+            Circuit[ Fac@Sqrt[1-x] ],
+            Circuit[ Fac@Sqrt[x] Subscript[Z, q] ] }
         convertOpToPureCircs[Subscript[Deph, q1_,q2_][x_]] := {
-        	Circuit[ Fac@Sqrt[1-x] ],
-        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q1] ],
-        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q2] ],
-        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q1] Subscript[Z, q2] ]}
+            Circuit[ Fac@Sqrt[1-x] ],
+            Circuit[ Fac@Sqrt[x/3] Subscript[Z, q1] ],
+            Circuit[ Fac@Sqrt[x/3] Subscript[Z, q2] ],
+            Circuit[ Fac@Sqrt[x/3] Subscript[Z, q1] Subscript[Z, q2] ]}
         convertOpToPureCircs[Subscript[Depol, q_][x_]] := {
-        	Circuit[ Fac@Sqrt[1-x] ],
-        	Circuit[ Fac@Sqrt[x/3] Subscript[X, q] ],
-        	Circuit[ Fac@Sqrt[x/3] Subscript[Y, q] ],
-        	Circuit[ Fac@Sqrt[x/3] Subscript[Z, q] ]}
+            Circuit[ Fac@Sqrt[1-x] ],
+            Circuit[ Fac@Sqrt[x/3] Subscript[X, q] ],
+            Circuit[ Fac@Sqrt[x/3] Subscript[Y, q] ],
+            Circuit[ Fac@Sqrt[x/3] Subscript[Z, q] ]}
         convertOpToPureCircs[Subscript[Depol, q1_,q2_][x_]] := 
-        	Join[{{Fac@Sqrt[1-x]}}, Rest @ Flatten[
-        		Table[{Fac@Sqrt[x/15], Subscript[a, q1], Subscript[b, q2]}, {a,{Id,X,Y,Z}}, {b,{Id,X,Y,Z}}] /. Subscript[Id, _] -> Nothing, 1]]
+            Join[{{Fac@Sqrt[1-x]}}, Rest @ Flatten[
+                Table[{Fac@Sqrt[x/15], Subscript[a, q1], Subscript[b, q2]}, {a,{Id,X,Y,Z}}, {b,{Id,X,Y,Z}}] /. Subscript[Id, _] -> Nothing, 1]]
         convertOpToPureCircs[g:Subscript[Damp, q_][x_]] :=
-        	convertOpToPureCircs @ First @ GetCircuitGeneralised @ g
+            convertOpToPureCircs @ First @ GetCircuitGeneralised @ g
         convertOpToPureCircs[g_] :=
-        	{{g}} (* non-decoherence ops have no alternatives *)
+            {{g}} (* non-decoherence ops have no alternatives *)
             
         GetCircuitsFromChannel[circ_List /; isCircuitFormat[circ] ] := With[
             {choices = convertOpToPureCircs /@ circ},
             {numCircs = Times @@ Length /@ choices},
             If[Ceiling @ Log2[numCircs] > $SystemWordLength,
                 Message[GetCircuitsFromChannel::error, "The number of unique circuit decompositions exceeds 2^$SystemWordLength and cannot be enumerated."]; $Failed,
-        	       Flatten /@ Tuples[choices]]]
+                   Flatten /@ Tuples[choices]]]
         GetCircuitsFromChannel[gate_?isCircuitFormat] :=
             GetCircuitsFromChannel @ {gate}
         GetCircuitsFromChannel[___] := invalidArgError[GetCircuitsFromChannel]
@@ -1748,34 +1748,34 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 Subscript[Depol, _][x_ /; x < 0 || x > 3/4] |
                 Subscript[Depol, _, _][x_ /; x < 0 || x > 15/16]],
                 Message[GetRandomCircuitFromChannel::error, "A unitary-mixture channel had an invalid probability which was negative or exceeded that causing maximal mixing."];
-        		Return[$Failed]];
+                Return[$Failed]];
 
-        	(* get circuit decompositions of each operator *)
-        	circs = convertOpToPureCircs /@ channel;
-        	
-        	(* infer the probabilities from Fac[] in mixed-unitary noise, and assert other noise decompositions are uniform *)
-        	probs = Table[
-        		Times @@ (Cases[choice, Fac[x_]:>Abs[x]^2] /. {}->{1/N@Length@choices}), 
-        		{choices, circs}, {choice, choices}];
+            (* get circuit decompositions of each operator *)
+            circs = convertOpToPureCircs /@ channel;
             
-        	(* validate probabilities *)
-        	If[ Not[And @@ Table[
-        		VectorQ[probset, Internal`RealValuedNumericQ] &&
-        		AllTrue[probset, (0 <= # <= 1&)] &&
-        		Abs[Total[probset] - 1] < 10^6 $MachineEpsilon, 
-        		{probset, probs}]],
-        			Message[GetRandomCircuitFromChannel::error, "The probabilities of a decomposition of a decoherence operator were invalid and/or unnormalised."];
-        			Return[$Failed]];
+            (* infer the probabilities from Fac[] in mixed-unitary noise, and assert other noise decompositions are uniform *)
+            probs = Table[
+                Times @@ (Cases[choice, Fac[x_]:>Abs[x]^2] /. {}->{1/N@Length@choices}), 
+                {choices, circs}, {choice, choices}];
+            
+            (* validate probabilities *)
+            If[ Not[And @@ Table[
+                VectorQ[probset, Internal`RealValuedNumericQ] &&
+                AllTrue[probset, (0 <= # <= 1&)] &&
+                Abs[Total[probset] - 1] < 10^6 $MachineEpsilon, 
+                {probset, probs}]],
+                    Message[GetRandomCircuitFromChannel::error, "The probabilities of a decomposition of a decoherence operator were invalid and/or unnormalised."];
+                    Return[$Failed]];
 
-        	(* randomly select a pure circuit from each channel decomposition *)
-        	Flatten @ MapThread[
-        		With[{choice=RandomChoice[#1 -> #2]}, 
-        			(* we must multiply the matrices of incoherent noise with the asserted uniform probability *)
-        			If[ Length[#1]>1 && Not @ MemberQ[choice, Fac[_]],
-        				(* which we can equivalently perform with a Fac gate *)
-        				Join[{Fac[Sqrt@N@Length[#1]], choice}],
-        				choice /. Fac[_]->Nothing]] &,
-        		{probs, circs}]
+            (* randomly select a pure circuit from each channel decomposition *)
+            Flatten @ MapThread[
+                With[{choice=RandomChoice[#1 -> #2]}, 
+                    (* we must multiply the matrices of incoherent noise with the asserted uniform probability *)
+                    If[ Length[#1]>1 && Not @ MemberQ[choice, Fac[_]],
+                        (* which we can equivalently perform with a Fac gate *)
+                        Join[{Fac[Sqrt@N@Length[#1]], choice}],
+                        choice /. Fac[_]->Nothing]] &,
+                {probs, circs}]
         ]
 
         GetRandomCircuitFromChannel[operator_?isCircuitFormat] :=
@@ -1855,16 +1855,16 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
         
         getIgorLink[id_] :=
-        	LinkConnect[
-        		With[{host="@129.67.85.74",startport=50000},
-        		ToString[startport+id] <> host <> "," <> ToString[startport+id+100] <> host],
-        		LinkProtocol->"TCPIP"]
+            LinkConnect[
+                With[{host="@129.67.85.74",startport=50000},
+                ToString[startport+id] <> host <> "," <> ToString[startport+id+100] <> host],
+                LinkProtocol->"TCPIP"]
                 
         getRemoteLink[ip_, port1_, port2_] :=
-        	LinkConnect[
-        		With[{host="@"<>ip},
-        		ToString[port1] <> host <> "," <> ToString[port2] <> host],
-        		LinkProtocol->"TCPIP"]
+            LinkConnect[
+                With[{host="@"<>ip},
+                ToString[port1] <> host <> "," <> ToString[port2] <> host],
+                LinkProtocol->"TCPIP"]
                     
         CreateRemoteQuESTEnv[ip_String, port1_Integer, port2_Integer] := Install @ getRemoteLink[ip, port1, port2]
         CreateRemoteQuESTEnv[___] := invalidArgError[CreateRemoteQuESTEnv]
@@ -1985,35 +1985,35 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         extractCoeffExpo[s_Symbol][Verbatim[Times][c_?NumericQ, Verbatim[Power][s_Symbol,e_?NumericQ]]] := {c,e}
         extractCoeffExpo[s_Symbol][badTerm_] := {$Failed, badTerm}
         extractExpPolyTerms[poly_Plus, s_Symbol] :=
-        	extractCoeffExpo[s] /@ List @@ poly
+            extractCoeffExpo[s] /@ List @@ poly
         extractExpPolyTerms[term_, s_Symbol] :=
-        	{extractCoeffExpo[s] @ term}
+            {extractCoeffExpo[s] @ term}
             
         (* for extracting {coeffs}, {exponents} from an n-D exponential-polynomial *)
         extractMultiExpPolyTerms[terms_List, symbs:{__Symbol}] := 
-        	Module[{coeffs,powers, cp, badterms},
-        		coeffs = Association @@ Table[s->{},{s,symbs}];
-        		powers = Association @@ Table[s->{},{s,symbs}];
-        		badterms = {};
-        		(* for each term... *)
-        		Do[
-        			(* attempting extraction of term via each symbol *)
-        			Do[
-        				cp = extractCoeffExpo[s][term];
-        				If[ First[cp] =!= $Failed,
-        					AppendTo[coeffs[s], cp[[1]]];
-        					AppendTo[powers[s], cp[[2]]];
-        					Break[]],
-        				{s, symbs}];
-        			(* if no symbol choice admitted a recognised term, record term *)
-        			If[ First[cp] === $Failed,
-        				AppendTo[badterms, cp]];
-        			(* otherwise, proceed through all terms *)
-        			, {term, terms}];
-        		(* return bad terms if encountered, else term info *)
-        		If[badterms === {}, 
-        			{Values @ coeffs, Values @ powers},
-        			badterms]]
+            Module[{coeffs,powers, cp, badterms},
+                coeffs = Association @@ Table[s->{},{s,symbs}];
+                powers = Association @@ Table[s->{},{s,symbs}];
+                badterms = {};
+                (* for each term... *)
+                Do[
+                    (* attempting extraction of term via each symbol *)
+                    Do[
+                        cp = extractCoeffExpo[s][term];
+                        If[ First[cp] =!= $Failed,
+                            AppendTo[coeffs[s], cp[[1]]];
+                            AppendTo[powers[s], cp[[2]]];
+                            Break[]],
+                        {s, symbs}];
+                    (* if no symbol choice admitted a recognised term, record term *)
+                    If[ First[cp] === $Failed,
+                        AppendTo[badterms, cp]];
+                    (* otherwise, proceed through all terms *)
+                    , {term, terms}];
+                (* return bad terms if encountered, else term info *)
+                If[badterms === {}, 
+                    {Values @ coeffs, Values @ powers},
+                    badterms]]
         extractMultiExpPolyTerms[poly_Plus, symbs:{__Symbol}] := 
             extractMultiExpPolyTerms[List @@ poly, symbs]
         extractMultiExpPolyTerms[term_, symbs:{__Symbol}] := 
@@ -2154,57 +2154,57 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             a
 
         innerSimplifyPaulis[ (a:Subscript[pauliCodePatt, q_])^n_Integer?NonNegative ] :=
-        	If[EvenQ[n], Subscript[Id,q], a]
+            If[EvenQ[n], Subscript[Id,q], a]
             
         innerSimplifyPaulis[ Verbatim[Times][t__] ] := With[
-        	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
-        	{nc = innerSimplifyPaulis /@ (NonCommutativeMultiply @@ (innerSimplifyPaulis /@ Hold[t]))},
-        	(* pass product (which now contains no powers of pauli expressions) to simplify *)
-        	innerSimplifyPaulis[nc]]
+            (* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
+            {nc = innerSimplifyPaulis /@ (NonCommutativeMultiply @@ (innerSimplifyPaulis /@ Hold[t]))},
+            (* pass product (which now contains no powers of pauli expressions) to simplify *)
+            innerSimplifyPaulis[nc]]
 
         innerSimplifyPaulis[ Power[b_, n_Integer?NonNegative] ] /; Not @ FreeQ[b,Subscript[pauliCodePatt, _]] :=
-        	(* simplify the base, then pass a (non-expanded) product to simplify (to trigger above def) *)
-        	With[{s=ConstantArray[innerSimplifyPaulis[b], n]}, 
-        		innerSimplifyPaulis @@ (Times @@@ Hold[s])]
-        		
+            (* simplify the base, then pass a (non-expanded) product to simplify (to trigger above def) *)
+            With[{s=ConstantArray[innerSimplifyPaulis[b], n]}, 
+                innerSimplifyPaulis @@ (Times @@@ Hold[s])]
+                
         innerSimplifyPaulis[ Plus[t__] ] := With[
-        	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
-        	{s = Plus @@ (innerSimplifyPaulis /@ (List @@ (innerSimplifyPaulis /@ Hold[t])))},
-        	(* combine identical Pauli tensors in the resulting sum *)
-        	factorPaulis[s]
+            (* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
+            {s = Plus @@ (innerSimplifyPaulis /@ (List @@ (innerSimplifyPaulis /@ Hold[t])))},
+            (* combine identical Pauli tensors in the resulting sum *)
+            factorPaulis[s]
         ]
 
         innerSimplifyPaulis[ NonCommutativeMultiply[t__] ] := With[
-        	(* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
-        	{s = innerSimplifyPaulis /@ (NonCommutativeMultiply @@ (innerSimplifyPaulis /@ Hold[t]))},
-        	(* expand all multiplication into non-commuting; this means ex can be a sum now *)
-        	{ex = Distribute[s /. Times -> NonCommutativeMultiply]},
-        	(* notation shortcuts *)
-        	{xyz = X|Y|Z, xyzi = pauliCodePatt, ncm = NonCommutativeMultiply}, 
-        	(* since ex can now be a sum, after below transformation, factorise *)
-        	factorPaulis[
-        		ex //. {
-        		(* destroy exponents of single terms *)
-        		(a:Subscript[xyzi, q_])^n_Integer  /; (n >= 0) :> If[EvenQ[n], Subscript[Id,q], a], 
+            (* hold each t (no substitutions), simplify each, release hold, simplify each (with subs) *)
+            {s = innerSimplifyPaulis /@ (NonCommutativeMultiply @@ (innerSimplifyPaulis /@ Hold[t]))},
+            (* expand all multiplication into non-commuting; this means ex can be a sum now *)
+            {ex = Distribute[s /. Times -> NonCommutativeMultiply]},
+            (* notation shortcuts *)
+            {xyz = X|Y|Z, xyzi = pauliCodePatt, ncm = NonCommutativeMultiply}, 
+            (* since ex can now be a sum, after below transformation, factorise *)
+            factorPaulis[
+                ex //. {
+                (* destroy exponents of single terms *)
+                (a:Subscript[xyzi, q_])^n_Integer  /; (n >= 0) :> If[EvenQ[n], Subscript[Id,q], a], 
                 (a:Subscript[Id, _])^n_Integer :> a,
-        		(* move scalars to their own element (to clean pauli pattern) *)
-        		ncm[r1___, (f:Except[Subscript[xyzi, _]]) (a:Subscript[xyzi, _]) , r2___] :> ncm[f,r1,a,r2],
-        		(* map same-qubit adjacent (closest) pauli matrices to their product *)
-        		ncm[r1___, Subscript[(a:xyz), q_], r2:Shortest[___],Subscript[(b:xyz), q_], r3___] :>
-        			If[a === b, 
+                (* move scalars to their own element (to clean pauli pattern) *)
+                ncm[r1___, (f:Except[Subscript[xyzi, _]]) (a:Subscript[xyzi, _]) , r2___] :> ncm[f,r1,a,r2],
+                (* map same-qubit adjacent (closest) pauli matrices to their product *)
+                ncm[r1___, Subscript[(a:xyz), q_], r2:Shortest[___],Subscript[(b:xyz), q_], r3___] :>
+                    If[a === b, 
                         (* XX = YY = ZZ = Id *)
                         ncm[r1,r2,r3,Subscript[Id,q]],
                         (* AB = (+-) i C *)
                         With[{c = First @ Complement[List@@xyz, {a,b}]},
-        				    ncm[r1, I Signature@{a,b,c} Subscript[c, q], r2, r3]]],
+                            ncm[r1, I Signature@{a,b,c} Subscript[c, q], r2, r3]]],
                 (* remove superfluous Id's when multiplying onto other paulis on any qubits *)
                 ncm[r1___, Subscript[Id, _], r2___, b:Subscript[xyzi, _], r3___] :>
                     ncm[r1, r2, b, r3],
                 ncm[r1___, a:Subscript[xyzi, _], r2___, Subscript[Id, _], r3___] :>
                     ncm[r1, a, r2, r3]
-        	(* finally, restore products (overwriting user non-comms) and simplify scalars *)
-        	} /. NonCommutativeMultiply -> Times]]
-        	
+            (* finally, restore products (overwriting user non-comms) and simplify scalars *)
+            } /. NonCommutativeMultiply -> Times]]
+            
         innerSimplifyPaulis[uneval_] := With[
             (* let everything else evaluate (to admit scalars, or let variables be substituted *)
             {eval=uneval},
@@ -2244,7 +2244,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             PlotComponent -> "Magnitude",
             ChartElementFunction -> "ProfileCube"
         };
-         
+        
         isNumericSquareMatrix[matrix_?MatrixQ] :=
             And[SquareMatrixQ @ matrix, AllTrue[Flatten @ matrix, NumericQ]]
         isNumericSquareMatrix[_] :=
@@ -2298,7 +2298,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     Times @@ Dimensions @ data,
                     (* offset and possibly under-axis (negative values) bar graphics *)
                     ChartElementFunction->
-            			Function[{region, inds, meta}, ChartElementData[chartelem][
+                        Function[{region, inds, meta}, ChartElementData[chartelem][
                             (* we subtract "twice" negative values, to point e.g. cones downard *)
                             region + {offset, offset, {0, 2 Min[0, Extract[data, First@inds]]}}, inds, meta]],
                     (* with user Histogram3D options *)
@@ -2383,42 +2383,42 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         (* deciding how to handle gate placement *)
         getQubitInterval[{ctrls___}, {targs___}] :=
-        	Interval @ {Min[ctrls,targs],Max[ctrls,targs]}
+            Interval @ {Min[ctrls,targs],Max[ctrls,targs]}
         getNumQubitsInCircuit[circ_List] :=
-        	Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], Infinity],    
-        		1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], Infinity]] /. -Infinity -> 1  (* assume G and Fac circuits are 1 qubit *)
+            Max[1 + Cases[{circ}, Subscript[gate_, inds__]-> Max[inds], Infinity],    
+                1 + Cases[{circ}, Subscript[gate_, inds__][___] -> Max[inds], Infinity]] /. -Infinity -> 1  (* assume G and Fac circuits are 1 qubit *)
         isContiguousBlockGate[(SWAP|M|Rz|Ph|X|R|{R, pauliCodePatt..})] := False
         isContiguousBlockGate[_] := True
         needsSpecialSwap[label_, _List] /; Not[isContiguousBlockGate[label]] := False
         needsSpecialSwap[label_Symbol, targs_List] :=
-        	And[Length[targs] === 2, Abs[targs[[1]] - targs[[2]]] > 1]
+            And[Length[targs] === 2, Abs[targs[[1]] - targs[[2]]] > 1]
         getFixedThenBotTopSwappedQubits[{targ1_,targ2_}] :=
-        	{Min[targ1,targ2],Min[targ1,targ2]+1,Max[targ1,targ2]}
+            {Min[targ1,targ2],Min[targ1,targ2]+1,Max[targ1,targ2]}
             
         (* gate and qubit graphics primitives *)
         drawCross[targ_, col_] := {
-        	Line[{{col+.5,targ+.5}-{.1,.1},{col+.5,targ+.5}+{.1,.1}}],
-        	Line[{{col+.5,targ+.5}-{-.1,.1},{col+.5,targ+.5}+{-.1,.1}}]}
+            Line[{{col+.5,targ+.5}-{.1,.1},{col+.5,targ+.5}+{.1,.1}}],
+            Line[{{col+.5,targ+.5}-{-.1,.1},{col+.5,targ+.5}+{-.1,.1}}]}
         drawControls[{ctrls__}, {targs___}, col_] := {
-        	FaceForm[Black],
-        	Table[Disk[{col+.5,ctrl+.5},.1],{ctrl,{ctrls}}],
-        	With[{top=Max@{ctrls,targs},bot=Min@{ctrls,targs}},
-        		Line[{{col+.5,bot+.5},{col+.5,top+.5}}]]}
+            FaceForm[Black],
+            Table[Disk[{col+.5,ctrl+.5},.1],{ctrl,{ctrls}}],
+            With[{top=Max@{ctrls,targs},bot=Min@{ctrls,targs}},
+                Line[{{col+.5,bot+.5},{col+.5,top+.5}}]]}
         drawSingleBox[targ_, col_] :=
-        	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+1-.1}]
+            Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+1-.1}]
         drawDoubleBox[targ_, col_] :=
-        	Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+2-.1}]
+            Rectangle[{col+.1,targ+.1}, {col+1-.1,targ+2-.1}]
         drawMultiBox[minTarg_, numTargs_, col_] :=
             Rectangle[{col+.1,minTarg+.1}, {col+1-.1,minTarg+numTargs-.1}]
         drawQubitLines[qubits_List, col_, width_:1] :=
-        	Table[Line[{{col,qb+.5},{col+width,qb+.5}}], {qb,qubits}]
+            Table[Line[{{col,qb+.5},{col+width,qb+.5}}], {qb,qubits}]
         drawSpecialSwapLine[targ1_, targ2_, col_] := {
-        	Line[{{col,targ1+.5},{col+.1,targ1+.5}}],
-        	Line[{{col+.1,targ1+.5},{col+.5-.1,targ2+.5}}],
-        	Line[{{col+.5-.1,targ2+.5},{col+.5,targ2+.5}}]}
+            Line[{{col,targ1+.5},{col+.1,targ1+.5}}],
+            Line[{{col+.1,targ1+.5},{col+.5-.1,targ2+.5}}],
+            Line[{{col+.5-.1,targ2+.5},{col+.5,targ2+.5}}]}
         drawSpecialSwap[targ1_,targ2_,col_] := {
-        	drawSpecialSwapLine[targ1,targ2,col],
-        	drawSpecialSwapLine[targ2,targ1,col]}
+            drawSpecialSwapLine[targ1,targ2,col],
+            drawSpecialSwapLine[targ2,targ1,col]}
             
         (* special gate graphics *)
         drawGate[SWAP, {}, {targs___}, col_] := {
@@ -2447,11 +2447,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         drawGate[visibleId, {}, {targs___}, col_] :=
             drawGate[visibleId, {}, #, col]& /@ {targs}
         drawGate[M, {}, {targs___}, col_] :=
-        	Table[{
-        		drawSingleBox[targ,col],
-        		Circle[{col+.5,targ+.5-.4}, .4, {.7,\[Pi]-.7}],
-        		Line[{{col+.5,targ+.5-.25}, {col+.5+.2,targ+.5+.3}}]
-        		}, {targ, {targs}}]
+            Table[{
+                drawSingleBox[targ,col],
+                Circle[{col+.5,targ+.5-.4}, .4, {.7,\[Pi]-.7}],
+                Line[{{col+.5,targ+.5-.25}, {col+.5+.2,targ+.5+.3}}]
+                }, {targ, {targs}}]
 
         drawGate[Depol, {}, {targ_}, col_] := {
             EdgeForm[Dashed], drawGate[\[CapitalDelta], {}, {targ}, col]}
@@ -2459,8 +2459,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Circle[{col+.5,targ+.5},.25],
             Line[{{col+.5,targ+.5-.25},{col+.5,targ+.5+.25}}]}
         drawGate[label_Symbol, {}, {targ_}, col_] := {
-        	drawSingleBox[targ, col],
-        	Text[SymbolName@label, {col+.5,targ+.5}]}
+            drawSingleBox[targ, col],
+            Text[SymbolName@label, {col+.5,targ+.5}]}
             
         (* multi-qubit gate graphics *)
         drawGate[Rz, {}, targs_List, col_] := {
@@ -2487,42 +2487,42 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Line[{{col+.5,targ1+.5},{col+.5,targ2+.5}}],
             Sequence @@ (drawGate[X, {}, {#1}, col]& /@ targs)}
         drawGate[label_Symbol, {}, {targ1_,targ2_}/;Abs[targ2-targ1]===1, col_] := {
-        	drawDoubleBox[Min[targ1,targ2], col],
-        	Text[SymbolName@label, {col+.5,Min[targ1,targ2]+.5+.5}]}
+            drawDoubleBox[Min[targ1,targ2], col],
+            Text[SymbolName@label, {col+.5,Min[targ1,targ2]+.5+.5}]}
         drawGate[label_Symbol, {}, {targ1_,targ2_}, col_] := 
-        	With[{qb = getFixedThenBotTopSwappedQubits[{targ1,targ2}]}, {
-        		drawSpecialSwap[qb[[3]], qb[[2]], col],
-        		drawGate[label, {}, {qb[[1]],qb[[2]]}, col+.5],
-        		drawSpecialSwap[qb[[3]],qb[[2]],col+.5+1]}]
-        		
+            With[{qb = getFixedThenBotTopSwappedQubits[{targ1,targ2}]}, {
+                drawSpecialSwap[qb[[3]], qb[[2]], col],
+                drawGate[label, {}, {qb[[1]],qb[[2]]}, col+.5],
+                drawSpecialSwap[qb[[3]],qb[[2]],col+.5+1]}]
+                
         (* controlled gate graphics *)
         drawGate[SWAP, {ctrls__}, {targs__}, col_] := {
-        	drawControls[{ctrls},{targs},col],
-        	drawGate[SWAP, {}, {targs}, col]}
+            drawControls[{ctrls},{targs},col],
+            drawGate[SWAP, {}, {targs}, col]}
         drawGate[ops:{R, (X|Y|Z)..}, {ctrls__}, {targs__}, col_] := {
             drawControls[{ctrls},{targs},col],
             drawGate[ops, {}, {targs}, col]}
         drawGate[label_Symbol, {ctrls__}, {targ_}, col_] := {
-        	drawControls[{ctrls},{targ},col],
-        	drawGate[label, {}, {targ}, col]}
+            drawControls[{ctrls},{targ},col],
+            drawGate[label, {}, {targ}, col]}
         drawGate[label_Symbol, {ctrls__}, targs_List, col_] := {
-        	If[needsSpecialSwap[label,targs],
-        		With[{qb = getFixedThenBotTopSwappedQubits[targs]},
-        			drawControls[{ctrls} /. qb[[2]]->qb[[3]], DeleteCases[targs,qb[[3]]], col+.5]],
-        		drawControls[{ctrls},targs, col]],
-        	drawGate[label, {}, targs, col]}
+            If[needsSpecialSwap[label,targs],
+                With[{qb = getFixedThenBotTopSwappedQubits[targs]},
+                    drawControls[{ctrls} /. qb[[2]]->qb[[3]], DeleteCases[targs,qb[[3]]], col+.5]],
+                drawControls[{ctrls},targs, col]],
+            drawGate[label, {}, targs, col]}
         
         (* generating background qubit lines in a whole circuit column *)
         drawQubitColumn[isSpecialSwapCol_, specialSwapQubits_, numQubits_, curCol_, width_:1] :=
-        	If[isSpecialSwapCol,
-        		(* for a special column, draw all middle lines then non-special left/right nubs *)
-        		With[{nonspecial=Complement[Range[0,numQubits-1], specialSwapQubits]}, {
-        			drawQubitLines[Range[0,numQubits-1],curCol+.5,width],
-        			drawQubitLines[nonspecial,curCol,width],
-        			drawQubitLines[nonspecial,curCol+1,width]}],
-        		(* for a non special column, draw all qubit lines *)
-        		drawQubitLines[Range[0,numQubits-1],curCol,width]
-        	]
+            If[isSpecialSwapCol,
+                (* for a special column, draw all middle lines then non-special left/right nubs *)
+                With[{nonspecial=Complement[Range[0,numQubits-1], specialSwapQubits]}, {
+                    drawQubitLines[Range[0,numQubits-1],curCol+.5,width],
+                    drawQubitLines[nonspecial,curCol,width],
+                    drawQubitLines[nonspecial,curCol+1,width]}],
+                (* for a non special column, draw all qubit lines *)
+                drawQubitLines[Range[0,numQubits-1],curCol,width]
+            ]
             
         (* subcircuit seperator and scheduling label graphics *)
         drawSubcircSpacerLine[col_, numQubits_, style_] := 
@@ -2553,21 +2553,21 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             
             (* prepare local variables *)
             Module[{
-            	qubitgraphics,gategraphics,
-            	curCol,curSymb,curCtrls,curTargs,curInterval,curIsSpecialSwap,
-            	prevIntervals,prevIsSpecialSwap,prevSpecialQubits,
+                qubitgraphics,gategraphics,
+                curCol,curSymb,curCtrls,curTargs,curInterval,curIsSpecialSwap,
+                prevIntervals,prevIsSpecialSwap,prevSpecialQubits,
                 isFirstGate,subcircInd=0,subcircIndMax=Length[subcircs],
                 gates,finalSubSpacing},
 
                 (* outputs *)
-            	qubitgraphics = {};
-            	gategraphics = {};
-            	
+                qubitgraphics = {};
+                gategraphics = {};
+                
                 (* status of whether a gate can fit in the previous column *)
-            	curCol = 0;
-            	prevIntervals = {};
-            	prevIsSpecialSwap = False;
-            	prevSpecialQubits = {};
+                curCol = 0;
+                prevIntervals = {};
+                prevIsSpecialSwap = False;
+                prevSpecialQubits = {};
                 
                 (* draw divider left-of-circuit for the first label (else don't draw it) *)
                 If[And[labelDrawFunc =!= None, labels =!= {}, First[labels] =!= None], 
@@ -2587,59 +2587,59 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     isFirstGate = True;
                 
                     (* for each gate... *)
-                	Table[
+                    Table[
                     
-                		(* extract data from gate *)
-                		{curSymb,curCtrls,curTargs} = getSymbCtrlsTargs[gate];
-                		curInterval = getQubitInterval[curCtrls,curTargs];
-                		curIsSpecialSwap = needsSpecialSwap[curSymb,curTargs];
-                		
-                		(* decide whether gate will fit in previous column *)
-                		If[Or[
-                			And[curIsSpecialSwap, Not[prevIsSpecialSwap]],
-                			AnyTrue[prevIntervals, (IntervalIntersection[curInterval,#] =!= Interval[]&)]],
-                			(* will not fit: *)
-                			(
+                        (* extract data from gate *)
+                        {curSymb,curCtrls,curTargs} = getSymbCtrlsTargs[gate];
+                        curInterval = getQubitInterval[curCtrls,curTargs];
+                        curIsSpecialSwap = needsSpecialSwap[curSymb,curTargs];
+                        
+                        (* decide whether gate will fit in previous column *)
+                        If[Or[
+                            And[curIsSpecialSwap, Not[prevIsSpecialSwap]],
+                            AnyTrue[prevIntervals, (IntervalIntersection[curInterval,#] =!= Interval[]&)]],
+                            (* will not fit: *)
+                            (
 
-                				(* draw qubit lines for the previous column (if it exists) *)
+                                (* draw qubit lines for the previous column (if it exists) *)
                                 If[Not[isFirstGate],
                                     AppendTo[qubitgraphics,
                                         drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]]];
-                				
-                				(* then make a new column *)
-                				curCol = curCol + If[isFirstGate, 0, If[prevIsSpecialSwap,2,1]]; 
-                				prevIntervals = {curInterval};
-                				prevIsSpecialSwap = curIsSpecialSwap;
-                				prevSpecialQubits = {};
+                                
+                                (* then make a new column *)
+                                curCol = curCol + If[isFirstGate, 0, If[prevIsSpecialSwap,2,1]]; 
+                                prevIntervals = {curInterval};
+                                prevIsSpecialSwap = curIsSpecialSwap;
+                                prevSpecialQubits = {};
                                     
-                			),
-                			(* will fit *)
-                			AppendTo[prevIntervals, curInterval]
-                		];
+                            ),
+                            (* will fit *)
+                            AppendTo[prevIntervals, curInterval]
+                        ];
                         
                         (* record that this is no longer the first gate in the subcircuit *)
                         isFirstGate = False;
-                		
-                		(* record whether this gate requires special swaps *)
-                		If[curIsSpecialSwap, 
-                			With[{qbs=getFixedThenBotTopSwappedQubits[curTargs]},
-                				AppendTo[prevSpecialQubits, qbs[[2]]];
-                				AppendTo[prevSpecialQubits, qbs[[3]]]]];
-                	
-                		(* draw gate *)
-                		AppendTo[gategraphics,
-                			drawGate[
-                				curSymb,curCtrls,curTargs,
-                				curCol + If[prevIsSpecialSwap ~And~ Not[curIsSpecialSwap], .5, 0]]];        
+                        
+                        (* record whether this gate requires special swaps *)
+                        If[curIsSpecialSwap, 
+                            With[{qbs=getFixedThenBotTopSwappedQubits[curTargs]},
+                                AppendTo[prevSpecialQubits, qbs[[2]]];
+                                AppendTo[prevSpecialQubits, qbs[[3]]]]];
+                    
+                        (* draw gate *)
+                        AppendTo[gategraphics,
+                            drawGate[
+                                curSymb,curCtrls,curTargs,
+                                curCol + If[prevIsSpecialSwap ~And~ Not[curIsSpecialSwap], .5, 0]]];        
                         ,
-                		{gate,gates}
-                	];
-            	
-                	(* perform the final round of qubit line drawing (for previous column),
+                        {gate,gates}
+                    ];
+                
+                    (* perform the final round of qubit line drawing (for previous column),
                      * unless this is the final and empty subcircuit *) 
                     If[ subcircInd < subcircIndMax || Length@subcircs[[-1]] =!= 0,
-                	   AppendTo[qubitgraphics, 
-                		     drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]]];
+                       AppendTo[qubitgraphics, 
+                             drawQubitColumn[prevIsSpecialSwap, prevSpecialQubits, numQubits, curCol]]];
                         
                     (* make a new column (just accounting for previous subcircuit) *)
                     curCol = curCol + If[prevIsSpecialSwap,2,1]; 
@@ -2683,9 +2683,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     AppendTo[qubitgraphics,
                         drawQubitColumn[False, {} , numQubits, curCol, subSpacing/2]];
                 ];
-            	
+                
                 (* return *)
-            	{curCol, qubitgraphics, gategraphics}
+                {curCol, qubitgraphics, gategraphics}
             ]    
         ]
         
@@ -2871,70 +2871,70 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         getAnalSwapMatrix[qb1_, qb1_, numQb_] :=
             IdentityMatrix @ Power[2,numQb]
         getAnalSwapMatrix[qb1_, qb2_, numQb_] /; (qb1 > qb2) :=
-    	    getAnalSwapMatrix[qb2, qb1, numQb]
+            getAnalSwapMatrix[qb2, qb1, numQb]
         getAnalSwapMatrix[qb1_, qb2_, numQb_] := Module[
-           	{swap, iden, p0,l1,l0,p1, block=Power[2, qb2-qb1]},
-           	
-           	(* as per Lemma 3.1 of arxiv.org/pdf/1711.09765.pdf *)
-           	iden = IdentityMatrix[block/2];
-           	p0 = KroneckerProduct[iden, {{1,0},{0,0}}];
-           	l0 = KroneckerProduct[iden, {{0,1},{0,0}}];
-           	l1 = KroneckerProduct[iden, {{0,0},{1,0}}];
-           	p1 = KroneckerProduct[iden, {{0,0},{0,1}}];
-           	swap = ArrayFlatten[{{p0,l1},{l0,p1}}];
-           	
-           	(* pad swap matrix to full size *)
-           	If[qb1 > 0, 
-           		swap = KroneckerProduct[swap, IdentityMatrix@Power[2,qb1]]];
-           	If[qb2 < numQb-1, 
-           		swap = KroneckerProduct[IdentityMatrix@Power[2,numQb-qb2-1], swap]];
-           	swap
+               {swap, iden, p0,l1,l0,p1, block=Power[2, qb2-qb1]},
+               
+               (* as per Lemma 3.1 of arxiv.org/pdf/1711.09765.pdf *)
+               iden = IdentityMatrix[block/2];
+               p0 = KroneckerProduct[iden, {{1,0},{0,0}}];
+               l0 = KroneckerProduct[iden, {{0,1},{0,0}}];
+               l1 = KroneckerProduct[iden, {{0,0},{1,0}}];
+               p1 = KroneckerProduct[iden, {{0,0},{0,1}}];
+               swap = ArrayFlatten[{{p0,l1},{l0,p1}}];
+               
+               (* pad swap matrix to full size *)
+               If[qb1 > 0, 
+                   swap = KroneckerProduct[swap, IdentityMatrix@Power[2,qb1]]];
+               If[qb2 < numQb-1, 
+                   swap = KroneckerProduct[IdentityMatrix@Power[2,numQb-qb2-1], swap]];
+               swap
         ]
         
         (* build a numQb-matrix from op matrix *)
         getAnalFullMatrix[ctrls_, targs_, op_, numQb_] := Module[
-        	{swaps=IdentityMatrix@Power[2,numQb], unswaps, swap, newctrls, newtargs, i,j, matr},
+            {swaps=IdentityMatrix@Power[2,numQb], unswaps, swap, newctrls, newtargs, i,j, matr},
             
             (* make copies of user lists so we don't modify *)
-        	unswaps = swaps;
-        	newctrls = ctrls;
-        	newtargs = targs;
-        	
-        	(* swap targs to {0,1,...} *)
-        	For[i=0, i<Length[newtargs], i++,
-        		If[i != newtargs[[i+1]],
-        			swap = getAnalSwapMatrix[i, newtargs[[i+1]], numQb];
-        			swaps = swap . swaps;
-        			unswaps = unswaps . swap;
-        			newctrls = newctrls /. i->newtargs[[i+1]];
-        			newtargs = newtargs /. i->newtargs[[i+1]];
-        		]
-        	];
-        	
-        	(* swap ctrls to {Length[targs], Length[targs]+1, ...} *)
-        	For[i=0, i<Length[newctrls], i++,
-        		j = Length[newtargs] + i;
-        		If[j != newctrls[[i+1]],
-        			swap = getAnalSwapMatrix[j, newctrls[[i+1]], numQb];
-        			swaps = swap . swaps;
-        			unswaps = unswaps . swap;
-        			newctrls = newctrls /. j->newctrls[[i+1]]
-        		]
-        	];
-        	
-        	(* create controlled(op) *)
-        	matr = IdentityMatrix @ Power[2, Length[ctrls]+Length[targs]];
-        	matr[[-Length[op];;,-Length[op];;]] = op;
-        	
-        	(* pad to full size *)
-        	If[numQb > Length[targs]+Length[ctrls],
-        		matr = KroneckerProduct[
-        			IdentityMatrix@Power[2, numQb-Length[ctrls]-Length[targs]], matr]
-        	];
-        	
-        	(* apply the swaps on controlled(op) *)
-        	matr = unswaps . matr . swaps;
-        	matr
+            unswaps = swaps;
+            newctrls = ctrls;
+            newtargs = targs;
+            
+            (* swap targs to {0,1,...} *)
+            For[i=0, i<Length[newtargs], i++,
+                If[i != newtargs[[i+1]],
+                    swap = getAnalSwapMatrix[i, newtargs[[i+1]], numQb];
+                    swaps = swap . swaps;
+                    unswaps = unswaps . swap;
+                    newctrls = newctrls /. i->newtargs[[i+1]];
+                    newtargs = newtargs /. i->newtargs[[i+1]];
+                ]
+            ];
+            
+            (* swap ctrls to {Length[targs], Length[targs]+1, ...} *)
+            For[i=0, i<Length[newctrls], i++,
+                j = Length[newtargs] + i;
+                If[j != newctrls[[i+1]],
+                    swap = getAnalSwapMatrix[j, newctrls[[i+1]], numQb];
+                    swaps = swap . swaps;
+                    unswaps = unswaps . swap;
+                    newctrls = newctrls /. j->newctrls[[i+1]]
+                ]
+            ];
+            
+            (* create controlled(op) *)
+            matr = IdentityMatrix @ Power[2, Length[ctrls]+Length[targs]];
+            matr[[-Length[op];;,-Length[op];;]] = op;
+            
+            (* pad to full size *)
+            If[numQb > Length[targs]+Length[ctrls],
+                matr = KroneckerProduct[
+                    IdentityMatrix@Power[2, numQb-Length[ctrls]-Length[targs]], matr]
+            ];
+            
+            (* apply the swaps on controlled(op) *)
+            matr = unswaps . matr . swaps;
+            matr
         ]
         
         (* map gate symbols to matrices *)
@@ -3013,7 +3013,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                             ToString @ StandardForm @ First @ Cases[matrices, getAnalGateMatrix[g_] :> g, Infinity]];
                         $Failed)]]]
         CalcCircuitMatrix[gates_List, opts:OptionsPattern[]] :=
-        	CalcCircuitMatrix[gates, getNumQubitsInCircuit[gates], opts]
+            CalcCircuitMatrix[gates, getNumQubitsInCircuit[gates], opts]
         CalcCircuitMatrix[gate_, opts:OptionsPattern[]] :=
             CalcCircuitMatrix[{gate}, opts]
         CalcCircuitMatrix[___] := invalidArgError[CalcCircuitMatrix]
@@ -3021,46 +3021,46 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         GetCircuitGeneralised[gates_List] := With[
             {generalGates = Replace[gates, {
-            	(* known channels are converted to Kraus maps *)
-            	g:Subscript[Kraus, __][__] :> g,
-            	Subscript[Damp, q_][p_] :> Subscript[Kraus, q][{
-            		{{1,0},{0,Sqrt[1-p]}},
-            		{{0,Sqrt[p]},{0,0}}}],
-            	Subscript[Deph, q_][p_] :> Subscript[Kraus, q][{
-            		Sqrt[1-p] PauliMatrix[0], 
-            		Sqrt[p]   PauliMatrix[3]}],
-            	Subscript[Deph, q1_,q2_][p_] :> Subscript[Kraus, q1,q2][{
-            		Sqrt[1-p] IdentityMatrix[4], 
-            		Sqrt[p/3] KroneckerProduct[PauliMatrix[0], PauliMatrix[3]],
-            		Sqrt[p/3] KroneckerProduct[PauliMatrix[3], PauliMatrix[0]],
-            		Sqrt[p/3] KroneckerProduct[PauliMatrix[3], PauliMatrix[3]]}],
-            	Subscript[Depol, q_][p_] :> Subscript[Kraus, q][{
-            		Sqrt[1-p] PauliMatrix[0],
-            		Sqrt[p/3] PauliMatrix[1],
-            		Sqrt[p/3] PauliMatrix[2],
-            		Sqrt[p/3] PauliMatrix[3]}],
-            	Subscript[Depol, q1_,q2_][p_] :> Subscript[Kraus, q1,q2][ Join[
-            		{Sqrt[1-p] IdentityMatrix[4]},
-            		Flatten[ Table[
-            			(* the PauliMatrix[0] Kraus operator is duplicated, insignificantly *)
-            			If[n1===0 && n2===0, Nothing, Sqrt[p/15] KroneckerProduct[PauliMatrix[n1], PauliMatrix[n2]]],
-            			{n1,{0,1,2,3}}, {n2,{0,1,2,3}}], 1]]],
-            	(* global phase and fac become a fac*identity on the first qubit *)
+                (* known channels are converted to Kraus maps *)
+                g:Subscript[Kraus, __][__] :> g,
+                Subscript[Damp, q_][p_] :> Subscript[Kraus, q][{
+                    {{1,0},{0,Sqrt[1-p]}},
+                    {{0,Sqrt[p]},{0,0}}}],
+                Subscript[Deph, q_][p_] :> Subscript[Kraus, q][{
+                    Sqrt[1-p] PauliMatrix[0], 
+                    Sqrt[p]   PauliMatrix[3]}],
+                Subscript[Deph, q1_,q2_][p_] :> Subscript[Kraus, q1,q2][{
+                    Sqrt[1-p] IdentityMatrix[4], 
+                    Sqrt[p/3] KroneckerProduct[PauliMatrix[0], PauliMatrix[3]],
+                    Sqrt[p/3] KroneckerProduct[PauliMatrix[3], PauliMatrix[0]],
+                    Sqrt[p/3] KroneckerProduct[PauliMatrix[3], PauliMatrix[3]]}],
+                Subscript[Depol, q_][p_] :> Subscript[Kraus, q][{
+                    Sqrt[1-p] PauliMatrix[0],
+                    Sqrt[p/3] PauliMatrix[1],
+                    Sqrt[p/3] PauliMatrix[2],
+                    Sqrt[p/3] PauliMatrix[3]}],
+                Subscript[Depol, q1_,q2_][p_] :> Subscript[Kraus, q1,q2][ Join[
+                    {Sqrt[1-p] IdentityMatrix[4]},
+                    Flatten[ Table[
+                        (* the PauliMatrix[0] Kraus operator is duplicated, insignificantly *)
+                        If[n1===0 && n2===0, Nothing, Sqrt[p/15] KroneckerProduct[PauliMatrix[n1], PauliMatrix[n2]]],
+                        {n1,{0,1,2,3}}, {n2,{0,1,2,3}}], 1]]],
+                (* global phase and fac become a fac*identity on the first qubit *)
                 G[x_] :> Subscript[U, 0][ Exp[I x] IdentityMatrix[2] ],
                 Fac[x_] :> Subscript[Matr, 0][ x IdentityMatrix[2] ],  (* will not be conjugated for density matrices *)
                 (* U, Matr and UNonNorm gates remain the same *)
                 g:(Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][m_]) :> g,
-            	(* controlled gates are turned into U of identity matrices with bottom-right submatrix *)
+                (* controlled gates are turned into U of identity matrices with bottom-right submatrix *)
                 Subscript[C, c__Integer|{c__Integer}][Subscript[(mg:Matr|UNonNorm), q__Integer|{q__Integer}][m_]] :> 
                     With[{cDim=2^Length[{c}], tDim=Length@m},
                         Subscript[mg, Sequence @@ Join[{q}, {c}]][
                             ArrayFlatten[{{IdentityMatrix[tDim(cDim-1)], 0}, {0, m}}]]],
-            	Subscript[C, c__Integer|{c__Integer}][g_] :> 
-            		With[{cDim=2^Length[{c}], tDim=2^Length[getAnalGateTargets[g]]},
-            			Subscript[U, Sequence @@ Join[getAnalGateTargets[g], {c}]][
+                Subscript[C, c__Integer|{c__Integer}][g_] :> 
+                    With[{cDim=2^Length[{c}], tDim=2^Length[getAnalGateTargets[g]]},
+                        Subscript[U, Sequence @@ Join[getAnalGateTargets[g], {c}]][
                             ArrayFlatten[{{IdentityMatrix[tDim(cDim-1)], 0}, {0, getAnalGateMatrix[g]}}]]],
-            	(* all other symbols are treated like generic unitary gates *)
-            	g_ :> Subscript[U, Sequence @@ getAnalGateTargets[g]][getAnalGateMatrix[g]]
+                (* all other symbols are treated like generic unitary gates *)
+                g_ :> Subscript[U, Sequence @@ getAnalGateTargets[g]][getAnalGateMatrix[g]]
             (* replace at top level *)
             }, 1]},
             If[ FreeQ[generalGates, getAnalGateMatrix],
@@ -3541,7 +3541,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetUnsupportedGates[cols:{_List ..}, spec_Association] :=
             GetUnsupportedGates[#, spec]& /@ cols
         GetUnsupportedGates[circ_List, spec_Association] :=
-    	   Select[circ, isUnsupportedGate[spec]]
+           Select[circ, isUnsupportedGate[spec]]
         GetUnsupportedGates[___] := invalidArgError[GetUnsupportedGates]
             
         (* replace alias symbols (in gates & noise) with their circuit, in-place (no list nesting),
@@ -3965,14 +3965,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q_Integer][matrOrVec_]] := Subscript[g, q][Simplify @ matrOrVec]
         tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q__Integer][matrOrVec_]] /; OrderedQ[{q}] := Subscript[g, q][Simplify @ matrOrVec]
         tidyMatrixGate[Subscript[g:(U|Matr|UNonNorm), q__Integer][matrOrVec_]] := 
-        	With[{order=Ordering[{q}]},
-        		Do[
-        			If[order[[i]] =!= i, Block[{tmp}, With[
-        				{q1={q}[[i]], q2={q}[[order[[i]]]]}, 
-        				{s=CalcCircuitMatrix[{Subscript[SWAP, i-1,order[[i]]-1]}, Length[{q}]]},
+            With[{order=Ordering[{q}]},
+                Do[
+                    If[order[[i]] =!= i, Block[{tmp}, With[
+                        {q1={q}[[i]], q2={q}[[order[[i]]]]}, 
+                        {s=CalcCircuitMatrix[{Subscript[SWAP, i-1,order[[i]]-1]}, Length[{q}]]},
                         {newMatr=If[MatrixQ[matrOrVec], (s . matrOrVec . s), (s . matrOrVec)]},
-        				Return @ tidyMatrixGate @ Subscript[g, Sequence@@((({q} /. q1->tmp) /. q2->q1) /. tmp->q2)][newMatr]]]],
-        			{i, Length[{q}]}]]
+                        Return @ tidyMatrixGate @ Subscript[g, Sequence@@((({q} /. q1->tmp) /. q2->q1) /. tmp->q2)][newMatr]]]],
+                    {i, Length[{q}]}]]
             
         (* multiply matrices with one another or with diagonal matrix vectors *)    
         multiplyMatrsOrVecs[m1_?MatrixQ, m2_?MatrixQ] := m1 . m2 // Simplify
@@ -3981,167 +3981,167 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         multiplyMatrsOrVecs[v1_?VectorQ, v2_?VectorQ] := v1 * v2 // Simplify
 
         SimplifyCircuit[circ_List] := With[{
-        	(*
-        	 * establish preconditions
-        	 *)
-        	initCols = GetCircuitColumns[circ] //. {
-        		(* convert Ph controls into targets *)
-        		Subscript[C, c__Integer|{c__Integer}][Subscript[Ph, t__Integer|{t__Integer}][x__]] :> Subscript[Ph, tidyInds[c,t]][x],
-        		(* convert S and T gates into Ph *)
-        		Subscript[(g:S|T), t_Integer ]:> Subscript[Ph, t][Pi / (g/.{S->2,T->4})], 
-        		Subscript[C, c__Integer|{c__Integer}][Subscript[(g:S|T), t_Integer]] :> Subscript[Ph, tidyInds[c,t]][Pi / (g/.{S->2,T->4})],
-        		(* sort qubits of general unitaries by SWAPs upon matrix *)
-        		g:Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][matrOrVec_] :> tidyMatrixGate[g],
-        		Subscript[C, c__][g:Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][matrOrVec_]] :> Subscript[C, tidyInds@c][tidyMatrixGate@g],
-        		(* sort controls of any gate *)
-        		Subscript[C, c__Integer|{c__Integer}][g_] :> Subscript[C, tidyInds@c][g],
-        		(* sort targets of target-order-agnostic gates *)
-        		Subscript[(g:(H|X|Y|Z|Id|SWAP|Ph|M||T|S)), t__Integer|{t__Integer}] :> Subscript[g, tidyInds@t],
-        		Subscript[(g:(Rx|Ry|Rz|Damp|Deph|Depol)), t__Integer|{t__Integer}][x__] :> Subscript[g, tidyInds@t][x],
-        		(* unpack all qubit lists *)
-        		Subscript[s_, {t__}] :> Subscript[s, t],
-        		Subscript[s_, {t__}][x_] :> Subscript[s, t][x],
-        		Subscript[C, c__][Subscript[s_, {t__}]] :> Subscript[C, c][Subscript[s, t]],
-        		Subscript[C, c__][Subscript[s_, {t__}][x_]] :> Subscript[C, c][Subscript[s, t][x]]
-        	}},
-        	(* above establishes preconditions:
-        		- gates within a column target unique qubits
-        		- qubit lists of order-agnostic gates are ordered and duplicate-free
-        		- qubit lists are flat (not contained in List)
-        		- phase gates have no control qubits
-        		- there are no T or S gates
-        		- R[x, pauli-tensor] have fixed-order tensors (automatic by Times)
-        		- the first global phase G[] will appear in the first column
-        	*)
-        	Module[{simpCols},
-        		(* 
-        		* repeatedly simplify circuit until static 
-        		*)
-        		simpCols = FixedPoint[ Function[{prevCols}, Module[{cols},
-        			cols = prevCols;
-        			(* 
-        			 * simplify contiguous columns
-        			 *)
-        			cols = SequenceReplace[cols, Join[
-        				(* remove adjacent idempotent operations *)
-        				Join @@ Table[
-        					{ {a___, wrap@Subscript[gate, q__], b___}, {c___,  wrap@Subscript[gate, q__], d___} } :> Sequence[{a,b},{c,d}],
-        					{gate, {H,X,Y,Z,Id,SWAP}},
-        					{wrap, {Identity, Subscript[C, ctrls__]}}],
-        				(* combine arguments of adjacent parameterized gates *)
-        				Join @@ Table[ 
-        					(* awkward With[] use to force immediate eval of 'gate' in DelayedRule *)
-        					With[{gate=gateSymb}, {
-        					{ {a___, Subscript[gate, q__][x_], b___}, {c___, Subscript[gate, q__][y_], d___} } :> Sequence[{a,Subscript[gate, q][x+y//Simplify],b},{c,d}],
-        					{ {a___, Subscript[C, ctrl__][Subscript[gate, q__][x_]], b___}, {c___, Subscript[C, ctrl__][Subscript[gate, q__][y_]], d___} } :> Sequence[{a,Subscript[C, ctrl][Subscript[gate, q][x+y//Simplify]],b},{c,d}]
-        					}],
-        					{gateSymb, {Ph,Rx,Ry,Rz}}],
-        				{
-        					{ {a___, R[x_,op_], b___}, {c___, R[y_,op_], d___} } :> Sequence[{a,R[x+y//Simplify,op],b},{c,d}],
-        					{ {a___, Subscript[C, ctrl__]@R[x_,op_], b___}, {c___, Subscript[C, ctrl__]@R[y_,op_], d___} } :> Sequence[{a,Subscript[C, ctrl]@R[x+y//Simplify,op],b},{c,d}]
-        				},
-        				(* multiply matrices of adjacent unitaries and Matr *)
+            (*
+             * establish preconditions
+             *)
+            initCols = GetCircuitColumns[circ] //. {
+                (* convert Ph controls into targets *)
+                Subscript[C, c__Integer|{c__Integer}][Subscript[Ph, t__Integer|{t__Integer}][x__]] :> Subscript[Ph, tidyInds[c,t]][x],
+                (* convert S and T gates into Ph *)
+                Subscript[(g:S|T), t_Integer ]:> Subscript[Ph, t][Pi / (g/.{S->2,T->4})], 
+                Subscript[C, c__Integer|{c__Integer}][Subscript[(g:S|T), t_Integer]] :> Subscript[Ph, tidyInds[c,t]][Pi / (g/.{S->2,T->4})],
+                (* sort qubits of general unitaries by SWAPs upon matrix *)
+                g:Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][matrOrVec_] :> tidyMatrixGate[g],
+                Subscript[C, c__][g:Subscript[U|Matr|UNonNorm, q__Integer|{q__Integer}][matrOrVec_]] :> Subscript[C, tidyInds@c][tidyMatrixGate@g],
+                (* sort controls of any gate *)
+                Subscript[C, c__Integer|{c__Integer}][g_] :> Subscript[C, tidyInds@c][g],
+                (* sort targets of target-order-agnostic gates *)
+                Subscript[(g:(H|X|Y|Z|Id|SWAP|Ph|M||T|S)), t__Integer|{t__Integer}] :> Subscript[g, tidyInds@t],
+                Subscript[(g:(Rx|Ry|Rz|Damp|Deph|Depol)), t__Integer|{t__Integer}][x__] :> Subscript[g, tidyInds@t][x],
+                (* unpack all qubit lists *)
+                Subscript[s_, {t__}] :> Subscript[s, t],
+                Subscript[s_, {t__}][x_] :> Subscript[s, t][x],
+                Subscript[C, c__][Subscript[s_, {t__}]] :> Subscript[C, c][Subscript[s, t]],
+                Subscript[C, c__][Subscript[s_, {t__}][x_]] :> Subscript[C, c][Subscript[s, t][x]]
+            }},
+            (* above establishes preconditions:
+                - gates within a column target unique qubits
+                - qubit lists of order-agnostic gates are ordered and duplicate-free
+                - qubit lists are flat (not contained in List)
+                - phase gates have no control qubits
+                - there are no T or S gates
+                - R[x, pauli-tensor] have fixed-order tensors (automatic by Times)
+                - the first global phase G[] will appear in the first column
+            *)
+            Module[{simpCols},
+                (* 
+                * repeatedly simplify circuit until static 
+                *)
+                simpCols = FixedPoint[ Function[{prevCols}, Module[{cols},
+                    cols = prevCols;
+                    (* 
+                     * simplify contiguous columns
+                     *)
+                    cols = SequenceReplace[cols, Join[
+                        (* remove adjacent idempotent operations *)
+                        Join @@ Table[
+                            { {a___, wrap@Subscript[gate, q__], b___}, {c___,  wrap@Subscript[gate, q__], d___} } :> Sequence[{a,b},{c,d}],
+                            {gate, {H,X,Y,Z,Id,SWAP}},
+                            {wrap, {Identity, Subscript[C, ctrls__]}}],
+                        (* combine arguments of adjacent parameterized gates *)
+                        Join @@ Table[ 
+                            (* awkward With[] use to force immediate eval of 'gate' in DelayedRule *)
+                            With[{gate=gateSymb}, {
+                            { {a___, Subscript[gate, q__][x_], b___}, {c___, Subscript[gate, q__][y_], d___} } :> Sequence[{a,Subscript[gate, q][x+y//Simplify],b},{c,d}],
+                            { {a___, Subscript[C, ctrl__][Subscript[gate, q__][x_]], b___}, {c___, Subscript[C, ctrl__][Subscript[gate, q__][y_]], d___} } :> Sequence[{a,Subscript[C, ctrl][Subscript[gate, q][x+y//Simplify]],b},{c,d}]
+                            }],
+                            {gateSymb, {Ph,Rx,Ry,Rz}}],
+                        {
+                            { {a___, R[x_,op_], b___}, {c___, R[y_,op_], d___} } :> Sequence[{a,R[x+y//Simplify,op],b},{c,d}],
+                            { {a___, Subscript[C, ctrl__]@R[x_,op_], b___}, {c___, Subscript[C, ctrl__]@R[y_,op_], d___} } :> Sequence[{a,Subscript[C, ctrl]@R[x+y//Simplify,op],b},{c,d}]
+                        },
+                        (* multiply matrices of adjacent unitaries and Matr *)
                         (* we do not presently merge U unto neighbouring Matr *)
-        				{
-        					{ {a___, Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> 
+                        {
+                            { {a___, Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> 
                                 (
                                     Sequence[{a,Subscript[g, q][multiplyMatrsOrVecs[mv2,mv1]],b},{c,d}]
                                 ),
-        					{ {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][multiplyMatrsOrVecs[mv2,mv1]],b},{c,d}]
-        				},
-        				(* merge all global phases *)
-        				{
-        					{ {a___, G[x_], b___, G[y_], c___} } :> {G[x+y//Simplify], a, b, c},
-        					{ {a___, G[x_], b___}, infix___, {c___, G[y_], d___} } :> Sequence[{G[x+y//Simplify],a,b}, infix, {c,d}]
-        				},
+                            { {a___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv1_], b___}, {c___, Subscript[C, ctrl__]@Subscript[g:(U|Matr|UNonNorm), q__][mv2_], d___} } :> Sequence[{a,Subscript[C, ctrl]@Subscript[g, q][multiplyMatrsOrVecs[mv2,mv1]],b},{c,d}]
+                        },
+                        (* merge all global phases *)
+                        {
+                            { {a___, G[x_], b___, G[y_], c___} } :> {G[x+y//Simplify], a, b, c},
+                            { {a___, G[x_], b___}, infix___, {c___, G[y_], d___} } :> Sequence[{G[x+y//Simplify],a,b}, infix, {c,d}]
+                        },
                         (* merge all factors *)
                         {
-        					{ {a___, Fac[x_], b___, Fac[y_], c___} } :> {Fac[x y //Simplify], a, b, c},
-        					{ {a___, Fac[x_], b___}, infix___, {c___, Fac[y_], d___} } :> Sequence[{Fac[x y //Simplify],a,b}, infix, {c,d}]
-        				},
+                            { {a___, Fac[x_], b___, Fac[y_], c___} } :> {Fac[x y //Simplify], a, b, c},
+                            { {a___, Fac[x_], b___}, infix___, {c___, Fac[y_], d___} } :> Sequence[{Fac[x y //Simplify],a,b}, infix, {c,d}]
+                        },
                         (* merge factors and global phases *)
                         {
                             { {a___, Fac[x_], b___, G[y_], c___} } :> {Fac[x Exp[y I] //Simplify], a, b, c},
                             { {a___, G[y_], b___, Fac[x_], c___} } :> {Fac[x Exp[y I] //Simplify], a, b, c},
-        					{ {a___, Fac[x_], b___}, infix___, {c___, G[y_], d___} } :> Sequence[{Fac[x Exp[y I] //Simplify],a,b}, infix, {c,d}],
+                            { {a___, Fac[x_], b___}, infix___, {c___, G[y_], d___} } :> Sequence[{Fac[x Exp[y I] //Simplify],a,b}, infix, {c,d}],
                             { {a___, G[y_], b___}, infix___, {c___, Fac[x_], d___} } :> Sequence[{Fac[x Exp[y I] //Simplify],a,b}, infix, {c,d}]
                         },
-        				(* merge adjacent Pauli operators *)
-        				{
-        					{ {a___, Subscript[X, q__], b___}, {c___, Subscript[Y, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[Z, q],b},{c,d}],
-        					{ {a___, Subscript[Y, q__], b___}, {c___, Subscript[Z, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[X, q],b},{c,d}],
-        					{ {a___, Subscript[Z, q__], b___}, {c___, Subscript[X, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[Y, q],b},{c,d}],
-        					{ {a___, Subscript[Y, q__], b___}, {c___, Subscript[X, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[Z, q],b},{c,d}],
-        					{ {a___, Subscript[Z, q__], b___}, {c___, Subscript[Y, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[X, q],b},{c,d}],
-        					{ {a___, Subscript[X, q__], b___}, {c___, Subscript[Z, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[Y, q],b},{c,d}]
-        				},
-        				(* merge adjacent rotations with paulis *)
-        				Join @@ Table[ With[{rot=First@ops, pauli=Last@ops}, {
-        					{ {a___, Subscript[pauli, q__], b___}, {c___, Subscript[rot, q__][x_], d___} } :> Sequence[{a,G[Pi/2],Subscript[rot, q][x+Pi],b},{c,d}],
-        					{ {a___, Subscript[rot, q__][x_], b___}, {c___, Subscript[pauli, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[rot, q][x+Pi],b},{c,d}]
-        				}], 
-        					{ops, {{Rx,X},{Ry,Y},{Rz,Z}}}]
-        				
-        				(* TODO: should I convert Z to Ph too in order to compound with Ph?? *)
-        				(* and should controlled Z become Ph too?? *)
-        				
-        				(* TODO: turn Rx[2\[Pi] + eh] = G[\[Pi]] Rx[eh] ??? *)
-        			]];
-        			(* 
-        			 * simplify single gates (at any level, even within controls)
-        			 *)
-        			cols = cols //. {
-        				(* remove empty columns *)
-        				{} -> Nothing, 
-        				{{}..} -> Nothing,
-        				(* remove controlled gates with insides already removed *)
-        				Subscript[C, __][Nothing] -> Nothing,
-        				(* remove zero-parameter gates *)
-        				Subscript[(Ph|Rx|Ry|Rz|Damp|Deph|Depol), __][0|0.] -> Nothing,
-        				R[0|0.,_] -> Nothing,
-        				G[0|0.] -> Nothing,
+                        (* merge adjacent Pauli operators *)
+                        {
+                            { {a___, Subscript[X, q__], b___}, {c___, Subscript[Y, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[Z, q],b},{c,d}],
+                            { {a___, Subscript[Y, q__], b___}, {c___, Subscript[Z, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[X, q],b},{c,d}],
+                            { {a___, Subscript[Z, q__], b___}, {c___, Subscript[X, q__], d___} } :> Sequence[{a,G[3 Pi/2],Subscript[Y, q],b},{c,d}],
+                            { {a___, Subscript[Y, q__], b___}, {c___, Subscript[X, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[Z, q],b},{c,d}],
+                            { {a___, Subscript[Z, q__], b___}, {c___, Subscript[Y, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[X, q],b},{c,d}],
+                            { {a___, Subscript[X, q__], b___}, {c___, Subscript[Z, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[Y, q],b},{c,d}]
+                        },
+                        (* merge adjacent rotations with paulis *)
+                        Join @@ Table[ With[{rot=First@ops, pauli=Last@ops}, {
+                            { {a___, Subscript[pauli, q__], b___}, {c___, Subscript[rot, q__][x_], d___} } :> Sequence[{a,G[Pi/2],Subscript[rot, q][x+Pi],b},{c,d}],
+                            { {a___, Subscript[rot, q__][x_], b___}, {c___, Subscript[pauli, q__], d___} } :> Sequence[{a,G[Pi/2],Subscript[rot, q][x+Pi],b},{c,d}]
+                        }], 
+                            {ops, {{Rx,X},{Ry,Y},{Rz,Z}}}]
+                        
+                        (* TODO: should I convert Z to Ph too in order to compound with Ph?? *)
+                        (* and should controlled Z become Ph too?? *)
+                        
+                        (* TODO: turn Rx[2\[Pi] + eh] = G[\[Pi]] Rx[eh] ??? *)
+                    ]];
+                    (* 
+                     * simplify single gates (at any level, even within controls)
+                     *)
+                    cols = cols //. {
+                        (* remove empty columns *)
+                        {} -> Nothing, 
+                        {{}..} -> Nothing,
+                        (* remove controlled gates with insides already removed *)
+                        Subscript[C, __][Nothing] -> Nothing,
+                        (* remove zero-parameter gates *)
+                        Subscript[(Ph|Rx|Ry|Rz|Damp|Deph|Depol), __][0|0.] -> Nothing,
+                        R[0|0.,_] -> Nothing,
+                        G[0|0.] -> Nothing,
                         Fac[1|1.] -> Nothing,
                         Fac[x_ /; (Abs[x] === 1)] -> G[ ArcTan[Re@x, Im@x] ],
-        				(* remove identity matrices (qubits are sorted) *)
-        				Subscript[U|Matr|UNonNorm, q__][m_?MatrixQ] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
+                        (* remove identity matrices (qubits are sorted) *)
+                        Subscript[U|Matr|UNonNorm, q__][m_?MatrixQ] /; m === IdentityMatrix[2^Length[{q}]] -> Nothing,
                         Subscript[U|Matr|UNonNorm, q__][v_?VectorQ] /; v === ConstantArray[1, 2^Length[{q}]] -> Nothing,
-        				(* simplify known parameters to within their periods *)
-        				Subscript[Ph, q__][x_?NumericQ] /; Not[0 <= x < 2 Pi] :> Subscript[Ph, q]@Mod[x, 2 Pi],
-        				(g:(Subscript[(Rx|Ry|Rz), q__]))[x_?NumericQ] /; Not[0 <= x < 4 Pi] :> g@Mod[x, 4 Pi],
-        				R[x_?NumericQ, op_] /; Not[0 <= x < 4 Pi] :> R[Mod[x, 4 Pi], op],
-        				(* convert single-target R to Rx, Ry or Rz *)
-        				R[x_, op:Subscript[(X|Y|Z), q_]] :> (op[x] /. {X->Rx,Y->Ry,Z->Rz})
-        			};
-        			(* 
-        			 * simplify single gates (top-level only, cannot occur within controls) 
-        			 *)
-        			cols = Replace[cols, {
-        				(* transform param gates with Pi params *)
-        				(g:(Subscript[(Rx|Ry|Rz), q__]))[Pi] :> Sequence[ G[3 Pi/2], g/.{Rx->X,Ry->Y,Rz->Z} ],
-        				R[Pi, op_Times] :> Sequence[G[3 Pi/2], Sequence@@op],
-        				Subscript[Ph, q_][Pi] :> Subscript[Z, q],
-        				Subscript[Ph, q__][Pi] :> Subscript[C, Sequence@@Rest[{q}]][Subscript[Z, First@{q}]],
-        				(* transform rotations gates with 2 Pi params *)
-        				(g:(Subscript[(Rx|Ry|Rz), q__]))[2 Pi] :> G[Pi],
-        				R[2 Pi, _Times] :> G[Pi]
-        				(* forces top-level, inside each subcircuit *)
-        				}, {2}];
-        			(* 
-        			 * re-update circuit columns 
-        			 *)
-        			If[cols === Nothing, cols={}];
-        			cols = GetCircuitColumns @ ExtractCircuit @ cols;
-        			cols
-        		]], initCols];
-        		(*
-        		 * post-process the simplified columns
-        		 *)
-        		ExtractCircuit @ simpCols /. {
-        			Subscript[Ph, q_][Pi/2] :> Subscript[S, q],
-        			Subscript[Ph, q_][Pi/4] :> Subscript[T, q]
-        			
-        			(* TODO: controls?? Z gates?? *)
-        		}]]
+                        (* simplify known parameters to within their periods *)
+                        Subscript[Ph, q__][x_?NumericQ] /; Not[0 <= x < 2 Pi] :> Subscript[Ph, q]@Mod[x, 2 Pi],
+                        (g:(Subscript[(Rx|Ry|Rz), q__]))[x_?NumericQ] /; Not[0 <= x < 4 Pi] :> g@Mod[x, 4 Pi],
+                        R[x_?NumericQ, op_] /; Not[0 <= x < 4 Pi] :> R[Mod[x, 4 Pi], op],
+                        (* convert single-target R to Rx, Ry or Rz *)
+                        R[x_, op:Subscript[(X|Y|Z), q_]] :> (op[x] /. {X->Rx,Y->Ry,Z->Rz})
+                    };
+                    (* 
+                     * simplify single gates (top-level only, cannot occur within controls) 
+                     *)
+                    cols = Replace[cols, {
+                        (* transform param gates with Pi params *)
+                        (g:(Subscript[(Rx|Ry|Rz), q__]))[Pi] :> Sequence[ G[3 Pi/2], g/.{Rx->X,Ry->Y,Rz->Z} ],
+                        R[Pi, op_Times] :> Sequence[G[3 Pi/2], Sequence@@op],
+                        Subscript[Ph, q_][Pi] :> Subscript[Z, q],
+                        Subscript[Ph, q__][Pi] :> Subscript[C, Sequence@@Rest[{q}]][Subscript[Z, First@{q}]],
+                        (* transform rotations gates with 2 Pi params *)
+                        (g:(Subscript[(Rx|Ry|Rz), q__]))[2 Pi] :> G[Pi],
+                        R[2 Pi, _Times] :> G[Pi]
+                        (* forces top-level, inside each subcircuit *)
+                        }, {2}];
+                    (* 
+                     * re-update circuit columns 
+                     *)
+                    If[cols === Nothing, cols={}];
+                    cols = GetCircuitColumns @ ExtractCircuit @ cols;
+                    cols
+                ]], initCols];
+                (*
+                 * post-process the simplified columns
+                 *)
+                ExtractCircuit @ simpCols /. {
+                    Subscript[Ph, q_][Pi/2] :> Subscript[S, q],
+                    Subscript[Ph, q_][Pi/4] :> Subscript[T, q]
+                    
+                    (* TODO: controls?? Z gates?? *)
+                }]]
         
         SimplifyCircuit[___] := invalidArgError[SimplifyCircuit]
         
@@ -4166,45 +4166,45 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             
         separateCoeffAndPauliTensor[pauli_Subscript] := {1, pauli}
         separateCoeffAndPauliTensor[prod_Times] := {
-        	Times@@Cases[prod, c:Except[pauliOpPatt]:>c],
-        	Times@@Cases[prod, p:pauliOpPatt:>p] }
+            Times@@Cases[prod, c:Except[pauliOpPatt]:>c],
+            Times@@Cases[prod, p:pauliOpPatt:>p] }
         separateTermsOfPauliHamil[hamil_Plus] := 
-        	separateCoeffAndPauliTensor /@ (List @@ hamil)
+            separateCoeffAndPauliTensor /@ (List @@ hamil)
         separateTermsOfPauliHamil[term_] := 
-        	{separateCoeffAndPauliTensor[term]}
+            {separateCoeffAndPauliTensor[term]}
         getSymmetrizedTerms[terms_List, fac_, 1] := 
-        	MapAt[fac # &, terms, {All, 1}]
+            MapAt[fac # &, terms, {All, 1}]
         getSymmetrizedTerms[terms_List, fac_, 2] := With[
-        	{s1 = getSymmetrizedTerms[terms, fac/2, 1]}, 
-        	Join[Most[s1], {{2 s1[[-1,1]], s1[[-1,2]]}}, Reverse[Most[s1]]]]
+            {s1 = getSymmetrizedTerms[terms, fac/2, 1]}, 
+            Join[Most[s1], {{2 s1[[-1,1]], s1[[-1,2]]}}, Reverse[Most[s1]]]]
         getSymmetrizedTerms[terms_List, fac_, n_?EvenQ] := 
-        	Block[{x, p=1/(4-4^(1/(n-1)))}, With[
-        		{s = getSymmetrizedTerms[terms, x, n-2]}, 
-        		{r = s /. x -> fac p},
-        		Join[r, r, s /. x -> (1-4p)fac, r, r]]]
+            Block[{x, p=1/(4-4^(1/(n-1)))}, With[
+                {s = getSymmetrizedTerms[terms, x, n-2]}, 
+                {r = s /. x -> fac p},
+                Join[r, r, s /. x -> (1-4p)fac, r, r]]]
         getTrotterTerms[terms_List, order_, reps_, time_] :=
-        	With[{s=getSymmetrizedTerms[terms, time/reps, order]},
-        		Join @@ ConstantArray[s, reps]]
+            With[{s=getSymmetrizedTerms[terms, time/reps, order]},
+                Join @@ ConstantArray[s, reps]]
                 
         GetKnownCircuit["Trotter", hamil_, order_Integer, reps_Integer, time_] /; (
-        	order>=1 && (order===1 || EvenQ@order) && reps>=1) := 
-        	With[
-        		{terms = separateTermsOfPauliHamil @ hamil},
-        		{gates = (R[2 #1, #2]&) @@@ getTrotterTerms[terms, order, reps, time]},
-        		gates /. R[_, Subscript[Id, _Integer]] :> Nothing]
+            order>=1 && (order===1 || EvenQ@order) && reps>=1) := 
+            With[
+                {terms = separateTermsOfPauliHamil @ hamil},
+                {gates = (R[2 #1, #2]&) @@@ getTrotterTerms[terms, order, reps, time]},
+                gates /. R[_, Subscript[Id, _Integer]] :> Nothing]
                 
         GetKnownCircuit["HardwareEfficientAnsatz", reps_Integer, param_Symbol, qubits_List] := 
-        	Module[{i=1, ent},
+            Module[{i=1, ent},
                 ent = Subscript[C, #[[1]]][Subscript[Z, #[[2]]]]& /@ Partition[qubits,2,1,{1,1}];
-            	Flatten[{
-            		Table[{
-            			Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}],
-            			ent[[1 ;; ;; 2 ]],
+                Flatten[{
+                    Table[{
+                        Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}],
+                        ent[[1 ;; ;; 2 ]],
                         ent[[2 ;; ;; 2 ]]
-            		}, reps],
-            		Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}]}]]
+                    }, reps],
+                    Table[Subscript[g, q][param[i++]], {q,qubits}, {g,{Ry,Rz}}]}]]
         GetKnownCircuit["HardwareEfficientAnsatz", reps_Integer, param_Symbol, numQubits_Integer] :=
-        	GetKnownCircuit["HardwareEfficientAnsatz", reps, param, Range[0,numQubits-1]]
+            GetKnownCircuit["HardwareEfficientAnsatz", reps, param, Range[0,numQubits-1]]
             
         GetKnownCircuit["TrotterAnsatz", hamil_, order_Integer, reps_Integer, param_Symbol] := 
             Module[{i=1},
@@ -4520,7 +4520,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
 
         addControlsToGate[newCtrls__][Subscript[C, oldCtrls__][g_]] :=
-	        Subscript[C, oldCtrls,newCtrls][g]
+            Subscript[C, oldCtrls,newCtrls][g]
         addControlsToGate[newCtrls__][G[x_]] :=
             Subscript[Ph, newCtrls][x]
         addControlsToGate[newCtrls__][Subscript[Ph, t__][x_]] :=
@@ -4557,7 +4557,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * src: https://github.com/qiskit-community/qiskit-community-tutorials/blob/master/awards/teach_me_qiskit_2018/exact_ising_model_simulation/Ising_time_evolution.ipynb
          *)
         decomposeToSingleQubitAndCNOT[ Subscript[C, c_][Subscript[H, t_]] ] :=
-	        {
+            {
                 Subscript[Ph, t][-Pi/2], Subscript[H, t], Subscript[Ph, t][-Pi/4], 
                 Subscript[C, c][Subscript[X, t]], 
                 Subscript[T, t], Subscript[H, t], Subscript[S, t]
@@ -4599,7 +4599,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
         decomposeToSingleQubitAndCNOT[ Subscript[C, c__][Subscript[SWAP, t1_,t2_]] ] := 
             Flatten @ {
-	            Subscript[C, t1][Subscript[X, t2]], 
+                Subscript[C, t1][Subscript[X, t2]], 
                 decomposeToSingleQubitAndCNOT @ Subscript[C, c,t2][Subscript[X, t1]], 
                 Subscript[C, t1][Subscript[X, t2]]
             }
@@ -4614,7 +4614,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
         decomposeToSingleQubitAndCNOT[ Subscript[Ph,c_,t_][x_] ] :=
             {
-		        Subscript[Ph, t][x/2], Subscript[Ph, c][x/2], 
+                Subscript[Ph, t][x/2], Subscript[Ph, c][x/2], 
                 Subscript[C, c][Subscript[X, t]], 
                 Subscript[Ph, t][-x/2], 
                 Subscript[C, c][Subscript[X, t]]
@@ -4649,7 +4649,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * src: https://arxiv.org/abs/1906.01734
          *)
         decomposeToSingleQubitAndCNOT[ R[x_, Verbatim[Times][OrderlessPatternSequence[Subscript[Z, c_], g:Subscript[(Z|Y), t_], rest___]]] ] :=
-	        Flatten @ {
+            Flatten @ {
                 Subscript[C, c][Subscript[X, t]], 
                 decomposeToSingleQubitAndCNOT @ R[x, Times[g, rest]], 
                 Subscript[C, c][Subscript[X, t]]
@@ -4660,7 +4660,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * src: https://arxiv.org/abs/1906.01734
          *)
         decomposeToSingleQubitAndCNOT[ R[x_, Verbatim[Times][OrderlessPatternSequence[Subscript[X, t_], rest___]]] ] :=
-	        Flatten @ {
+            Flatten @ {
                 Subscript[H, t], 
                 decomposeToSingleQubitAndCNOT @ R[x, Times[Subscript[Z, t], rest]], 
                 Subscript[H, t]
@@ -4671,7 +4671,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * src: https://arxiv.org/abs/1906.01734
          *)
         decomposeToSingleQubitAndCNOT[ R[x_, Verbatim[Times][OrderlessPatternSequence[Subscript[Y, t_], rest___]]] ] :=
-	        Flatten @ {
+            Flatten @ {
                 Subscript[Rx, t][Pi/2], 
                 decomposeToSingleQubitAndCNOT @ R[x, Times[Subscript[Z, t], rest]], 
                 Subscript[Rx, t][-Pi/2]
@@ -4683,7 +4683,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
         decomposeToSingleQubitAndCNOT[ Subscript[C, ctrls__Integer][g:R[x_, prod_]] ] := 
             Module[{circ,ind},
-	            circ = decomposeToSingleQubitAndCNOT[g];
+                circ = decomposeToSingleQubitAndCNOT[g];
                 ind = 1 + Floor[Length[circ] / 2];
                 circ[[ind]] = decomposeToSingleQubitAndCNOT @ Subscript[C, ctrls] @ circ[[ind]];
                 Flatten @ circ
@@ -4741,7 +4741,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         
         (* C*[Z] sub-optimally treats Z as Ph[pi], and uses Ph^(n) decomposition *)
         decomposeToSingleQubitAndCNOT[ Subscript[C, c__][Subscript[Z, t_]] ] /; Length@{c} >= 3 :=
-	        decomposeToSingleQubitAndCNOT @ Subscript[Ph, c,t][Pi]
+            decomposeToSingleQubitAndCNOT @ Subscript[Ph, c,t][Pi]
 
         (* 
          * CC[X] -> C[X], H, T, Ph, via pre/post-appending H onto CC[Z] decomp
@@ -4823,7 +4823,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * src: https://arxiv.org/pdf/2203.15368.pdf
          *)
         decomposeToSingleQubitAndCNOT[ Subscript[C, c_][Subscript[s:Ry|Rz, t_][r_]] ] :=
-	        {
+            {
                 Subscript[s, t][r/2], 
                 Subscript[C, c][Subscript[X, t]], 
                 Subscript[s, t][-r/2], 
