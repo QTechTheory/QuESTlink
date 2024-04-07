@@ -42,7 +42,7 @@ Compiling is trivial with [GNUMake](https://www.gnu.org/software/make/) and the 
 
 > See [here](WINDOWS.md) for a comprehensive guide to compiling QuESTlink on **Windows**, including how to obtain the necessary compilers.
 
-> Note **Linux** users should first run `sudo apt-get install uuid-dev` before compiling. If this fails (and/or compiling says `cannot find -luuid`, also try to install `uuid`, `uuid-devel` and `libuuid-devel`.
+> Note **Linux** users should first run `sudo apt-get install uuid-dev` before compiling. If this fails (and/or compiling says `cannot find -luuid`), also try to install `uuid`, `uuid-devel` and `libuuid-devel`. On a SLURM cluster, this can often be resolved with `module load util-linux`.
 
 Within the root directory, edit the [makefile](../makefile) and set:
 
