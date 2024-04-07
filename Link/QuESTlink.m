@@ -370,6 +370,7 @@ CalcPauliTransferMatrix accepts optional argument AssertValidChannels."
     CalcPauliTransferMap::usage = "CalcPauliTransferMap[ptm] produces a PTMap equivalent to the given PTM operator. See ?PTM.
 CalcPauliTransferMap[circuit] produces a PTMap from the given gate or circuit, by merely first invoking CalcPauliTransferMatrix[].
 The returned map encodes how each basis Pauli-string (encoded by its integer index) is mapped to a weighted sum of other strings (encoded as {index, coefficient} pairs) by the PTM. The indexing convention is the same as used by GetPauliString[] where the subscripted qubits of the PTM are treated as though given in order of increasing significance.
+For improved performance, gate parameters should be kept symbolic (and optionally substituted thereafter) so that algebraic simplification can identify zero elements without interference by finite-precision numerical errors.
 CalcPauliTransferMap also accepts option AssertValidChannels->False to disable the automatic simplification of the map's coefficients through the assertion of valid channel parameters. See ?AssertValidChannels."
     CalcPauliTransferMap::error = "`1`"
 
@@ -384,6 +385,7 @@ DrawPauliTransferMap accepts options \"PauliStringForm\", \"ShowCoefficients\" a
 
     ApplyPauliTransferMap::usage = "ApplyPauliTransferMap[pauliString, ptMap] returns the Pauli string produced by the given PTMap acting upon the given initial Pauli string.
 ApplyPauliTransferMap[pauliString, circuit] automatically transforms the given circuit (composed of gates, channels, and PTMs, possibly intermixed) into PTMaps before applying them to the given Pauli string.
+For improved performance, gate parameters should be kept symbolic (and optionally substituted thereafter) so that algebraic simplification can identify zero elements without interference by finite-precision numerical errors.
 This method uses automatic caching to avoid needless re-computation of an operator's PTMap, agnostic to the targeted and controlled qubits, at the cost of additional memory usage. Caching behaviour can be controlled using option \"CacheMaps\":
 \[Bullet] \"CacheMaps\" -> \"UntilCallEnd\" (default) caches all computed PTMaps but clears the cache when ApplyPauliTransferMap[] returns.
 \[Bullet] \"CacheMaps\" -> \"Forever\" maintains the cache even between multiple calls to ApplyPauliTransferMap[].
@@ -942,6 +944,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 Flatten @ codes[[3]], Length /@ codes[[3]],
                 Flatten[N /@ codes[[4]]], Length /@ codes[[4]]
             ]
+
+        circContainsDecoherence[circuit_List] :=
+            MemberQ[
+                circuit, 
+                Subscript[ Damp | Deph | Depol | Kraus | KrausNonTP, __ ][__]]
             
         
         
@@ -2985,7 +2992,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         };
         
         (* convert a symbolic circuit channel into an analytic matrix *)
-        CalcCircuitMatrix[gates_List, numQb_Integer, OptionsPattern[]] /; MemberQ[gates, Subscript[Damp|Deph|Depol|Kraus|KrausNonTP, __][__]] := 
+        CalcCircuitMatrix[gates_List?circContainsDecoherence, numQb_Integer, OptionsPattern[]] := 
             If[OptionValue[AsSuperoperator] =!= True && OptionValue[AsSuperoperator] =!= Automatic,
                 (Message[CalcCircuitMatrix::error, "The input circuit contains decoherence channels and must be calculated as a superoperator."]; $Failed),
                 With[{superops = GetCircuitSuperoperator[gates, numQb, AssertValidChannels -> OptionValue[AssertValidChannels]]},
@@ -4267,16 +4274,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         getGateSimplifyFunc[_] :=
             Identity
 
-        containsNoise[circuit_List] :=
-            MemberQ[
-                circuit, 
-                Subscript[ Damp | Deph | Depol | Kraus | KrausNonTP, __ ][__]]
-
         Options[CalcCircuitGenerator] = {
             TransformationFunction -> Automatic
         };
 
-        CalcCircuitGenerator[circuit_List, opts___] /; isCircuitFormat[circuit] && containsNoise[circuit] :=
+        CalcCircuitGenerator[circuit_List, opts___] /; isCircuitFormat[circuit] && circContainsDecoherence[circuit] :=
             CalcCircuitGenerator[GetCircuitSuperoperator @ circuit, opts]
 
         CalcCircuitGenerator[circuit_List, OptionsPattern[]] /; isCircuitFormat[circuit] := Module[
@@ -5252,7 +5254,6 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 ]
             ]
             
-
         Options[CalcPauliTransferMatrix] = {
             AssertValidChannels -> True
         };
@@ -5276,7 +5277,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     (* get equivalent circuit acting upon lowest order qubits *)
                     compCirc = First @ GetCircuitCompacted[targCirc] // ConfirmQuiet;
 
-                    (* compute superator of entire circuit *)
+                    (* compute superator of entire circuit (passing on AssertValidChannels) *)
                     superMatr = SparseArray @ CalcCircuitMatrix[compCirc, AsSuperoperator -> True, opts] // ConfirmQuiet;
                     If[superMatr === {}, Message[CalcPauliTransferMatrix::error, "Could not compute circuit superoperator."]] // ConfirmQuiet;
 
@@ -5583,12 +5584,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ]
 
         ApplyPauliTransferMap[ pauliStr_?isValidSymbolicPauliString, map:ptmapPatt, opts:OptionsPattern[] ] :=
-            (
+            Module[
+                {out, scalars},
+
                 (* we don't actually use the options (they inform PTMap gen), but we still validate them *)
                 Check[ validatePauliTransferMapOptions[ApplyPauliTransferMap, opts], Return @ $Failed];
 
                 (* apply the PTM to each input pauli product ... *)
-                Plus @@ Flatten[ Table[
+                out = Plus @@ Flatten[ Table[
 
                     (* multiplying the input and output coefficients *)
                     inState[[2]] * outState[[2]] * GetPauliString @ outState[[1]], 
@@ -5597,8 +5600,30 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     {inState, getPauliStringInitStatesForPTMapSim[pauliStr, {map}]},
 
                     (* (iterate each resulting output product) **)
-                    {outState, applyPTMapToPauliState[inState[[1]], map]}], 1]
-            )
+                    {outState, applyPTMapToPauliState[inState[[1]], map]}], 1];
+
+                (* the result may contain a +0 scalar because of unsimplified-to-zero map elems, which we discard... *)
+                If[
+                    Head @ out === Plus, 
+                    scalars = Cases[out, Except[_?isValidSymbolicPauliString]];
+
+                    (* but we check that scalar hasn't grown concerningly large *)
+                    If[scalars =!= {} && Not @ PossibleZeroQ @ Chop @ Max @ Abs @ scalars,
+
+                        Message[ApplyPauliTransferMap::error, 
+                            "A numerical artefact in ApplyPauliTransferMap[] grew too large (to value " <>
+                            ToString @ StandardForm @ First @ scalars <> "), and likely resulted from the " <>
+                            "input PTMap being unsimplified or containing an insufficiently precise amplitude."];
+                        
+                        (* otherwise we error out; this $Failed won't be seen by wrapped calls using Enclose[] *)
+                        Return @ $Failed];
+
+                    (* harmless, negligible scalars are removed *)
+                    out = DeleteCases[out, Or @@ scalars]];
+
+                (* return a valid Pauli string *)
+                out
+            ]
 
         ApplyPauliTransferMap[ pauliStr_?isValidSymbolicPauliString, maps:{ptmapPatt..}, opts:OptionsPattern[] ] :=
             (
