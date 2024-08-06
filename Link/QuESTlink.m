@@ -1217,6 +1217,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             DestroyQuregInternal @ ReleaseHold @ qureg
         DestroyQureg[___] := invalidArgError[DestroyQureg]
 
+
+        (* Mathematica v14 silently changed Ket... *)
+        getPrettyKet[x_] :=
+            If[$VersionNumber < 14, Ket[x], Ket[{x}]]
+
         (* get a local matrix representation of the qureg. GetQuregMatrixInternal provided by WSTP *)
         GetQuregState[qureg_Integer, "ZBasisMatrix"] :=
             With[{data = GetQuregMatrixInternal[qureg]},
@@ -1246,11 +1251,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     (* project state-vector into kets *)
                     Length @ Dimensions @ matr === 1,
                         matr . Table[
-                            Ket @ IntegerString[i, 2, nQb], {i, 0, 2^nQb - 1}],
+                            getPrettyKet @ IntegerString[i, 2, nQb], {i, 0, 2^nQb - 1}],
                     (* project density-matrix into ket-bra's *)
                     Length @ Dimensions @ matr === 2,
                         Flatten[matr] . Flatten @ Table[
-                            Ket @ IntegerString[i, 2, nQb] ** 
+                            getPrettyKet @ IntegerString[i, 2, nQb] ** 
                             Bra @ IntegerString[j, 2, nQb],
                             {i, 0, 2^nQb - 1}, {j, 0, 2^nQb - 1}]
                 (* tidy up some amplitudes for visual clarity *)
@@ -1265,6 +1270,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             GetQuregState[qureg, "ZBasisMatrix"]
 
         GetQuregState[___] := invalidArgError[GetQuregState]
+
 
         (* overwrite the state of a qureg. InitStateFromAmps provided by WSTP *)
         SetQuregMatrix[qureg_Integer, elems_List] :=
