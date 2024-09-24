@@ -460,7 +460,12 @@ GetPauliStringReformatted[..., numQubits] expands the \"Digits\", \"Kronecker\" 
     GetPauliStringOverlap::usage = "GetPauliStringOverlap[a, b] returns the Pauli products common to both given weighted sums of Pauli strings, with coefficients equal to the conjugate of the 'a' coefficients multiplied by those of 'b'."
     GetPauliStringOverlap::error = "`1`"
 
-    
+    DrawPauliStringAsTree::usage = "DrawPauliStringAsTree[paulis] draws the given sum of Pauli strings as a tree, where Pauli products with the same prefix operators share ancestors. This visualises a compressed form of the ensemble without coefficients.
+DrawPauliStringAsTree also accepts option \"SmallestIsRoot\"->True to reverse the ordering of the strings such that increasing tree depth corresponds to increasing qubit index."
+    DrawPauliStringAsTree::error = "`1`"
+
+
+
     (*
      * optional arguments to public functions
      *)
@@ -1221,6 +1226,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             DestroyQuregInternal @ ReleaseHold @ qureg
         DestroyQureg[___] := invalidArgError[DestroyQureg]
 
+
+        (* Mathematica v14 silently changed Ket... *)
+        getPrettyKet[x_] :=
+            If[$VersionNumber < 14, Ket[x], Ket[{x}]]
+
         (* get a local matrix representation of the qureg. GetQuregMatrixInternal provided by WSTP *)
         GetQuregState[qureg_Integer, "ZBasisMatrix"] :=
             With[{data = GetQuregMatrixInternal[qureg]},
@@ -1250,11 +1260,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     (* project state-vector into kets *)
                     Length @ Dimensions @ matr === 1,
                         matr . Table[
-                            Ket @ IntegerString[i, 2, nQb], {i, 0, 2^nQb - 1}],
-                    (* project density-matrix into ket-bras *)
+                            getPrettyKet @ IntegerString[i, 2, nQb], {i, 0, 2^nQb - 1}],
+                    (* project density-matrix into ket-bra's *)
                     Length @ Dimensions @ matr === 2,
                         Flatten[matr] . Flatten @ Table[
-                            Ket @ IntegerString[i, 2, nQb] ** 
+                            getPrettyKet @ IntegerString[i, 2, nQb] ** 
                             Bra @ IntegerString[j, 2, nQb],
                             {i, 0, 2^nQb - 1}, {j, 0, 2^nQb - 1}]
                 (* tidy up some amplitudes for visual clarity *)
@@ -1269,6 +1279,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             GetQuregState[qureg, "ZBasisMatrix"]
 
         GetQuregState[___] := invalidArgError[GetQuregState]
+
 
         (* overwrite the state of a qureg. InitStateFromAmps provided by WSTP *)
         SetQuregMatrix[qureg_Integer, elems_List] :=
@@ -1707,9 +1718,55 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             getCompactStringFormOfPauliString[string, nQb]
         
         GetPauliStringReformatted[___] := invalidArgError[GetPauliStringReformatted]
-            
 
+
+
+        (*
+         * Drawing Pauli strings
+         *)
+                
+        getEdgesFromPauliProduct[prod_String] := 
+            Rule @@@ Partition[StringTake[prod, Table[{1,n},{n,StringLength@prod}]], 2, 1]
+    
+        getEdgesFromPauliString[paulis_, smallestIsRoot_] := 
+            Module[
+                {strings, rules},
+                strings = GetPauliStringReformatted[paulis, "String"];
+
+                (* ensure output is a list of strings and coefficients *)
+                If[StringQ[strings], strings = {{strings,1}}];
+
+                (* discard coefficients (hehe) *)
+                strings = First /@ strings;
+
+                (* reverse strings is smallest index is root *)
+                If[smallestIsRoot, strings = StringReverse /@ strings];
+
+                (* give strings a common blank ancestor, i.e. the tree's root *)
+                strings = (" " <> #&) /@ strings;
+
+                (* decompose each string into a tree, then merge *)
+                rules = getEdgesFromPauliProduct /@ strings;
+                rules = DeleteDuplicates @ Flatten @ rules;
+                rules
+            ]
+
+        Options[DrawPauliStringAsTree] = {
+            "SmallestIsRoot" -> False
+        };
         
+        DrawPauliStringAsTree[paulis_?isValidSymbolicPauliString, opts:OptionsPattern[{DrawPauliStringAsTree,Graph}]] :=
+            Graph[
+                getEdgesFromPauliString[paulis, OptionValue["SmallestIsRoot"]], 
+                Sequence @@ FilterRules[{opts}, Options[Graph]],
+                VertexLabels->{s_ :> StringTake[s,-1]},
+                VertexStyle -> White,
+                GraphLayout -> "LayeredDigraphEmbedding"
+            ]
+        DrawPauliStringAsTree[___] := invalidArgError[DrawPauliStringAsTree]
+
+
+
         (*
          * Analytic and numerical channel decompositions for statevector simulation
          *)
@@ -5062,7 +5119,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             u01 = m[[;;dim/2, dim/2+1;;]];
 
             (* perform cosine-sine (CS) decomposition via numerical GSVD *)
-            {{l0,l1},{d00,d10},r0} = SingularValueDecomposition @ N @ {u00, u10};	
+            {{l0,l1},{d00,d10},r0} = SingularValueDecomposition @ N @ {u00, u10};
             
             (* TODO: we should implement the general CS decomposition, in order to handle when 
              * the diagonals include zeros; see https://arxiv.org/abs/2302.14324
