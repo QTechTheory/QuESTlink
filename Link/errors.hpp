@@ -46,6 +46,7 @@ QuESTException local_wrongNumDerivParamsExcep(std::string gate, int wrongNumPara
 QuESTException local_unrecognisedGateExcep(std::string gateSyntax, int opcode, const char* caller);
 
 QuESTException local_invalidProbExcep(std::string gateName, qreal prob, std::string maxProb);
+QuESTException local_invalidProbExcep(std::string gateName, qreal probX, qreal probY, qreal probZ);
 
 void sendDebugEcho(std::string msg);
 

@@ -339,6 +339,10 @@ void Gate::applyDerivTo(Qureg qureg, qreal* derivParams, int numDerivParams) {
                 if (numTargs == 2)
                     extension_mixTwoQubitDepolarisingDeriv(qureg, targs[0], targs[1], derivParams[0]);  // throws
                 break;
+
+            case OPCODE_PauliError : 
+                throw QuESTException("", "Derivatives of operator " + getSymb() + " have not yet been implemented."); // throws, caught by below
+                break;
                 
             case OPCODE_Damp :
                 if (numDerivParams != 1)
