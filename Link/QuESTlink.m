@@ -578,6 +578,9 @@ To specify a general non-unitary matrix, use Matr."
     Damp::usage = "Damp[prob] is 1 qubit amplitude damping with the given decay probability."
     Protect[Damp]
     
+    PauliError::usage = "PauliError[pX,pY,pZ] is a 1 qubit inhomogeneous depolarising channel, where pX, pY, pZ are the probabilities of X, Y and Z errors respectively."
+    Protect[PauliError]
+
     SWAP::usage = "SWAP is a 2 qubit gate which swaps the state of two qubits."
     Protect[SWAP]
     
@@ -780,7 +783,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                
         (* opcodes which correlate with the global IDs in circuits.hpp *)
         getOpCode[gate_] :=
-            gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,Matr->22,UNonNorm->23,Fac->24,_->-1}
+            gate /. {H->0,X->1,Y->2,Z->3,Rx->4,Ry->5,Rz->6,R->7,S->8,T->9,U->10,Deph->11,Depol->12,Damp->13,SWAP->14,M->15,P->16,Kraus->17,G->18,Id->19,Ph->20,KrausNonTP->21,Matr->22,UNonNorm->23,Fac->24,PauliError->25,_->-1}
         
         
         
@@ -953,7 +956,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         circContainsDecoherence[circuit_List] :=
             MemberQ[
                 circuit, 
-                Subscript[ Damp | Deph | Depol | Kraus | KrausNonTP, __ ][__]]
+                Subscript[ Damp | Deph | Depol | Kraus | KrausNonTP | PauliError, __ ][__]]
             
         
         
@@ -1028,6 +1031,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          *)
         
         encodeDerivParams[Subscript[Rx|Ry|Rz|Ph|Damp|Deph|Depol, __][f_], x_] := {D[f,x]}
+        encodeDerivParams[Subscript[PauliError, __][f__], x_] := D[{f},x]
         encodeDerivParams[R[f_,_], x_] := {D[f,x]}
         encodeDerivParams[G[f_], x_] := {D[f,x]}
         encodeDerivParams[Fac[f_], x_] := With[{df=D[f,x]}, {Re@N@df, Im@N@df}]
@@ -1782,6 +1786,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Circuit[ Fac@Sqrt[x/3] Subscript[X, q] ],
             Circuit[ Fac@Sqrt[x/3] Subscript[Y, q] ],
             Circuit[ Fac@Sqrt[x/3] Subscript[Z, q] ]}
+        convertOpToPureCircs[Subscript[PauliError, q_][px_,py_,pz_]] := {
+            Circuit[ Fac@Sqrt[1-(px+py+pz)] ],
+            Circuit[ Fac@Sqrt[px] Subscript[X, q] ],
+            Circuit[ Fac@Sqrt[py] Subscript[Y, q] ],
+            Circuit[ Fac@Sqrt[pz] Subscript[Z, q] ]}
         convertOpToPureCircs[Subscript[Depol, q1_,q2_][x_]] := 
             Join[{{Fac@Sqrt[1-x]}}, Rest @ Flatten[
                 Table[{Fac@Sqrt[x/15], Subscript[a, q1], Subscript[b, q2]}, {a,{Id,X,Y,Z}}, {b,{Id,X,Y,Z}}] /. Subscript[Id, _] -> Nothing, 1]]
@@ -1810,7 +1819,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 Subscript[Deph, _][x_ /; x < 0 || x > 1/2] |
                 Subscript[Deph, _, _][x_ /; x < 0 || x > 3/4] |
                 Subscript[Depol, _][x_ /; x < 0 || x > 3/4] |
-                Subscript[Depol, _, _][x_ /; x < 0 || x > 15/16]],
+                Subscript[Depol, _, _][x_ /; x < 0 || x > 15/16]
+                (Subscript[PauliError, _][x_, y_, z_] /; ( x<0 || y<0 || z<0 || x+y+z>1 || Max[x,y,z] > 1-(x+y+z) ))
+                ],
                 Message[GetRandomCircuitFromChannel::error, "A unitary-mixture channel had an invalid probability which was negative or exceeded that causing maximal mixing."];
                 Return[$Failed]];
 
@@ -2494,11 +2505,16 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         drawGate[Ph, {ctrls___}, {targs__}, col_] := {
             drawControls[{ctrls,targs},{},col],
             Text["\[Theta]", {col+.75,Min[{ctrls,targs}]+.75}]}
-        drawGate[label:(Kraus|KrausNonTP|Damp|Deph|Depol), {}, targs_List, col_] := {
+        drawGate[label:(Kraus|KrausNonTP|Damp|Deph|Depol|PauliError), {}, targs_List, col_] := {
             EdgeForm[Dashed],
             drawGate[label /. {
-                    Kraus -> \[Kappa], KrausNonTP -> \[Kappa]NTP, Damp -> \[Gamma], 
-                    Deph -> \[Phi], Depol -> \[CapitalDelta]},
+                    Kraus -> \[Kappa], 
+                    KrausNonTP -> \[Kappa]NTP, 
+                    Damp -> \[Gamma], 
+                    Deph -> \[Phi], 
+                    Depol -> \[CapitalDelta],
+                    PauliError -> \[Sigma]
+                },
                 {}, targs, col]}
 
         (* single qubit gate graphics *)
@@ -2516,9 +2532,6 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 Circle[{col+.5,targ+.5-.4}, .4, {.7,\[Pi]-.7}],
                 Line[{{col+.5,targ+.5-.25}, {col+.5+.2,targ+.5+.3}}]
                 }, {targ, {targs}}]
-
-        drawGate[Depol, {}, {targ_}, col_] := {
-            EdgeForm[Dashed], drawGate[\[CapitalDelta], {}, {targ}, col]}
         drawGate[X, {}, {targ_}, col_] := {
             Circle[{col+.5,targ+.5},.25],
             Line[{{col+.5,targ+.5-.25},{col+.5,targ+.5+.25}}]}
@@ -3103,6 +3116,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     Sqrt[p/3] PauliMatrix[1],
                     Sqrt[p/3] PauliMatrix[2],
                     Sqrt[p/3] PauliMatrix[3]}],
+                Subscript[PauliError, q_][px_,py_,pz_] :> Subscript[Kraus, q][{
+                    Sqrt[1-(px+py+pz)] PauliMatrix[0],
+                    Sqrt[px] PauliMatrix[1],
+                    Sqrt[py] PauliMatrix[2],
+                    Sqrt[pz] PauliMatrix[3]}],
                 Subscript[Depol, q1_,q2_][p_] :> Subscript[Kraus, q1,q2][ Join[
                     {Sqrt[1-p] IdentityMatrix[4]},
                     Flatten[ Table[
@@ -3190,8 +3208,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         
         (* Damp, Deph are entirely real (when valid), else we assume principal Sqrts,
          * and although Depol contains Y, its superoperator/application cancels conj(Y)=-Y *)
-        getGateConj[valid_] @ (g:Subscript[Damp|Deph|Depol, __]) @ x_ :=
-            If[valid, g[x], g @ Conjugate @ x]
+        getGateConj[valid_] @ (g:Subscript[Damp|Deph|Depol|PauliError, __]) @ x__ :=
+            If[valid, g[x], g @@ Conjugate @ {x}]
 
         (* unmatched operators *)
         getGateConj[valid_][g_] := Message[GetCircuitConjugated::error,
@@ -3216,12 +3234,19 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         (* rules to simplify operators when AssertValidChannels -> True *)
         (* note we do not simplify/assert real-parameterised gates like rotations, out of laziness *)
+        (* beware we are simplifying under the constraints that the channels never surpass maximum mixing,
+         * which is in-fact distinct and stronger than constraining they are merely CPTP. *)
         assertReal[x_] := Element[x, Reals]
         getValidChannelAssumps @ Subscript[Damp, _][x_]    := assertReal[x] && (0 <= x <= 1)
         getValidChannelAssumps @ Subscript[Deph, _][x_]    := assertReal[x] && (0 <= x <= 1/2)
         getValidChannelAssumps @ Subscript[Deph, _,_][x_]  := assertReal[x] && (0 <= x <= 3/4)
         getValidChannelAssumps @ Subscript[Depol, _][x_]   := assertReal[x] && (0 <= x <= 3/4)
         getValidChannelAssumps @ Subscript[Depol, _,_][x_] := assertReal[x] && (0 <= x <= 15/16)
+        getValidChannelAssumps @ Subscript[PauliError, _][x_,y_,z_] := (
+            assertReal[x] && (0 <= x <= 1) && x <= (1 - (x+y+z)) && 
+            assertReal[y] && (0 <= y <= 1) && y <= (1 - (x+y+z)) && 
+            assertReal[z] && (0 <= z <= 1) && z <= (1 - (x+y+z))
+        )
         
         (* un-targeted operators merge with their conjugate *)
         getSuperOpCirc[numQb_,valid_] @ G[x_] :=
@@ -3234,8 +3259,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             {supermatr = Total[(KroneckerProduct[Conjugate[#], #]&) /@ matrs]},
             {Subscript[Matr, q, Sequence @@ ({q} + numQb)] @ supermatr}]
 
-        (* Damp, Depol, Deph must first be generalised to Kraus, then recursed upon... *)
-        getSuperOpCirc[numQb_,valid_] @ g:Subscript[Damp|Deph|Depol, q__][x_] := With[
+        (* Damp, Depol, Deph, PauliError must first be generalised to Kraus, then recursed upon... *)
+        getSuperOpCirc[numQb_,valid_] @ g:Subscript[Damp|Deph|Depol|PauliError, q__][__] := With[
             {supers = getSuperOpCirc[numQb, valid] /@ GetCircuitGeneralised @ g},
             {assumps = getValidChannelAssumps @ g},
             (* and the result is optionally simplified, if CPTP condition is possible (else caller Aborts) *)
@@ -3387,7 +3412,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                                     " which is not supported by the given device specification. Note this may be due to preceding gates," <> 
                                     " if the spec contains constraints which depend on dynamic variables. See ?GetUnsupportedGates."];
                                 $Failed],
-                            (* if match, but targeted qubits don't exist, throw top-level error *)
+                            (* if match, but targeted qubits do not exist, throw top-level error *)
                             Not @ AllTrue[gateQubits, LessThan[spec[NumAccessibleQubits]]],
                             Throw[
                                 Message[InsertCircuitNoise::error, "The gate " <> ToString@StandardForm@gate <> 
@@ -3437,11 +3462,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Do[
                 With[
                     {qubitProps = Replace[qubit, spec[Qubits]]},
-                    (* continue only if qubit matches a rule in spec[Qubits] (don't noise unspecified qubits) *)
+                    (* continue only if qubit matches a rule in spec[Qubits] (do not noise unspecified qubits) *)
                     If[
                         qubitProps =!= qubit,
                         With[
-                            (* work out start-time and duration of qubit's passive noise (pre-determined) *)
+                            (* work out start-time and duration of passive noise of qubits (pre-determined) *)
                             {passiveTime = subcircTime + qubitActiveDurs[[ 1 + qubit ]]},
                             {passiveDur = subcircDur - qubitActiveDurs[[ 1 + qubit ]]},
                             (* work out passive noise (time, dur and var dependent *)
@@ -3474,7 +3499,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 spec[InitVariables][]];
             
             Do[
-                (* get each subcirc's noise (updates circuit variables) *)
+                (* get noise of each subcirc (updates circuit variables) *)
                 {curDur, curActive, curPassive} = getDurAndNoiseFromSubcirc[sub, curTime, spec];
                     
                 (* losing info here (mering separate gate infos into subcirc-wide) *)
@@ -4061,7 +4086,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 Subscript[C, c__Integer|{c__Integer}][g_] :> Subscript[C, tidyInds@c][g],
                 (* sort targets of target-order-agnostic gates *)
                 Subscript[(g:(H|X|Y|Z|Id|SWAP|Ph|M||T|S)), t__Integer|{t__Integer}] :> Subscript[g, tidyInds@t],
-                Subscript[(g:(Rx|Ry|Rz|Damp|Deph|Depol)), t__Integer|{t__Integer}][x__] :> Subscript[g, tidyInds@t][x],
+                Subscript[(g:(Rx|Ry|Rz|Damp|Deph|Depol|PauliError)), t__Integer|{t__Integer}][x__] :> Subscript[g, tidyInds@t][x],
                 (* unpack all qubit lists *)
                 Subscript[s_, {t__}] :> Subscript[s, t],
                 Subscript[s_, {t__}][x_] :> Subscript[s, t][x],
@@ -4162,6 +4187,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                         Subscript[C, __][Nothing] -> Nothing,
                         (* remove zero-parameter gates *)
                         Subscript[(Ph|Rx|Ry|Rz|Damp|Deph|Depol), __][0|0.] -> Nothing,
+                        Subscript[PauliError, __][0|0., 0|0., 0|0.] -> Nothing,
                         R[0|0.,_] -> Nothing,
                         G[0|0.] -> Nothing,
                         Fac[1|1.] -> Nothing,
@@ -4391,7 +4417,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Subscript[C, retargetQubits[c, map]] @ retargetGate[map] @ g
 
         (* avoid modifying arg of parameterised gates *)
-        retargetGate[map_][ Subscript[s:Damp|Deph|Depol|Kraus|KrausNonTP|Matr|P|Ph|Rx|Ry|Rz|U|UNonNorm, t__][args__] ] :=
+        retargetGate[map_][ Subscript[s:Damp|Deph|Depol|PauliError|Kraus|KrausNonTP|Matr|P|Ph|Rx|Ry|Rz|U|UNonNorm, t__][args__] ] :=
             Subscript[s, retargetQubits[t, map]] @ args
 
         (* modify only the qubits of the Pauli product in R gates *)
@@ -4484,13 +4510,17 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         getGateParameterised[r_, _, exclParamsPatt_, g_ ] /; isParamInExcludeList[exclParamsPatt, g] :=
             {g, None}
 
-        (* re-paramaterise non-controlled gates *)
+        (* re-paramaterise non-controlled one-parameter gates *)
         getGateParameterised[r_, _,_, (g:Subscript[Damp|Deph|Depol|Ph|Rx|Ry|Rz, __])[x_]] := 
             {g[r], x}
         getGateParameterised[r_, _,_, (g:Fac|G)[x_]] := 
             {g[r], x}
         getGateParameterised[r_, _,_, R[x_, p_]] := 
             {R[r,p], x}
+
+        (* re-parameterise non-controlled multi-parameter gates (to a list) *)
+        getGateParameterised[s_[i_], _,_, (g:Subscript[PauliError, __])[px_,py_,pz_]] := 
+            {g[s[i], s[i+1], s[i+2]], {px,py,pz}}
 
         (* re-param control gates, removing excludes *)
         getGateParameterised[r_, _, exclParamsPatt_, (c:Subscript[C,__])[g_] ] /; Not @ isParamInExcludeList[exclParamsPatt, g] := 
@@ -4502,11 +4532,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         getGateParameterised[r_, _,_, g_] :=
             {g, None}
 
-        GetCircuitParameterised[gate_?isGateFormat, s_Symbol, opts:OptionsPattern[]] :=
-            GetCircuitParameterised[{gate}, s, opts]
+        GetCircuitParameterised[gate_?isGateFormat, paramsym_Symbol, opts:OptionsPattern[]] :=
+            GetCircuitParameterised[{gate}, paramsym, opts]
 
-        GetCircuitParameterised[circuit_?isCircuitFormat, s_Symbol, OptionsPattern[]] := Module[
-            {exclGatesPatt,exclParamsPatt, paramInd,outGate,paramVal, outCircuit,outParams, newSymb,newParams,symbSubs},
+        GetCircuitParameterised[circuit_?isCircuitFormat, paramsym_Symbol, OptionsPattern[]] := Module[
+            {exclGatesPatt,exclParamsPatt, paramInd,outGate,paramValOrVals, outCircuit,outParams, newSymb,newParams,symbSubs},
 
             (* validate all options are recognised *)
             Check[ OptionValue @ "ExcludeChannels", Return @ $Failed];
@@ -4525,19 +4555,22 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             If[ Head @ exclParamsPatt === List, 
                 exclParamsPatt = Alternatives @@ exclParamsPatt];
             If[ OptionValue @ "ExcludeChannels", 
-                exclGatesPatt = exclGatesPatt | Subscript[Damp|Deph|Depol,__][_]];
+                exclGatesPatt = exclGatesPatt | Subscript[Damp|Deph|Depol|PauliError,__][__]];
 
             paramInd = 1;
             outCircuit = {};
             outParams = {};
             Do[
                 (* conditionally insert symbolic param from each gate... *)
-                {outGate, paramVal} = getGateParameterised[
-                    s[paramInd], exclGatesPatt, exclParamsPatt, inGate];
+                {outGate, paramValOrVals} = getGateParameterised[
+                    paramsym[paramInd], exclGatesPatt, exclParamsPatt, inGate];
                 AppendTo[outCircuit, outGate];
 
-                (* and if performed, increment the symbolic param counter *)
-                If[paramVal =!= None, AppendTo[outParams, s[paramInd++] -> paramVal]],
+                (* and if performed, increment the symbolic param counter for each value *)
+                If[paramValOrVals =!= None, 
+                    Do[
+                        AppendTo[outParams, paramsym[paramInd++] -> val],
+                        {val, If[ListQ@paramValOrVals, paramValOrVals, {paramValOrVals}]}]],
                 {inGate, circuit}];
 
             paramInd = 1;
@@ -4562,8 +4595,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 outCircuit = outCircuit /. Flatten @ symbSubs;
 
                 (* re-param circuit and subs back to user symbol*)
-                outCircuit = outCircuit /. TEMPSYMBOL[i_] :> s[i];
-                outParams = newParams /. TEMPSYMBOL[i_] :> s[i];
+                outCircuit = outCircuit /. TEMPSYMBOL[i_] :> paramsym[i];
+                outParams = newParams /. TEMPSYMBOL[i_] :> paramsym[i];
             ];
 
             {outCircuit, outParams}
