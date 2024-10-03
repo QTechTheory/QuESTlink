@@ -5304,7 +5304,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Module[{d,p},
                 d = Sqrt @ Length @ super;
                 (* todo: can significantly speed this up using sparsity, Hadamard-walsh transform, etc *)
-                p = Table[SparseArray @ getChoiVecFromMatrix @ (Echo @ getNthPauliTensorMatrix[i-1, Log2@d],{i,d^2}]);
+                p = Table[SparseArray @ getChoiVecFromMatrix @ (Echo @ getNthPauliTensorMatrix[i-1, Log2@d]),{i,d^2}];
                 SparseArray @ Table[
                     (1/d) getSuperOpInnerProd[p[[i]], super, p[[j]]] // simpFunc,
                     {i,d^2}, {j,d^2}
