@@ -1430,7 +1430,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         GetPauliStringRetargeted[str_?isValidSymbolicPauliString, map_] := 
             Enclose[
-                ReplaceAll[str, Subscript[p:pauliCodePatt, q_] :> Subscript[p, q /. map]] // ConfirmQuiet,
+                ReplaceAll[str, Subscript[p:pauliCodePatt, q_] :> Subscript[p, q /. map]] // Confirm,
                 Function[{failObj},
                     Message[GetPauliStringRetargeted::error, "Invalid rules caused the below ReplaceAll error:"]; 
                     ReleaseHold @ failObj @ "HeldMessageCall";
@@ -1449,7 +1449,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         getPauliStringFromAddress[addr_String, removeIds_:True] :=
             Enclose[
-                ConfirmQuiet[
+                Confirm[
                     Plus @@ (#[[1]] If[ 
                             AllTrue[ #[[2;;]], PossibleZeroQ ],
                             If[removeIds,
@@ -2292,7 +2292,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         SimplifyPaulis[expr_] :=
             Enclose[
                 (* immediately abort upon unrecognised sub-expression *)
-                ConfirmQuiet @ innerSimplifyPaulis @ expr,
+                Confirm @ innerSimplifyPaulis @ expr,
                 (ReleaseHold @ # @ "HeldMessageCall"; $Failed) & ]
 
         SimplifyPaulis[__] := invalidArgError[SimplifyPaulis]
@@ -3080,7 +3080,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             CalcCircuitMatrix[gates, getNumQubitsInCircuit[gates], opts]
         CalcCircuitMatrix[gate_, opts:OptionsPattern[]] :=
             CalcCircuitMatrix[{gate}, opts]
+        
+        (* DEBUG *)
+        (*
         CalcCircuitMatrix[___] := invalidArgError[CalcCircuitMatrix]
+        *)
         
 
         GetCircuitGeneralised[gates_List] := With[
@@ -3205,7 +3209,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         (* circuit conjugate = conjugate of each gate, aborting if any unrecognised *)
         GetCircuitConjugated[circ_List?isCircuitFormat, OptionsPattern[]] :=
             Enclose[
-                getGateConj[OptionValue @ AssertValidChannels] /@ circ // Flatten // ConfirmQuiet,
+                getGateConj[OptionValue @ AssertValidChannels] /@ circ // Flatten // Confirm,
                 (ReleaseHold @ # @ "HeldMessageCall"; $Failed) &]
 
         GetCircuitConjugated[gate_?isCircuitFormat, opts___] :=
@@ -3259,7 +3263,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         GetCircuitSuperoperator[circ_List?isCircuitFormat, numQb_Integer, OptionsPattern[]] :=
             Enclose[
                 (* map each gate to a superoperator(s) *)
-                getSuperOpCirc[numQb, OptionValue @ AssertValidChannels] /@ circ // Flatten // ConfirmQuiet,
+                getSuperOpCirc[numQb, OptionValue @ AssertValidChannels] /@ circ // Flatten // Confirm,
 
                 (* and abort immediately if any call fails, and hijack the error message *)
                 (Message[GetCircuitSuperoperator::error, #["HeldMessageCall"][[1,2]]]; $Failed) &]
@@ -5324,26 +5328,26 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     simpFlag = OptionValue[AssertValidChannels];
 
                     (* replace global phase gates with equivalent unitary on arbitrary qubit *)
-                    qubits = GetCircuitQubits[circ] // ConfirmQuiet;
+                    qubits = GetCircuitQubits[circ] // Confirm;
                     targCirc = circ /. g:G[_] :> Subscript[U, If[qubits==={},0,Min@qubits]] @ CalcCircuitMatrix @ g;
 
                     (* thereafter ensure circ isn't all non-targeted Fac[] (and similar) gates *)
-                    qubits = GetCircuitQubits[targCirc] // ConfirmQuiet;
-                    If[qubits === {}, Message[CalcPauliTransferMatrix::error, "Circuit must explicitly target at least one qubit."]] // ConfirmQuiet;
+                    qubits = GetCircuitQubits[targCirc] // Confirm;
+                    If[qubits === {}, Message[CalcPauliTransferMatrix::error, "Circuit must explicitly target at least one qubit."]] // Confirm;
 
                     Echo[qubits, "qubits:"];
 
                     (* get equivalent circuit acting upon lowest order qubits *)
-                    compCirc = First @ GetCircuitCompacted[targCirc] // ConfirmQuiet;
+                    compCirc = First @ GetCircuitCompacted[targCirc] // Confirm;
 
                     Echo[compCirc, "compCirc:"];
 
                     (* compute superator of entire circuit (passing on AssertValidChannels) *)
-                    superMatr = SparseArray @ CalcCircuitMatrix[compCirc, AsSuperoperator -> True, opts] // ConfirmQuiet;
+                    superMatr = SparseArray @ CalcCircuitMatrix[compCirc, AsSuperoperator -> True, opts] // Confirm;
 
                     Echo[superMatr, "superMatr:"];
 
-                    If[superMatr === {}, Message[CalcPauliTransferMatrix::error, "Could not compute circuit superoperator."]] // ConfirmQuiet;
+                    If[superMatr === {}, Message[CalcPauliTransferMatrix::error, "Could not compute circuit superoperator."]] // Confirm;
 
                     (* compute PTM from superoperator (and optionally simplify it) **)
                     ptMatr = getSuperOpPTM[superMatr, If[simpFlag, FullSimplify, Identity]];
@@ -5509,7 +5513,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 (* attempt to auto-generate PTM of circuit, passing along CalcPauliTransferMap[] options *)
                 calcOpts = FilterRules[{opts}, Options[CalcPauliTransferMap]];
                 map = Enclose[ 
-                    ConfirmQuiet @ CalcPauliTransferMap[ptmOrCirc, Sequence @@ calcOpts],
+                    Confirm @ CalcPauliTransferMap[ptmOrCirc, Sequence @@ calcOpts],
                     ( Message[DrawPauliTransferMap::error, "Failed to automatically obtain the PTMap due to the below error:"]; 
                       ReleaseHold @ # @ "HeldMessageCall";
                       errFlag = True; ) & ];
@@ -5606,7 +5610,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 
                 (* attempt to precompute all maps ... *)
                 Enclose[
-                    maps = calcAndCachePTMaps[mixed, cacheOpt, opts] // ConfirmQuiet,
+                    maps = calcAndCachePTMaps[mixed, cacheOpt, opts] // Confirm,
 
                     (* and abort immediately if any fail, to avoid caching errors *)
                     ( Message[caller::error, "Could not pre-compute the Pauli transfer maps due to the below error:"]; 
