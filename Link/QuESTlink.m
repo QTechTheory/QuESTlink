@@ -5331,15 +5331,24 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     qubits = GetCircuitQubits[targCirc] // ConfirmQuiet;
                     If[qubits === {}, Message[CalcPauliTransferMatrix::error, "Circuit must explicitly target at least one qubit."]] // ConfirmQuiet;
 
+                    Echo[qubits, "qubits:"];
+
                     (* get equivalent circuit acting upon lowest order qubits *)
                     compCirc = First @ GetCircuitCompacted[targCirc] // ConfirmQuiet;
 
+                    Echo[compCirc, "compCirc:"];
+
                     (* compute superator of entire circuit (passing on AssertValidChannels) *)
                     superMatr = SparseArray @ CalcCircuitMatrix[compCirc, AsSuperoperator -> True, opts] // ConfirmQuiet;
+
+                    Echo[superMatr, "superMatr:"];
+
                     If[superMatr === {}, Message[CalcPauliTransferMatrix::error, "Could not compute circuit superoperator."]] // ConfirmQuiet;
 
                     (* compute PTM from superoperator (and optionally simplify it) **)
                     ptMatr = getSuperOpPTM[superMatr, If[simpFlag, FullSimplify, Identity]];
+
+                    Echo[ptMatr, "ptMatr:"];
 
                     (* return PTM[] symbol *)
                     Subscript[PTM, Sequence @@ qubits] @ ptMatr
