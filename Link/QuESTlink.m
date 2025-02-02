@@ -6124,7 +6124,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         DrawPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, circ:(mixedGatesAndMapsPatt|_?isGateFormat), opts:drawPTEvalOptPatt ] := (
             Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
             Check[assertValidPictureFlag[OptionValue["Picture"], FreeQ[circ,PTM|PTMap], DrawPauliTransferEval], Return @ $Failed];
-            DrawPauliTransferEval[CalcPauliTransferEval[pauliStr, circ, extractCalcPTEvalOptions @ opts], opts] )
+            DrawPauliTransferEval[
+                CalcPauliTransferEval[pauliStr, circ, extractCalcPTEvalOptions @ opts], 
+                Sequence @@ ({opts} /. ("Picture" -> _) -> Nothing)
+            ]
+        )
 
         DrawPauliTransferEval[___] := invalidArgError[DrawPauliTransferEval];
 
