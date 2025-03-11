@@ -5934,6 +5934,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 mapGenOpts = FilterRules[{opts}, {Except @ Options @ CalcPauliTransferEval, Options @ CalcPauliTransferMap}];
                 maps = Check[ getAndValidateAllGatesAsPTMaps[mixed, CalcPauliTransferEval, mapGenOpts], Return @ $Failed ];
 
+                If[ OptionValue["Picture"] === "Heisenberg", maps = Reverse[maps] ];
+
                 (* once all maps are calculated, the "Picture" value is erased *)
                 CalcPauliTransferEval[pauliStr, maps, Sequence @@ ({opts} /. ("Picture"->_) -> Nothing)]
             ]
