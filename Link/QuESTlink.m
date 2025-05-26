@@ -363,35 +363,43 @@ Note that the returned circuits are not necessarily optimal/minimal, and may ben
     RecompileCircuit::error = "`1`"
 
     CalcPauliTransferMatrix::usage = "CalcPauliTransferMatrix[circuit] returns a single PTM operator equivalent to the given circuit.
-CalcPauliTranferMatrix /@ circuit returns an equivalent sequence of individual (and likely smaller) PTM operators.
-CalcPauliTransferMatrix accepts optional argument AssertValidChannels."
+CalcPauliTransferMatrix /@ circuit returns an equivalent sequence of individual (and likely smaller) PTM operators.
+CalcPauliTransferMatrix accepts the below options:
+\[Bullet] AssertValidChannels->False to disable the automatic simplification of the matrix through the assertion of valid channel parameters. See ?AssertValidChannels.
+\[Bullet] \"Picture\" which can be either \"Schrodinger\" (default) or \"Heisenberg\", which returns the PTM of the adjoint channel, as operates upon observables in the Heisenberg picture."
     CalcPauliTransferMatrix::error = "`1`"
 
     CalcPauliTransferMap::usage = "CalcPauliTransferMap[ptm] produces a PTMap equivalent to the given PTM operator. See ?PTM.
 CalcPauliTransferMap[circuit] produces a PTMap from the given gate or circuit, by merely first invoking CalcPauliTransferMatrix[].
 The returned map encodes how each basis Pauli-string (encoded by its integer index) is mapped to a weighted sum of other strings (encoded as {index, coefficient} pairs) by the PTM. The indexing convention is the same as used by GetPauliString[] where the subscripted qubits of the PTM are treated as though given in order of increasing significance.
 For improved performance, gate parameters should be kept symbolic (and optionally substituted thereafter) so that algebraic simplification can identify zero elements without interference by finite-precision numerical errors.
-CalcPauliTransferMap also accepts option AssertValidChannels->False to disable the automatic simplification of the map's coefficients through the assertion of valid channel parameters. See ?AssertValidChannels."
+CalcPauliTransferMap also accepts options:
+\[Bullet] AssertValidChannels->False to disable the automatic simplification of the map's coefficients through the assertion of valid channel parameters. See ?AssertValidChannels.
+\[Bullet] \"Picture\" which can be either \"Schrodinger\" (default) or \"Heisenberg\", which returns the map of the adjoint channel, as operates upon observables in the Heisenberg picture."
     CalcPauliTransferMap::error = "`1`"
 
     DrawPauliTransferMap::usage = "DrawPauliTransferMap[map] visualises the given PTMap as a graph where nodes are basis Pauli strings, and edges indicate the transformative action of the map.
 DrawPauliTransferMap also accepts PTM, circuit and gate instances, for which the corresponding PTMap is automatically calculated.
-DrawPauliTransferMap accepts options \"PauliStringForm\", \"ShowCoefficients\" and \"EdgeDegreeStyles\", in addition to all options accepted by Graph[].
+DrawPauliTransferMap accepts options \"PauliStringForm\", \"ShowCoefficients\" and \"EdgeDegreeStyles\", in addition to all options accepted by CalcPauliTransferMap and Graph[].
 \[Bullet] \"ShowCoefficients\" -> False hides the map's Pauli string coefficients which are otherwise shown as edge labels.
 \[Bullet] \"PauliStringForm\" sets the vertex label format to one of \"Subscript\" (default), \"Index\", \"Kronecker\", \"String\" or \"Hidden\". These (except the latter) are the formats are supported by GetPauliStringReformatted[].
 \[Bullet] \"EdgeDegreeStyles\" specifies a list of styles (default informed by ColorData[\"Pastel\"]) to set upon edges from nodes with increasing outdegree. For example, \"EdgeDegreeStyles\"->{Red,Green,Blue} sets edges from Pauli states which are mapped to a single other state to the colour Red, but two-outdegree node out-edges become Green, and three-outdegree become Blue. The list is assumed repeated for higher outdegree nodes than specified.
-\[Bullet] Graph[] options override these settings, so specifying EdgeStyle -> Black will set all edges to Black regardless of their node's outdegree."
+\[Bullet] Graph[] options override these settings, so specifying EdgeStyle -> Black will set all edges to Black regardless of their node's outdegree.
+\[Bullet] \"Picture\" -> \"Heisenberg\" can be passed when the given circuit excludes existing PTMs or PTMap, and will compute new maps in the Heisenberg picture.
+\[Bullet] AssertValidChannels -> False will disable analytic simplifications made by assuming the input circuit/channel/map represents a CPTP operation."
     DrawPauliTransferMap::error = "`1`"
 
     ApplyPauliTransferMap::usage = "ApplyPauliTransferMap[pauliString, ptMap] returns the Pauli string produced by the given PTMap acting upon the given initial Pauli string.
 ApplyPauliTransferMap[pauliString, circuit] automatically transforms the given circuit (composed of gates, channels, and PTMs, possibly intermixed) into PTMaps before applying them to the given Pauli string.
 For improved performance, gate parameters should be kept symbolic (and optionally substituted thereafter) so that algebraic simplification can identify zero elements without interference by finite-precision numerical errors.
+ApplyPauliTransferMap accepts all optional arguments accepted by CalcPauliTransferMap, including:
+\[Bullet] \"Picture\" -> \"Heisenberg\" to apply the adjoint channel of the given circuit, useful when Heisenberg-evolving an osbervable operator.
+\[Bullet] AssertValidChannels -> False to disable automatic simplification of the Pauli transfer maps (and as a result, the coefficients of the output Pauli string) through assuming CPTPness.
 This method uses automatic caching to avoid needless re-computation of an operator's PTMap, agnostic to the targeted and controlled qubits, at the cost of additional memory usage. Caching behaviour can be controlled using option \"CacheMaps\":
 \[Bullet] \"CacheMaps\" -> \"UntilCallEnd\" (default) caches all computed PTMaps but clears the cache when ApplyPauliTransferMap[] returns.
 \[Bullet] \"CacheMaps\" -> \"Forever\" maintains the cache even between multiple calls to ApplyPauliTransferMap[].
-\[Bullet] \"CacheMaps\" -> \"Never\" disables caching (and clears the existing cache before computation), re-computing each operqtors' PTMap when encountered in the circuit.
-ApplyPauliTransferMap also accepts all options of CalcPauliTransferMap, like AssertValidChannels. See ?AssertValidChannels."
-    ApplyPauliTransferMap::error = "`1`"
+\[Bullet] \"CacheMaps\" -> \"Never\" disables caching (and clears the existing cache before computation), re-computing each operqtors' PTMap when encountered in the circuit."
+ApplyPauliTransferMap::error = "`1`"
 
     CalcPauliTransferEval::usage = "CalcPauliTransferEval[pauliString, ptMaps] returns the full evolution history of the given Pauli string under the given list of PTMap operators. This is often unnecessary to call directly - most users can call ApplyPauliTransferMap[] or DrawPauliTransferEval[] instead - unless you wish to store or process the evaluation history.
 CalcPauliTransferEval[pauliString, circuit] evolves the Pauli string under the PTMaps automatically calculated from the given circuit. 
@@ -416,6 +424,7 @@ CalcPauliTransferEval accepts the below options:
 \[Bullet] \"OutputForm\" -> \"Simple\" (default) or \"Detailed\", as explained above.
 \[Bullet] \"CombineStrings\" -> False which disables combining incident Pauli strings, so that the result is an acyclic tree, and each node has a single parent.
 \[Bullet] \"CacheMaps\" which controls the automatic caching of generated PTMaps (see ?ApplyPauliTransferMap).
+\[Bullet] \"Picture\" -> \"Heisenberg\" to evaluate the adjoint channel of the given circuit, useful when Heisenberg-evolving an osbervable operator.
 \[Bullet] AssertValidChannels -> False which disables the simplification of symbolic Pauli string coefficients (see ?AssertValidChannels)."
     CalcPauliTransferEval::error = "`1`"
 
@@ -428,6 +437,7 @@ DrawPauliTransferEval accepts all options to Graph[], CalcPauliTransferEval[], D
 \[Bullet] \"ShowCoefficients\" -> True or False explicitly shows or hides the PTMap coefficient associated with each edge. The default is Automatic which auto-hides edge labels if there are too many.
 \[Bullet] \"EdgeDegreeStyles\" specifies the style of edges from nodes of increasing outdegree. See ?DrawPauliTransferMap.
 \[Bullet] \"CacheMaps\" controls the automatic caching of generated PTMaps. See ?ApplyPauliTransferMap.
+\[Bullet] \"Picture\" -> \"Heisenberg\" draws the evaluation of the adjoint channel of the given circuit, evolving the intial Pauli string in the Heisenberg picture as if it were an observable operator.
 \[Bullet] AssertValidChannels -> False disables the simplification of symbolic Pauli string coefficients, only noticeable when \"ShowCoefficients\"->True. See ?AssertValidChannels.
 \[Bullet] Graph[] options override these settings. For example, specifying EdgeStyle -> Black will set all edges to Black regardless of their node's outdegree."
     DrawPauliTransferEval::error = "`1`"
@@ -5294,6 +5304,20 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
          * and Pauli-basis.
          *)
 
+        assertValidPictureFlag[flag_, canBeHeisen:True, caller_] := If[
+            Or[
+                Not @ StringQ[flag],
+                Not @ StringMatchQ[flag, "Schrodinger"|"Heisenberg"]
+            ],
+            Message[caller::error, "Optional argument \"Picture\" must be either \"Heisenberg\" or \"Schrodinger\"."]]
+        assertValidPictureFlag[flag_, canBeHeisen:False, caller_] := Switch[flag,
+            "Schrodinger",
+                True, (* i.e. nothing happens; valid **)
+            "Heisenberg",
+                Message[caller::error, "Cannot specify optional argument \"Picture\" as \"Heisenberg\" when passing an existing PTM or PTMap, since their picture has already been determined when created."],
+            _,
+                Message[caller::error, "Unrecognised value for optional argument \"Picture\" which should anyway not be specified (defaulting to \"Schrodinger\") when passing existing PTMs or PTMaps."]]
+
         getChoiVecFromMatrix[m_] := 
             Transpose @ {Flatten @ Transpose @ m}
             
@@ -5312,7 +5336,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ]
             
         Options[CalcPauliTransferMatrix] = {
-            AssertValidChannels -> True
+            AssertValidChannels -> True,
+            "Picture" -> "Schrodinger"  (* or "Heisenberg" *)
         };
     
         CalcPauliTransferMatrix[circ_?isCircuitFormat, opts:OptionsPattern[]] :=
@@ -5321,7 +5346,8 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     {simpFlag, qubits, targCirc, compCirc, superMatr, ptMatr},
 
                      (* trigger option validation (and show error message immediately )*)
-                    simpFlag = OptionValue[AssertValidChannels];
+                    simpFlag = OptionValue[AssertValidChannels] // ConfirmQuiet;
+                    assertValidPictureFlag[OptionValue @ "Picture", True, CalcPauliTransferMatrix] // ConfirmQuiet;
 
                     (* replace global phase gates with equivalent unitary on arbitrary qubit *)
                     qubits = GetCircuitQubits[circ] // ConfirmQuiet;
@@ -5335,11 +5361,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                     compCirc = First @ GetCircuitCompacted[targCirc] // ConfirmQuiet;
 
                     (* compute superator of entire circuit (passing on AssertValidChannels) *)
-                    superMatr = SparseArray @ CalcCircuitMatrix[compCirc, AsSuperoperator -> True, opts] // ConfirmQuiet;
+                    superMatr = SparseArray @ CalcCircuitMatrix[compCirc, AsSuperoperator -> True, FilterRules[{opts}, Options @ CalcCircuitMatrix]] // ConfirmQuiet;
                     If[superMatr === {}, Message[CalcPauliTransferMatrix::error, "Could not compute circuit superoperator."]] // ConfirmQuiet;
 
                     (* compute PTM from superoperator (and optionally simplify it) **)
                     ptMatr = getSuperOpPTM[superMatr, If[simpFlag, FullSimplify, Identity]];
+
+                    (* transpose PTM in Heisenberg picture (preserving simplifications of AssertValidChannels) *)
+                    If[ OptionValue["Picture"] === "Heisenberg", ptMatr = Transpose[ptMatr]];
 
                     (* return PTM[] symbol *)
                     Subscript[PTM, Sequence @@ qubits] @ ptMatr
@@ -5371,12 +5400,15 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
 
         Options[CalcPauliTransferMap] = {
-            AssertValidChannels -> True
+            AssertValidChannels -> True,
+            "Picture" -> "Schrodinger" (* or "Heisenberg" when not applied to existing PTMs *)
         };
 
         CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] := (
             Check[ OptionValue[AssertValidChannels], Return @ $Failed];
-            Subscript[PTMap, q] @@ getMapOfPauliIndicesFromPTM[m] )
+            Check[ assertValidPictureFlag[OptionValue["Picture"], False, CalcPauliTransferMap], Return @ $Failed];
+            Subscript[PTMap, q] @@ getMapOfPauliIndicesFromPTM[m]
+        )
 
         CalcPauliTransferMap[ Subscript[PTM, q__Integer][m_], OptionsPattern[] ] /; 
             Not[ And@@(NonNegative/@{q}) ] || Not @ DuplicateFreeQ[{q}] := (
@@ -5391,13 +5423,18 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         CalcPauliTransferMap[circ_?isCircuitFormat, opts:OptionsPattern[]] := Module[
             {ptm},
             Check[ OptionValue[AssertValidChannels], Return @ $Failed];
+            Check[ assertValidPictureFlag[OptionValue["Picture"], True, CalcPauliTransferMap], Return @ $Failed];
+            If[ 
+                MemberQ[circ, Subscript[PTM, __][___] ], 
+                Message[CalcPauliTransferMap::error, "Circuit must not contain existing PTM instances; only a single PTM in isolation can be passed."]; 
+                Return @ $Failed];
 
             ptm = Check[
                 CalcPauliTransferMatrix[circ, FilterRules[{opts}, Options @ CalcPauliTransferMatrix]], 
                 Message[CalcPauliTransferMap::error, "Unable to determine PTM as per the above error."];
                 Return @ $Failed];
-            
-            CalcPauliTransferMap[ptm, FilterRules[{opts}, Options @ CalcPauliTransferMap]]
+
+            CalcPauliTransferMap[ptm] (* discard opts which have already been utilised *)
         ]
 
 
@@ -5438,15 +5475,17 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         Options[DrawPauliTransferMap] = {
             "PauliStringForm" -> "Subscript", (* or "Index", "Kronecker", "String", "Hidden" *)
             "ShowCoefficients" -> True,
-            "EdgeDegreeStyles" -> Automatic (* or a list of styles *),
+            "EdgeDegreeStyles" -> Automatic, (* or a list of styles *)
+            "Picture" -> "Schrodinger", (* or "Heisenberg", though which is not accepted when passing PTMs *)
             AssertValidChannels -> True
         };
 
         DrawPauliTransferMap[ Subscript[PTMap, q__Integer?NonNegative][rules__], opts:OptionsPattern[{DrawPauliTransferMap,Graph}] ] := Module[
             {edges, edgeLabels, vertInds, vertFormFunc, vertLabels, vertDegrees, maxDegree, degreeStyles, edgeStyles},
 
-            (* fail immediately if given unrecognised option *)
+            (* fail immediately if given unrecognised or invalid option *)
             Check[OptionValue["PauliStringForm"], Return @ $Failed];
+            Check[ assertValidPictureFlag[OptionValue @ "Picture", False, DrawPauliTransferMap], Return @ $Failed];
 
             (* warn about not plotting null entries *)
             If[ MemberQ[{rules}, _->{}], Message[DrawPauliTransferMap::error, 
@@ -5495,8 +5534,13 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         DrawPauliTransferMap[ ptmOrCirc:(Subscript[PTM,_][_] | _?isCircuitFormat), opts:OptionsPattern[{CalcPauliTransferMap,DrawPauliTransferMap,Graph}] ] :=
             Module[
-                {map, calcOpts, drawOpts, errFlag=False},
+                {map, isPTM, calcOpts, drawOpts, errFlag=False},
 
+                (* fail immediately if given unrecognised or invalid option *)
+                Check[OptionValue["PauliStringForm"], Return @ $Failed];
+                isPTM = MatchQ[ptmOrCirc, Subscript[PTM,_][_]];
+                Check[ assertValidPictureFlag[OptionValue @ "Picture", Not @ isPTM, DrawPauliTransferMap], Return @ $Failed];
+                
                 (* attempt to auto-generate PTM of circuit, passing along CalcPauliTransferMap[] options *)
                 calcOpts = FilterRules[{opts}, Options[CalcPauliTransferMap]];
                 map = Enclose[ 
@@ -5508,8 +5552,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                 (* return immediately if PTM generation failed *)
                 If[errFlag, Return @ $Failed];
 
-                (* otherwise recurse, passing along Graph styling options *)
+                (* otherwise recurse, passing along Graph styling options, removing Picture argument *)
                 drawOpts = FilterRules[{opts}, Options[DrawPauliTransferMap] ~Join~ Options[Graph]];
+                drawOpts = drawOpts /. ("Picture" -> _) -> Nothing;
                 DrawPauliTransferMap[map, Sequence @@ drawOpts]
             ]
 
@@ -5524,7 +5569,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
 
         Options[ApplyPauliTransferMap] = {
-            "CacheMaps" -> "UntilCallEnd" (* or "Forever" or "Never" *)
+            "CacheMaps" -> "UntilCallEnd", (* or "Forever" or "Never" *)
+            "Picture" -> "Schrodinger", (* or "Heisenberg" when not passing any PTMs directly *)
+            AssertValidChannels -> True
         };
 
         (* ApplyPauliTransferMap additionally accepts all options to CalcPauliTransferMap which is called internally *)
@@ -5551,13 +5598,14 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
         (* immediately call clear to create initial definition *)
         resetCachedPTMaps[];
 
-        calcAndCachePTMaps[mixed_List, cacheOpt_String, opts___ ] :=
+        calcAndCachePTMaps[mixed_List, cacheOpt_String, opts___ ] := Module[
+            {calcRules = FilterRules[{opts}, Options @ CalcPauliTransferMap]},
             Table[
                 Switch[item,
 
                     (* keep PTMaps, and convert all PTMs to PTMaps*)
                     ptmapPatt, item,
-                    ptmatrPatt, CalcPauliTransferMap[item],
+                    ptmatrPatt, CalcPauliTransferMap[item, calcRules],
 
                     (* but for gates and sub-circuits... *)
                     _, If[
@@ -5572,10 +5620,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
                             First @ GetCircuitRetargeted[ptmap, rules]
                         ],
                         (* else compute the map afresh *)
-                        CalcPauliTransferMap[item]]
+                        CalcPauliTransferMap[item, calcRules]]
                 ],
                 {item, mixed}
             ]
+        ]
 
         validatePauliTransferMapOptions[caller_Symbol, applyPTMapOptPatt] := (
 
@@ -5644,8 +5693,9 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             Module[
                 {out, scalars},
 
-                (* we don't actually use the options (they inform PTMap gen), but we still validate them *)
+                (* check options are valid *)
                 Check[ validatePauliTransferMapOptions[ApplyPauliTransferMap, opts], Return @ $Failed];
+                Check[ assertValidPictureFlag[OptionValue["Picture"], False, ApplyPauliTransferMap], Return @ $Failed];
 
                 (* apply the PTM to each input pauli product ... *)
                 out = Plus @@ Flatten[ Table[
@@ -5684,17 +5734,20 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         ApplyPauliTransferMap[ pauliStr_?isValidSymbolicPauliString, maps:{ptmapPatt..}, opts:OptionsPattern[] ] :=
             (
-                (* we don't use nor pass on the options (they inform PTMap gen), but we still validate them  *)
+                (* validate options  *)
                 Check[ validatePauliTransferMapOptions[ApplyPauliTransferMap, opts], Return @ $Failed];
+                Check[ assertValidPictureFlag[OptionValue["Picture"], False, ApplyPauliTransferMap], Return @ $Failed];
 
                 (* apply each map in turn to the growing pauli string, and simplify the end result *)
                 SimplifyPaulis @ Fold[ApplyPauliTransferMap, pauliStr, maps]
             )
 
         ApplyPauliTransferMap[ pauliStr_?isValidSymbolicPauliString, mixed:mixedGatesAndMapsPatt, opts:OptionsPattern[] ] := 
-            Module[{maps},
+            Module[{maps, hasPTMs},
                 (* validate the options *)
                 Check[ validatePauliTransferMapOptions[ApplyPauliTransferMap, opts], Return @ $Failed];
+                hasPTMs = MemberQ[mixed, ptmapPatt|ptmatrPatt];
+                Check[ assertValidPictureFlag[OptionValue["Picture"], Not @ hasPTMs, ApplyPauliTransferMap], Return @ $Failed];
 
                 (* validate and pre-compute all PTMaps, managing all caching *)
                 maps = Check[ getAndValidateAllGatesAsPTMaps[mixed, ApplyPauliTransferMap, opts], Return @ $Failed ];
@@ -5825,10 +5878,11 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         Options[CalcPauliTransferEval] = {
             "CombineStrings" -> True,
-            "OutputForm" -> "Simple" (* or "Detailed" *)
+            "OutputForm" -> "Simple", (* or "Detailed" *)
+            "Picture" -> "Schrodinger" (* "Heisenberg", which are not accepted when passing only PTMs *)
         };
 
-        (*CalcPauliTransferEval additionally accepts all options to ApplyPauliTransferMap (and its subroutines) which are internally called *)
+        (* CalcPauliTransferEval additionally accepts all options to ApplyPauliTransferMap (and its subroutines) which are internally called *)
         calcPTEvalOptPatt = OptionsPattern @ {CalcPauliTransferEval, Sequence @@ First @ applyPTMapOptPatt};
 
         validateCalcPauliTransferEvalOptions[caller_Symbol, opts:calcPTEvalOptPatt] := 
@@ -5855,6 +5909,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
                 (* validate options (including those for inner functions like CalcPauliTransferMap) *)
                 Check[validateCalcPauliTransferEvalOptions[CalcPauliTransferEval, opts], Return @ $Failed];
+                Check[ assertValidPictureFlag[OptionValue["Picture"], False, CalcPauliTransferEval], Return @ $Failed];
 
                 (* compute simple evaluation graph *)
                 inStates = getPauliStringInitStatesForPTMapSim[pauliStr, maps];
@@ -5868,16 +5923,21 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
             ]
 
         CalcPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, mixed:mixedGatesAndMapsPatt, opts:calcPTEvalOptPatt ] := 
-            Module[{maps,mapGenOpts},
+            Module[{maps, hasPTMs, mapGenOpts},
 
                 (* validate CalcPauliTransferEval options, and those needed by subsequent PTMap generation *)
                 Check[validateCalcPauliTransferEvalOptions[CalcPauliTransferEval, opts], Return @ $Failed];
+                hasPTMs = MemberQ[mixed, ptmapPatt|ptmatrPatt];
+                Check[ assertValidPictureFlag[OptionValue["Picture"], Not @ hasPTMs, CalcPauliTransferEval], Return @ $Failed];
 
                 (* validate and pre-compute all PTMaps, managing all caching *)
-                mapGenOpts = FilterRules[{opts}, Except @ Options @ CalcPauliTransferEval];
+                mapGenOpts = FilterRules[{opts}, {Except @ Options @ CalcPauliTransferEval, Options @ CalcPauliTransferMap}];
                 maps = Check[ getAndValidateAllGatesAsPTMaps[mixed, CalcPauliTransferEval, mapGenOpts], Return @ $Failed ];
 
-                CalcPauliTransferEval[pauliStr, maps, opts]
+                If[ OptionValue["Picture"] === "Heisenberg", maps = Reverse[maps] ];
+
+                (* once all maps are calculated, the "Picture" value is erased *)
+                CalcPauliTransferEval[pauliStr, maps, Sequence @@ ({opts} /. ("Picture"->_) -> Nothing)]
             ]
 
         CalcPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, gate_?isGateFormat, opts:calcPTEvalOptPatt ] :=
@@ -5967,6 +6027,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
                 (* validate options *)
                 Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
+                Check[assertValidPictureFlag[OptionValue["Picture"], False, DrawPauliTransferEval], Return @ $Failed];
 
                 (* warn if eval history contains null states (e.g. by fully-mixing channels) *)
                 If[
@@ -6041,6 +6102,7 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
                 (* validate options *)
                 Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
+                Check[assertValidPictureFlag[OptionValue["Picture"], False, DrawPauliTransferEval], Return @ $Failed];
 
                 (* compute a simplified 'Detailed' Association containing only the necessary keys *)
                 keys = {"Ids", "NumQubits", "Children", "Outdegree"};
@@ -6063,7 +6125,12 @@ Unlike UNonNorm, the given matrix is not internally treated as a unitary matrix.
 
         DrawPauliTransferEval[ pauliStr_?isValidSymbolicPauliString, circ:(mixedGatesAndMapsPatt|_?isGateFormat), opts:drawPTEvalOptPatt ] := (
             Check[validateDrawPauliTransferEvalOptions[opts], Return @ $Failed];
-            DrawPauliTransferEval[CalcPauliTransferEval[pauliStr, circ, extractCalcPTEvalOptions @ opts], opts] )
+            Check[assertValidPictureFlag[OptionValue["Picture"], FreeQ[circ,PTM|PTMap], DrawPauliTransferEval], Return @ $Failed];
+            DrawPauliTransferEval[
+                CalcPauliTransferEval[pauliStr, circ, extractCalcPTEvalOptions @ opts], 
+                Sequence @@ ({opts} /. ("Picture" -> _) -> Nothing)
+            ]
+        )
 
         DrawPauliTransferEval[___] := invalidArgError[DrawPauliTransferEval];
 
