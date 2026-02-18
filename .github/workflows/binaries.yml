@@ -100,19 +100,19 @@ jobs:
         run: |
           rm -rf Binaries
           mkdir Binaries
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: linux_quest_link
           path: Binaries
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: macos_x86_quest_link
           path: Binaries
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: macos_arm_quest_link
           path: Binaries
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: windows_quest_link
           path: Binaries
