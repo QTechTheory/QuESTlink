@@ -38,8 +38,9 @@
 #define OPCODE_Matr 22
 #define OPCODE_UNonNorm 23
 #define OPCODE_Fac 24
+#define OPCODE_PauliError 25
 
-#define NUM_OPCODES 25
+#define NUM_OPCODES 26
 
 static const std::string opcodeStrings[] = {
     "H",			// OPCODE_H 0
@@ -67,6 +68,7 @@ static const std::string opcodeStrings[] = {
     "Matr",			// OPCODE_Matr 22
     "UNonNorm",		// OPCODE_UNonNorm 23
     "Fac",          // OPCODE_Fac 24
+    "PauliError",   // OPCODE_PauliError 25
 };
 
 static const std::string opcodeNames[] = {
@@ -95,6 +97,7 @@ static const std::string opcodeNames[] = {
     "general matrix",                   // OPCODE_Matr 22
     "unnormalised general unitary",     // OPCODE_UNonNorm 23
     "factor",                           // OPCODE_Fac 24
+    "inhomogeneous Pauli error",        // OPCODE_PauliError 25
 };
 
 

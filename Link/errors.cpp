@@ -155,6 +155,19 @@ QuESTException local_invalidProbExcep(std::string gateName, qreal prob, std::str
         " for which " + gateName + " is maximally mixing."); // throws
 }
 
+QuESTException local_invalidProbExcep(std::string gateName, qreal probX, qreal probY, qreal probZ) {
+
+    if (probX < 0 || probY < 0 || probZ < 0)
+        return QuESTException("", "An error probability is negative and ergo invalid.");
+    if (probX > 1 || probY > 1 || probZ > 1)
+        return QuESTException("", "An error probability exceeded one and is ergo invalid.");
+    
+    if (probX + probY + probZ > 1)
+        return QuESTException("", "The error probabilities together exceeded one and are ergo invalid.");
+
+    return QuESTException("", "The error probabilities together exceeded those which induce maximal mixing.");
+}
+
 void local_throwExcepIfUserAborted() {
     
     /* Dear ancient Wolfram Gods; why does this no longer work? 
