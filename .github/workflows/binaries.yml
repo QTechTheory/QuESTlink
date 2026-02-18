@@ -25,7 +25,7 @@ jobs:
         run: |
           mkdir -p Binaries/linux
           mv linux_quest_link Binaries/linux/.
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: linux_quest_link
           path: Binaries/linux
@@ -43,7 +43,7 @@ jobs:
         run: |
           mkdir -p Binaries/macos_x86
           mv macos_x86_quest_link Binaries/macos_x86/.
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: macos_x86_quest_link
           path: Binaries/macos_x86
@@ -61,7 +61,7 @@ jobs:
         run: |
           mkdir -p Binaries/macos_arm
           mv macos_arm_quest_link Binaries/macos_arm/.
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: macos_arm_quest_link
           path: Binaries/macos_arm
@@ -83,7 +83,7 @@ jobs:
           if not exist Binaries mkdir Binaries
           if not exist Binaries\windows mkdir Binaries\windows
           move windows_quest_link.exe Binaries\windows
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v4
         with:
           name: windows_quest_link
           path: Binaries/windows
@@ -100,19 +100,19 @@ jobs:
         run: |
           rm -rf Binaries
           mkdir Binaries
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: linux_quest_link
           path: Binaries
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: macos_x86_quest_link
           path: Binaries
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: macos_arm_quest_link
           path: Binaries
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: windows_quest_link
           path: Binaries
