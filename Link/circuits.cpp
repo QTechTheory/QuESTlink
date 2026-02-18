@@ -196,6 +196,7 @@ std::string Gate::getName() {
         case OPCODE_Deph :
         case OPCODE_Depol :
         case OPCODE_Damp :
+        case OPCODE_PauliError : 
         case OPCODE_Kraus :
         case OPCODE_KrausNonTP :
             if (numTargs == 0)
@@ -488,6 +489,15 @@ void Gate::validate() {
             if (numTargs != 1)
                 throw local_wrongNumGateTargsExcep(getSyntax(), getSymb(), numTargs, 1); // throws
             return;
+
+        case OPCODE_PauliError :
+            if (numParams != 3)
+                throw local_wrongNumGateParamsExcep(getSyntax(), getSymb(), numParams, 3); // throws
+            if (numCtrls != 0)
+                throw local_gateUnsupportedExcep(getSyntax(), getName()); // throws
+            if (numTargs != 1)
+                throw local_wrongNumGateTargsExcep(getSyntax(), getSymb(), numTargs, 1); // throws
+            return;
             
         case OPCODE_SWAP :
             if (numParams != 0)
@@ -736,6 +746,12 @@ void Gate::applyTo(Qureg qureg, qreal* outputs) {
                 if (numTargs == 2)
                     mixTwoQubitDepolarising(qureg, targs[0], targs[1], params[0]); // throws
                 break;
+
+            case OPCODE_PauliError : 
+                if (params[0] == 0 && params[1] == 0 && params[2] == 0)
+                    break; // permit zero-prob decoherence to act on state-vectors
+                mixPauli(qureg, targs[0], params[0], params[1], params[2]); // throws
+                break;
                 
             case OPCODE_Damp :
                 if (params[0] == 0)
@@ -889,6 +905,7 @@ void Gate::applyDaggerTo(Qureg qureg) {
         case OPCODE_Z :
         case OPCODE_Deph :
         case OPCODE_Depol :
+        case OPCODE_PauliError : 
             applyTo(qureg); // throws
             break;
 
@@ -1014,6 +1031,7 @@ bool Gate::isUnitary() {
         case OPCODE_Deph :
         case OPCODE_Depol :
         case OPCODE_Damp :
+        case OPCODE_PauliError :
         case OPCODE_Kraus :
         case OPCODE_KrausNonTP :
         case OPCODE_Fac :
@@ -1039,6 +1057,7 @@ bool Gate::isPure() {
         
         case OPCODE_Deph :
         case OPCODE_Depol :
+        case OPCODE_PauliError :
         case OPCODE_Damp :
         case OPCODE_Kraus :
         case OPCODE_KrausNonTP :
@@ -1081,6 +1100,12 @@ bool Gate::isInvertible() {
             if (numTargs == 2)
                 return local_isNonZero(15 - 16*params[0]);
         
+        case OPCODE_PauliError :
+            return local_isNonZero(
+                (1 - 2*params[1] - 2*params[2]) *
+                (1 - 2*params[0] - 2*params[2]) *
+                (1 - 2*params[0] - 2*params[1]));
+
         case OPCODE_Damp :
             if (numTargs == 1)
                 return local_isNonZero(1 - params[0]);
@@ -1116,6 +1141,7 @@ bool Gate::isTracePreserving() {
         case OPCODE_Damp :
         case OPCODE_Deph : 
         case OPCODE_Depol :
+        case OPCODE_PauliError :
         case OPCODE_Kraus :
             return true;
             
@@ -1200,12 +1226,30 @@ void Gate::applyInverseTo(Qureg qureg) {
                 densmatr_mixTwoQubitDepolarising(qureg, targs[0], targs[1], (16*invParam)/15.);
             }
             return;
+
+        case OPCODE_PauliError : { ;
+            qreal oldX = params[0];
+            qreal oldY = params[1];
+            qreal oldZ = params[2];
+
+            qreal termX = 1 / (1 - 2*oldY - 2*oldZ); // Gate::isInvertible assures these won't divide-by-zero
+            qreal termY = 1 / (1 - 2*oldX - 2*oldZ);
+            qreal termZ = 1 / (1 - 2*oldX - 2*oldY);
+            
+            qreal newI = (1 + termX + termY + termZ) / 4;
+            qreal newX = (1 + termX - termY - termZ) / 4;
+            qreal newY = (1 + termX - termY + termZ * 2 * (oldX + oldY)) / 4;
+            qreal newZ = oldZ + 2 * (oldX + oldY - 1) * (oldX + oldZ) * (oldY + oldZ);
+                  newZ /= - termX * termY * termZ;
+
+            densmatr_mixArbitraryPauli(qureg, targs[0], newI, newX, newY, newZ);
+        }
+            return;
         
-        case OPCODE_Damp :
-            if (numTargs == 1) {
-                qreal invParam = params[0] / (params[0] - 1);
-                densmatr_mixDamping(qureg, targs[0], invParam);
-            }
+        case OPCODE_Damp : { ;
+            qreal invParam = params[0] / (params[0] - 1);
+            densmatr_mixDamping(qureg, targs[0], invParam);
+        }
             return;
                 
         case OPCODE_Kraus :
@@ -1248,6 +1292,9 @@ int Gate::getNumDecomps() {
                 return 4;
             if (numTargs == 2)
                 return 16;
+
+        case OPCODE_PauliError :
+            return 4;
         
         case OPCODE_Kraus :
         case OPCODE_KrausNonTP :
@@ -1397,6 +1444,36 @@ qreal Gate::applyDecompTo(Qureg qureg, int decompInd) {
             }
                 break;
             
+            case OPCODE_PauliError : { ;
+                qreal pX = params[0];
+                qreal pY = params[1];
+                qreal pZ = params[2];
+                qreal pI = 1 - (pX + pY + pZ);
+
+                if (pX < 0 || pY < 0 || pZ < 0)
+                    throw local_invalidProbExcep(getName(), pX, pY, pZ); // throws
+                
+                qreal pMax = 0;
+                if (pX > pMax) pMax = pX;
+                if (pY > pMax) pMax = pY;
+                if (pZ > pMax) pMax = pZ;
+                if (pMax > pI)
+                    throw local_invalidProbExcep(getName(), pX, pY, pZ); // throws
+
+                // apply I, X, Y or Z
+                qreal probs[] = {pI, pX, pY, pZ};
+                int r = (isRand)? local_getRandomIndex(probs, 4) : decompInd;
+                if (r == 1)
+                    pauliX(qureg, targs[0]); // throws
+                if (r == 2)
+                    pauliY(qureg, targs[0]); // throws
+                if (r == 3)
+                    pauliZ(qureg, targs[0]); // throws
+                    
+                return probs[r];
+            }
+                break;
+
             case OPCODE_Kraus :
             case OPCODE_KrausNonTP : { ;
                 int numOps = (int) params[0];
