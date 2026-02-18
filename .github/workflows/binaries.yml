@@ -2,7 +2,7 @@ name: Binaries
 
 on:
   push:
-    branches: [ fix-main-build-ci ]
+    branches: [ main ]
     
 jobs:
   
