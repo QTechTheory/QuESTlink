@@ -35,12 +35,14 @@ BeginPackage["QuEST`"]
     Unset[$MessagePrePrint];
 
     (* display launch message *)
-    Message[QuESTlink::notice, 
-        "Bug alert! Prior to this version (v0.19), SimplifyPaulis[] contained a bug whereby multiplying X and Z operators (targeting the same qubit) produced a Y operator with an incorrect sign. " <>
-        "This bug occurred only when multiplying Pauli strings together, and did not affect other algebraic forms (like summing or exponentiation), though did affect the downstream function CalcPauliExpressionMatrix[]. " <>
-        "Please check any previous calculations which passed products of Pauli-strings to SimplifyPaulis[] and CalcPauliExpressionMatrix[]. " <>
-        "We sincerely apologise for any arising issues! Silence this warning using Quiet[]."];
-
+    (* MSG BELOW REMOVED BUT PRESERVED FOR FUTURE EXAMPLE *)
+        (*
+        Message[QuESTlink::notice, 
+            "Bug alert! Prior to this version (v0.19), SimplifyPaulis[] contained a bug whereby multiplying X and Z operators (targeting the same qubit) produced a Y operator with an incorrect sign. " <>
+            "This bug occurred only when multiplying Pauli strings together, and did not affect other algebraic forms (like summing or exponentiation), though did affect the downstream function CalcPauliExpressionMatrix[]. " <>
+            "Please check any previous calculations which passed products of Pauli-strings to SimplifyPaulis[] and CalcPauliExpressionMatrix[]. " <>
+            "We sincerely apologise for any arising issues! Silence this warning using Quiet[]."];
+        *)
     (* restore subsequent message truncation (as per user settings) *)
     $MessagePrePrint = initPrePrintVal;
 
